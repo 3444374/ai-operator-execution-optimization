@@ -35,11 +35,13 @@ class NativeEcommMediaTests(unittest.TestCase):
                 output = root / pattern
                 main(["--sembench-checkout", CHECKOUT, "--data-dir", str(root),
                       "--styles-file", str(root / "styles.csv"), "--mapping-file", str(root / "mapping.csv"),
+                      "--input-role", "software_fixture",
                       "--image-rows", "2", "--tile-assets", "1", "--max-logical-requests", "128",
                       "--model", "openai/CPU-vision-fixture", "--max-tokens", "8", "--pattern", pattern,
                       "--warmup", "0", "--repeats", "1", "--output-dir", str(output)])
                 report = json.loads((output / "profile.json").read_text())
                 self.assertEqual(report["actual_model_calls"], 0)
+                self.assertEqual(report["input_role"], "software_fixture")
                 self.assertEqual(report["source"]["workload"]["merged_occurrences"], 3)
                 runs = {r["case"]: r for r in report["runs"]}
                 self.assertTrue(all(r["original_join_result_equal"] for r in runs.values()))

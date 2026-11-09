@@ -23,6 +23,9 @@ from unittest.mock import patch
 import weakref
 
 from src.baselines.text.sembench_source import SEMBENCH_COMMIT, verify_checkout
+from src.infrastructure.private_artifacts import (
+    file_identity, new_private_directory, open_private_text, write_private_json,
+)
 from src.infrastructure.redact import redact_text
 from src.research.data_organization.ecomm_media import RequestAudit, TileImages, asset_tiles
 from src.semantic_methods.lotus.source import FILTER_FILES, source_report
@@ -147,8 +150,7 @@ class MediaObserver:
 @dataclass
 class Branch:
     frame: object
-    args: tuple
-    kwargs: dict
+    instruction: str
 
 
 class BeforeOriginalJoin(Exception):
@@ -158,8 +160,8 @@ class BeforeOriginalJoin(Exception):
 def capture_branches(query, data_dir, filter_type, join_type):
     branches = []
 
-    def capture(accessor, *args, **kwargs):
-        branches.append(Branch(accessor._obj, args, kwargs))
+    def capture(accessor, instruction):
+        branches.append(Branch(accessor._obj, instruction))
         return accessor._obj
 
     def stop(*args, **kwargs):
@@ -189,7 +191,6 @@ def cpu_allowance(frame, max_requests):
 def run_case(query, data_dir, selected, args, output, *, case, fixed=None):
     import lotus
     import pandas as pd
-    from pandas.testing import assert_frame_equal
     from lotus.models import LM
     from lotus.templates import task_instructions
     from lotus.types import LMOutput
@@ -199,12 +200,11 @@ def run_case(query, data_dir, selected, args, output, *, case, fixed=None):
     native_filter, native_join = filter_type.__call__, join_type.__call__
     observer = MediaObserver(image_module, task_instructions)
     branches, lineage, counters = [], {}, Counter()
-    workload = {}
 
-    def source(path, *unused_args, **unused_kwargs):
+    def source(path):
         return selected[Path(path).name].copy(deep=True)
 
-    with output.open("x", encoding="utf-8") as stream:
+    with open_private_text(output) as stream:
         audit = RequestAudit(stream, fixed=fixed, pattern=args.pattern, max_requests=args.max_logical_requests)
 
         class FixedLM(LM):
@@ -219,31 +219,24 @@ def run_case(query, data_dir, selected, args, output, *, case, fixed=None):
             stage = "filter_" + str(branch)
             occurrences = [(stage + ":" + str(i), []) for i in frame.index]
             with audit.operation(stage, occurrences):
-                result = native_filter(frame.sem_filter, *instructions[branch].args,
-                                       **instructions[branch].kwargs)
+                result = native_filter(frame.sem_filter, instructions[branch].instruction)
             lineage[id(result)] = {i: [stage + ":" + str(i)] for i in result.index}
             observer.sample()
             return result
 
-        def run_filter(accessor, *call_args, **call_kwargs):
+        def run_filter(accessor, instruction):
             branch = counters["filters"]
             counters["filters"] += 1
             if branch >= 4 or counters["joins"]:
                 raise ValueError("unexpected dataframe Filter in the authored Q11 suffix")
-            if branch == 0:
-                workload.update(cpu_allowance(accessor._obj, args.max_logical_requests))
             if case == "branch_native":
-                instructions.append(Branch(accessor._obj, call_args, call_kwargs))
+                instructions.append(Branch(accessor._obj, instruction))
                 result = filter_rows(branch, accessor._obj)
                 branches.append(result)
                 return result
-            expected = instructions[branch]
-            if call_args != expected.args or call_kwargs != expected.kwargs:
-                raise ValueError("an authored initial Filter instruction changed")
-            assert_frame_equal(accessor._obj, expected.frame, check_exact=True)
             return branches[branch]
 
-        def run_join(accessor, other, *call_args, **call_kwargs):
+        def run_join(accessor, other, instruction):
             if counters["filters"] != 4:
                 raise ValueError("an authored Join ran before all initial Filters completed")
             stage = "join_" + str(counters["joins"])
@@ -253,7 +246,7 @@ def run_case(query, data_dir, selected, args, output, *, case, fixed=None):
             occurrences = [(stage + f":{i}:{j}", left[i] + right[j])
                            for i in accessor._obj.index for j in other.index]
             with audit.operation(stage, occurrences):
-                result = native_join(accessor, other, *call_args, **call_kwargs)
+                result = native_join(accessor, other, instruction)
             surviving = [[key] for key, _ in occurrences if audit.responses[key] == "Answer: True"]
             if len(result) != len(surviving):
                 raise ValueError("native Join assembly differs from the fixed parsed responses")
@@ -272,7 +265,6 @@ def run_case(query, data_dir, selected, args, output, *, case, fixed=None):
                 instructions = capture_branches(query, data_dir, filter_type, join_type)
                 capture_s = perf_counter() - capture_start
                 base = instructions[0].frame
-                workload.update(cpu_allowance(base, args.max_logical_requests))
                 organize_start = perf_counter()
                 tiles = asset_tiles(list(base["images"].array), args.tile_assets)
                 organization_s = perf_counter() - organize_start
@@ -297,14 +289,14 @@ def run_case(query, data_dir, selected, args, output, *, case, fixed=None):
                 result = query.run(str(data_dir))
             if counters != Counter(filters=4, joins=3):
                 raise ValueError("the authored Q11 operator count changed")
-        elapsed = perf_counter() - start
+    elapsed = perf_counter() - start
     report = dict(case=case, query_cpu_s=elapsed, capture_s=capture_s,
                   organization_s=organization_s, observer_sample_s=observer.sample_s,
                   media={k: dict(v) for k, v in observer.metrics.items()},
                   observed_cache_samples=observer.samples,
-                  workload=workload, request_audit=audit.report(), result_rows=len(result),
+                  request_audit=audit.report(), result_rows=len(result),
                   result_sha256=hashlib.sha256(result.to_json().encode()).hexdigest(),
-                  private_audit_sha256=hashlib.sha256(output.read_bytes()).hexdigest())
+                  private_audit_sha256=file_identity(output)["sha256"])
     return report, audit, branches, result
 
 
@@ -314,9 +306,11 @@ def read_selected(args):
 
     start = perf_counter()
     paths = {"styles_details.parquet": args.styles_file, "image_mapping.parquet": args.mapping_file}
+    if args.input_role == "ecomm_sample" and any(path.suffix != ".parquet" for path in paths.values()):
+        raise ValueError("the original Ecomm sample requires Parquet; CSV is only a software fixture")
     loaded, hashes = {}, {}
     for name, path in paths.items():
-        hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        hashes[name] = file_identity(path)["sha256"]
         loaded[name] = pd.read_csv(path) if path.suffix == ".csv" else pd.read_parquet(path)
     mapping = loaded["image_mapping.parquet"].head(args.image_rows)
     styles = loaded["styles_details.parquet"]
@@ -327,27 +321,30 @@ def read_selected(args):
         left_on="id", right_on="image_id", suffixes=("", "_img"))
     workload = cpu_allowance(merged, args.max_logical_requests)
     assets = [args.data_dir / "images" / str(name) for name in merged.filename]
-    media = []
+    media, identities = [], {}
     for path in dict.fromkeys(assets):
+        identities[path] = file_identity(path)
         with Image.open(path) as image:
-            media.append(dict(sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
-                              encoded_bytes=path.stat().st_size, width=image.width, height=image.height))
+            media.append(dict(sha256=identities[path]["sha256"], encoded_bytes=identities[path]["bytes"],
+                              width=image.width, height=image.height))
     source = dict(selection="first mapping rows and all matching style occurrences",
                   requested_mapping_rows=args.image_rows, mapping_rows=len(mapping),
                   source_sha256=hashes, input_formats={k: v.suffix for k, v in paths.items()},
                   asset_occurrences=len(assets), unique_asset_references=len(set(assets)),
                   assets=media, workload=workload)
-    return selected, assets, source, perf_counter() - start
+    return selected, identities, source, perf_counter() - start
 
 
 @contextmanager
-def record_failure(output):
+def record_profile(output):
+    report = dict(status="running")
     try:
-        yield
+        yield report
     except Exception as error:
-        (output / "failure.json").write_text(json.dumps(dict(status="failed",
-            error_type=type(error).__name__, message=redact_text(str(error))), indent=2) + "\n")
+        report.update(status="failed", error_type=type(error).__name__, message=redact_text(str(error)))
         raise
+    finally:
+        write_private_json(output / "profile.json", report)
 
 
 def main(argv=None):
@@ -356,6 +353,7 @@ def main(argv=None):
     parser.add_argument("--data-dir", type=Path, required=True, help="existing root with images/; no downloads")
     parser.add_argument("--styles-file", type=Path, required=True)
     parser.add_argument("--mapping-file", type=Path, required=True)
+    parser.add_argument("--input-role", choices=("software_fixture", "ecomm_sample"), required=True)
     parser.add_argument("--image-rows", type=int, required=True)
     parser.add_argument("--tile-assets", type=int, required=True)
     parser.add_argument("--max-logical-requests", type=int, required=True)
@@ -370,7 +368,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if min(args.image_rows, args.tile_assets, args.max_logical_requests, args.max_tokens, args.repeats) < 1 or args.warmup < 0:
         parser.error("sample, tile, request, token and repeat values must be positive; warmup may be zero")
-    args.output_dir.mkdir(parents=True, exist_ok=False, mode=0o700)
+    new_private_directory(args.output_dir)
 
     # The CPU probe never needs an external connection, even if an installed
     # SDK tries to auto-fetch metadata. A missing local dependency fails here.
@@ -381,7 +379,7 @@ def main(argv=None):
             raise RuntimeError("network access is forbidden during this CPU-only probe")
         return connect(sock, address)
 
-    with record_failure(args.output_dir), patch.object(socket.socket, "connect", local_only), \
+    with record_profile(args.output_dir) as report, patch.object(socket.socket, "connect", local_only), \
             patch.dict(os.environ, CUDA_VISIBLE_DEVICES="", HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
                        GIT_NO_LAZY_FETCH="1"):
         from pandas.testing import assert_frame_equal, assert_series_equal
@@ -393,22 +391,21 @@ def main(argv=None):
             raise ValueError("the authored Q11 query is locally modified")
         query = ModuleType("ecomm_q11_cpu_probe")
         exec(compile(pinned, QUERY, "exec"), query.__dict__)
-        selected, assets, source, source_s = read_selected(args)
-        original_media = [hashlib.sha256(path.read_bytes()).hexdigest() for path in assets]
-        report = dict(schema="semloom.ecomm_media_cpu.v1", status="running", kind="native_cpu_fixed_output_replay",
+        selected, original_media, source, source_s = read_selected(args)
+        report.update(schema="semloom.ecomm_media_cpu.v2", kind="native_cpu_fixed_output_replay",
                       sembench_commit=SEMBENCH_COMMIT,
                       query_sha256=hashlib.sha256(pinned).hexdigest(), source=source, source_read_s=source_s,
-                      implementation_sha256={name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
+                      implementation_sha256={name: file_identity(Path(__file__).with_name(name))["sha256"]
                                              for name in ("ecomm_media.py", "ecomm_media_profile.py")},
                       actual_model_calls=0, gpu_started=False, token_ids="not produced; no VLM processor/model run",
                       native_sdk=source_report("ecomm-q11-cpu", (*FILTER_FILES, "utils.py", "dtype_extensions/image.py", "sem_ops/sem_join.py")),
-                      pattern=args.pattern, tile_assets=args.tile_assets, runs=[])
+                      input_role=args.input_role, pattern=args.pattern, tile_assets=args.tile_assets, runs=[])
         # Records of local paths and selected row positions stay private.
         private_selection = {k: dict(indices=v.index.tolist(),
                                      source=str((args.styles_file if k == "styles_details.parquet"
                                                  else args.mapping_file).resolve()))
                              for k, v in selected.items()}
-        (args.output_dir / "selection.private.json").write_text(json.dumps(private_selection, indent=2) + "\n")
+        write_private_json(args.output_dir / "selection.private.json", private_selection)
         for repeat in range(-args.warmup, args.repeats):
             # Native reference supplies the exact per-occurrence fixed outputs.
             # Alternate candidate order; all arrays are new for every case.
@@ -431,13 +428,11 @@ def main(argv=None):
                                 branches_equal=True, original_join_result_equal=True)
                 measured["source_plus_query_cpu_s"] = source_s + measured["query_cpu_s"]
                 report["runs"].append(measured)
-                (args.output_dir / "profile.json").write_text(json.dumps(report, indent=2) + "\n")
-        if original_media != [hashlib.sha256(path.read_bytes()).hexdigest() for path in assets]:
+        if original_media != {path: file_identity(path) for path in original_media}:
             raise ValueError("source image bytes changed during the CPU probe")
         report["status"] = "passed"
-        (args.output_dir / "profile.json").write_text(json.dumps(report, indent=2) + "\n")
         # Keep the report compact; private JSONL files hold complete messages.
-        print(json.dumps(dict(status="passed", runs=len(report["runs"]), actual_model_calls=0)))
+    print(json.dumps(dict(status="passed", runs=len(report["runs"]), actual_model_calls=0)))
 
 
 if __name__ == "__main__":

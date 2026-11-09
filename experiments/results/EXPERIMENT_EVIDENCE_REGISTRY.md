@@ -2,8 +2,7 @@
 
 ## 2026-11-09：Ecomm Q11 同资产表示 CPU 原型
 
-[隔离原型与本地检查](diagnostics/ecomm_media_consumers_20261109/README.md)保留四初始 Filter 的完整逻辑请求、重复项和原三 Join；
-七项标准库检查通过，原生 SDK／真实图片检查跳过并待协调。只有请求审计与表示寿命行为证据，尚无实际准备成本、GPU、质量或研究收益结论。
+[隔离原型主报告](diagnostics/ecomm_media_consumers_20261109/README.md)唯一维护软件 fixture、真实 Ecomm 资产及各次源码／运行身份；不将 fixture 转授实际成本或 GPU 收益。
 
 ## 2026-11-08：直接链的方法状态与请求槽分别计量
 

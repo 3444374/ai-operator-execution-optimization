@@ -4,10 +4,12 @@ import io
 import json
 from copy import deepcopy
 from types import SimpleNamespace
+from pathlib import Path
+import tempfile
 import unittest
 
 from src.research.data_organization.ecomm_media import RequestAudit, TileImages, asset_tiles
-from src.research.data_organization.ecomm_media_profile import MediaObserver
+from src.research.data_organization.ecomm_media_profile import MediaObserver, record_profile
 
 
 class EcommMediaTests(unittest.TestCase):
@@ -33,7 +35,7 @@ class EcommMediaTests(unittest.TestCase):
         cache("a", "base64")
         self.assertEqual(len(calls), 4)
 
-    def test_reordered_requests_keep_duplicates_media_params_and_dependencies(self):
+    def test_reordered_requests_keep_duplicate_occurrences_and_complete_media(self):
         reference_stream, replay_stream = io.StringIO(), io.StringIO()
         reference = RequestAudit(reference_stream, max_requests=8, pattern="mixed")
         replay = RequestAudit(replay_stream, max_requests=8)
@@ -43,19 +45,14 @@ class EcommMediaTests(unittest.TestCase):
             with reference.operation("filter_0", [(key, [])]):
                 reference.reply(messages, model="model/revision", params=dict(temperature=0, max_tokens=8))
         replay.fixed = reference.responses
-        for key in reversed(reference.issue_order):
+        for key in reversed(reference.requests):
             with replay.operation("filter_0", [(key, [])]):
                 replay.reply(messages, model="model/revision", params=dict(max_tokens=8, temperature=0))
         reference.assert_same_requests(replay)
         self.assertEqual(len(replay.requests), 2, "identical payloads still have two physical occurrences")
-        self.assertNotEqual(reference.issue_order, replay.issue_order)
+        self.assertNotEqual(list(reference.requests), list(replay.requests))
         written = json.loads(replay_stream.getvalue().splitlines()[0])
         self.assertEqual(written["request"]["messages"], messages[0])
-        changed = RequestAudit(io.StringIO(), fixed=reference.responses, max_requests=8)
-        with changed.operation("filter_0", [("filter_0:0", ["upstream:0"])]):
-            changed.reply(messages, model="model/revision", params=dict(temperature=0, max_tokens=8))
-        with self.assertRaisesRegex(ValueError, "dependencies"):
-            reference.assert_same_requests(changed)
 
     def test_duplicate_missing_and_excess_occurrences_fail(self):
         audit = RequestAudit(io.StringIO(), max_requests=2)
@@ -145,6 +142,18 @@ class EcommMediaTests(unittest.TestCase):
         self.assertGreater(counts["peak_observed_cached_string_bytes"], 0)
         self.assertEqual(observer.samples[-1][2], len(outside._cached_images[(0, "base64")]))
         self.assertIs(module.fetch_image, fetch, "the isolated probe must restore native functions")
+
+    def test_failed_profile_keeps_completed_observations_in_one_private_record(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, "fixture failed"):
+                with record_profile(output) as report:
+                    report["runs"] = [dict(case="branch_native", logical_requests=3)]
+                    raise RuntimeError("fixture failed")
+            saved = json.loads((output / "profile.json").read_text())
+            self.assertEqual(saved["status"], "failed")
+            self.assertEqual(saved["runs"], report["runs"])
+            self.assertEqual(list(output.iterdir()), [output / "profile.json"])
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import math
 from statistics import median
 from time import perf_counter
 
+from src.infrastructure.private_artifacts import content_digest
 
 def asset_tiles(assets, tile_assets):
     """Keep duplicate occurrences; visit equal source references in one tile."""
@@ -69,7 +70,6 @@ class RequestAudit:
         self.max_requests = max_requests
         self.requests = {}
         self.responses = {}
-        self.issue_order = []
         self.stage_counts = Counter()
         self.input_sizes = []
         self.audit_s = 0.0
@@ -116,7 +116,6 @@ class RequestAudit:
                                               response=response)).decode() + "\n")
             self.requests[key] = digest
             self.responses[key] = response
-            self.issue_order.append(key)
             self.stage_counts[self._stage] += 1
             self.input_sizes.append(len(encoded))
             output.append(response)
@@ -134,6 +133,6 @@ class RequestAudit:
                         if sizes else None)
         return dict(logical_requests=len(self.requests), stages=dict(self.stage_counts),
                     request_json_bytes=distribution,
-                    request_set_sha256=hashlib.sha256(json_bytes(self.requests)).hexdigest(),
-                    issue_order_sha256=hashlib.sha256(json_bytes(self.issue_order)).hexdigest(),
+                    request_set_sha256=content_digest(self.requests),
+                    issue_order_sha256=content_digest(list(self.requests)),
                     audit_s=self.audit_s)
