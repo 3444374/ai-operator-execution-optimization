@@ -1,0 +1,7 @@
+# MMQA native Q3a/Q4 bounded cold checks
+
+This isolated experiment uses existing native Daft and Ray workers; it does not change production execution code.
+Daft Q3a consumes all 25 original title/text rows and returns the original title DataFrame. Ray Q4 retains the 24 original target-title occurrences, uses JSON-object genres extraction, then runs the original comma expansion and genre grouping. Both retain original parsers and evaluators.
+Run Daft first, confirm physical cleanup and lease release, then Ray. Limits are 25 and 24 public generate attempts, no extra query warmup or whole-query retry. A failed model step preserves partial results and stops. Each query is an independent cold owner, not a warm measurement.
+Runtime paths and private CONFIG.json stay outside Git. Scripts receive CASE_SOURCE, CASE_DRIVER_PYTHON, CASE_MODEL_PYTHON, CASE_HOST_HELPER, CASE_SOCKET_HELPER, CASE_RESOURCES, CASE_LEASE_SCOPE, CASE_OUTPUT, CASE_TEMP, CASE_CPU_TEMP, CASE_CACHE_ROOT and CASE_ROOT from the caller. The caller freezes script/input hashes after the bounded CPU checks and uses the existing exclusive host supervisor. Python hash seed 3 preserves the original Q3a title/text serialization; generation seed remains 0.
+No input records, gold values, model weights, credentials or raw runtime output are published here. Run cpu_controller.py first. Daft controller.py reads its local FROZEN.json; Ray controller.py takes its SHA256 as its one argument. The caller records the exact public script commit separately from the deployed source commit.

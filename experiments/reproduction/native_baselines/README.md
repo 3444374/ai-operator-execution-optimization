@@ -1078,3 +1078,7 @@ PG专属驱动与旧公共文件的原字节集中在[94db图像来源](historic
 五份投影中，SQuAD导入、sentence-count诊断与truncation诊断原来各直接读取当前文件，现为这三份补十五条准确来源及gzip格式。
 其余四实现原已指向旧来源，映射保持；所有expected、投影身份及原始版本保持。
 本批35条相关来源读取逐项匹配原摘要，没有重跑3010文件完整构造，也没有启动旧工具、数据库或模型。
+
+## Bounded MMQA native checks
+
+[Q3a Daft and Q4 Ray cold checks](variants/mmqa_native_20261109/README.md) are isolated test-only bindings; runtime configuration and evidence stay private.
