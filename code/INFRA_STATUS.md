@@ -1473,4 +1473,5 @@ Ray SDK 和现用测试已迁移导入，两个仅由旧接线使用的私有关
 
 [研究模块与 CPU 结果](../experiments/results/diagnostics/message_frame_size_reuse_20261109/README.md)记录精确帧大小复用、
 直接 JSON 对照及固定结果回放。原组织器仅分离测算方法，默认仍用原编码器；生产不导入研究子类。
-实际数据、原生 tokenizer、完整查询与 GPU 改善尚未验证。
+提供原生 formatter／本地 tokenizer 的零模型采集命令及源码；两项新增 CPU 替身检查通过。
+公开 CSV 长度画像不替代原生准备成本，完整查询与 GPU 改善仍未验证。

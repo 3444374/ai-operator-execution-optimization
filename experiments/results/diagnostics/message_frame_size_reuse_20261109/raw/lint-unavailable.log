@@ -1,2 +1,0 @@
-python3 -m ruff check <five changed Python files>
-No module named ruff

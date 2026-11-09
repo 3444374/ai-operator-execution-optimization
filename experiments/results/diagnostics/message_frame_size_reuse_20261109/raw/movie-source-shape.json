@@ -1,0 +1,48 @@
+{
+  "source": "https://github.com/SemBench/SemBench/blob/c814e3807e72d4cf876b852b17e77f3cc94575c2/files/movie/data/sf_2000/Reviews.csv",
+  "source_blob": "710028a863dbf04853e45a3e618113dff7521b4d",
+  "scope": "read-only upstream CSV shape; no formatter/tokenizer/model executed",
+  "columns": [
+    "id",
+    "reviewId",
+    "creationDate",
+    "criticName",
+    "isTopCritic",
+    "originalScore",
+    "reviewState",
+    "publicatioName",
+    "reviewText",
+    "scoreSentiment",
+    "reviewUrl"
+  ],
+  "all": {
+    "records": 2000,
+    "unique_texts": 1864,
+    "review_utf8_bytes": {
+      "min": 10,
+      "median": 148,
+      "p95": 250,
+      "max": 301
+    }
+  },
+  "taken_3": {
+    "records": 120,
+    "unique_texts": 119,
+    "review_utf8_bytes": {
+      "min": 10,
+      "median": 128,
+      "p95": 218,
+      "max": 295
+    }
+  },
+  "quantumania": {
+    "records": 256,
+    "unique_texts": 128,
+    "review_utf8_bytes": {
+      "min": 29,
+      "median": 177,
+      "p95": 287,
+      "max": 301
+    }
+  }
+}

@@ -52,3 +52,6 @@
 固定结果、原生 tokenizer 和真实 GPU 的证明范围分别说明。
 命令、输入格式、短消息反例与全部重复值见[诊断报告](../../../../experiments/results/diagnostics/message_frame_size_reuse_20261109/README.md)。
 普通 records 入口不导入该实现，真实查询改善尚未验证。
+
+真实输入先用[native_frame_profile.py](native_frame_profile.py)的原生 formatter／本地 tokenizer 采集，
+再交原回放；只处理原查询初始已就绪集合，不执行模型。计时、实际额度和停止条件见同一诊断报告。

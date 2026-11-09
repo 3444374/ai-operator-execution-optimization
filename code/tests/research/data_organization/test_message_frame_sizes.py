@@ -12,6 +12,7 @@ from src.research.data_organization.message_frame_sizes import (
     MessageSizeReuseOrganizer, direct_json_frame_sizes, reused_message_frame_sizes,
 )
 from src.research.data_organization.message_frame_replay import compare, fixture_frontier, replay
+from src.research.data_organization.native_frame_profile import profile
 from src.semantic_methods.lotus import record_chain as chains
 from src.semantic_methods.lotus.record_relation import complete_extract_relation
 from src.serving.backends.async_engine_wire import _frame
@@ -113,6 +114,43 @@ class MessageFrameSizeTests(unittest.TestCase):
         for value in (original, reused):
             with self.assertRaisesRegex(ValueError, 'model context'):
                 value(rows)
+
+    def test_native_capture_recipe_records_every_tokenization_without_model_execution(self):
+        from src.research.data_organization.message_frame_replay import ReplayTokenizer
+        frontier = fixture_frontier(3, 256)
+        calls = []
+        def prepare(records, *, query_id):
+            calls.append((records, query_id))
+            return [dict(e['row']) for e in frontier]
+        method = SimpleNamespace(stage=SimpleNamespace(generation=GenerationSpec(max_tokens=8)),
+                                 prepare_rows=prepare)
+        tokenizer = ReplayTokenizer(frontier)
+        limits = SimpleNamespace(item_input_bytes=2**20, input_bytes=2**20, item_result_bytes=8192)
+        captured, report = profile(method, [1, 2, 3], tokenizer, frontier[0]['model'], limits,
+                                   query_id='cpu-frame-replay', repeats=2)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(tokenizer.calls, 6)
+        self.assertEqual([e['token_ids'] for e in captured], [e['token_ids'] for e in frontier])
+        self.assertEqual([e['row'] for e in captured], [e['row'] for e in frontier])
+        self.assertEqual(report['duplicate_message_counts'], [3])
+        self.assertEqual(report['model_calls'], 0)
+        for sample in report['samples']:
+            self.assertGreater(sample['original_sizing_fraction_in_slice'], 0)
+            self.assertLess(sample['original_sizing_fraction_in_slice'], 1)
+
+    def test_native_capture_recipe_rejects_changed_token_ids_between_repeats(self):
+        frontier = fixture_frontier(1, 32)
+        method = SimpleNamespace(stage=SimpleNamespace(generation=GenerationSpec()),
+            prepare_rows=lambda records, **kw: [dict(frontier[0]['row'])])
+        class ChangingTokenizer:
+            calls = 0
+            def apply_chat_template(self, messages, **kw):
+                self.calls += 1
+                return [self.calls]
+        limits = SimpleNamespace(item_input_bytes=2**20, input_bytes=2**20, item_result_bytes=8192)
+        with self.assertRaisesRegex(AssertionError, 'token IDs'):
+            profile(method, [1], ChangingTokenizer(), frontier[0]['model'], limits,
+                    query_id='cpu-frame-replay', repeats=2)
 
     def test_real_chain_fixed_results_keep_dependencies_and_extract_relation(self):
         for pattern in ('FM', 'MF', 'FME', 'EM'):

@@ -1,0 +1,11 @@
+{
+  "schema": "semloom.evidence_storage.v2",
+  "result": "experiments/results/diagnostics/message_frame_size_reuse_20261109",
+  "files_verified": 11,
+  "bytes_verified": 31790,
+  "model_requests": 0,
+  "archive": {
+    "bytes": 3634,
+    "sha256": "363aa116c0f525f7305fa3571d044e95d0a42444ee323491e98cbe43aac6ef3a"
+  }
+}
