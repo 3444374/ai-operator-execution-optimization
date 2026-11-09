@@ -1,0 +1,191 @@
+{
+  "schema": "semloom.message_frame_replay.v1",
+  "status": "completed",
+  "requests": 64,
+  "input_sha256": "a6902fc924ba26d93f3f645e0de4528a786ed10c3d549ab7978262be49e36a9b",
+  "python": "3.12.6",
+  "platform": "Darwin",
+  "architecture": "arm64",
+  "window": 8,
+  "input_bytes": 4194304,
+  "seconds": {
+    "original": [
+      0.01853475,
+      0.018657875,
+      0.020211625,
+      0.018370708,
+      0.018354125
+    ],
+    "direct_json": [
+      0.017187875,
+      0.016869,
+      0.017111292,
+      0.016942916,
+      0.016842333
+    ],
+    "reuse": [
+      0.01807175,
+      0.018039625,
+      0.018256834,
+      0.018047791,
+      0.017878791
+    ]
+  },
+  "warmups_per_arm": 1,
+  "timing_scope": "complete CPU frontier replay: task encoding, recorded-token lookup, production organization, size prediction, full wire encoding and fixed result assembly",
+  "source_read_in_timing": false,
+  "no_model_calls": true,
+  "native_tokenizer_executed": false,
+  "gpu_metrics": null,
+  "host_memory": null,
+  "unavailable_reason": "no GPU execution or isolated process-memory sampling",
+  "equivalence": {
+    "batches": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      [
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      [
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      [
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      [
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
+      ]
+    ],
+    "history": [
+      {
+        "members": 8,
+        "tokens": 32968,
+        "reason": "request_capacity",
+        "ipc_frame_bytes_upper_bound": 53335,
+        "data_rpc_bytes_upper_bound": 54464
+      },
+      {
+        "members": 8,
+        "tokens": 32968,
+        "reason": "request_capacity",
+        "ipc_frame_bytes_upper_bound": 53359,
+        "data_rpc_bytes_upper_bound": 54494
+      },
+      {
+        "members": 8,
+        "tokens": 32968,
+        "reason": "request_capacity",
+        "ipc_frame_bytes_upper_bound": 53367,
+        "data_rpc_bytes_upper_bound": 54504
+      },
+      {
+        "members": 8,
+        "tokens": 32968,
+        "reason": "request_capacity",
+        "ipc_frame_bytes_upper_bound": 53367,
+        "data_rpc_bytes_upper_bound": 54504
+      },
+      {
+        "members": 8,
+        "tokens": 32968,
+        "reason": "request_capacity",
+        "ipc_frame_bytes_upper_bound": 53367,
+        "data_rpc_bytes_upper_bound": 54504
+      },
+      {
+        "members": 8,
+        "tokens": 32968,
+        "reason": "request_capacity",
+        "ipc_frame_bytes_upper_bound": 53367,
+        "data_rpc_bytes_upper_bound": 54504
+      },
+      {
+        "members": 8,
+        "tokens": 32968,
+        "reason": "request_capacity",
+        "ipc_frame_bytes_upper_bound": 53367,
+        "data_rpc_bytes_upper_bound": 54504
+      },
+      {
+        "members": 8,
+        "tokens": 32968,
+        "reason": "request_capacity",
+        "ipc_frame_bytes_upper_bound": 53367,
+        "data_rpc_bytes_upper_bound": 54504
+      }
+    ],
+    "tokenizer_calls": 64,
+    "wire_sha256": "8a0e97ae0fdb2bb3bede765380dad8cc4dae7361b2b202df5b545ea7c5f733f5",
+    "result_sha256": "d6a30f4b18caeb270b17dbe078f43fd1f6fa079e69c1f150894f72759e314687"
+  },
+  "source_seconds": 0.001390125,
+  "run_id": "cpu-4096-r2",
+  "input_kind": "scripted_codepoint_fixture",
+  "fixture_body_chars": 4096
+}

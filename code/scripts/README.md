@@ -36,6 +36,11 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 没有将 Core 替身当作原生执行资格。
 
 <a id="native-daft-q3-worker"></a>
+## 同请求消息字节测算的 CPU 回放
+
+[replay_message_frame_sizes.py](experiments/replay_message_frame_sizes.py)使用现有组织器比较原测算、直接 JSON 与同请求长度复用，
+不启动模型。命令、实际输入格式和 CPU 结果见[诊断报告](../../experiments/results/diagnostics/message_frame_size_reuse_20261109/README.md)。
+
 ## 直接原生Daft Q3的worker与监督
 
 主driver在取得现有host租约、永久次数claim和当前环境preflight后，调用

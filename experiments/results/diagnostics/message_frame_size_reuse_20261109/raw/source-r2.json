@@ -1,0 +1,13 @@
+{
+  "base_commit": "f44f174a27e564734774c015fa0847334698a321",
+  "files": {
+    "code/src/execution_provider/adapters/lotus_chain_token_batches.py": "d54c3e1d720208da6016d194754ad54b03b87a42fc21bdf64494c8e704c8fe56",
+    "code/src/research/data_organization/message_frame_sizes.py": "3b094f34bda48e8d79fd72a187272eda4f2b2796a5971ddebaa21b28ac188b53",
+    "code/src/research/data_organization/message_frame_replay.py": "0b7911105fe87406ed8d398aefef29132ca04ebf3a31007c56fa91084a1c06d0",
+    "code/tests/research/data_organization/test_message_frame_sizes.py": "0584bde65b9ce4a6f86213a1b311001d0850a9a71967b7ab734e3976b9b25633",
+    "code/scripts/experiments/replay_message_frame_sizes.py": "c6b305fa73b5137f84b1708491fceba0dfb03a8e89110b255e314da8485f13f2"
+  },
+  "model_calls": 0,
+  "server_access": false,
+  "dependencies_installed": false
+}

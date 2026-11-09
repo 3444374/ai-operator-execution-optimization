@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-09：同请求消息长度测算的 CPU 候选
+
+[独立研究报告](diagnostics/message_frame_size_reuse_20261109/README.md)保留原测算、直接 JSON、精确长度复用的全部 CPU 重复值和测量源码摘要。
+17 项检查含有限链固定输出回放及既有真实 CPU IPC；原 SDK、tokenizer 和模型为替身或记录输入。
+短消息未胜过简单 JSON 对照；不据长消息组件观察声称完整查询或 GPU 收益，生产默认保持。
+
+
 ## 2026-11-08：直接链的方法状态与请求槽分别计量
 
 [Q9旧设置、同额重算与20项CPU](diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)保留原单份方法状态设置，不将R136或37934宽松计数解释为实际驻留量。

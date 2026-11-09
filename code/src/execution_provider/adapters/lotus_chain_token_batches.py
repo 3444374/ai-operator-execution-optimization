@@ -100,6 +100,11 @@ class PreparedTokenOrganizer:
             self._header_context = context
         return self._header_estimate
 
+    @staticmethod
+    def _request_frame_sizes(submit, rpc, limits):
+        return (len(_frame(submit, limits.item_input_bytes))-4,
+                len(_frame(rpc, limits.input_bytes))-4)
+
     def _estimate(self, candidate):
         limits = self.owner._actors.limits
         if candidate.key not in self._estimates:
@@ -112,16 +117,15 @@ class PreparedTokenOrganizer:
                 raise ValueError('prepared prompt and output cap exceed effective model context')
             snapshot = {name: row[name] for name in (*IDENTITY_FIELDS, 'messages_json')}
             item = dict(request_id='f'*32+':'+str((1 << 63)-1), row=snapshot)
-            single = len(_frame(dict(op='submit', **item, generation=generation,
-                deadline=self.owner.deadline), limits.item_input_bytes))-4
+            submit = dict(op='submit', **item, generation=generation, deadline=self.owner.deadline)
+            rpc = dict(row=row, generation=generation, maximum=candidate.task.max_result_bytes,
+                request_key=[candidate.key.session_id, candidate.key.sequence])
+            single, rpc_item = self._request_frame_sizes(submit, rpc, limits)
             key = tuple(row[n] for n in ('query_id', 'algorithm_stage', 'model_role')) + (json.dumps(generation, sort_keys=True),)
             extra, _, _ = self._header_sizes(candidate.key.session_id, key[-1], limits)
             size = single-extra
             if size > limits.input_bytes:
                 raise ValueError('async engine IPC item exceeds its byte capacity')
-            rpc_item = len(_frame(dict(row=row, generation=generation,
-                maximum=candidate.task.max_result_bytes,
-                request_key=[candidate.key.session_id, candidate.key.sequence]), limits.input_bytes))-4
             self._estimates[candidate.key] = (row['call_id'], prompt, generation['max_tokens'], key,
                 size, rpc_item)
         return self._estimates[candidate.key]

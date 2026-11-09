@@ -42,3 +42,13 @@
 原等待、B和回放专测归本目录对应的[研究测试](../../../tests/research/data_organization/)，
 生产构建器的八项检查保留在[原调度测试](../../../tests/scheduling/test_runtime_batching.py)。
 旧等待／B模块的[来源与恢复](../../../../experiments/reproduction/native_baselines/README.md#arrival-replay-research-sources)独立登记。
+
+
+## 同请求消息长度测算
+
+[message_frame_sizes.py](message_frame_sizes.py)提供显式研究子类，复用同请求两种帧的消息转义长度；
+原组织器仍用原编码器。它不改变请求、token、批选择或实际发送，不建立跨请求缓存。
+[CPU 回放](message_frame_replay.py)同时比较原测算、直接 JSON 与长度复用；
+固定结果、原生 tokenizer 和真实 GPU 的证明范围分别说明。
+命令、输入格式、短消息反例与全部重复值见[诊断报告](../../../../experiments/results/diagnostics/message_frame_size_reuse_20261109/README.md)。
+普通 records 入口不导入该实现，真实查询改善尚未验证。
