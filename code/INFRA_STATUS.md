@@ -20,6 +20,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
 | 部分 | 已完成的实现整理 | 仍未完成或未验证 |
 |---|---|---|
+| 独立 Ecomm Q11 表示原型 | 研究目录增加四个初始 Filter 的同资产分块、块内原生表示共享、逐项请求审计及原 Join 后缀 replay | [七项标准库 CPU 检查](../experiments/results/diagnostics/ecomm_media_consumers_20261109/README.md)通过；原生 SDK／真实图片检查待协调会话，GPU、质量和方法收益未验证；生产默认无变化 |
 | 常驻链逐查询反馈 | 内部回调只绑定当前driver，不再改写用户ready配置；Extract继续完成整关系，Map反馈逐轮重新绑定，显式配置拒绝保持 | [3项本地CPU检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#extract-resident-feedback-20261109)通过，含真实CPU IPC；语义与Ray为替身，真实SDK／模型连续Extract待服务器验证 |
 | 独立本地终审 | 核对现行入口、导入、参数、生产依赖与资源收尾；新关闭RPC只取得剩余时间，两处观测私有转发改用原纯函数；两项旧容量断言补齐字节与计数的共同作用 | [92项本地CPU及有限模块清单](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#independent-final-review-20261108)通过；一项原生Ray启动上下文方法因缺PyArrow待服务器，真实Ray／模型仍按准确候选单独核验 |
 | 直接链的方法容量预览 | 显式实际MethodLimits进入现有总字节搜索，实际方法数量同时满足声明计数和完整状态字节；普通默认预览签名保持 | [20项CPU与Q9字节核算](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)通过；Q9 worker尚未接此新预览，未证明链取得服务授予、物理容量或性能改善 |
