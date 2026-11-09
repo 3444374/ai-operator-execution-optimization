@@ -5,11 +5,6 @@ SemLoom 执行适配直接依赖本层，
 不从 baseline 获得生产实现；公共 Core 不选择 Movie、字段或标签默认。
 `FilterMethod(model_name, instruction)` 的 instruction 由调用方显式绑定。
 
-`LotusRecordMethod.prepare_rows(..., project_input_columns=True)` 是默认关闭的临时表列投影原型，
-只提前构造 Map／Extract 声明使用的列；完整记录、关系装配和 formatter 仍由原实现负责。
-普通 runner 尚未选择该选项；[CPU 范围与缺项](../../../../experiments/results/diagnostics/record_input_projection_20261109/README.md)
-区分软件等价检查、Python 输入构造成本与尚未验证的真实 SDK／模型净收益。
-
 [records.py](records.py)的`RecordsResources.query_timeout_s`默认None，由调用方按需给出整查询期限。
 启动仍使用独立有限时间；模型实际上下文、生成设置、逐命令通信及关闭等待各归实际执行者，
 不得把未指定查询时间换算为隐藏的60秒或无限资源。历史实验读取其原来源与显式配置。

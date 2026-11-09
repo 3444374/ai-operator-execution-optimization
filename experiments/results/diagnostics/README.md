@@ -1,6 +1,6 @@
 # Feasibility Results
 
-[Map／Extract 临时输入列投影原型](record_input_projection_20261109/README.md)：显式准备选项、CPU 软件检查及输入容器成本，真实 SDK／完整查询收益待验证。
+[临时输入列投影候选放弃](record_input_projection_20261109/README.md)：实际 SemBench 记录已投影；保留原证据和准确提交的 SDK／完整 CPU 准备复核命令。
 
 [Records 执行模块与容量责任](records_runtime_refactor_20261104/README.md)：逐批职责整理、容量解析、旧入口退役及准确来源。
 [CLIP职责迁移与SDK断开标记](records_runtime_refactor_20261104/README.md#image-clip-module-owners)保留14组前后输出、22图像CPU及16观测Mock的实际来源；[5b服务器回执](records_runtime_refactor_20261104/README.md#basic-multquery-server-5b)另记28方法、重叠探针与真实Ray，原错误不改写。

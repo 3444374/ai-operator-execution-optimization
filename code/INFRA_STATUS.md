@@ -6,9 +6,6 @@
 本页记录所处开发分支的实现与尚未验证范围。源码与接口从[代码入口](README.md)核对，
 逐次运行、源码身份、校验值和失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)与主报告维护。
 Git 接纳、CPU 接线、模型功能、质量及性能分别判断；较早切片文字保留其对应版本的状态。
-
-[Map／Extract 临时输入列投影](../experiments/results/diagnostics/record_input_projection_20261109/README.md)提供默认关闭的
-`prepare_rows` 调用选项；普通 runner 未采用。CPU 软件等价及 Python 输入容器测量不提供真实 SDK、RSS 或查询收益资格。
 当前主线是 SemLoom 外部执行与语义 API；PG 资料归档保留，当前不作为开发或验收前提，是否恢复以后另行决定。
 
 <a id="current-refactor-status"></a>

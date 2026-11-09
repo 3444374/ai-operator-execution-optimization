@@ -8,7 +8,6 @@
 
 | 任务 | 入口 | 范围 |
 |---|---|---|
-| Map／Extract 输入列投影 CPU 原型 | [检查脚本](experiments/check_record_input_projection_cpu.py) | 仅测 Python 输入容器，完整范围见[原报告](../../experiments/results/diagnostics/record_input_projection_20261109/README.md) |
 | 单次 Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) | `check/run` 使用现有方法与执行工厂；Q4 计算原 positivity ratio |
 | 原生 LOTUS 视觉运行 | [run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py) | 已有原生 VLM 服务上的完整查询、原评价和逐 POST 预算；[配置](#sembench-native-vlm-run) |
 | SemBench 图像准备 | [check_sembench_image_query.py](experiments/check_sembench_image_query.py) | 只读输入和像素身份／调用预算，不启动模型；[范围](#sembench-image-preparation) |
