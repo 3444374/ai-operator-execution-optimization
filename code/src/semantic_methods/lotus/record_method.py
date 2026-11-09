@@ -13,6 +13,17 @@ from .records import FilterMethod
 from .record_types import ExtractMethod, MapMethod, StageSpec, stage_identity
 
 
+def record_frame_input(records, *, columns=None):
+    """Prepare frame input without changing the records retained by the query.
+
+    None preserves the existing row input. Explicit columns build only the
+    declared input vectors; the formatter still owns their serialization.
+    """
+    if columns is None:
+        return [record.values for record in records]
+    return {name: [record.values[name] for record in records] for name in columns}
+
+
 class LotusRecordMethod:
     """Original ordinary formatter/parser and accounting for one named stage."""
 
@@ -64,7 +75,12 @@ class LotusRecordMethod:
                    or allow_nulls and record.values[name] is None) for name in self.columns):
                 raise ValueError("ordinary record methods require present text input columns")
 
-    def prepare_rows(self, records, *, query_id, allow_nulls=False):
+    def prepare_rows(self, records, *, query_id, allow_nulls=False, project_input_columns=False):
+        """Optionally project the temporary Map/Extract frame before construction.
+
+        This experimental call option leaves the ordinary execution path intact.
+        Full records, relation assignment and output assembly remain with the caller.
+        """
         import pandas as pd
 
         self.validate_rows(records, allow_nulls=allow_nulls)
@@ -76,7 +92,8 @@ class LotusRecordMethod:
                 [record.values for record in records], index=[record.source_index for record in records],
                 allow_nulls=allow_nulls)
         else:
-            frame = pd.DataFrame([record.values for record in records],
+            frame = pd.DataFrame(record_frame_input(records,
+                                     columns=self.columns if project_input_columns else None),
                                  index=[record.source_index for record in records])
             docs = self.instructions.df2multimodal_info(frame, self.columns)
             if type(self.method) is MapMethod:

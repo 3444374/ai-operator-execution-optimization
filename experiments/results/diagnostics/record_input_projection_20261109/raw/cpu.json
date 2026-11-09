@@ -1,0 +1,1528 @@
+{
+  "schema": "semloom.record_input_projection_cpu.v1",
+  "completed_utc": "2026-11-09T09:50:11.816377+00:00",
+  "python": "3.12.6",
+  "architecture": "arm64",
+  "identity": "software_fixture; no SemBench data or SDK",
+  "measurement": "Python input-container build only; excludes pandas, formatter and inference",
+  "source_preparation_in_timing": false,
+  "warmup_calls": 2,
+  "timed_calls_per_repeat": 32,
+  "repeats": 7,
+  "model_calls": 0,
+  "pandas_used": false,
+  "samples": [
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 83.34375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 125.0,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 110.6875,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 63.8125,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 57.28125,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 108.0625,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 108.0625,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 58.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 58.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 104.15625,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 102.84375,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 58.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 57.28125,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 1,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 106.75,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 66.40625,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 8
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 122.40625,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 106.75,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 58.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 8
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 58.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 8
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 582.03125,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 105.46875,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 58.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 8
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 55.96875,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 8
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 106.78125,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 109.375,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 333.34375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 8
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 58.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 8
+    },
+    {
+      "rows": 1,
+      "source_columns": 8,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 109.375,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 70.3125,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 114.59375,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 110.6875,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 62.5,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 58.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 106.78125,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 113.28125,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 65.09375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 59.875,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 545.5625,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 108.09375,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 62.5,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 58.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 1,
+      "source_columns": 64,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 402.34375,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 221.34375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 128
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 113.28125,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 309.90625,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 170.59375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 128
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 167.96875,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 128
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 286.46875,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 287.75,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 162.75,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 128
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 162.78125,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 128
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 285.15625,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 286.46875,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 161.4375,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 128
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 161.46875,
+      "input_build_peak_python_bytes": 80,
+      "declared_frame_cells": 128
+    },
+    {
+      "rows": 1,
+      "source_columns": 128,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 285.15625,
+      "input_build_peak_python_bytes": 128,
+      "declared_frame_cells": 1
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 800.78125,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 1914.0625,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 1024.75,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 1273.4375,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 501.3125,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 1022.125,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 1207.03125,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 877.59375,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 717.4375,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 1087.25,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 1079.4375,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 516.9375,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 519.53125,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 1,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 1277.34375,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 537.78125,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 1037.78125,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 1031.25,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 513.03125,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 503.90625,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 996.09375,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 998.6875,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 506.5,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 511.71875,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 1016.90625,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 983.0625,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 509.125,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 503.90625,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 64,
+      "source_columns": 8,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 1013.03125,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 561.21875,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 1056.0,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 1092.46875,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 524.75,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 522.125,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 1078.125,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 1072.90625,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 518.25,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 502.59375,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 1061.21875,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 1052.09375,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 522.15625,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 507.8125,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 64,
+      "source_columns": 64,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 1069.03125,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 563.8125,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 8192
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 1192.71875,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 1227.875,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 542.96875,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 8192
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 531.25,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 8192
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 1214.84375,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 1063.8125,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 516.90625,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 8192
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 516.9375,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 8192
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 1118.5,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 1114.5625,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 518.25,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 8192
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 516.9375,
+      "input_build_peak_python_bytes": 560,
+      "declared_frame_cells": 8192
+    },
+    {
+      "rows": 64,
+      "source_columns": 128,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 1141.9375,
+      "input_build_peak_python_bytes": 608,
+      "declared_frame_cells": 64
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 5312.5,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 22257.8125,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 24679.6875,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 8776.03125,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 4036.46875,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 8220.03125,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 14727.875,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 4411.46875,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 4343.75,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 8837.21875,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 11635.4375,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 5820.3125,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 5014.3125,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 1,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 9925.78125,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 11020.84375,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 18401.0625,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 21338.5625,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 5233.09375,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 5458.34375,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 11110.6875,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 12270.8125,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 5244.8125,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 5492.1875,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 11484.375,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 10408.84375,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 5087.25,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 4723.9375,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 4096
+    },
+    {
+      "rows": 512,
+      "source_columns": 8,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 11509.09375,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 5220.0625,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 32768
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 20346.375,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 27804.6875,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 4399.75,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 32768
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 4135.40625,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 32768
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 13514.34375,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 12213.53125,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 4208.3125,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 32768
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 4361.96875,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 32768
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 13825.53125,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 15930.96875,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 5462.25,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 32768
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 5574.21875,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 32768
+    },
+    {
+      "rows": 512,
+      "source_columns": 64,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 16430.96875,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 0,
+      "arm": "current_row_list",
+      "input_build_ns": 5180.96875,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 65536
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 0,
+      "arm": "projected_vectors",
+      "input_build_ns": 16059.90625,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 1,
+      "arm": "projected_vectors",
+      "input_build_ns": 15136.71875,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 1,
+      "arm": "current_row_list",
+      "input_build_ns": 4675.78125,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 65536
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 2,
+      "arm": "current_row_list",
+      "input_build_ns": 4610.6875,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 65536
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 2,
+      "arm": "projected_vectors",
+      "input_build_ns": 15300.78125,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 3,
+      "arm": "projected_vectors",
+      "input_build_ns": 15763.03125,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 3,
+      "arm": "current_row_list",
+      "input_build_ns": 4589.84375,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 65536
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 4,
+      "arm": "current_row_list",
+      "input_build_ns": 4894.53125,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 65536
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 4,
+      "arm": "projected_vectors",
+      "input_build_ns": 16028.65625,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 5,
+      "arm": "projected_vectors",
+      "input_build_ns": 15223.96875,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 5,
+      "arm": "current_row_list",
+      "input_build_ns": 4638.03125,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 65536
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 6,
+      "arm": "current_row_list",
+      "input_build_ns": 4591.15625,
+      "input_build_peak_python_bytes": 4208,
+      "declared_frame_cells": 65536
+    },
+    {
+      "rows": 512,
+      "source_columns": 128,
+      "repeat": 6,
+      "arm": "projected_vectors",
+      "input_build_ns": 17216.125,
+      "input_build_peak_python_bytes": 4256,
+      "declared_frame_cells": 512
+    }
+  ]
+}

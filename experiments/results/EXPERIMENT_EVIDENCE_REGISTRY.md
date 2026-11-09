@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+## 2026-11-09：Map／Extract 临时输入列投影原型
+
+[独立 CPU 证据](diagnostics/record_input_projection_20261109/README.md)区分软件 formatter 的完整请求／关系等价、
+Python 输入容器成本与声明矩形单元数。默认路径保持，真实 LOTUS／pandas、模型、RSS 及查询净收益尚未验证。
+
 ## 2026-11-08：直接链的方法状态与请求槽分别计量
 
 [Q9旧设置、同额重算与20项CPU](diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)保留原单份方法状态设置，不将R136或37934宽松计数解释为实际驻留量。
