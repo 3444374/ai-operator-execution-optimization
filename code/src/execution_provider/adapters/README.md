@@ -625,6 +625,10 @@ RPC nor treats cancellation as completion. An EOF cleanup error retains its
 first report as `chain_cleanup_report`, even if a later owner close succeeds.
 [Delayed control-RPC checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)
 separate local Future fixtures from actual server IPC and model results.
+Record-local chain drivers bind the current query's feedback directly. Internal
+observers do not become user ready-selection options; explicit options still
+reject Extract. [Sequential Extract and Map CPU checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#extract-resident-feedback-20261109)
+cover two queries on the same owner, with scripted semantics and real CPU IPC.
 Completed iterator reports remain independent snapshots. Failure, cancellation, early
 consumer close or unconfirmed draining stops reuse and closes the owner; unknown
 outcomes are not cleared. Model-name changes reject before work; a different fixed

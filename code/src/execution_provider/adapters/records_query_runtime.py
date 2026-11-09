@@ -161,10 +161,13 @@ class _RecordLocalRows:
         capacity = self.owner.capacity.method_capacity(self.owner.resources, limits)
         self.pool = MethodBudgetPool(capacity)
         budget = self.pool.allocate(capacity)
+        ready_options = dict(self.owner._ready_options)
+        if self.owner._supply_feedback is not None:
+            ready_options["on_ready_event"] = self.owner._supply_feedback.ready
         self.driver = (LotusChainFIFO(self.session, self.section.chain, limits, budget,
                                      token_budget=self.owner.token_budget,
                                      completion_batch_rows=self.owner.progression_batch_rows,
-                                     **self.owner._ready_options) if self.section is not None
+                                     **ready_options) if self.section is not None
                        else MethodDriver(self.session, program, limits, budget,
                             on_ready_event=None if self.owner._supply_feedback is None
                             else self.owner._supply_feedback.ready))

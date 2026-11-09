@@ -2286,3 +2286,10 @@ Ray 画像与 Core 类型的[职责整理组合](diagnostics/records_runtime_ref
 以准确cc4为输入记录有限模块审查、新关闭RPC的剩余时长修正、观测直接调用及两处容量旧断言同步。
 最终92个不同本地CPU方法通过；首轮回归反例、清理漏迁移错误和缺PyArrow的方法均保留，真实Ray／模型由原服务器会话后续验证。
 不改变历史SDK／GPU资格、负结果、归档来源或原生baseline调度，不宣称全项目无工程债。
+
+
+## 2026-11-09：常驻 Extract 逐查询反馈
+
+[源码原因、修前失败与3项CPU结果](diagnostics/records_runtime_refactor_20261104/README.md#extract-resident-feedback-20261109)
+记录main d58上的内部回调污染及最小修复。真实CPU IPC覆盖同owner两轮Extract、Map反馈重绑和显式拒绝；
+语义、模型与Ray为替身，真实SDK／模型尚未补验，不改原Q10失败或历史成绩。

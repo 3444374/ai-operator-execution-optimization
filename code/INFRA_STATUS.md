@@ -20,6 +20,7 @@ ACK 指结果交接确认，IPC 指进程间通信，RPC 指远程调用。
 
 | 部分 | 已完成的实现整理 | 仍未完成或未验证 |
 |---|---|---|
+| 常驻链逐查询反馈 | 内部回调只绑定当前driver，不再改写用户ready配置；Extract继续完成整关系，Map反馈逐轮重新绑定，显式配置拒绝保持 | [3项本地CPU检查](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#extract-resident-feedback-20261109)通过，含真实CPU IPC；语义与Ray为替身，真实SDK／模型连续Extract待服务器验证 |
 | 独立本地终审 | 核对现行入口、导入、参数、生产依赖与资源收尾；新关闭RPC只取得剩余时间，两处观测私有转发改用原纯函数；两项旧容量断言补齐字节与计数的共同作用 | [92项本地CPU及有限模块清单](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#independent-final-review-20261108)通过；一项原生Ray启动上下文方法因缺PyArrow待服务器，真实Ray／模型仍按准确候选单独核验 |
 | 直接链的方法容量预览 | 显式实际MethodLimits进入现有总字节搜索，实际方法数量同时满足声明计数和完整状态字节；普通默认预览签名保持 | [20项CPU与Q9字节核算](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)通过；Q9 worker尚未接此新预览，未证明链取得服务授予、物理容量或性能改善 |
 | 链查询控制RPC收尾 | 采样停止后，在transport已有绝对截止时刻内收取原RPC终态；未结束继续保留引用，EOF异常保留首次清理报告 | [38项纯CPU与f18c Q9原失败](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-control-rpc-cleanup-20261108)分别解释；候选真实IPC／模型尚未复测，原GPU首个unknown原因不能唯一确定 |

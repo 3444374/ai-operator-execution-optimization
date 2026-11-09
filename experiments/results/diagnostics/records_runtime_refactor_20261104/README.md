@@ -5491,3 +5491,20 @@ src＋scripts合计92,895行，核心是其子集，不再相加一次。历史�
 由原服务器会话记录当前进程和资源并清理。成功查询须无重复或丢失，四条终态成功、0unknown，
 实际资源清理完成后才支持该有限路径的最终候选检查。这里不预报耗时收益、整体质量或硬期限能力。
 服务器由原唯一会话统一执行；取得对应结果后再核head、CI／冲突和PR说明，进入已授权的合并步骤。
+
+
+<a id="extract-resident-feedback-20261109"></a>
+## 常驻 Extract 的逐查询反馈（2026-11-09）
+
+源码：从 main `d58b44e53dc00efc3f408e8224472b1f307a332f` 建独立修复分支。首轮内部反馈曾写入
+`_ready_options`，第二轮 Extract 因而被当作用户选择了仅适用 Filter/Map 的选项，在提交前报错。
+修复移除该写入，由每轮 driver 使用本地参数绑定当前反馈；用户显式配置、Extract 的
+`complete_relation`、源读取完成、结果确认及资源清理代码保持。反馈专用查询不再生成
+误表述为用户配置的 `ready_selection`；原 `request_supply_feedback` 报告继续保留。
+
+原代码3项检查中，连续Extract第二轮报同一ValueError，Map检查发现用户配置被改写，显式选项拒绝检查通过。
+修复后3项通过：同一owner连续两轮Extract各2条、两轮Map各2条，以及显式observer对Extract的提前拒绝。
+两轮核对新session／同engine、当轮反馈对象及计数、完整输出、Core所有用量与方法额度归零，最终owner关闭成功。
+运行 `cd code && python3 -m unittest tests.execution_provider.test_chain_resident_ready_feedback.ResidentReadyFeedbackTests -v`。
+本地使用真实CPU子进程与进程间通信；LOTUS格式化／解析、模型及Ray均为明确替身，没有安装依赖或运行GPU。
+不能据此声称真实SDK／模型的连续Extract已通过；服务器后续只补准确修复版本的同owner两轮完整Q10及清理。
