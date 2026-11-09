@@ -124,3 +124,7 @@ C 是当前请求窗口，结果槽与输入／结果字节各自计量，均不
 当前未完成项、真实环境检查和代码量使用[整体完成清单](INFRA_STATUS.md#refactor-completion-checklist)；
 配置用途和适用范围只维护在[配置总览](../docs/执行配置与优化开关.md)，
 各批次测试数字只从主报告和证据台账读取。本页不重复逐批发布历史。
+
+
+同请求消息长度测算保存在[数据组织研究模块](src/research/data_organization/README.md#同请求消息长度测算)，
+原始 CPU 对照从所属诊断报告读取；普通 records 默认保持。

@@ -1467,3 +1467,11 @@ Ray SDK 和现用测试已迁移导入，两个仅由旧接线使用的私有关
 改为启动时实际可用SHM边界，分配仅作统计；18控制器＋7资源CPU方法通过。
 控制器独立终态ledger、unknown小计、lease释放与原异常非零重抛已验证；
 不改公共runtime／不可覆盖writer／作者和模型参数，本轮未重放GPU。
+
+
+## 独立同请求长度测算候选
+
+[研究模块与 CPU 结果](../experiments/results/diagnostics/message_frame_size_reuse_20261109/README.md)记录精确帧大小复用、
+直接 JSON 对照及固定结果回放。原组织器仅分离测算方法，默认仍用原编码器；生产不导入研究子类。
+提供原生 formatter／本地 tokenizer 的零模型采集命令及源码；两项新增 CPU 替身检查通过。
+公开 CSV 长度画像不替代原生准备成本，完整查询与 GPU 改善仍未验证。
