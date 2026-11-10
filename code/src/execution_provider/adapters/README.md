@@ -14,6 +14,13 @@ its actual encoder and the distinct v3/v4 implementations remain.
 
 ## Python consumer
 
+`LotusChainFIFO` 与 `SemLoomRecordChainCore` 的未组批逐记录路径可显式传入 `ready_selector`。
+方法只提供已合法就绪的 `ReadyRequest`，包含 stage、profile、work 单位与等待时间；策略返回成员序号和理由。
+Core 继续拥有接纳和容量。调用方可使用 [WorkProgressPriority](../../scheduling/organization/ready_work.py)，
+但须提供有来源的成本估计；该接点不覆盖 token batching、rolling 或阶段整批推进。
+[完成时间路由](../../scheduling/endpoint_routing/completion_cost.py)只消费已有 endpoint 的成本描述，不迁移缓存。
+实际验证与未覆盖项见[候选报告](../../../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)。
+
 [IncrementalExecution](incremental_execution.py) holds an existing Core, the caller's
 prepared-task function and service cleanup callback. Its original Job allocation
 and flow partition methods remain. It imports no fixed HTTP transport and does not

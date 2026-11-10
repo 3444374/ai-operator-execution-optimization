@@ -113,6 +113,19 @@ FIFO 对照令 `order` 为 `null`，候选使用下例对象，其他容量与�
 
 ## 同步、资格和最小 on/off 配置
 
+`workload.kind="request_capture"` 支持保存下来的完整请求，复用下述资格、租约与监督流程。
+输入使用 `workload.input.capture/sha256`，`expected_calls` 必须等于文件中请求数；`units` 使用一个完整工作单元。
+`engine.max_model_calls` 与之相同，`generation` 必须与捕获值相同。`ipc_limits` 传入 `AsyncEngineLimits`，
+`request_group_rows` 不大于 `max_inflight`；每组交给原 AsyncEngineProcess，收齐后继续下一组。
+`resources.startup_timeout_s/query_timeout_s` 和 `limits.owner_close_s` 明确给出各自时限。
+输出 `REQUEST-RESULTS.json` 保留完整结果、实际 prompt token、组时间和关闭回执；本入口不运行原查询解析或评价。
+它是请求层实验，不是完整查询或新增 baseline。full profile 使用原 GPU 观察器，off/on 必须匹配其他配置。
+[本轮协议与证据](../../../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)记录有限工作量与质量缺项。
+
+`analyze_native_stage_work.py --events-dir "$PRIVATE_RUN/events" --output "$NEW_PRIVATE_REPORT"`
+复用现有事件读取，区分实际 prompt 位置、其他位置和 encoder 表示观察；缺字段保持未知。
+已计算 prompt 位置不自动表示缓存命中，其他位置不等于接受的生成 token，逻辑 encoder 字节不等于唯一显存分配。
+
 在独立、干净的工具 checkout 同步已经审查的提交；命令不会自行联网、安装或连接服务器：
 
 ```sh

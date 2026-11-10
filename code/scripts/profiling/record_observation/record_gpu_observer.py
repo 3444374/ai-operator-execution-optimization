@@ -87,9 +87,12 @@ class ObservedWorker(Worker):
         opened=range_push(marker)
         succeeded=False
         try:
+            qualified_decisions=kind=='v1' and settings().get('native_vllm_version')=='0.25.1'
             decisions=(_decisions.observe_decisions(self.model_runner,scheduler_output,sequence,emit_buffered)
-                       if kind=='v1' and settings().get('native_vllm_version')=='0.25.1' else nullcontext())
-            with decisions:
+                       if qualified_decisions else nullcontext())
+            cache=(_decisions.observe_encoder_cache(self.model_runner,sequence,emit_buffered)
+                   if qualified_decisions else nullcontext())
+            with decisions,cache:
                 value=super().execute_model(scheduler_output);succeeded=True
             return value
         finally:

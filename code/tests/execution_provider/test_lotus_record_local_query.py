@@ -54,17 +54,50 @@ class QueryOwnerTests(unittest.TestCase):
         self.config.write_text(json.dumps(config))
         return config
 
-    def owner(self, plan, *, C=2):
+    def owner(self, plan, *, C=2, **options):
         model = EngineSpec(str(self.config), sys.executable, sys.executable, max_model_len=4096)
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
             max_active_batches=C, query_timeout_s=12, startup_timeout_s=8)
         actors = AsyncRecordsActorOwner.for_prepared(model, plan.stages[0].generation, resources)
         return SemLoomRecordChainCore(model, resources, capacity=CoreRecordsCapacity(
-            item_input_bytes=65536, item_result_bytes=65536), execution="record_local_sections", actor_owner=actors)
+            item_input_bytes=65536, item_result_bytes=65536), execution="record_local_sections", actor_owner=actors, **options)
 
     def events(self):
         log = Path(str(self.config) + ".events")
         return [] if not log.exists() else [json.loads(line) for line in log.read_text().splitlines()]
+
+    def test_work_priority_runs_through_the_query_owner_with_unchanged_method_results(self):
+        from src.scheduling.organization.ready_work import ReadyCost, WorkProgressPriority
+        plan, rows = relation.relation_chain('MF'), fixture.source_rows(size=3)
+        config = self.config_for(plan, rows)
+        class Replies(fixture.ResponseFixture):
+            def one(self, row, generation):
+                value = super().one(row, generation)
+                value['text'] = config['responses'][row['algorithm_stage'] + '|' + row['row_id']]['text']
+                return value
+        expected = relation.reference(plan, rows, Replies(plan))
+        events = []
+        seen_profiles = set()
+        def estimate(candidate):
+            seen_profiles.add(candidate.profile_name)
+            self.assertEqual(candidate.work_unit, 'model_calls')
+            return ReadyCost(candidate.sequence + 1, 10 * (candidate.stage_index + 1), 'CPU-fixture')
+        selector = WorkProgressPriority(estimate, mode='progress_per_work', max_wait_s=1)
+        with ThreadedRuntime([]), patch.object(AsyncCoreModelActor, '_process_type', return_value=Process):
+            owner = self.owner(plan, C=3, ready_selector=selector, on_ready_event=events.append)
+            stream = owner.evaluate(iter(rows), plan, expected=rows, query_id=plan.query_id)
+            try:
+                result = list(stream)
+            finally:
+                report = owner.close(timeout=3)
+            self.assertEqual(fixture.normalized(dict(records=result, calls=owner.calls, columns=stream.columns)),
+                             fixture.normalized(expected))
+            self.assertEqual(len(owner.calls), len(rows) * 2)
+            self.assertTrue(report['query_completed'])
+            self.assertEqual(report['core_usage']['held_tasks'], 0)
+            self.assertEqual(report['ready_selection']['selector'], 'WorkProgressPriority')
+            self.assertTrue(any(e.reason == 'progress_per_work' for e in events))
+            self.assertEqual(seen_profiles, {stage.stage_id for stage in plan.stages})
 
     def test_Map_first_mixed_plan_matches_reference_on_one_real_CPU_child(self):
         plan, rows = relation.relation_chain("MFEMF"), fixture.source_rows(size=3)

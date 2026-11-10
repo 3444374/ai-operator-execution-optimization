@@ -66,6 +66,17 @@ class _Row:
     ready_at: float | None = None
 
 
+@dataclass(frozen=True)
+class ReadyRequest:
+    sequence: int
+    call_id: str
+    stage_index: int
+    estimated_work: int
+    ready_at: float
+    profile_name: str
+    work_unit: str
+
+
 class MethodDriver:
     """One owner thread; the service owner advances Engine for registered Jobs.
 
@@ -86,9 +97,12 @@ class MethodDriver:
         successor_first: SuccessorFirst | None = None,
         clock=None,
         on_ready_event=None,
+        ready_selector=None,
     ):
         if ready_order not in ("round_robin", "fifo", "successor_first"):
             raise ValueError("unknown continuation ready order")
+        if ready_selector is not None and (not callable(ready_selector) or ready_order != 'fifo'):
+            raise ValueError('a custom ready selector requires the FIFO ready queue')
         if ((ready_order == "successor_first") != (successor_first is not None)
                 or successor_first is not None and type(successor_first) is not SuccessorFirst):
             raise ValueError("successor_first order requires its explicit settings")
@@ -117,6 +131,7 @@ class MethodDriver:
         self._describe_work = describe_work
         self._ready = None if ready_order == "round_robin" else deque()
         self._ready_order, self._priority = ready_order, successor_first
+        self._ready_selector = ready_selector
         self._successor_burst = 0
         self._clock = time.monotonic if clock is None else clock
         self._on_ready_event = on_ready_event
@@ -139,12 +154,25 @@ class MethodDriver:
     def _mark_ready(self, sequence):
         row = self._rows[sequence]
         # Aging needs a real policy timestamp; diagnostic clocks are optional.
-        row.ready_at = self._clock() if self._priority is not None else None
+        row.ready_at = self._clock() if self._priority is not None or self._ready_selector is not None else None
         if self._ready is not None:
             self._ready.append(sequence)
         self._ready_event(row, "method_ready")
 
     def _candidates(self, maximum):
+        if self._ready_selector is not None:
+            for _ in range(maximum):
+                if not self._ready:
+                    return
+                candidates = tuple(ReadyRequest(sequence, self._rows[sequence].identity.call_id,
+                    self._rows[sequence].stages, self._rows[sequence].run.pending.estimated_work,
+                    self._rows[sequence].ready_at, self._rows[sequence].run.pending.profile_name,
+                    self.session.spec.work_unit) for sequence in self._ready)
+                sequence, reason = self._ready_selector(candidates, self._clock())
+                if sequence not in self._ready:
+                    raise ValueError('selector returned a request outside the legal ready set')
+                yield sequence, reason
+            return
         if self._priority is None:
             for sequence in tuple(self._rows) if self._ready is None else tuple(self._ready):
                 yield sequence, self._ready_order

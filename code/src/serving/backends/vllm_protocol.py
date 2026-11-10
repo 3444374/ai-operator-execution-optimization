@@ -186,10 +186,26 @@ class EngineSpec:
     chat_template: str | None = None
     max_model_calls: int | None = None
     enable_mfu_metrics: bool = False
+    enable_prefix_caching: bool | None = None
+    enable_chunked_prefill: bool | None = None
+    disable_cascade_attn: bool | None = None
+    cudagraph_mode: str | None = None
+    cudagraph_capture_sizes: tuple[int, ...] | None = None
 
     def __post_init__(self) -> None:
         if type(self.enable_mfu_metrics) is not bool:
             raise TypeError("enable_mfu_metrics must be boolean")
+        for name in ('enable_prefix_caching', 'enable_chunked_prefill', 'disable_cascade_attn'):
+            if getattr(self, name) is not None and type(getattr(self, name)) is not bool:
+                raise TypeError(name + ' must be boolean or omitted')
+        if self.cudagraph_mode is not None and self.cudagraph_mode not in (
+                'NONE', 'PIECEWISE', 'FULL', 'FULL_DECODE_ONLY', 'FULL_AND_PIECEWISE'):
+            raise ValueError('unknown native CUDA Graph mode')
+        if self.cudagraph_capture_sizes is not None:
+            sizes = tuple(self.cudagraph_capture_sizes)
+            if not sizes or any(type(x) is not int or x < 1 for x in sizes) or len(set(sizes)) != len(sizes):
+                raise ValueError('graph capture sizes must be distinct positive integers')
+            object.__setattr__(self, 'cudagraph_capture_sizes', sizes)
         for name in ("model_path", "model_python", "driver_python"):
             _string(getattr(self, name), name)
         if self.tokenizer_path is not None:
@@ -209,9 +225,18 @@ class EngineSpec:
             _integer(self.max_model_calls, "max_model_calls", minimum=1)
 
     def optional_kwargs(self) -> dict:
-        return {name: getattr(self, name) for name in (
+        result = {name: getattr(self, name) for name in (
             "dtype", "max_model_len", "max_num_seqs", "max_num_batched_tokens",
-            "gpu_memory_utilization") if getattr(self, name) is not None}
+            "gpu_memory_utilization", 'enable_prefix_caching', 'enable_chunked_prefill',
+            'disable_cascade_attn') if getattr(self, name) is not None}
+        compilation = {}
+        if self.cudagraph_mode is not None:
+            compilation['cudagraph_mode'] = self.cudagraph_mode
+        if self.cudagraph_capture_sizes is not None:
+            compilation['cudagraph_capture_sizes'] = list(self.cudagraph_capture_sizes)
+        if compilation:
+            result['compilation_config'] = compilation
+        return result
 
     @classmethod
     def from_dict(cls, value: dict) -> EngineSpec:

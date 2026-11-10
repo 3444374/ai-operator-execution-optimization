@@ -27,6 +27,9 @@ LOTUS 主线由 SemBench 提供任务与评价，保留 LOTUS 原方法及全局
 近期先落实[首批真实查询观察](experiments/plans/数据组织.md#dag-first-observation)，既有逐记录后继推进作为可复用能力与对照；
 实际默认、接入与资格从[代码状态](code/INFRA_STATUS.md#record-local-sections-c827)核对。
 
+[其余执行候选的分项尝试](experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)补充提示布局、
+真实图片传输和构造消费轨迹的观察。当前只支持各自 CPU／状态机结论；资源位置、实际模型阶段和完整查询继续分别验证。
+
 records→结果独立建设，旧 request 接点按实际适用范围复用。LOTUS 目标配置为 Daft 扫描／普通关系处理
 加 Ray Core／Actor，SemLoom 自管准备、供给与回收；Ray Data、Daft、IMLane 对照各自原生执行。
 职责见[架构](experiments/plans/系统架构.md#lotus-data-execution)，接口、模型资格与候选状态从代码状态和证据台账核对。

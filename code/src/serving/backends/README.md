@@ -8,6 +8,13 @@ the parent sockets, submitted inputs, result consumption and its original child;
 `async_engine_worker.py` owns the child event loop. `async_engine_wire.py` encodes
 frames and compact terminal records without transport or scheduling.
 
+`EngineSpec` can explicitly forward native `enable_prefix_caching`,
+`enable_chunked_prefill`, `disable_cascade_attn`, `cudagraph_mode` and
+`cudagraph_capture_sizes`. Omitted values remain native defaults; graph options
+enter the native `compilation_config`. These controls are experimental inputs,
+not an adaptive policy. [Candidate evidence](../../../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)
+separates constructor checks, CPU metadata and actual device runs.
+
 Explicit result and control frame allowances may be below 4096 bytes. Frames
 still have to fit their actual encoded bytes, and each submitted identity must
 fit its compact terminal receipt. Defaults remain 2 MiB per result and 64 KiB

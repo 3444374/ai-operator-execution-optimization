@@ -158,7 +158,8 @@ class CaptureTests(unittest.TestCase):
         gpu=self.gpu();gpu.runner_contract=lambda runner:'v1'
         self.observer.settings()['native_vllm_version']='0.25.1'
         class Runner:
-            input_batch=SimpleNamespace(req_ids=['native-A'])
+            input_batch=SimpleNamespace(req_ids=['native-A'],num_prompt_tokens=[64],num_computed_tokens_cpu=[32])
+            encoder_cache={}
             cascade_attn_enabled=True
             parallel_config=SimpleNamespace(use_ubatching=False)
             execute_model_state=None
@@ -167,7 +168,7 @@ class CaptureTests(unittest.TestCase):
                 return SimpleNamespace(name='FULL'),SimpleNamespace(num_tokens=8,num_reqs=1),False,object(),None
         worker=gpu.ObservedWorker();worker.model_runner=Runner()
         scheduled=SimpleNamespace(num_scheduled_tokens={'native-A':5},total_num_scheduled_tokens=5,
-                                  num_common_prefix_blocks=[2],scheduled_encoder_inputs={})
+                                  num_common_prefix_blocks=[2],scheduled_encoder_inputs={},scheduled_new_reqs=[])
         def execute(instance,value):
             runner=instance.model_runner
             runner._compute_cascade_attn_prefix_lens([5],[32],[2])

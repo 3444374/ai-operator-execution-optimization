@@ -33,7 +33,7 @@ class Stages:
         return Final(result)
 
 
-def make_driver(rows=2, slots=1, method=None):
+def make_driver(rows=2, slots=1, method=None, **options):
     engine, old, backend, _clock = setup(
         metadata_bytes=1024,
         held_tasks=slots,
@@ -50,7 +50,7 @@ def make_driver(rows=2, slots=1, method=None):
     )
     pool = MethodBudgetPool(MethodCapacity(rows, rows * ROW_BYTES))
     driver = MethodDriver(
-        session, method or Stages(), LIMITS, pool.allocate(pool.capacity)
+        session, method or Stages(), LIMITS, pool.allocate(pool.capacity), **options
     )
     return driver, engine, backend, pool
 

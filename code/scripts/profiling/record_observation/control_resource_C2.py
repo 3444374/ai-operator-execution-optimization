@@ -150,7 +150,7 @@ def main(root, *, monitor=None):
         command=worker_command(config)
         if profiled(config):(root/'trace').mkdir(mode=0o700,exist_ok=False)
         write('COMMAND-IDENTITY.json',dict(source=identity,observer_sha256=config['observer_sha256'],
-               entry='movie_records_session' if config['workload']['kind']=='movie_session' else 'existing finite chain',
+               entry=config['workload']['kind'],
                observed=config['observation']['mode']=='on',config_sha256=hashlib.sha256((root/'config.json').read_bytes()).hexdigest(),
                scope='private command/environment paths retained in frozen config, not emitted into diagnostics'))
         env=worker_environment(config,os.environ)

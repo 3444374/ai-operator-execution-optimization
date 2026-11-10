@@ -8,6 +8,7 @@
 
 | 任务 | 入口 | 范围 |
 |---|---|---|
+| 布局、图片准备与原生阶段候选 | [布局](profiling/profile_request_layouts.py)、[传输](profiling/run_media_transport_study.py)、[消费](profiling/run_media_consumer_study.py)、[提前准备](profiling/run_preparation_ahead_study.py)、[encoder](profiling/probe_encoder_retention.py)、[阶段分析](profiling/analyze_native_stage_work.py) | [运行范围与来源](../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)；参数由各 CLI 的 `--help` 和显式配置提供 |
 | 原生 GPU 批决策分析 | [analyze_native_gpu_decisions.py](profiling/analyze_native_gpu_decisions.py) | 离线核对成员、前缀／cascade、graph／padding 和采集完整性；[说明](profiling/record_observation/README.md#native-gpu-decisions) |
 | 表示寿命与供给等待 | [表示](profiling/analyze_representation_lifetimes.py)、[供给](profiling/analyze_supply_waits.py) | 读取实际事件、保留缺项；[范围](profiling/record_observation/README.md#mechanism-prototypes) |
 | 无模型机制对照 | [请求回放](profiling/replay_prepared_order.py)、[图片准备](profiling/run_media_retention_study.py) | 完整原请求的模拟窗口及原 LOTUS 编码对照；[配置](profiling/record_observation/README.md#mechanism-prototypes) |

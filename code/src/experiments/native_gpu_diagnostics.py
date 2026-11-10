@@ -85,6 +85,8 @@ def _iteration(key, events):
         status="unknown" if issues else "observed", reasons=issues,
         actual_members=members, common_prefix_blocks=blocks,
         computed_tokens=cascade.get("computed_tokens"),
+        prompt_token_counts=graph.get('prompt_token_counts'), computed_before=graph.get('computed_before'),
+        new_request_computed_tokens=metadata.get('new_request_computed_tokens'),
         cascade_selected=selected, cascade_call_observed=bool(cascade),
         cascade_prefix_lengths=cascade.get("cascade_prefix_lengths"),
         cudagraph_mode=mode, raw_tokens=raw, padded_tokens=padded,

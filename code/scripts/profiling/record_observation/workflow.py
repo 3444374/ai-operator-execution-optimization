@@ -20,7 +20,9 @@ from src.infrastructure.redact import redact_text
 from src.infrastructure.json_content import json_content_equal
 import control_resource_C2 as controller
 
-TESTS = ('tests.experiments.test_record_resource_capture',
+TESTS = ('tests.experiments.test_request_capture_run',
+         'tests.observability.test_native_stage_work',
+         'tests.experiments.test_record_resource_capture',
          'tests.observability.test_native_gpu_decisions',
          'tests.experiments.test_native_gpu_diagnostics',
          'tests.experiments.test_supply_diagnostics',
@@ -71,6 +73,10 @@ def target_environment(config):
 
 
 def input_binding(config):
+    if config['workload']['kind'] == 'request_capture':
+        from src.experiments.request_capture_run import read_capture
+        read_capture(config)
+        return dict(kind='request_capture', input=file_identity(config['workload']['input']['capture']))
     if config['workload']['kind'] == 'record_chain':
         return dict(kind='record_chain', input=file_identity(config['workload']['input']['csv']))
     from src.experiments.movie_cancellation import qualification_options
@@ -122,6 +128,9 @@ def validate_base(config):
         require_outside_git(Path(binding['csv']))
         if file_identity(binding['csv'])['sha256'] != binding['sha256']:
             raise ValueError('private input changed')
+    elif config['workload']['kind'] == 'request_capture':
+        require_outside_git(Path(config['workload']['input']['capture']))
+        input_binding(config)
     elif config['workload']['kind'] != 'movie_session':
         raise ValueError('use an existing Movie session or finite record chain')
     elif config.get('prepared_requests') is not None:

@@ -8,6 +8,7 @@
 
 | 内容 | 报告入口 |
 |---|---|
+| 其余执行候选的分项尝试 | [提示布局、图片表示与执行接点](diagnostics/semloom_execution_candidates_20261110/README.md) |
 | 当前执行与资源清理 | [records 主报告](diagnostics/records_runtime_refactor_20261104/README.md) |
 | 原生 Movie Q3 复测 | [功能、质量与退出记录](diagnostics/native_sembench_q3_20261106/README.md) |
 | LOTUS原生CLIP建索引与检索 | [六路径历史与最终融合资格](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)、[PNG共享适配](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate) |

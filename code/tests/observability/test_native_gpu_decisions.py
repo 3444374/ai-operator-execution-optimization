@@ -13,7 +13,8 @@ from src.observability.native_gpu_decisions import cpu_counts, observe_decisions
 
 class Runner:
     def __init__(self):
-        self.input_batch = SimpleNamespace(req_ids=["a", "b"])
+        self.input_batch = SimpleNamespace(req_ids=["a", "b"], num_prompt_tokens=[10, 20],
+                                           num_computed_tokens_cpu=[8, 21])
         self.cascade_attn_enabled = True
         self.parallel_config = SimpleNamespace(use_ubatching=False)
         self.cascade_result = [[16]]
@@ -32,7 +33,7 @@ class Runner:
 
 def schedule():
     return SimpleNamespace(num_common_prefix_blocks=[2], total_num_scheduled_tokens=5,
-                           scheduled_encoder_inputs={"a": [0, 1]})
+                           scheduled_encoder_inputs={"a": [0, 1]}, scheduled_new_reqs=[])
 
 
 class DecisionTests(unittest.TestCase):
