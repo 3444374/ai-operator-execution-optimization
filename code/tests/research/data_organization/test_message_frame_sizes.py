@@ -2,7 +2,9 @@
 from copy import deepcopy
 from dataclasses import asdict
 import json
+from pathlib import Path
 import random
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -12,11 +14,12 @@ from src.research.data_organization.message_frame_sizes import (
     MessageSizeReuseOrganizer, direct_json_frame_sizes, reused_message_frame_sizes,
 )
 from src.research.data_organization.message_frame_replay import compare, fixture_frontier, replay
+from src.research.data_organization import message_frame_replay
 from src.research.data_organization.native_frame_profile import profile
 from src.semantic_methods.lotus import record_chain as chains
 from src.semantic_methods.lotus.record_relation import complete_extract_relation
 from src.serving.backends.async_engine_wire import _frame
-from src.serving.backends.vllm_protocol import GenerationSpec
+from src.serving.backends.vllm_protocol import AsyncEngineLimits, GenerationSpec
 from tests.execution_provider.test_prepared_request_organization import candidates, organizer
 from tests.semantic_methods.test_lotus_chain_composition import ResponseFixture, normalized, source_rows
 from tests.semantic_methods.test_lotus_chain_relation_handoff import reference
@@ -100,12 +103,46 @@ class MessageFrameSizeTests(unittest.TestCase):
             entry['generation'].update(seed=5, response_format=dict(type='json_object'))
             entry['parent_call_ids'] = ['original-parent']
             entry['media'] = []  # The entire input record is checked for mutation.
-        report = compare(frontier, repeats=2, window=3, input_bytes=2**20)
+        report = compare(frontier, repeats=2, window=3, input_bytes=2**20,
+                         item_input_bytes=2**20, item_result_bytes=8192)
         self.assertEqual(report['requests'], 7)
         self.assertEqual(len({e['row']['call_id'] for e in frontier}), 7)
         self.assertEqual(len({e['row']['messages_json'] for e in frontier}), 1)
         self.assertEqual(report['equivalence']['batches'], [(0, 1, 2), (3, 4, 5), (6,)])
         self.assertEqual(report['equivalence']['tokenizer_calls'], 7)
+
+    def test_replay_cli_preserves_distinct_item_aggregate_and_rpc_allowances(self):
+        caps = dict(input_bytes=2**20, item_input_bytes=16384, item_result_bytes=131072)
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(message_frame_replay, 'AsyncEngineLimits', wraps=AsyncEngineLimits) as declared, \
+                patch.object(message_frame_replay, '_frame', wraps=_frame) as frames, \
+                patch.object(PreparedTokenOrganizer, '_request_frame_sizes',
+                             wraps=PreparedTokenOrganizer._request_frame_sizes) as sizing:
+            output = Path(directory) / 'replay.json'
+            message_frame_replay.main(['--rows', '7', '--body-chars', '256', '--window', '3',
+                '--repeats', '1', '--input-bytes', str(caps['input_bytes']),
+                '--item-input-bytes', str(caps['item_input_bytes']),
+                '--item-result-bytes', str(caps['item_result_bytes']), '--output', str(output)])
+            report = json.loads(output.read_text())
+        self.assertTrue(declared.call_args_list)
+        for call in declared.call_args_list:
+            self.assertEqual(call.args, (3,))
+            self.assertEqual(call.kwargs, caps)
+        self.assertEqual({name: report[name] for name in caps}, caps)
+        self.assertEqual(report['equivalence']['batches'], [[0, 1, 2], [3, 4, 5], [6]])
+        self.assertTrue(sizing.call_args_list)
+        for call in sizing.call_args_list:
+            _, rpc, actual = call.args
+            self.assertEqual(rpc['maximum'], caps['item_result_bytes'])
+            self.assertEqual({name: getattr(actual, name) for name in caps}, caps)
+        self.assertEqual({call.args[0].get('op', 'rpc') for call in frames.call_args_list}, {'submit', 'rpc'})
+        for call in frames.call_args_list:
+            value, maximum = call.args
+            if value.get('op') == 'submit':
+                self.assertEqual(maximum, caps['item_input_bytes'])
+            else:
+                self.assertEqual(value['maximum'], caps['item_result_bytes'])
+                self.assertEqual(maximum, caps['input_bytes'])
 
     def test_failed_prediction_still_rejects_model_context_overflow(self):
         rows = candidates([4090])
@@ -125,9 +162,14 @@ class MessageFrameSizeTests(unittest.TestCase):
         method = SimpleNamespace(stage=SimpleNamespace(generation=GenerationSpec(max_tokens=8)),
                                  prepare_rows=prepare)
         tokenizer = ReplayTokenizer(frontier)
-        limits = SimpleNamespace(item_input_bytes=2**20, input_bytes=2**20, item_result_bytes=8192)
-        captured, report = profile(method, [1, 2, 3], tokenizer, frontier[0]['model'], limits,
-                                   query_id='cpu-frame-replay', repeats=2)
+        limits = SimpleNamespace(item_input_bytes=2**21, input_bytes=2**24, item_result_bytes=2**21)
+        with patch.object(PreparedTokenOrganizer, '_request_frame_sizes',
+                          wraps=PreparedTokenOrganizer._request_frame_sizes) as sizing:
+            captured, report = profile(method, [1, 2, 3], tokenizer, frontier[0]['model'], limits,
+                                       query_id='cpu-frame-replay', repeats=2)
+        for call in sizing.call_args_list:
+            self.assertEqual(call.args[1]['maximum'], 2**21)
+            self.assertIs(call.args[2], limits)
         self.assertEqual(len(calls), 2)
         self.assertEqual(tokenizer.calls, 6)
         self.assertEqual([e['token_ids'] for e in captured], [e['token_ids'] for e in frontier])
@@ -178,7 +220,8 @@ class MessageFrameSizeTests(unittest.TestCase):
                         frontier = [dict(row=row, generation=asdict(generation),
                             model=dict(name='cpu-fixture', revision='scripted'), token_ids=[11, 22],
                             parent_call_ids=[], result=by_id[row['call_id']]) for row in prepared]
-                        replay(frontier, arm, window=2, input_bytes=2**20)
+                        replay(frontier, arm, window=2, input_bytes=2**20,
+                               item_input_bytes=2**20, item_result_bytes=8192)
                         captured.extend(deepcopy(frontier))
                         return results
                     result = reference(chain, source_rows(size=4), checked)

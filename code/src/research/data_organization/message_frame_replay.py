@@ -59,18 +59,18 @@ class ReplayTokenizer:
         return self.tokens[encoded(messages)]
 
 
-def replay(frontier, organizer_type, *, window, input_bytes):
+def replay(frontier, organizer_type, *, window, input_bytes, item_input_bytes, item_result_bytes):
     """Use production selection and encoding, then restore fixed occurrence results."""
     tokenizer = ReplayTokenizer(frontier)
+    limits = AsyncEngineLimits(window, input_bytes=input_bytes,
+        item_input_bytes=item_input_bytes, item_result_bytes=item_result_bytes)
     spec = SessionSpec('replay', 'ready', 'cpu-fixture')
     candidates = tuple(TaskCandidate(TaskKey(0, i), OfferedTask(i,
         encoded(dict(row=entry['row'], generation=entry['generation'],
-                     parent_call_ids=entry['parent_call_ids'])), 1, 8192), spec)
+                     parent_call_ids=entry['parent_call_ids'])), 1, limits.item_result_bytes), spec)
         for i, entry in enumerate(frontier))
-    limits = AsyncEngineLimits(window, input_bytes=input_bytes, item_input_bytes=input_bytes,
-                               item_result_bytes=8192)
     records = {c.key: SimpleNamespace(compute=False, member=None) for c in candidates}
-    owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=window),
+    owner = SimpleNamespace(resources=SimpleNamespace(max_active_batches=limits.max_inflight),
         engine=EngineSpec('/tmp/cpu-frame-replay', sys.executable, sys.executable,
             max_model_len=max(len(e['token_ids'])+e['generation']['max_tokens'] for e in frontier)),
         core=SimpleNamespace(capacity=SimpleNamespace(records=records)),
@@ -88,9 +88,9 @@ def replay(frontier, organizer_type, *, window, input_bytes):
             row, generation = entry['row'], entry['generation']
             # The real send encoder still materializes both complete frames.
             wire.update(_frame(dict(op='submit', request_id='replay:'+str(key.sequence),
-                row=row, generation=generation, deadline=owner.deadline), input_bytes))
-            wire.update(_frame(dict(row=row, generation=generation, maximum=8192,
-                request_key=[key.session_id, key.sequence]), input_bytes))
+                row=row, generation=generation, deadline=owner.deadline), limits.item_input_bytes))
+            wire.update(_frame(dict(row=row, generation=generation, maximum=limits.item_result_bytes,
+                request_key=[key.session_id, key.sequence]), limits.input_bytes))
             call_id = row['call_id']
             if call_id in results or entry['result']['call_id'] != call_id:
                 raise ValueError('fixed results must retain unique occurrence identities')
@@ -104,18 +104,20 @@ def replay(frontier, organizer_type, *, window, input_bytes):
                 wire_sha256=wire.hexdigest(), result_sha256=hashlib.sha256(encoded(ordered)).hexdigest())
 
 
-def compare(frontier, *, repeats, window, input_bytes):
+def compare(frontier, *, repeats, window, input_bytes, item_input_bytes, item_result_bytes):
     original = deepcopy(frontier)
     arms = dict(original=PreparedTokenOrganizer, direct_json=DirectJsonSizeOrganizer,
                 reuse=MessageSizeReuseOrganizer)
     # One unreported warm-up per arm; all measured repeats are retained.
     for constructor in arms.values():
-        replay(frontier, constructor, window=window, input_bytes=input_bytes)
+        replay(frontier, constructor, window=window, input_bytes=input_bytes,
+               item_input_bytes=item_input_bytes, item_result_bytes=item_result_bytes)
     durations, result = {name: [] for name in arms}, None
     for repeat in range(repeats):
         for name in (tuple(arms) if repeat % 2 == 0 else tuple(reversed(arms))):
             started = time.perf_counter_ns()
-            observed = replay(frontier, arms[name], window=window, input_bytes=input_bytes)
+            observed = replay(frontier, arms[name], window=window, input_bytes=input_bytes,
+                item_input_bytes=item_input_bytes, item_result_bytes=item_result_bytes)
             durations[name].append((time.perf_counter_ns()-started)/1e9)
             if result is not None and observed != result:
                 raise AssertionError('size, membership, complete wire or fixed assembly changed')
@@ -125,7 +127,9 @@ def compare(frontier, *, repeats, window, input_bytes):
     return dict(schema='semloom.message_frame_replay.v1', status='completed', requests=len(frontier),
         input_sha256=hashlib.sha256(encoded(frontier)).hexdigest(),
         python=platform.python_version(), platform=platform.system(), architecture=platform.machine(),
-        window=window, input_bytes=input_bytes, seconds=durations, warmups_per_arm=1,
+        window=window, input_bytes=input_bytes,
+        item_input_bytes=item_input_bytes, item_result_bytes=item_result_bytes,
+        seconds=durations, warmups_per_arm=1,
         timing_scope='complete CPU frontier replay: task encoding, recorded-token lookup, production '
             'organization, size prediction, full wire encoding and fixed result assembly',
         source_read_in_timing=False, no_model_calls=True, native_tokenizer_executed=False,
@@ -139,11 +143,13 @@ def main(argv=None):
     parser.add_argument('--rows', type=int, default=64)
     parser.add_argument('--body-chars', type=int, default=4096)
     parser.add_argument('--window', type=int, default=8)
-    parser.add_argument('--input-bytes', type=int, default=2**22)
+    for name in ('input-bytes', 'item-input-bytes', 'item-result-bytes'):
+        parser.add_argument('--'+name, type=int, required=True)
     parser.add_argument('--repeats', type=int, default=5)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
-    if min(args.rows, args.body_chars, args.window, args.input_bytes, args.repeats) < 1:
+    if min(args.rows, args.body_chars, args.window, args.input_bytes,
+           args.item_input_bytes, args.item_result_bytes, args.repeats) < 1:
         parser.error('sizes, window and repeats must be positive')
     started = time.perf_counter_ns()
     frontier = (json.loads(args.input.read_text()) if args.input else
@@ -151,7 +157,8 @@ def main(argv=None):
     source_seconds = (time.perf_counter_ns()-started)/1e9
     if not frontier:
         parser.error('provide one nonempty already-ready frontier')
-    report = compare(frontier, repeats=args.repeats, window=args.window, input_bytes=args.input_bytes)
+    report = compare(frontier, repeats=args.repeats, window=args.window, input_bytes=args.input_bytes,
+        item_input_bytes=args.item_input_bytes, item_result_bytes=args.item_result_bytes)
     report.update(source_seconds=source_seconds,
                   run_id=args.output.stem,
                   input_kind='captured_ready_frontier' if args.input else 'scripted_codepoint_fixture',

@@ -34,8 +34,8 @@
 原检查记录和 Ruff 缺失记录；不混合两次采样。[存储清单](raw/storage-manifest.jsonl)与
 [恢复验证](raw/storage-verification.json)核对 31,790 字节原件，压缩包为 3,634 字节。
 原有恢复器逐字节核对后才移除展开副本，没有删选重复值或慢样本。
-本轮另有[19 项检查](raw/followup-checks.log)，只增加真实输入采集器的两项 CPU 替身检查，
-不因此声称原生 SDK 已执行。两个已存在的本地 Python 环境均没有 Ruff／LOTUS／transformers，
+`bcc95e423` 时另有[19 项检查](raw/followup-checks.log)，只增加真实输入采集器的两项 CPU 替身检查，
+不因此声称原生 SDK 已执行。当时检查的两个本地 Python 环境均没有 Ruff／LOTUS／transformers，
 静态 lint 和原生 CPU 成本保持 pending；未安装依赖。
 
 ## CPU 结果
@@ -64,6 +64,7 @@ GPU 空转、KV 命中、prefill、显存与完整进程主存未测，JSON 中�
 ```bash
 python3 code/scripts/experiments/replay_message_frame_sizes.py \
   --rows 64 --body-chars 4096 --window 8 --repeats 5 \
+  --item-input-bytes 4194304 --item-result-bytes 8192 --input-bytes 4194304 \
   --output /tmp/message-frame-replay.json
 cd code
 python3 -m unittest tests.research.data_organization.test_message_frame_sizes \
@@ -95,6 +96,23 @@ Movie Q9-map 只有一个语义 Map，前置为普通谓词，不能据此证明
 尤其字节额度不能套用 fixture 值。先按 runtime README 使用已有 `AI_OPERATOR_ENV_FILE`
 完成 `core,text,semantic-benchmarks` 的只读 preflight；源码、数据和 tokenizer 不下载。
 
+`bcc95e423` 的[实际配置入口检查](https://github.com/3444374/ai-operator-execution-optimization/pull/93#issuecomment-6776049824)
+在采集前被阻塞：回放固定 8192 结果字节，并将单项输入与总输入混用；实际 Q9 的单项输入／结果均为 2 MiB。
+当时没有执行采集或回放、没有模型／GPU 调用。本次只修实验接口，三项字节参数都必须显式提供，
+各臂构建相同声明的 `AsyncEngineLimits`，构造开销仍计入原回放区间；不修改生产默认，也不据参数修复判断收益。
+
+| 参数 | 透传位置 |
+|---|---|
+| `--item-input-bytes` | `AsyncEngineLimits.item_input_bytes` 与每项提交帧的编码上限 |
+| `--item-result-bytes` | 任务 `max_result_bytes`、`AsyncEngineLimits.item_result_bytes` 和 RPC 的 `maximum` |
+| `--input-bytes` | `AsyncEngineLimits.input_bytes`，原组织器的总输入预算及该版本的批 RPC 负载上限 |
+
+最后一项取既有 owner 的 IPC 声明，不用单项字节数或 Core 总池替代。RPC 没有另设独立容量字段；
+原 owner 的批 RPC `_encode` 同样使用 `limits.input_bytes`，回放遵循该映射。
+九项受影响 CPU 检查通过，覆盖非 8192 结果值、不同单项／总输入值传入 CLI、原尺寸核验和编码，
+并保持三臂成员、完整请求、token 与固定装配相同；采集替身另覆盖 2 MiB 单项声明。
+新增本地输出追加到[原检查日志](raw/followup-checks.log)，不覆盖先前结果；真实输入结果仍为 pending。
+
 ```bash
 CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code \
   "$DRIVER_PYTHON" -m src.research.data_organization.native_frame_profile \
@@ -107,6 +125,7 @@ CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code 
 "$DRIVER_PYTHON" code/scripts/experiments/replay_message_frame_sizes.py \
   --input "$CPU_PROFILE_ROOT/capture/frontier.json" --repeats 5 \
   --window "$EXISTING_REQUEST_WINDOW" --input-bytes "$ACTUAL_INPUT_BYTES" \
+  --item-input-bytes "$ACTUAL_ITEM_INPUT_BYTES" --item-result-bytes "$ACTUAL_ITEM_RESULT_BYTES" \
   --output "$CPU_PROFILE_ROOT/replay.json"
 ```
 
