@@ -41,6 +41,7 @@ class CaptureRunTests(unittest.TestCase):
                 for row in rows:
                     i=row['row_id']
                     self.pending.append(SimpleNamespace(request_id=row['call_id'], engine_terminal_confirmed=True,
+                        identity={k:v for k,v in row.items()if k!='messages_json'},error_type=None,
                         result=dict(row,status='failed'if fail_second and i==1 else 'succeeded',
                                     prompt_token_ids_json=json.dumps([11 if changed_tokens else 10,i]))))
                 return SimpleNamespace(status='queued',request_ids=tuple(r['call_id']for r in rows))
@@ -68,6 +69,8 @@ class CaptureRunTests(unittest.TestCase):
         result=run_capture(self.config,self.ledger,process_type=self.process(fail_second=True))
         self.assertEqual(result['status'],'failed')
         self.assertEqual(len(self.owner.groups),1)
+        self.assertEqual(len(result['calls']),2)
+        self.assertEqual(result['terminal_failures'][0]['request_id'],'call-1')
         self.assertTrue(self.closed)
 
     def test_generation_rewrite_is_rejected_before_start(self):

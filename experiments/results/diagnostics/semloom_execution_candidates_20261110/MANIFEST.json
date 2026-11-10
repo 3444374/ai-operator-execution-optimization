@@ -2504,6 +2504,23 @@
           "sha256": "58f45c58969cdd9cba707863e82fefda818002de45c621032b58b6eb364deedf"
         }
       ]
+    },
+    {
+      "public_file": "failed-page-preservation.json.gz",
+      "public_bytes": 1487,
+      "public_sha256": "5e2e358b5593688286e3c0bf149a76ef189fed740b26fa161b80c671b413705c",
+      "sources": [
+        {
+          "artifact": "capture-failed-page-red.log",
+          "bytes": 874,
+          "sha256": "86694ee643385312d859454bce1ebaf2c530603f9958734b5b6614e5518d3f2e"
+        },
+        {
+          "artifact": "capture-failed-page-green.log",
+          "bytes": 6028,
+          "sha256": "62cf5897d7bb6c55a24f86b13aa8cc431aca51c5374cd080cb45d2d6532df842"
+        }
+      ]
     }
   ]
 }

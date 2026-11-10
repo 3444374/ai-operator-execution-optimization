@@ -121,6 +121,7 @@ FIFO 对照令 `order` 为 `null`，候选使用下例对象，其他容量与�
 `request_group_rows` 不大于 `max_inflight`；每组交给原 AsyncEngineProcess，收齐后继续下一组。
 `resources.startup_timeout_s/query_timeout_s` 和 `limits.owner_close_s` 明确给出各自时限。
 输出 `REQUEST-RESULTS.json` 保留完整结果、实际 prompt token、组时间和关闭回执；本入口不运行原查询解析或评价。
+若返回页内含失败，先保存这一页所有已返回成员，再停止后续请求组；缺失终态保持未知。
 它是请求层实验，不是完整查询或新增 baseline。full profile 使用原 GPU 观察器，off/on 必须匹配其他配置。
 [本轮协议与证据](../../../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)记录有限工作量与质量缺项。
 

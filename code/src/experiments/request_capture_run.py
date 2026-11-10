@@ -62,12 +62,17 @@ def run_capture(config, ledger, *, process_type=AsyncEngineProcess):
             while pending:
                 if time.monotonic() >= deadline:
                     raise TimeoutError('saved request experiment deadline expired')
+                failed=[]
                 for event in owner.poll(max_events=limits.result_slots):
                     pending.remove(event.request_id)
                     if event.result is not None:
                         calls.append(event.result)
                     if not event.engine_terminal_confirmed or event.result is None or event.result['status'] != 'succeeded':
-                        raise RuntimeError('native request did not finish successfully')
+                        failed.append(dict(request_id=event.request_id,identity=event.identity,
+                            engine_terminal_confirmed=event.engine_terminal_confirmed,error_type=event.error_type))
+                if failed:
+                    report['terminal_failures']=failed
+                    raise RuntimeError('native request did not finish successfully')
                 if pending:
                     owner.wait(timeout=min(0.05, max(0.001, deadline-time.monotonic())))
             groups.append(dict(offset=offset, requests=len(members), wall_ns=time.monotonic_ns()-begin))

@@ -91,6 +91,8 @@ EncoderCacheManager 探针从官方 vLLM 0.25.1 文件用 AST 取出原类，原
 [编译配置](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/config/compilation.py)与
 [分离 encoder 说明](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/features/disagg_encoder.md)。未启动分离部署示例。
 
+就绪优先级、完成时间路由与提前准备的单步期望值属于本轮工程决策，用于同信息消融。
+消费者留存先按单位字节价值选择候选，只有新值超过被驱逐项的总价值才换入；没有使用下次消费距离。
 就绪策略由调用方提供估计；没有成本时记录 FIFO 理由。Core 接线用原关系 reference 核对最终输出、发生项、stage profile 和资源收尾。
 路由只在原可接纳 endpoint 中选择；缺成本显式使用 least-queued，不声称搬运 KV。
 native stage 分析将实际调度的 prompt 与其他位置分开；其他位置包括投机位置，不能当作最终生成 token。
@@ -184,3 +186,7 @@ Q8 是对 `taken_3` 评论的两类计数；绝对误差是两类计数误差之
 
 后续优先在保持完整请求不变的组织／供给接点上做匹配干预，并将表示留存与合法推进顺序联动验证。
 提示布局保留为独立探索，只有质量评价支持的变体才继续；不会把本次变体改为默认。
+
+收尾复核另发现实验回放入口在一页出现失败时提前抛错，遗漏该页后续已返回的结果。现先保留整页再停止后续组，
+记录失败成员身份；[先失败后通过的证据](failed-page-preservation.json.gz)包含 29 项相关检查。该修复只作 CPU 失败路径验证，
+上述实机数据仍绑定各自原源码，不补写为修复后的 GPU 失败恢复验证。
