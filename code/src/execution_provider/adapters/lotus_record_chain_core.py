@@ -70,7 +70,7 @@ class SemLoomRecordChainCore:
                  ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
                  prepared_batching=None, batch_concurrency=None, batching_tokenizer=None,
                  batch_feedback=None, rolling_refill=False, request_feedback=None, resident=False,
-                 request_window=None):
+                 request_window=None, prepared_order=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -110,6 +110,11 @@ class SemLoomRecordChainCore:
                                   and self.prepared_batching.policy == 'token_budget' and execution == 'fused')
         self._async_token_batches = ((self.prepared_batching is not None or rolling_refill)
                                      and execution == 'record_local_sections')
+        if prepared_order is not None:
+            from src.scheduling.organization.prepared_order import PreparedRequestOrder
+            if type(prepared_order) is not PreparedRequestOrder or not self._async_token_batches:
+                raise ValueError('prepared ordering requires an explicit candidate on the async prepared path')
+        self.prepared_order = prepared_order
         if type(rolling_refill) is not bool:
             raise ValueError('rolling_refill must be boolean')
         self.rolling_refill = rolling_refill
@@ -754,7 +759,8 @@ class SemLoomRecordChainCore:
                 from transformers import AutoTokenizer
                 self._batching_tokenizer = AutoTokenizer.from_pretrained(
                     self.engine.tokenizer_path or self.engine.model_path, local_files_only=True, trust_remote_code=False)
-            self._token_organizer = PreparedTokenOrganizer(self, self._batching_tokenizer, self.batch_concurrency)
+            self._token_organizer = PreparedTokenOrganizer(self, self._batching_tokenizer, self.batch_concurrency,
+                                                         prepared_order=self.prepared_order)
             policies = replace(policies, organize=self._token_organizer)
         if self.core is None:
             self.core = SessionEngine(limits, self.transport, policies)

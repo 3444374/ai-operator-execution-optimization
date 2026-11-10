@@ -20,18 +20,9 @@ def cpu_counts(value):
     return values if all(type(v) is int and v >= 0 for v in values) else None
 
 
-def _count(value):
-    return value if type(value) is int and value >= 0 else None
-
-
-def _bool(value):
-    return value if type(value) is bool else None
-
-
 def _members(runner, counts):
-    ids = getattr(getattr(runner, "input_batch", None), "req_ids", None)
-    if (counts is not None and isinstance(ids, (list, tuple)) and len(ids) == len(counts)
-            and all(type(v) is str for v in ids) and len(set(ids)) == len(ids)):
+    ids = runner.input_batch.req_ids
+    if counts is not None and len(ids) == len(counts):
         return dict(zip(ids, counts))
     return None
 
@@ -48,39 +39,26 @@ _GRAPH_ARGS = ("num_tokens", "num_reqs", "num_scheduled_tokens_np", "max_num_sch
 
 def _cascade(runner, args, kwargs, result):
     inputs = _arguments(_CASCADE_ARGS, args, kwargs)
-    lengths = None
-    if isinstance(result, (list, tuple)):
-        lengths = [cpu_counts(group) for group in result]
-        if any(group is None for group in lengths):
-            lengths = None
-    computed = cpu_counts(inputs.get("num_computed_tokens"))
     return dict(
-        scheduled_tokens=_members(runner, cpu_counts(inputs.get("num_scheduled_tokens"))),
-        computed_tokens=_members(runner, computed),
-        common_prefix_blocks=cpu_counts(inputs.get("num_common_prefix_blocks")),
-        cascade_selected=False if result is None else (True if lengths is not None else None),
-        cascade_prefix_lengths=lengths,
+        scheduled_tokens=_members(runner, cpu_counts(inputs['num_scheduled_tokens'])),
+        computed_tokens=_members(runner, cpu_counts(inputs['num_computed_tokens'])),
+        common_prefix_blocks=inputs['num_common_prefix_blocks'],
+        cascade_selected=result is not None,
+        cascade_prefix_lengths=result,
     )
 
 
 def _graph(runner, args, kwargs, result):
     inputs = _arguments(_GRAPH_ARGS, args, kwargs)
     # Slot 3 may contain a device tensor: never inspect or serialize it.
-    mode, descriptor, microbatching = result[:3]
-    mode_name = getattr(mode, "name", None)
-    if mode_name not in ("NONE", "PIECEWISE", "FULL"):
-        mode_name = None
+    mode, descriptor, microbatching, _, _ = result
     return dict(
-        scheduled_tokens=_members(runner, cpu_counts(inputs.get("num_scheduled_tokens_np"))),
-        num_tokens=_count(inputs.get("num_tokens")),
-        num_reqs=_count(inputs.get("num_reqs")),
-        padded_tokens=_count(getattr(descriptor, "num_tokens", None)),
-        padded_reqs=_count(getattr(descriptor, "num_reqs", None)),
-        cudagraph_mode=mode_name,
-        use_cascade_attn=_bool(inputs.get("use_cascade_attn")),
-        force_eager=_bool(inputs.get("force_eager", False)),
-        num_encoder_reqs=_count(inputs.get("num_encoder_reqs", 0)),
-        should_ubatch=_bool(microbatching),
+        scheduled_tokens=_members(runner, cpu_counts(inputs['num_scheduled_tokens_np'])),
+        num_tokens=inputs['num_tokens'], num_reqs=inputs['num_reqs'],
+        padded_tokens=descriptor.num_tokens, padded_reqs=descriptor.num_reqs,
+        cudagraph_mode=mode.name, use_cascade_attn=inputs['use_cascade_attn'],
+        force_eager=inputs.get('force_eager', False),
+        num_encoder_reqs=inputs.get('num_encoder_reqs', 0), should_ubatch=microbatching,
     )
 
 
@@ -100,53 +78,45 @@ def observe_decisions(runner, scheduler_output, sequence, emit):
     def unknown(operation, error):
         record("native_decision_unknown", operation=operation, error_type=type(error).__name__)
 
+    def make_wrapper(original, event, extract):
+        @wraps(original)
+        def observed(*args, **kwargs):
+            result = original(*args, **kwargs)
+            try:
+                record(event, **extract(runner, args, kwargs, result))
+            except Exception as error:
+                unknown(event, error)
+            return result
+        return observed
+
     installed = []
     try:
         try:
-            encoder = getattr(scheduler_output, "scheduled_encoder_inputs", None)
-            encoder_counts = ({k: len(v) for k, v in encoder.items()}
-                              if isinstance(encoder, dict)
-                              and all(type(k) is str and isinstance(v, (list, tuple))
-                                      for k, v in encoder.items()) else None)
             record("native_schedule_metadata",
-                   common_prefix_blocks=cpu_counts(getattr(scheduler_output, "num_common_prefix_blocks", None)),
-                   total_scheduled_tokens=_count(getattr(scheduler_output, "total_num_scheduled_tokens", None)),
-                   encoder_input_counts=encoder_counts,
-                   cascade_enabled=_bool(getattr(runner, "cascade_attn_enabled", None)),
-                   microbatching_enabled=_bool(getattr(getattr(runner, "parallel_config", None), "use_ubatching", None)))
+                   common_prefix_blocks=scheduler_output.num_common_prefix_blocks,
+                   total_scheduled_tokens=scheduler_output.total_num_scheduled_tokens,
+                   encoder_input_counts={k: len(v) for k, v in scheduler_output.scheduled_encoder_inputs.items()},
+                   cascade_enabled=runner.cascade_attn_enabled,
+                   microbatching_enabled=runner.parallel_config.use_ubatching)
         except Exception as error:
             unknown("scheduler_metadata", error)
-        for name, event, extract in (
-            ("_compute_cascade_attn_prefix_lens", "native_cascade_decision", _cascade),
-            ("_determine_batch_execution_and_padding", "native_graph_decision", _graph),
-        ):
-            try:
+        try:
+            for name, event, extract in (
+                ("_compute_cascade_attn_prefix_lens", "native_cascade_decision", _cascade),
+                ("_determine_batch_execution_and_padding", "native_graph_decision", _graph),
+            ):
                 original = getattr(runner, name)
                 existed = name in vars(runner)
                 saved = vars(runner).get(name)
 
-                def make_wrapper(original, event, extract):
-                    @wraps(original)
-                    def observed(*args, **kwargs):
-                        result = original(*args, **kwargs)
-                        try:
-                            record(event, **extract(runner, args, kwargs, result))
-                        except Exception as error:
-                            unknown(event, error)
-                        return result
-                    return observed
-
                 setattr(runner, name, make_wrapper(original, event, extract))
                 installed.append((name, existed, saved))
-            except Exception as error:
-                unknown(name, error)
+        except Exception as error:
+            unknown('install', error)
         yield
     finally:
         for name, existed, saved in reversed(installed):
-            try:
-                if existed:
-                    setattr(runner, name, saved)
-                else:
-                    delattr(runner, name)
-            except Exception as error:
-                unknown("restore_" + name, error)
+            if existed:
+                setattr(runner, name, saved)
+            else:
+                delattr(runner, name)

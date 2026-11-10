@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[请求排序、图片留存与供给诊断](semloom_mechanism_prototypes_20261110/README.md)：可选机制接线、原 Q9 回放、实际图片准备及保留的负结果；GPU 和查询收益待验。
+
 [原生 GPU 批决策观察与诊断](native_gpu_decisions_20261110/README.md)：被动采集、证据完整性、软件反例和固定版本源码的 CPU 分支检查；实机效果待验。
 
 [Records 执行模块与容量责任](records_runtime_refactor_20261104/README.md)：逐批职责整理、容量解析、旧入口退役及准确来源。

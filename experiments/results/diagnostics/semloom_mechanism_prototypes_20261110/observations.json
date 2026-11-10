@@ -1,0 +1,2417 @@
+{
+  "q9_replay": [
+    {
+      "candidate_limit": 32,
+      "group_requests": 2,
+      "block_tokens_hypothesis": 16,
+      "request_digest": "9af297fc0b8d8b118427a74c0927abd7469f178733e37e46af288fc52546c445",
+      "capture_sha256": "e9658c81f5671b6721c1b36ead09fc1ab5000335e604b1b7dadfb5995e37834a",
+      "arms": [
+        {
+          "mode": "fifo",
+          "within_group_shared_full_block_tokens": 4096,
+          "adjacent_shared_full_block_tokens": 8160,
+          "cached_profile_choice_ns": [
+            663597,
+            524669,
+            514953
+          ]
+        },
+        {
+          "mode": "length",
+          "within_group_shared_full_block_tokens": 5968,
+          "adjacent_shared_full_block_tokens": 10032,
+          "cached_profile_choice_ns": [
+            5118832,
+            5057503,
+            5028372
+          ]
+        },
+        {
+          "mode": "prefix",
+          "within_group_shared_full_block_tokens": 5904,
+          "adjacent_shared_full_block_tokens": 9968,
+          "cached_profile_choice_ns": [
+            5001419,
+            4869331,
+            4709501
+          ]
+        },
+        {
+          "mode": "prefix_length",
+          "within_group_shared_full_block_tokens": 6304,
+          "adjacent_shared_full_block_tokens": 10384,
+          "cached_profile_choice_ns": [
+            5093711,
+            5143426,
+            5097469
+          ]
+        }
+      ]
+    },
+    {
+      "candidate_limit": 32,
+      "group_requests": 8,
+      "block_tokens_hypothesis": 16,
+      "request_digest": "9af297fc0b8d8b118427a74c0927abd7469f178733e37e46af288fc52546c445",
+      "capture_sha256": "e9658c81f5671b6721c1b36ead09fc1ab5000335e604b1b7dadfb5995e37834a",
+      "arms": [
+        {
+          "mode": "fifo",
+          "within_group_shared_full_block_tokens": 7168,
+          "adjacent_shared_full_block_tokens": 8160,
+          "cached_profile_choice_ns": [
+            175165,
+            264915,
+            152252
+          ]
+        },
+        {
+          "mode": "length",
+          "within_group_shared_full_block_tokens": 7168,
+          "adjacent_shared_full_block_tokens": 11040,
+          "cached_profile_choice_ns": [
+            1313164,
+            1324253,
+            1262714
+          ]
+        },
+        {
+          "mode": "prefix",
+          "within_group_shared_full_block_tokens": 7168,
+          "adjacent_shared_full_block_tokens": 9104,
+          "cached_profile_choice_ns": [
+            1189917,
+            1216751,
+            1167370
+          ]
+        },
+        {
+          "mode": "prefix_length",
+          "within_group_shared_full_block_tokens": 7168,
+          "adjacent_shared_full_block_tokens": 11568,
+          "cached_profile_choice_ns": [
+            1278169,
+            1306622,
+            1248333
+          ]
+        }
+      ]
+    },
+    {
+      "candidate_limit": 64,
+      "group_requests": 2,
+      "block_tokens_hypothesis": 16,
+      "request_digest": "9af297fc0b8d8b118427a74c0927abd7469f178733e37e46af288fc52546c445",
+      "capture_sha256": "e9658c81f5671b6721c1b36ead09fc1ab5000335e604b1b7dadfb5995e37834a",
+      "arms": [
+        {
+          "mode": "fifo",
+          "within_group_shared_full_block_tokens": 4096,
+          "adjacent_shared_full_block_tokens": 8160,
+          "cached_profile_choice_ns": [
+            1294218,
+            987419,
+            1061840
+          ]
+        },
+        {
+          "mode": "length",
+          "within_group_shared_full_block_tokens": 8304,
+          "adjacent_shared_full_block_tokens": 12368,
+          "cached_profile_choice_ns": [
+            9209158,
+            9172619,
+            9291875
+          ]
+        },
+        {
+          "mode": "prefix",
+          "within_group_shared_full_block_tokens": 8992,
+          "adjacent_shared_full_block_tokens": 13056,
+          "cached_profile_choice_ns": [
+            8941838,
+            8511617,
+            8924664
+          ]
+        },
+        {
+          "mode": "prefix_length",
+          "within_group_shared_full_block_tokens": 11472,
+          "adjacent_shared_full_block_tokens": 15536,
+          "cached_profile_choice_ns": [
+            11057872,
+            9537455,
+            9698299
+          ]
+        }
+      ]
+    },
+    {
+      "candidate_limit": 64,
+      "group_requests": 8,
+      "block_tokens_hypothesis": 16,
+      "request_digest": "9af297fc0b8d8b118427a74c0927abd7469f178733e37e46af288fc52546c445",
+      "capture_sha256": "e9658c81f5671b6721c1b36ead09fc1ab5000335e604b1b7dadfb5995e37834a",
+      "arms": [
+        {
+          "mode": "fifo",
+          "within_group_shared_full_block_tokens": 7168,
+          "adjacent_shared_full_block_tokens": 8160,
+          "cached_profile_choice_ns": [
+            267456,
+            354537,
+            250875
+          ]
+        },
+        {
+          "mode": "length",
+          "within_group_shared_full_block_tokens": 7168,
+          "adjacent_shared_full_block_tokens": 11968,
+          "cached_profile_choice_ns": [
+            2342793,
+            2460834,
+            2335292
+          ]
+        },
+        {
+          "mode": "prefix",
+          "within_group_shared_full_block_tokens": 7168,
+          "adjacent_shared_full_block_tokens": 9376,
+          "cached_profile_choice_ns": [
+            2256331,
+            2175248,
+            2956747
+          ]
+        },
+        {
+          "mode": "prefix_length",
+          "within_group_shared_full_block_tokens": 7168,
+          "adjacent_shared_full_block_tokens": 13056,
+          "cached_profile_choice_ns": [
+            2330702,
+            2355087,
+            2629335
+          ]
+        }
+      ]
+    }
+  ],
+  "media_preparation": [
+    {
+      "capacity_bytes": 512,
+      "matched_outputs": true,
+      "rows": 5,
+      "passes": 3,
+      "repeats": 4,
+      "arms": [
+        {
+          "arm": "disabled",
+          "repeat": 0,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 5506333,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": false,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 0,
+              "cache_hits": 0,
+              "encodings": 15,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 3,
+              "retention_disabled_bypasses": 12,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 77
+            },
+            "encodings": 15,
+            "read_validate_ns": 432542,
+            "encode_ns": 4570915,
+            "media_prepare_ns": 5299374,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "keep_until_last",
+          "repeat": 0,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 3473416,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 58
+            },
+            "encodings": 8,
+            "read_validate_ns": 503917,
+            "encode_ns": 2255415,
+            "media_prepare_ns": 3175834,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "lru",
+          "repeat": 0,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 5369084,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "lru",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 62
+            },
+            "encodings": 8,
+            "read_validate_ns": 410628,
+            "encode_ns": 1925499,
+            "media_prepare_ns": 5165918,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "consumer_rebuild_value",
+          "repeat": 0,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 3121833,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "consumer_rebuild_value",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 62
+            },
+            "encodings": 8,
+            "read_validate_ns": 505251,
+            "encode_ns": 2142082,
+            "media_prepare_ns": 2931541,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "keep_until_last",
+          "repeat": 1,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 2483167,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 58
+            },
+            "encodings": 8,
+            "read_validate_ns": 318123,
+            "encode_ns": 1785125,
+            "media_prepare_ns": 2312376,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "lru",
+          "repeat": 1,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 2449083,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "lru",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 62
+            },
+            "encodings": 8,
+            "read_validate_ns": 284292,
+            "encode_ns": 1757915,
+            "media_prepare_ns": 2281959,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "consumer_rebuild_value",
+          "repeat": 1,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 2653166,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "consumer_rebuild_value",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 62
+            },
+            "encodings": 8,
+            "read_validate_ns": 340374,
+            "encode_ns": 1861332,
+            "media_prepare_ns": 2469165,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "disabled",
+          "repeat": 1,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 3230125,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": false,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 0,
+              "cache_hits": 0,
+              "encodings": 15,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 3,
+              "retention_disabled_bypasses": 12,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 77
+            },
+            "encodings": 15,
+            "read_validate_ns": 532208,
+            "encode_ns": 2257002,
+            "media_prepare_ns": 3054585,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "lru",
+          "repeat": 2,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 2285750,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "lru",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 62
+            },
+            "encodings": 8,
+            "read_validate_ns": 297584,
+            "encode_ns": 1568665,
+            "media_prepare_ns": 2112957,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "consumer_rebuild_value",
+          "repeat": 2,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 2492042,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "consumer_rebuild_value",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 62
+            },
+            "encodings": 8,
+            "read_validate_ns": 311667,
+            "encode_ns": 1766585,
+            "media_prepare_ns": 2319377,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "disabled",
+          "repeat": 2,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 3564292,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": false,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 0,
+              "cache_hits": 0,
+              "encodings": 15,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 3,
+              "retention_disabled_bypasses": 12,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 77
+            },
+            "encodings": 15,
+            "read_validate_ns": 342044,
+            "encode_ns": 2801040,
+            "media_prepare_ns": 3388500,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "keep_until_last",
+          "repeat": 2,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 2419375,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 58
+            },
+            "encodings": 8,
+            "read_validate_ns": 290876,
+            "encode_ns": 1770710,
+            "media_prepare_ns": 2252249,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "consumer_rebuild_value",
+          "repeat": 3,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 2306917,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "consumer_rebuild_value",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 62
+            },
+            "encodings": 8,
+            "read_validate_ns": 304791,
+            "encode_ns": 1589875,
+            "media_prepare_ns": 2135916,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "disabled",
+          "repeat": 3,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 3185584,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": false,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 0,
+              "cache_hits": 0,
+              "encodings": 15,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 3,
+              "retention_disabled_bypasses": 12,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 77
+            },
+            "encodings": 15,
+            "read_validate_ns": 406585,
+            "encode_ns": 2321126,
+            "media_prepare_ns": 3003543,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "keep_until_last",
+          "repeat": 3,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 2463958,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 58
+            },
+            "encodings": 8,
+            "read_validate_ns": 311706,
+            "encode_ns": 1782415,
+            "media_prepare_ns": 2294206,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "lru",
+          "repeat": 3,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 2680417,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 512,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 444,
+              "cache_hits": 7,
+              "encodings": 8,
+              "capacity_bypasses": 4,
+              "no_future_consumer_bypasses": 2,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 512,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "lru",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 62
+            },
+            "encodings": 8,
+            "read_validate_ns": 324832,
+            "encode_ns": 1857292,
+            "media_prepare_ns": 2504331,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        }
+      ]
+    },
+    {
+      "capacity_bytes": 2048,
+      "matched_outputs": true,
+      "rows": 5,
+      "passes": 3,
+      "repeats": 4,
+      "arms": [
+        {
+          "arm": "disabled",
+          "repeat": 0,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 4830667,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": false,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 0,
+              "cache_hits": 0,
+              "encodings": 15,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 3,
+              "retention_disabled_bypasses": 12,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 77
+            },
+            "encodings": 15,
+            "read_validate_ns": 397374,
+            "encode_ns": 3933584,
+            "media_prepare_ns": 4620789,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "keep_until_last",
+          "repeat": 0,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1508958,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 320374,
+            "encode_ns": 800792,
+            "media_prepare_ns": 1320877,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "lru",
+          "repeat": 0,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1469833,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "lru",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 320041,
+            "encode_ns": 762668,
+            "media_prepare_ns": 1288832,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "consumer_rebuild_value",
+          "repeat": 0,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1516541,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "consumer_rebuild_value",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 341502,
+            "encode_ns": 788458,
+            "media_prepare_ns": 1327420,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "keep_until_last",
+          "repeat": 1,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1413583,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 306624,
+            "encode_ns": 759875,
+            "media_prepare_ns": 1241501,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "lru",
+          "repeat": 1,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1681375,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "lru",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 356918,
+            "encode_ns": 876249,
+            "media_prepare_ns": 1480169,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "consumer_rebuild_value",
+          "repeat": 1,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1520125,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "consumer_rebuild_value",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 305210,
+            "encode_ns": 855250,
+            "media_prepare_ns": 1342251,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "disabled",
+          "repeat": 1,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 3204500,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": false,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 0,
+              "cache_hits": 0,
+              "encodings": 15,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 3,
+              "retention_disabled_bypasses": 12,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 77
+            },
+            "encodings": 15,
+            "read_validate_ns": 367541,
+            "encode_ns": 2392583,
+            "media_prepare_ns": 3016917,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "lru",
+          "repeat": 2,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1388292,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "lru",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 300583,
+            "encode_ns": 740750,
+            "media_prepare_ns": 1216209,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "consumer_rebuild_value",
+          "repeat": 2,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1419375,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "consumer_rebuild_value",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 302414,
+            "encode_ns": 768500,
+            "media_prepare_ns": 1245832,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "disabled",
+          "repeat": 2,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 3120417,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": false,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 0,
+              "cache_hits": 0,
+              "encodings": 15,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 3,
+              "retention_disabled_bypasses": 12,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 77
+            },
+            "encodings": 15,
+            "read_validate_ns": 366625,
+            "encode_ns": 2309126,
+            "media_prepare_ns": 2939582,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "keep_until_last",
+          "repeat": 2,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1584250,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 462707,
+            "encode_ns": 772667,
+            "media_prepare_ns": 1408251,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "consumer_rebuild_value",
+          "repeat": 3,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1335875,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "consumer_rebuild_value",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 291123,
+            "encode_ns": 709251,
+            "media_prepare_ns": 1167961,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "disabled",
+          "repeat": 3,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 3339042,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": false,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 0,
+              "cache_hits": 0,
+              "encodings": 15,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 3,
+              "retention_disabled_bypasses": 12,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 77
+            },
+            "encodings": 15,
+            "read_validate_ns": 431627,
+            "encode_ns": 2372751,
+            "media_prepare_ns": 3100750,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "keep_until_last",
+          "repeat": 3,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1509833,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 400169,
+            "encode_ns": 766751,
+            "media_prepare_ns": 1336005,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        },
+        {
+          "arm": "lru",
+          "repeat": 3,
+          "status": "succeeded",
+          "prepare_consume_wall_ns": 1375916,
+          "outputs_sha256": [
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec",
+            "063cc0fa890f328aa9b200565ff641db46bd24dd7e7176480d14a38d1f14068e",
+            "8b60a6922939f53cd156396963836adf600f094bada1cf384d005fe135f1219d",
+            "4fab8538009bc23d0f6e655ab297f3d12205f71781850209bc13c9ffb1964c35",
+            "70a21c876494c48a71e51a93c0f6b095fe939cd88887c7f4ccf65373e5c9a1ec"
+          ],
+          "snapshot": {
+            "retention_enabled": true,
+            "representation_profile": {
+              "generation": {
+                "temperature": 0
+              },
+              "media_recipe": {
+                "convert": "RGB",
+                "encoding": "PNG",
+                "fetch_image_sha256": "96a4ed97d450197ad77f732e0ad32b5efeeac265f1cfecda90338956afa09c20",
+                "lotus": "1.2.4",
+                "pillow": "13.0.0",
+                "representation": "ASCII data:image/png;base64",
+                "resize": "none"
+              },
+              "model": "not_invoked_cpu_preparation",
+              "service_preprocess": "not_invoked"
+            },
+            "representation_profile_sha256": "e02908a814b5e12bcf05af3b11071f0fdc316174c3503406e709bd21c8f721bc",
+            "configured_retention_bytes": 2048,
+            "cache": {
+              "retained_bytes": 0,
+              "retained_entries": 0,
+              "active_borrows": 0,
+              "pending_consumers": 0,
+              "peak_retained_bytes": 1988,
+              "cache_hits": 11,
+              "encodings": 4,
+              "capacity_bypasses": 0,
+              "no_future_consumer_bypasses": 0,
+              "retention_disabled_bypasses": 0,
+              "capacity_bytes": 2048,
+              "max_item_bytes": 8388608,
+              "byte_scope": "owner-retained ASCII URI payloads; excludes frontend/encoder/SDK/metadata/RSS",
+              "retention_policy": "lru",
+              "retention_evictions": 0,
+              "observation_errors": 0,
+              "observation_events": 48
+            },
+            "encodings": 4,
+            "read_validate_ns": 310082,
+            "encode_ns": 704959,
+            "media_prepare_ns": 1194125,
+            "closed": true,
+            "scope": "frontend URI retention; LOTUS arrays/messages, encoder/SDK copies, RSS and HBM separate"
+          }
+        }
+      ]
+    }
+  ],
+  "model_calls": 0,
+  "gpu": false,
+  "run_source": "source-at-mechanism-study-r1.json",
+  "input_recipe": {
+    "kind": "generated RGB PNG fixture",
+    "sizes": [
+      32,
+      64,
+      128,
+      256
+    ],
+    "RGB_formula": "(index * 50, 40, 130)",
+    "occurrences": [
+      0,
+      1,
+      2,
+      3,
+      0
+    ]
+  },
+  "interpretation": "Application-group shared content and CPU preparation only; neither GPU cache savings nor query speedup."
+}

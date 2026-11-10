@@ -51,6 +51,66 @@ submit/audit/transfer/feedback hooks retain their existing owners.
 缓存节省与完整查询收益需要各自匹配干预。当前没有自动推断这些结论。
 [实现与验证](../../../../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)保留准确来源与未覆盖项。
 
+<a id="mechanism-prototypes"></a>
+## 请求排序、表示寿命与供给等待
+
+有限 `record_chain` 运行可显式增加 `prepared_requests`；省略时保留原执行方式。
+FIFO 对照令 `order` 为 `null`，候选使用下例对象，其他容量与执行配置匹配。
+示例数字仅说明格式，实际值由具体实验确定；Movie 入口不接受此配置。
+
+```json
+{
+  "prepared_requests": {
+    "token_budget": 4096,
+    "batch_concurrency": 1,
+    "order": {
+      "mode": "prefix_length",
+      "candidate_limit": 32,
+      "prefix_token_limit": 512,
+      "block_tokens": 16
+    }
+  }
+}
+```
+
+排序在被测 Core 的 async prepared 路径执行，需要被测源码包含
+[`prepared_order`](../../../src/execution_provider/adapters/README.md#prepared-request-ordering) 接口。
+它改变应用请求次序；原生 GPU 批仍由引擎决定。对已保存的原始请求做无模型回放：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/profiling/replay_prepared_order.py \
+  --capture "$PRIVATE_REQUEST_CAPTURE" --output "$NEW_PRIVATE_REPLAY" \
+  --candidate-limit 32 --group-requests 8 --prefix-token-limit 512 --block-tokens 16
+```
+
+回放同时报告相邻共享量和组内全体公共块，使用模拟就绪窗口；不报告缓存命中或 GPU 节省。
+原始消息、token 和发生项摘要保留在私有输入，公开结果不复制请求正文。
+
+媒体 owner 新增显式 `observer`，`LotusMediaObservation` 转交 `representation_observer`；
+事件覆盖准备、借用、归还、终结、驱逐和关闭。原 `retention_policy=None` 保留简单留存，
+可选 `lru` 或 `consumer_rebuild_value` 使用相同容量，后者按剩余消费者与实测准备成本选择。
+它只观察该 owner 的 URI 表示；其他表示层需要各自接线。
+接入当前事件 sink 后，使用以下离线入口：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/profiling/analyze_representation_lifetimes.py \
+  --events-dir "$PRIVATE_RUN/events" --output "$NEW_PRIVATE_REPRESENTATION_REPORT"
+"$DRIVER_PYTHON" -B code/scripts/profiling/analyze_supply_waits.py \
+  --events-dir "$PRIVATE_RUN/events" --output "$NEW_PRIVATE_SUPPLY_REPORT"
+```
+
+供给事件来自方法 ready／Core 交接及真实 `NativeStats.record` 队列回调。跨进程关联使用实际
+引擎身份和 Linux 共享单调时钟标识；缺少共享时钟时仅比较同进程事件。分析器保留未闭合等待、
+缺项和下一项干预；队列为空不等于 GPU 空闲，传输返回不等于模型开始。
+三个离线诊断共用事件文件与收尾读取，`capture_status` 表达实际采集完整性。
+
+独立图片准备对照使用 `run_media_retention_study.py --config "$PRIVATE_MEDIA_CONFIG" --output "$NEW_PRIVATE_DIRECTORY"`。
+配置包含 `schema="semloom.media_retention_study.v1"`、本地路径列表 `images`、正整数 `passes`、
+`capacity_bytes`、`repeats` 和 `input_kind="fixture"` 或 `"real_input"`。
+它执行原 LOTUS 图片准备函数，比较关闭留存、简单留存、LRU 和消费者价值；保存每臂事件与内置寿命分析，
+不运行语义算子或模型。[本地结果](../../../../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
+保留负结果、原始重复值和未验证范围。
+
 ## 同步、资格和最小 on/off 配置
 
 在独立、干净的工具 checkout 同步已经审查的提交；命令不会自行联网、安装或连接服务器：

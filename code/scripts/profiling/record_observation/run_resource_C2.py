@@ -102,9 +102,14 @@ def record_chain(config,ledger):
     records=[RecordOccurrence('movie:'+str(i),i,r[binding['id_column']],{'text':r[binding['text_column']]}) for i,r in enumerate(rows)]
     engine=EngineSpec.from_dict(config['engine']);generation=GenerationSpec.from_dict(config['generation'])
     resources=RecordsResources(**config['resources'])
+    prepared_options={}
+    if config.get('prepared_requests') is not None:
+        from src.experiments.prepared_request_options import owner_options
+        prepared_options=owner_options(config['prepared_requests'],max_active_requests=resources.max_active_batches)
     claim=ledger.claim_unit(next(iter(config['units'])));claim.bind_execution()
     chain=make_chain(config['model_name'],generation)
     tokenizer=AutoTokenizer.from_pretrained(engine.tokenizer_path,local_files_only=True)
+    if prepared_options:prepared_options['batching_tokenizer']=tokenizer
     observed=config['observation']['mode']=='on'
     emit=(lambda *a,**k:None)
     if observed:
@@ -116,7 +121,8 @@ def record_chain(config,ledger):
     try:
         emit('source_read_end',rows=len(records),source_values_utf8_bytes=sum(len(r[binding['text_column']].encode()) for r in rows))
         emit('owner_construct_start')
-        owner=SemLoomRecordChainCore(engine,resources,execution='record_local_sections',control_dir=root/'control')
+        owner=SemLoomRecordChainCore(engine,resources,execution='record_local_sections',control_dir=root/'control',
+                                   **prepared_options)
         emit('owner_construct_end');emit('evaluate_start')
         stream=owner.evaluate(iter(records),chain,expected=records,query_id=chain.query_id);emit('evaluate_end')
         for row in stream:

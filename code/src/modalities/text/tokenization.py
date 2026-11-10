@@ -3,7 +3,7 @@
 from collections.abc import Mapping
 
 
-def chat_token_count(tokenizer, messages, *, max_tokens=None) -> int:
+def chat_token_ids(tokenizer, messages, *, max_tokens=None):
     if max_tokens is not None and (type(max_tokens) is not int or max_tokens < 1):
         raise ValueError("token count limit must be a positive integer")
     # The extra token detects overflow; this never changes the outgoing messages.
@@ -18,4 +18,8 @@ def chat_token_count(tokenizer, messages, *, max_tokens=None) -> int:
         raise ValueError("tokenizer must return a nonempty token ID sequence")
     if any(type(token) is not int or token < 0 for token in tokens):
         raise ValueError("tokenizer token IDs must be a flat sequence of nonnegative integers")
-    return len(tokens)
+    return tokens
+
+
+def chat_token_count(tokenizer, messages, *, max_tokens=None) -> int:
+    return len(chat_token_ids(tokenizer, messages, max_tokens=max_tokens))

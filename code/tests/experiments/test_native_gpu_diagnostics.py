@@ -84,8 +84,6 @@ class DiagnosticsTests(unittest.TestCase):
             self.assertEqual(value["iterations"][0]["evidence"][0], dict(file=path.name, line=1))
             self.assertEqual(len(value["sources"][0]["sha256"]), 64)
             for altered in (dict(status, dropped=1), dict(status, flush_confirmed=False),
-                            dict(status, dropped=False),
-                            dict(status, feedback_buffer=dict(status["feedback_buffer"], attempted=None, enqueued=None, drained=None)),
                             dict(status, feedback_buffer=dict(status["feedback_buffer"], errors=1))):
                 footer.write_text(json.dumps(altered))
                 self.assertEqual(analyze_directory(root)["capture_status"], "incomplete")

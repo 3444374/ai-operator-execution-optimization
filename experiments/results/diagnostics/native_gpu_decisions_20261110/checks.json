@@ -60,5 +60,7 @@
     }
   },
   "final_diagnostic_tests": 7,
-  "worker_sink_integration_recheck": 1
+  "worker_sink_integration_recheck": 1,
+  "public_log_sha256": "8a83835d194cb2f30694a6ca7d045cabe7b1a183d3f0ed8cba3f09725cab8573",
+  "public_log_redaction": "local interpreter and checkout roots replaced; raw_log_sha256 identifies the retained original"
 }

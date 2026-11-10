@@ -1,0 +1,351 @@
+{
+  "artifact_run": "semloom-mechanism-observation-20261110",
+  "retrieval": "Private originals remain in the artifact directory identified by this run; public projections and archive members are listed below.",
+  "files": [
+    {
+      "private_source": "cpu-media-01.log",
+      "source_sha256": "91860b48deb48acb766e2a17f2f792de17675366443e57cab1d8b287930a4887",
+      "public_file": "raw/cpu-media-01.log.gz",
+      "public_uncompressed_sha256": "0ffb26c93facc1c72a4a559d03f98d8f9d0b3317d0aa14f52d850d7247a196ff",
+      "transformation": "local interpreter and checkout roots replaced; original retained"
+    },
+    {
+      "private_source": "cpu-supply-01.log",
+      "source_sha256": "2a7137f89dd09b002f579ebb4b74d74f8873e1640ea2579348308bca4c732ac3",
+      "public_file": "raw/cpu-supply-01.log.gz",
+      "public_uncompressed_sha256": "9c2a8807c05150918ae9b51bce76708f368a865fa380c17f217c9972287a741d",
+      "transformation": "local interpreter and checkout roots replaced; original retained"
+    },
+    {
+      "private_source": "cpu-order-media-01.log",
+      "source_sha256": "30d5f40c9c32d5880d83a326c70a58301940beece8af3c7a04c5130a42fbf184",
+      "public_file": "raw/cpu-order-media-01.log.gz",
+      "public_uncompressed_sha256": "ab63d50318231781847cdf0fcdce0f4722584e3cb3e8d91d61a11965a0664a37",
+      "transformation": "local interpreter and checkout roots replaced; original retained"
+    },
+    {
+      "private_source": "cpu-mechanisms-full-01.log",
+      "source_sha256": "e7dae092f3b08016b22bdef2691ff011183e87470b6e19b9ebf9c3a919d43734",
+      "public_file": "raw/cpu-mechanisms-full-01.log.gz",
+      "public_uncompressed_sha256": "27443335f74b6f06f09ead3e493222e4fbc2011c6958c8e04df2a251839de62a",
+      "transformation": "local interpreter and checkout roots replaced; original retained"
+    },
+    {
+      "private_source": "cpu-handoff-repair-01.log",
+      "source_sha256": "d1047f43b20da9cb58f645c1d9c7c126850cc03999c734751f141091f1b7a5ee",
+      "public_file": "raw/cpu-handoff-repair-01.log.gz",
+      "public_uncompressed_sha256": "d1047f43b20da9cb58f645c1d9c7c126850cc03999c734751f141091f1b7a5ee",
+      "transformation": "local interpreter and checkout roots replaced; original retained"
+    },
+    {
+      "private_source": "cpu-mechanisms-full-02.log",
+      "source_sha256": "3ba69b0cd5392b6c748853e777cec437727ea5c6f87ebc740bc27630c388e749",
+      "public_file": "raw/cpu-mechanisms-full-02.log.gz",
+      "public_uncompressed_sha256": "e491bc6e93dded2c07940645b8dcb0bc1f5818d7de366117ee36509cf14bc985",
+      "transformation": "local interpreter and checkout roots replaced; original retained"
+    },
+    {
+      "private_source": "cpu-simplification-01.log",
+      "source_sha256": "737187d94e8bbd71e6554c1ac137bfbba57bc204261255e54e48d03c55c871bc",
+      "public_file": "raw/cpu-simplification-01.log.gz",
+      "public_uncompressed_sha256": "b708c9777902373496c253b17cc5d51f12c752760c6ece44ada3a7dcc256ed34",
+      "transformation": "local interpreter and checkout roots replaced; original retained"
+    },
+    {
+      "private_source": "q9-replay-w32-g2-r1.json",
+      "source_sha256": "1be3dd0baf7d3d247b54e8ffec9d47fc311ce5451326f447fac15d82535ad67a",
+      "public_file": "raw/q9-replay-w32-g2-r1.json.gz",
+      "transformation": "lossless gzip"
+    },
+    {
+      "private_source": "q9-replay-w32-g8-r1.json",
+      "source_sha256": "aeec2926ba5b0f5e93e0e8f982f6518d46d6849e78c2d4a2f185843d46bc858d",
+      "public_file": "raw/q9-replay-w32-g8-r1.json.gz",
+      "transformation": "lossless gzip"
+    },
+    {
+      "private_source": "q9-replay-w64-g2-r1.json",
+      "source_sha256": "b2b560554fa3204569ad108a99c72fd2f3c134642ad43255fb7d30f34b4044af",
+      "public_file": "raw/q9-replay-w64-g2-r1.json.gz",
+      "transformation": "lossless gzip"
+    },
+    {
+      "private_source": "q9-replay-w64-g8-r1.json",
+      "source_sha256": "91ebb640f7bb1c4e5235ffc365a1d2cf8c2f13af3f5c5109b0a8c43c4345216d",
+      "public_file": "raw/q9-replay-w64-g8-r1.json.gz",
+      "transformation": "lossless gzip"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-0-consumer_rebuild_value.events.json",
+      "source_sha256": "cf3a7339cefa357afd2fc93ac007067d697bed772f089a6b74190696764ff948",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-0-consumer_rebuild_value.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-0-disabled.events.json",
+      "source_sha256": "486ca6647e152019079ca36eb025e57bbe67c0d275ebe5b40606027a7d529206",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-0-disabled.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-0-keep_until_last.events.json",
+      "source_sha256": "f681ee20b602f7d0873dfefb6706818a075c6a2d102ca2fc45d74646ea58ef9a",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-0-keep_until_last.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-0-lru.events.json",
+      "source_sha256": "ec9a4babd2400b4c2bb1530d8940ec1c5332d39a71f585251973612aaeb18a15",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-0-lru.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-1-consumer_rebuild_value.events.json",
+      "source_sha256": "6b4e3273df4c053fa01ab7f4e09f792ded3d1bfe0201c9cfbac851f6081b0a6e",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-1-consumer_rebuild_value.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-1-disabled.events.json",
+      "source_sha256": "df0810d7e1ef793a7cc84a589485a6fa6d0c04a09e02623ea77b232ef339d982",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-1-disabled.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-1-keep_until_last.events.json",
+      "source_sha256": "af3bba7387a55daaafc4667d92ba161d21578720166088900b5fe33feae87dae",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-1-keep_until_last.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-1-lru.events.json",
+      "source_sha256": "2c46daedd1f06ad4b830cefa474cb6209f5e8d7c6fa8767a6d2d69ab018bb0ac",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-1-lru.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-2-consumer_rebuild_value.events.json",
+      "source_sha256": "ca896ff2729156fa307378c3308868b81fe884e548e6d8d74eca8eac84d4fbf0",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-2-consumer_rebuild_value.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-2-disabled.events.json",
+      "source_sha256": "385a50a3bff7f777e0ee3f68c393028662991332f2d9232373eef7899b286522",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-2-disabled.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-2-keep_until_last.events.json",
+      "source_sha256": "8591e927c211d65a62c7e9aada18e2f9ebf7f899002c11ceb487f3cc21af4cf0",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-2-keep_until_last.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-2-lru.events.json",
+      "source_sha256": "44d59f3157554c340288f2623e33e137b831cb5345e8a303e2f71f194bc8c540",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-2-lru.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-3-consumer_rebuild_value.events.json",
+      "source_sha256": "cd1f147abbb07411cb81877b36d96fc443f1c991f1aaecabb46f8881701e4d14",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-3-consumer_rebuild_value.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-3-disabled.events.json",
+      "source_sha256": "b55c414e62ac85ec4a4297e81bb8bc3ee4ae017bb0d0debad2d4e4be3e2d408e",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-3-disabled.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-3-keep_until_last.events.json",
+      "source_sha256": "18fb795e3c972c45c5708feb28ef7ad827f40e5c08043d6fa9daff96a2f09802",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-3-keep_until_last.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/repeat-3-lru.events.json",
+      "source_sha256": "1ecf16459a587deabbb91857b3ca11cc119717f9b06fab3cc30eeaef90536d25",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-512-r1/repeat-3-lru.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-512-r1/config.json",
+      "bytes": 707,
+      "source_sha256": "9392506e757f9afd4cef6ef8511f4171de5b8a64acb48de0b689249dc777373c",
+      "public_file": null
+    },
+    {
+      "private_source": "media-study-512-r1/result.json",
+      "bytes": 380568,
+      "source_sha256": "6ee9c4f96f8cb2ec4e3b27c0edd07db3b14b3f168946de21796f8c16430a176d",
+      "public_file": null
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-0-consumer_rebuild_value.events.json",
+      "source_sha256": "c37c8971d4443cdc7aa919deac05c39b49ce548b9b3adec432f94641137756ba",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-0-consumer_rebuild_value.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-0-disabled.events.json",
+      "source_sha256": "9ec8e023c53f52c0ad222ad76befc807685f69dbfb49b97eb53820737ac8cc78",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-0-disabled.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-0-keep_until_last.events.json",
+      "source_sha256": "cbb6e5412853c38230a4283c7e517b895a0512410a4e38e7223f5a5c264ee485",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-0-keep_until_last.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-0-lru.events.json",
+      "source_sha256": "d881bd5e483ce874e6971c6ae9d61014465f2dd6db0b1bbcc8a215e36ee3519a",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-0-lru.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-1-consumer_rebuild_value.events.json",
+      "source_sha256": "a3b79f14493c0d305924145b87258d66f59a5780b02bdc58b1959106cfd180c6",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-1-consumer_rebuild_value.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-1-disabled.events.json",
+      "source_sha256": "936fa09b10abb59310d4e770207f994f49ecfb91523054a9da08274822ad9527",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-1-disabled.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-1-keep_until_last.events.json",
+      "source_sha256": "309846f88ea1ab8ae2c5c6096f313a9317c528bfe90b2a5fe1f8406a45f81d0f",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-1-keep_until_last.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-1-lru.events.json",
+      "source_sha256": "5fffa9c134980be887f20dd78845ae267051582bcfe45b70fd4269b7aa8a3410",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-1-lru.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-2-consumer_rebuild_value.events.json",
+      "source_sha256": "8ed946ed7075b6f7f1211f96af258f30eeea0cef6432f5ff26b1a94df361ce11",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-2-consumer_rebuild_value.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-2-disabled.events.json",
+      "source_sha256": "3a4c0e19f6a53d5b1d988e7a78b7cf1b9ce3886d760d7b00d973d4627870bbf1",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-2-disabled.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-2-keep_until_last.events.json",
+      "source_sha256": "ca1401b513e45f43347a004aec0fea9a4a03d9d88a58d3b7a0027eeb9830dccb",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-2-keep_until_last.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-2-lru.events.json",
+      "source_sha256": "8aa1d42acaa610b062af76ee628c7525beea21eadd9455d125f9965c0e4192d5",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-2-lru.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-3-consumer_rebuild_value.events.json",
+      "source_sha256": "738330cc0fe4978b262411156483b34c76c2856daecc04341cd6edc603ce7909",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-3-consumer_rebuild_value.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-3-disabled.events.json",
+      "source_sha256": "eb9fe8c6ae680622c617525d6bd435f6ebda0906535e6be050a4b9743a27cff1",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-3-disabled.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-3-keep_until_last.events.json",
+      "source_sha256": "c3049109f81323aded91807acd3ccb13c5b5e5dae1b72bb4e1de9b8dc3d62d4a",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-3-keep_until_last.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/repeat-3-lru.events.json",
+      "source_sha256": "25ce36f57ffb1b21f837a94dc462c4645a24ac49c5aff144d5db631a1c3f1df2",
+      "public_archive": "raw/media-events.tar.gz",
+      "archive_member": "media-study-2048-r1/repeat-3-lru.events.json",
+      "transformation": "unchanged event bytes"
+    },
+    {
+      "private_source": "media-study-2048-r1/config.json",
+      "bytes": 708,
+      "source_sha256": "7242ade9f700bb505737899f1b038d74f5defa65226307add48c33bfa39f1090",
+      "public_file": null
+    },
+    {
+      "private_source": "media-study-2048-r1/result.json",
+      "bytes": 353740,
+      "source_sha256": "416b548b10183981645eec8cd4e1e5c87f0ba8ae3031d493298d65deca552490",
+      "public_file": null
+    },
+    {
+      "private_source": "source-at-mechanism-study-r1.json",
+      "bytes": 4510,
+      "source_sha256": "15d25dfc1ce085e115044d4479de18683063dbc095b6d53e3d436ea0d84bc607",
+      "public_file": null
+    },
+    {
+      "private_source": "source-at-mechanism-study-r1.tar.gz",
+      "bytes": 57707,
+      "source_sha256": "c82b9586c15f9a1577f561b281cb3d47a50c4b7bbd3cbfc1986e822208399935",
+      "public_file": null
+    },
+    {
+      "private_source": "source-at-mechanism-study-r2.json",
+      "bytes": 4934,
+      "source_sha256": "b5a72854034643704117e397fd761192a28bdbdfd9bd0a957a3c8a643693b3c5",
+      "public_file": null
+    },
+    {
+      "private_source": "source-at-mechanism-study-r2.tar.gz",
+      "bytes": 67236,
+      "source_sha256": "cc253cd4d55581be80ee015827d7684a0ee76dcd2df55224912794751b1d0366",
+      "public_file": null
+    }
+  ]
+}

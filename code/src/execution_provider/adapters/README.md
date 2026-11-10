@@ -308,6 +308,32 @@ there is no independent per-batch row cap. Engine `max_num_seqs` and
 The application bulk frame is not a claim that vLLM executes a physical batch of
 the same size at once.
 
+<a id="prepared-request-ordering"></a>
+### Optional ordering of complete prepared requests
+
+The async prepared path accepts `prepared_order=PreparedRequestOrder(...)` from
+[`scheduling.organization.prepared_order`](../../scheduling/organization/prepared_order.py).
+`None` preserves the existing order. The explicit modes are `length`, `prefix`
+and `prefix_length`; the caller declares `candidate_limit`, `prefix_token_limit`
+and `block_tokens`. These are a finite lookahead, a token-profile limit and a
+block-size hypothesis, respectively, rather than measured cache residency.
+
+The oldest candidate remains first. Other compatible candidates are ranked by
+complete-request length distance, shared token blocks, or both; stable ties retain
+input order. The organizer returns exact members and continues using the existing
+transport, input/result reservations and completion handling. Appending ready work
+rebuilds the candidate group. Prompt contents and generation parameters are unchanged.
+Method-ready ordering remains FIFO; this separate option acts after preparation.
+
+For a matched FIFO comparison, keep the same prepared batching, transport concurrency,
+request capacity and tokenizer, and set only `prepared_order=None`. Prefix modes reuse
+the tokenization pass to retain a bounded token prefix. Complete prompt lengths still
+use the whole request. The option does not select actual vLLM iterations or CUDA Graph
+mode; [CPU evidence](../../../../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
+is separate from the required engine and full-query comparison.
+
+### Rolling refill
+
 An optional `rolling_refill=True` uses the existing **request** window R instead
 of a whole-batch window. Omit `batch_concurrency` and `batch_feedback` in this
 mode; mixing either with rolling refill is rejected before model startup.

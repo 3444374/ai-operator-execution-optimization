@@ -68,8 +68,8 @@ class HandoffPassivityTests(unittest.TestCase):
     def test_handoff_core_event_omits_usage_scan_and_hot_path_disk_io(self):
         Core, _ = self.driver()
         usage = Mock(side_effect=AssertionError('per-event full table scan'))
-        core = Core(SimpleNamespace(usage=usage))
-        Key = make_dataclass('Key', [('session_id', int), ('sequence', int)])
+        core = Core(SimpleNamespace(usage=usage, records={}))
+        Key = make_dataclass('Key', [('session_id', int), ('sequence', int)], frozen=True)
         with patch.object(self.observer.os, 'write') as write:
             core.sink('released', Key(1, 3))
             usage.assert_not_called()
@@ -84,8 +84,8 @@ class HandoffPassivityTests(unittest.TestCase):
         Core, _ = self.driver()
         Usage = make_dataclass('Usage', [('active_requests', int)])
         usage = Mock(return_value=Usage(7))
-        core = Core(SimpleNamespace(usage=usage))
-        Key = make_dataclass('Key', [('session_id', int), ('sequence', int)])
+        core = Core(SimpleNamespace(usage=usage, records={}))
+        Key = make_dataclass('Key', [('session_id', int), ('sequence', int)], frozen=True)
         core.sink('released', Key(1, 3))
         usage.assert_called_once_with()
         event = next(v for v in self.fixture.events() if v['event'] == 'Core_released')

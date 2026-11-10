@@ -23,6 +23,8 @@ import control_resource_C2 as controller
 TESTS = ('tests.experiments.test_record_resource_capture',
          'tests.observability.test_native_gpu_decisions',
          'tests.experiments.test_native_gpu_diagnostics',
+         'tests.experiments.test_supply_diagnostics',
+         'tests.observability.test_native_queue_capture',
          'tests.experiments.test_record_dag_observation',
          'tests.experiments.test_record_resource_handoff',
          'tests.experiments.test_record_handoff_passivity',
@@ -113,12 +115,17 @@ def validate_base(config):
         if file_identity(config[key]['path'])['sha256'] != config[key]['sha256']:
             raise ValueError('private host binding changed')
     if config['workload']['kind'] == 'record_chain':
+        if config.get('prepared_requests') is not None:
+            from src.experiments.prepared_request_options import owner_options
+            owner_options(config['prepared_requests'], max_active_requests=config['resources']['max_active_batches'])
         binding = config['workload']['input']
         require_outside_git(Path(binding['csv']))
         if file_identity(binding['csv'])['sha256'] != binding['sha256']:
             raise ValueError('private input changed')
     elif config['workload']['kind'] != 'movie_session':
         raise ValueError('use an existing Movie session or finite record chain')
+    elif config.get('prepared_requests') is not None:
+        raise ValueError('prepared_requests currently belongs to the finite record-chain entry')
     if (config.get('movie_plan') or {}).get('backend') == 'imlane':
         controller.owner_resource_context(config, controller.checked_json(config['host_config']))
     return git_identity(config['source_root'], config['expected_source'])

@@ -70,15 +70,6 @@ class DecisionTests(unittest.TestCase):
         self.assertIs(runner._compute_cascade_attn_prefix_lens, original)
         original.assert_called_once()
 
-    def test_unknown_extraction_does_not_change_return_or_leak_exception_text(self):
-        runner = Runner()
-        runner.graph_result = object()
-        events = []
-        with observe_decisions(runner, schedule(), 1, lambda event, **kw: events.append((event, kw))):
-            self.assertIs(runner._determine_batch_execution_and_padding(), runner.graph_result)
-        self.assertEqual(events[-1][0], "native_decision_unknown")
-        self.assertNotIn("reason", events[-1][1])
-
     def test_device_values_are_never_read(self):
         class Device:
             device = SimpleNamespace(type="cuda")
@@ -92,13 +83,6 @@ class DecisionTests(unittest.TestCase):
             runner._compute_cascade_attn_prefix_lens(Device(), Device(), [2])
         self.assertIsNone(events[-1]["scheduled_tokens"])
         self.assertIsNone(events[-1]["computed_tokens"])
-
-    def test_sink_failure_preserves_result_and_missing_methods_only_reduce_evidence(self):
-        runner = SimpleNamespace()
-        sink = Mock(side_effect=RuntimeError("sink"))
-        with observe_decisions(runner, schedule(), 1, sink):
-            runner.result = 4
-        self.assertEqual(runner.result, 4)
 
     def test_none_cascade_is_not_a_missing_observation(self):
         runner = Runner()

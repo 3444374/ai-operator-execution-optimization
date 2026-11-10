@@ -6,6 +6,7 @@ from contextvars import ContextVar
 from dataclasses import asdict
 import functools
 import inspect
+import importlib.util
 import hashlib
 import json
 import math
@@ -27,6 +28,9 @@ _ALLOWED.update(('identities','outstanding','metrics','prompt_tokens','output_to
 _ALLOWED.update(('rss','uss','pss','pid','process_birth'))
 _ALLOWED.add('range_handle')
 _ALLOWED.add('batch_key')
+_ALLOWED.update(('clock_domain', 'core_uid', 'driver_uid'))
+_ALLOWED.add('record_phase')
+_ALLOWED.update('representation_key consumer_ref owner_sequence retained_bytes retained_entries active_borrows pending_consumers capacity_bytes max_entries declared_consumers retention_enabled policy source_bytes cache_hit retained victim_keys estimated_reuse_ns rebuild_ns storage_id declared_pending observation_errors'.split())
 _ALLOWED.update('computed_tokens common_prefix_blocks cascade_selected cascade_prefix_lengths total_scheduled_tokens encoder_input_counts cascade_enabled microbatching_enabled num_tokens num_reqs padded_tokens padded_reqs cudagraph_mode use_cascade_attn force_eager num_encoder_reqs should_ubatch'.split())
 _ALLOWED.update(('method_row_ref', 'stage_index', 'action', 'selection_reason'))
 _ALLOWED.update('observation_ns accepted source_sequence source_observed_at_s received_at_s decision_at_s expected_engine_uid'.split())
@@ -49,6 +53,7 @@ _close_receipt = None
 _phase = 'online'
 _n = _attempts = _errors = _dropped = _wall = _cpu = 0
 _settings_cache = None
+_clock_domain_value = None
 _buffer = deque()
 _buffer_lock = threading.Lock()
 _buffer_closed = False
@@ -147,11 +152,15 @@ def _drain_buffer():
 
 
 def settings():
-    global _settings_cache
+    global _settings_cache, _clock_domain_value
     if not ENABLED:
         return {}
     if _settings_cache is None:
         _settings_cache=json.loads((ROOT/'config.json').read_text()).get('observation', {})
+        path=Path(__file__).resolve().parents[3]/'src/observability/clock.py'
+        spec=importlib.util.spec_from_file_location('_record_clock_domain',path)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        _clock_domain_value=module.monotonic_clock_domain()
     return _settings_cache
 
 
@@ -211,7 +220,8 @@ def emit(event, **values):
             raw = dict(event=event, phase=_phase, pid=os.getpid(), parent_pid=os.getppid(),
                        thread=threading.get_ident(), monotonic_ns=started, epoch_ns=time.time_ns(),
                        thread_cpu_ns=cpu, sequence=_attempts,
-                       run_id=os.environ.get('SEM_RECORD_RUN_ID'), observer_session_id=os.environ.get('SEM_RECORD_SESSION_ID'))
+                       run_id=os.environ.get('SEM_RECORD_RUN_ID'), observer_session_id=os.environ.get('SEM_RECORD_SESSION_ID'),
+                       clock_domain=_clock_domain_value)
             raw.update({k: _safe(v) for k, v in values.items() if k in _ALLOWED})
             packet = (json.dumps(raw, allow_nan=False, separators=(',', ':'))+'\n').encode()
             if _closed or _n >= limits['max_events_per_process'] or len(packet) > limits['max_event_bytes']:
@@ -390,6 +400,19 @@ def memory_snapshot(boundary):
          scope='sparse observed process snapshots; not phase peaks or additive shared RSS')
 
 
+def _core_identity(core):
+    if core is None:return None,None
+    uid=getattr(core,'_record_observer_uid',None)
+    if uid is None:
+        uid=uuid.uuid4().hex;core._record_observer_uid=uid
+    transport=getattr(core,'backend',None)
+    if not hasattr(transport,'actors'):
+        transport=getattr(getattr(transport,'_execute',None),'__self__',None)
+    ready=getattr(getattr(transport,'actors',None),'model_ready',None)
+    engine_uid=ready.get('engine_uid') if isinstance(ready,dict) else None
+    return uid,engine_uid
+
+
 def install_ready_hook():
     """Observe after the original callback; never replace its clock or policy state."""
     if not ENABLED or handoff_profile() or 'method_ready' in _installed:return
@@ -401,7 +424,12 @@ def install_ready_hook():
         result=original(self,row,action,reason,key)
         if ENABLED and not _closed:
             try:
+                core_uid,engine_uid=_core_identity(getattr(self.session,'engine',None))
+                driver_uid=getattr(self,'_record_observer_uid',None)
+                if driver_uid is None:
+                    driver_uid=uuid.uuid4().hex;self._record_observer_uid=driver_uid
                 emit('method_ready_boundary', action=action,
+                     core_uid=core_uid,engine_uid=engine_uid,driver_uid=driver_uid,
                      method_row_ref=hashlib.sha256(row.identity.call_id.encode()).hexdigest(),
                      stage_index=row.stages, session_id=self.session.session_id,
                      key=None if key is None else asdict(key), selection_reason=reason,
@@ -435,16 +463,19 @@ def install_driver():
     owner._runtime_env=async_owner._runtime_env=runtime_env
     def attach_core(core):
         previous=core.sink
-        transport=core.backend
-        if not callable(getattr(transport,'retained_refs',None)):
-            # The ordinary Core holds the existing transport's bound coroutine.
-            transport=getattr(getattr(transport,'_execute',None),'__self__',None)
         def sink(kind,key):
             if previous is not None:previous(kind,key)
             try:
+                core_uid,engine_uid=_core_identity(core)
+                transport=core.backend
+                if not callable(getattr(transport,'retained_refs',None)):
+                    # Resolve the current query transport for a reused Core.
+                    transport=getattr(getattr(transport,'_execute',None),'__self__',None)
                 reference_reader=getattr(transport,'retained_refs',None)
                 references=reference_reader() if callable(reference_reader) else None
-                point('Core_'+kind,key=asdict(key),
+                record=core.capacity.records.get(key)
+                point('Core_'+kind,key=asdict(key),core_uid=core_uid,engine_uid=engine_uid,
+                    record_phase=None if record is None else record.phase,
                     usage=None if handoff else asdict(core.capacity.usage()),retained_refs=references,
                     scope='Core key transition; per-event usage sampled only in full profile')
             except Exception as error:point('core_observation_unavailable',error_type=type(error).__name__)
@@ -554,6 +585,36 @@ def request_range_end(nvtx,handle):
         return {}
 
 
+def install_native_queue_hook():
+    """Observe delivered native queue counters, not a continuous idle interval."""
+    if not ENABLED or handoff_profile() or 'native_queue' in _installed:return
+    settings()
+    from src.serving.backends import vllm_async_engine as native
+    cls=getattr(native,'NativeStats',None)
+    if cls is None:
+        emit('native_queue_observation_unavailable',reason='source_has_no_native_stats');return
+    original=cls.record
+    @functools.wraps(original)
+    def record(self,*args,**kwargs):
+        before=getattr(self,'sequence',None)
+        result=original(self,*args,**kwargs)
+        try:
+            latest=self.latest
+            if latest is not None and self.sequence!=before:
+                emit_buffered('native_queue_snapshot',engine_uid=latest['engine_uid'],
+                    source_sequence=latest['sequence'],source_observed_at_s=latest['observed_at_s'],
+                    running=latest['running'],waiting=latest['waiting'],kv_usage=latest['kv_usage'],
+                    preemptions_total=latest['preemptions_total'],finished_total=latest['finished_total'],
+                    generation_tokens_total=latest['generation_tokens_total'],
+                    scope='stats logger delivery; queue snapshot, not GPU idle or service capacity')
+        except Exception as error:
+            try:emit_buffered('native_queue_observation_unavailable',error_type=type(error).__name__)
+            except Exception:pass
+        return result
+    cls.record=record
+    _installed.add('native_queue')
+
+
 def install_model():
     if not ENABLED or handoff_profile() or 'model' in _installed:return
     _installed.add('model')
@@ -561,6 +622,7 @@ def install_model():
     install_transport(child=True)
     from vllm.engine.arg_utils import AsyncEngineArgs
     from src.serving.backends.vllm_async_engine import VllmAsyncEngine
+    install_native_queue_hook()
     from src.serving.backends import vllm_protocol as common
     from src.observability.native_model_api_trace import install as install_native_api
     from vllm.v1.engine.async_llm import AsyncLLM

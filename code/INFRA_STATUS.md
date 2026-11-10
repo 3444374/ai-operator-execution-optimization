@@ -10,6 +10,11 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 graph／padding 及采集缺项核对；[代码与 CPU 验证](../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)
 说明范围。真实 GPU 开销、请求全链关联、kernel 费用与候选优化收益尚未验证。
 
+本分支另有默认关闭的完整请求排序、图片 URI 留存选择，以及表示寿命／供给等待诊断。
+[实现与本地证据](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
+区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备和 CPU 检查；真实 GPU、完整查询收益、
+encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
+
 <a id="current-refactor-status"></a>
 <a id="refactor-completion-checklist"></a>
 ## 当前能力与待处理项
