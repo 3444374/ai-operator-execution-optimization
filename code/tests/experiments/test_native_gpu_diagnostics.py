@@ -22,6 +22,14 @@ def events(session="session"):
 
 
 class DiagnosticsTests(unittest.TestCase):
+    def test_qualified_v2_without_optional_sink_field_is_not_unused_cascade(self):
+        values=events();del values[3]
+        values[0]['actual_runner_module']='vllm.v1.worker.gpu.model_runner'
+        values[2]['cascade_enabled']=False
+        report=diagnose(values)
+        self.assertEqual(report['summary']['cascade_unsupported_iterations'],1)
+        self.assertEqual(report['summary']['shared_blocks_without_cascade'],0)
+
     def test_selected_cascade_keeps_actual_lengths_and_computed_tokens(self):
         values = events()
         values[3].update(cascade_selected=True, cascade_prefix_lengths=[[16, 0]], computed_tokens={"a": 32, "b": 16})

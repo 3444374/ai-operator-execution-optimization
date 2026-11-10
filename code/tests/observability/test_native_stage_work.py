@@ -1,11 +1,26 @@
 from types import SimpleNamespace
 import unittest
 
-from src.experiments.native_stage_diagnostics import scheduled_position_split
+from src.experiments.native_stage_diagnostics import scheduled_position_split, match_request_iterations
 from src.observability.native_gpu_decisions import observe_encoder_cache
 
 
 class NativeStageWorkTests(unittest.TestCase):
+    def test_native_aliases_select_business_work_without_name_guessing(self):
+        row=dict(status='observed',actual_members={'unrelated-internal':5},stage_positions=dict(status='observed',
+            scheduled_prompt_positions=4,scheduled_nonprompt_positions=1),cudagraph_mode='FULL',
+            raw_tokens=5,padding_tokens=3,cascade_supported=False,pid=8,observer_execute_id=3)
+        startup=dict(row,actual_members={'startup':5})
+        results=dict(status='completed',calls=[dict(status='succeeded',engine_request_id='external')])
+        alias=dict(event='native_api_native_add_return',request_id='external',collector_request_id='unrelated-internal',
+            native_identity=dict(mapped_internal_ids=['unrelated-internal'],present_internal_ids=['unrelated-internal']))
+        report=match_request_iterations([startup,row],[alias],results,capture_status='closed_without_recorded_loss')
+        self.assertEqual((report['status'],report['covered_requests'],report['workload_iterations'],report['other_iterations']),('observed',1,1,1))
+        self.assertEqual(report['scheduled_prompt_positions'],4)
+        self.assertEqual(report['cascade_unsupported_iterations'],1)
+        self.assertEqual(match_request_iterations([row],[],results,capture_status='closed_without_recorded_loss')['status'],'unavailable')
+        self.assertEqual(match_request_iterations([row],[alias,alias],results,capture_status='closed_without_recorded_loss')['status'],'unavailable')
+
     def test_prompt_positions_are_separate_from_decode_or_speculative_positions(self):
         row = dict(status='observed', actual_members={'prefill': 7, 'decode': 3},
                    prompt_token_counts={'prefill': 20, 'decode': 10},

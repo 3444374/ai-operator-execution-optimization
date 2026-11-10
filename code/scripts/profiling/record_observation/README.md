@@ -127,6 +127,9 @@ FIFO 对照令 `order` 为 `null`，候选使用下例对象，其他容量与�
 `analyze_native_stage_work.py --events-dir "$PRIVATE_RUN/events" --output "$NEW_PRIVATE_REPORT"`
 复用现有事件读取，区分实际 prompt 位置、其他位置和 encoder 表示观察；缺字段保持未知。
 已计算 prompt 位置不自动表示缓存命中，其他位置不等于接受的生成 token，逻辑 encoder 字节不等于唯一显存分配。
+可增加 `--request-results "$PRIVATE_RUN/REQUEST-RESULTS.json"`：使用原生 add 返回的 collector 与当时存活的别名表，
+将完整成功回执关联到实际批成员。重复／缺失别名或未闭合业务轮次保持未知，不按 ID 字符后缀或相近时间猜配。
+其他轮次保留在总报告中，`request_work` 单列业务请求；已知 v2 采集的实际 runner 模块与原元数据也用于解释旧回执缺少的 cascade 能力字段。
 
 在独立、干净的工具 checkout 同步已经审查的提交；命令不会自行联网、安装或连接服务器：
 

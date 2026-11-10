@@ -14,8 +14,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--events-dir', required=True)
     parser.add_argument('--output', required=True)
+    parser.add_argument('--request-results', help='optional complete native REQUEST-RESULTS.json for explicit request-ID association')
     args = parser.parse_args()
-    report = analyze_directory(args.events_dir)
+    report = analyze_directory(args.events_dir,request_results=args.request_results)
     write_private_json(Path(args.output), report)
     print(json.dumps(dict(capture_status=report['capture_status'], iterations=len(report['iterations']),
                           cache_observations=len(report['encoder_cache_changes']))))
