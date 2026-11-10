@@ -29,7 +29,7 @@ def configuration(path):
     required = {'schema', 'scenario', 'query', 'query_id', 'backend', 'model_name',
                 'generation', 'engine', 'resources', 'profile'}
     if (type(value) is not dict or not required <= value.keys()
-            or value.keys() - required - {'budget', 'owner_config', 'scale_factor'}
+            or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident'}
             or value['schema'] != 'semloom.sembench_text_run.v1'
             or value['backend'] not in BACKENDS or type(value['profile']) is not dict):
         raise ValueError('an explicit single-operator SemBench text configuration is required')
@@ -55,6 +55,14 @@ def configuration(path):
         raise ValueError('the existing finite native record graphs support cpu_workers=1')
     if value['backend'] == 'imlane':
         resources.request_capacity()
+    lifecycle = value.get('lifecycle', 'isolated')
+    if lifecycle not in ('isolated', 'resident'):
+        raise ValueError('choose isolated or explicit native LOTUS resident lifecycle')
+    if lifecycle == 'resident':
+        from .sembench_text_resident import validate_configuration
+        validate_configuration(value)
+    elif 'resident' in value:
+        raise ValueError('resident settings require lifecycle=resident')
     return value, engine, generation, resources
 
 
@@ -91,6 +99,19 @@ def _frame_value(frame):
     return json_metric(frame.to_dict(orient='split'))
 
 
+def complete_calls(query, operator):
+    """Require one confirmed successful result for each original occurrence."""
+    raw = {} if operator is None else operator
+    calls = raw.get('calls', [])
+    calls = calls['records'] if type(calls) is dict else calls
+    keys = [(row['row_id'], row['source_position']) for row in calls]
+    declared = [] if query.operation is None else [(r.row_id,r.source_position) for r in query.operation.records]
+    if (len(keys) != len(set(keys)) or set(keys) != set(declared)
+            or any(row['status'] != 'succeeded' for row in calls)):
+        raise RuntimeError('the complete original operator lacks unique successful occurrence calls')
+    return calls
+
+
 def run_query(config, query, engine, resources, directory, *, budget=None, context=None,
               execute_operator=None):
     """One original query; source scan and complete native close stay in its clock."""
@@ -120,16 +141,8 @@ def run_query(config, query, engine, resources, directory, *, budget=None, conte
         result, operator = query.execute(execute)
         report['query_seconds'] = time.monotonic() - started
         report['operator'] = {} if operator is None else {k:v for k,v in operator.items() if k != 'frame'}
-        raw_calls = report['operator'].get('calls', [])
-        calls = raw_calls['records'] if type(raw_calls) is dict else raw_calls
+        calls = complete_calls(query, operator)
         expected = query.describe()['expected_model_calls']
-        # Each adapter retains its own call-ID protocol. Association compares
-        # original source occurrences, not equality of unrelated ID prefixes.
-        keys = [(row['row_id'], row['source_position']) for row in calls]
-        declared = [] if query.operation is None else [(r.row_id,r.source_position) for r in query.operation.records]
-        if (len(keys) != len(set(keys)) or set(keys) != set(declared)
-                or any(row['status'] != 'succeeded' for row in calls)):
-            raise RuntimeError('the complete original operator lacks unique successful occurrence calls')
         report['model_calls'] = len(calls)
         report['call_statuses'] = dict(Counter(row['status'] for row in calls))
         report['expected_model_calls'] = expected
@@ -208,7 +221,7 @@ def run_worker(config, query, engine, resources, directory):
     return report
 
 
-def main(argv=None):
+def main(argv=None, *, controller_entry_ns=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='action', required=True)
     prepare = commands.add_parser('prepare-mmqa-text')
@@ -247,11 +260,18 @@ def main(argv=None):
     config, engine, generation, resources = configuration(args.config)
     query = query_from_config(config,args.sembench_checkout,args.data_dir,generation)
     checked = check(config,query,engine)
+    resident = config.get('lifecycle', 'isolated') == 'resident'
+    if resident:
+        from .sembench_text_resident import verify_binding
+        checked.update(lifecycle='explicit same-owner resident; fresh source per query',
+            binding=verify_binding(config,query,engine,assets=not getattr(args,'worker',False)))
     if args.action == 'check' or args.action == 'run' and not args.execute_model:
         print(json.dumps(checked, ensure_ascii=False))
         return 0
     root = Path(args.output_dir).resolve()
     if args.action == 'fixture':
+        if resident:
+            raise ValueError('resident CPU qualification uses tests.baselines.text.replay_lotus_resident')
         new_private_directory(root)
         try:
             report = fixture(config,query,read_json(args.responses),root)
@@ -266,7 +286,15 @@ def main(argv=None):
         print(json.dumps(dict(status=report['status'],inference_calls=0)))
         return 0
     if args.worker:
-        run_worker(config,query,engine,resources,root)
+        if resident:
+            from .sembench_text_resident import run
+            from src.infrastructure.private_artifacts import content_digest
+            if read_json(root/'preflight.json')['binding']['config_sha256'] != content_digest(config):
+                raise ValueError('resident worker differs from the validated launch configuration')
+            engine.validate_driver_environment()
+            run(config,args.sembench_checkout,args.data_dir,engine,generation,resources,root/'session')
+        else:
+            run_worker(config,query,engine,resources,root)
     else:
         from .lotus_records_supervisor import supervise
         new_private_directory(root)
@@ -275,5 +303,12 @@ def main(argv=None):
             'run','--config',str(Path(args.config).resolve()),'--data-dir',str(Path(args.data_dir).resolve()),
             '--sembench-checkout',str(Path(args.sembench_checkout).resolve()),'--output-dir',str(root),
             '--execute-model','--worker']
-        supervise(command,root,timeout_s=None if resources.query_timeout_s is None else resources.startup_timeout_s+resources.query_timeout_s+30)
+        if resident:
+            from src.observability.native_query_timing import resident_launch_timing
+            spec = config['resident']
+            supervision = supervise(command,root,timeout_s=spec['timeout_s'],grace_s=spec['cleanup_s'])
+            timing = resident_launch_timing(supervision,read_json(root/'session/session.json'),controller_entry_ns)
+            write_private_json(root/'resident-timing.json',timing)
+        else:
+            supervise(command,root,timeout_s=None if resources.query_timeout_s is None else resources.startup_timeout_s+resources.query_timeout_s+30)
     return 0

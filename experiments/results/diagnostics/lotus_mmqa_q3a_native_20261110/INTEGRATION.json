@@ -1,0 +1,107 @@
+{
+  "schema": "baseline.native.lotus.main_integration.v1",
+  "status": "CPU_passed_target_formal_migration_pending",
+  "base_main": "6b0f4f6efcfe61225ffc0c7ad5a3f4af261dc1bf",
+  "tested_source": {
+    "commit": "1af1a75278238f04ee9744a1811052316f2b1acf",
+    "code_tree": "8b290e813550308d15b1a9855a82881494de277b"
+  },
+  "driver_versions": {
+    "lotus-ai": "1.2.4",
+    "pandas": "2.3.3",
+    "litellm": "1.95.1",
+    "openai": "2.50.0",
+    "transformers": "4.57.6"
+  },
+  "python": "3.12.6",
+  "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+  "unit_checks": {
+    "unique_passed": 124,
+    "initial_passed": 123,
+    "affected_recheck": 8,
+    "additional_distinct": 1,
+    "unresolved_skips": 0,
+    "initial_log_sha256": "59973f8e648b267d1d35b4cfd110d85bb4556a36ee053a168a6b89438811ff79",
+    "original_query_log_sha256": "9b7b054d27d29cd44eab201919a48f8efb8ece396d8c33456180f0542f5006c2",
+    "delta_log_sha256": "b3d6a0073e65521806bf5ef7ebe1a1235d4da3913c6d3b97f71efca1b48ad032"
+  },
+  "replays": [
+    {
+      "query": "q3a",
+      "software_IPC_requests": 50,
+      "model_calls": 0,
+      "CPU_sha256": "20c559b06091b67a5113a6fa59b4a02db0446a883074fbb9d3ad9c8efe43c3de",
+      "session_sha256": "b4ef1034ae2d43dcaa75442b71cb0e20e959de6aad1dae5b738ed5ec5f28de44",
+      "source_occurrences_sha256": "37ced727b3b929d777b310a49aac13362c12e5d59d994726cdef5a68423bdb58",
+      "full_messages_tokens_source_relation_sink_and_evaluator_equal": true,
+      "same_CPU_owner_PID_and_birth": true,
+      "constructs": 1,
+      "closes": 1,
+      "extra_attempt_rejected": true,
+      "quality_replay": [
+        {
+          "precision": 1.0,
+          "recall": 0.8461538461538461,
+          "f1_score": 0.9166666666666666
+        },
+        {
+          "precision": 1.0,
+          "recall": 0.8461538461538461,
+          "f1_score": 0.9166666666666666
+        }
+      ],
+      "CLI_check_sha256": "ae1decd7049e323a34b4c3de246b2155f1785c140e36b3158ab92e487a5970a2"
+    },
+    {
+      "query": "q4",
+      "software_IPC_requests": 48,
+      "model_calls": 0,
+      "CPU_sha256": "14bd37d8de30d5e34fa6936068ad35a9f02e4021d86049f10af8934a0b1be15c",
+      "session_sha256": "e538951fd1eeb51a65e30c407d3900e9f16d65544c673fa158a50d2507ccb379",
+      "source_occurrences_sha256": "bb07b1324a2821dc648608857fa7830a8df6b84e374fb1e83a823ec7a046ea57",
+      "full_messages_tokens_source_relation_sink_and_evaluator_equal": true,
+      "same_CPU_owner_PID_and_birth": true,
+      "constructs": 1,
+      "closes": 1,
+      "extra_attempt_rejected": true,
+      "quality_replay": [
+        {
+          "precision": 0.5142857142857142,
+          "recall": 0.46153846153846156,
+          "f1_score": 0.48648648648648646
+        },
+        {
+          "precision": 0.5142857142857142,
+          "recall": 0.46153846153846156,
+          "f1_score": 0.48648648648648646
+        }
+      ],
+      "CLI_check_sha256": "0929af7e5c1b050652f6397b9e1b275e2b04de0e9f1d10af6a69b80de7dde831"
+    }
+  ],
+  "failure_preserved": {
+    "run": "lotus-r1",
+    "commit": "0c5cbae04e643a8ed6d2b51c64a0d1a7a679e800",
+    "reason": "input digest included fresh execution ID; stopped before owner/model creation",
+    "log_sha256": "74d3d4a53b733338dc05f2e3bcf8e414acaf2dee5942f3f642c4ef2139132ac7",
+    "fix_commit": "1af1a75278238f04ee9744a1811052316f2b1acf"
+  },
+  "new_model_calls": 0,
+  "supervisor_run_in_replay": false,
+  "engine_accept_observed": false,
+  "kernel_time_observed": false,
+  "physical_GPU_cleanup_verified_by_this_run": false,
+  "existing_GPU_Q3a": {
+    "entry_commit": "ee625c877976b209ef8480edad8ec15c92d22ac6",
+    "runtime_commit": "fd06f6f04b537dea1c005ee5e69fe93b8ad77799",
+    "terminal_requests": 50,
+    "handoff_sha256": "b994aefb44935d19e6fc36585a69ef632d094bd1f3ecd0161c798e8335b8ec51",
+    "not_repeated": true
+  },
+  "next": [
+    "target environment imports and current-source binding",
+    "existing host supervisor/resource/physical cleanup integration",
+    "coordinator review, protocol dependency and main integration",
+    "migrate active references then retire redundant deployed launchers; preserve frozen evidence"
+  ]
+}

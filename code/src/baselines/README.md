@@ -8,7 +8,7 @@
 
 | 对照 | 真实入口／实现 | 谁拥有执行 | 当前限制 |
 |---|---|---|---|
-| 原生 LOTUS | [lotus_native_local.py](text/frameworks/lotus_native_local.py)，普通 Movie session 的 `backend=lotus-native` | 原算子、`LM.__call__`、`_process_uncached_messages`、LiteLLM `batch_completion`；公共 provider 只接本地模型 IPC | 新非 HTTP 路径只有 CPU 资格，官方完整 Q123 依赖及实机待验 |
+| 原生 LOTUS | [lotus_native_local.py](text/frameworks/lotus_native_local.py)，`backend=lotus-native` | 原算子、`LM.__call__`、`_process_uncached_messages`、LiteLLM `batch_completion`；公共 provider 只接本地模型 IPC | 冻结MMQA Q3a/Q4已真实冷暖通过；正式resident迁移的CPU与目标资格[分别记录](../../../experiments/results/diagnostics/lotus_mmqa_q3a_native_20261110/README.md)，不外推完整Movie Q123 |
 | Daft | [daft_lotus_records.py](text/frameworks/daft_lotus_records.py) | `read_csv`、原生 class／batch UDF 与模型 class 生命周期 | 明确的隔离配置；可选[单线程 session](text/frameworks/daft_lotus_session.py)单独比较 |
 | Ray Data | [ray_data_lotus_records.py](text/frameworks/ray_data_lotus_records.py) | Dataset、`map_batches`、ActorPoolStrategy 与原生图 | runtime 复用不等于跨查询模型复用 |
 | IMLane | [resident.py](../../integrations/imlane_records/resident.py)、[隔离入口](../experiments/imlane_movie_formal.py) | 作者 CPython Filter 桥接与作者执行；共享方法／模型内核 | 原生作者能力和有限桥接合同保留，不等于任意 DAG |
@@ -174,6 +174,39 @@ close 可能与 driver 后处理重叠。严格 host controller 入口仍未知�
 `ffbc352ac` 的 Q3a25/Q4 24 已完成目标原生参数、真实模型和物理清理资格；最新 main 整合候选的
 执行接线另经CPU回归和完整关系回放；后续已把消息摘要及关系序列化移至sink后，旧49条时长不追认为该新边界。未重复GPU。其余17题、同 owner 暖轮与共同 host
 总时钟仍待资格。保留每个系统自己的依赖版本，不以迁移到统一 vLLM 为前提。
+
+<a id="lotus-native-resident-sembench"></a>
+### 原生 LOTUS 的显式 resident 文本查询
+
+现有 `run_sembench_text_query.py` 默认仍执行 isolated 单查询。选择
+[resident 配置](../../configs/sembench_lotus_native.example.json)后，同一原生 LOTUS owner 执行冷查询和
+指定数量的新鲜暖查询；每轮重新读取 source/prepare，经原 accessor、LM、LiteLLM 和本地原生模型 IPC
+到完整原 sink。`native_lm_max_batch_size=64` 是显式实验 profile，不是作者默认；SemLoom Core 不参与调度。
+
+```bash
+PYTHONHASHSEED=3 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHON" -B \
+  code/scripts/experiments/run_sembench_text_query.py check \
+  --config "$RUN_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" --data-dir "$DATA_DIR"
+```
+
+经唯一 host 协调者安排后，同一入口使用 `run --execute-model --output-dir "$NEW_PRIVATE_OUTPUT"`。
+外层继续提供 host 租约、CPU/GPU 限额、空闲预检和最终物理清理；本入口不再创建一套 host 控制器。
+配置绑定所选当前 commit/code tree、输入文件与有序发生项摘要、完整模型/分片和 tokenizer 文件摘要，
+以及实际 generation/resources/profile；真实路径保存在仓库外。模型文件列表应列全实际权重、索引和配置，
+不能只填写示例的单个占位项。`occurrences_sha256` 由现有原查询的 `occurrence_digest` 产生。
+永久 SQLite 的各轮单位须由调用方预留且未被领取；worker 逐轮领取，失败不退还，结束后关闭该单位。
+
+原 stage 可借用 owner，成功或失败均由外层生命周期负责最终关闭；原 isolated 调用仍自行关闭。
+source→完整 sink 与最早脚本事件→sink、监督器 Popen 前事件→sink 分列；模型实际 ready、首原生提交、
+末确认终态、snapshot/审计、评价、查询持久化和最终 close 分列。adapter-ready 不冒充模型 ready，
+引擎首次接受和 kernel 时间留空。每轮持久化终点在 `session.json`，该文件本身的写入终点见
+`session-persistence.json`；不能从文件写入前的快照宣称已落盘完成。
+示例 `timeout_s=600` 已含监督器的30秒退出预留；正常 owner close 在 worker 内，外层 host 清理另计，
+不能称完整 host 流程已被这600秒覆盖。结果缓存关闭，模型 KV 和磁盘缓存按真实配置记录，不伪称全冷。
+
+完整软件回放使用 `python -m tests.baselines.text.replay_lotus_resident`，保存答复按完整消息身份绑定，
+由真实原生 accessor/LM/LiteLLM/IPC执行，具体资格和已完成的冻结 GPU 结果见
+[报告](../../../experiments/results/diagnostics/lotus_mmqa_q3a_native_20261110/README.md)。
 
 <a id="additional-sembench-text"></a>
 ## 补充 SemBench 文本查询

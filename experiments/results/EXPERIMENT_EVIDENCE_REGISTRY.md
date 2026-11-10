@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-10：原生LOTUS同owner结果与正式入口迁移
+
+[报告](diagnostics/lotus_mmqa_q3a_native_20261110/README.md)保存ee625/fd06的Q3a冷25＋暖25真实资格、
+完整GPU输入token、原答复差异和独立计数未知项。当前main的显式resident迁移复用既有CLI/stage/监督，
+声明式绑定取代固定历史源码约束；CPU回归和待目标验证范围另列，不重跑或转授旧模型成绩。
+
 ## 2026-11-10：Daft 原生 AI 接线整理与完整 sink 边界
 
 [报告](diagnostics/daft_native_semantics_20261110/README.md)记录从已有 Medical Q10/MMQA 私有原生接线恢复的

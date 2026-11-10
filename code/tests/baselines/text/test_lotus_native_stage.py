@@ -171,7 +171,8 @@ class NativeStageFixtureTests(unittest.TestCase):
         budget = ClaimedUnit(Reservation("q", 1, max(1, len(records))), None)
         return frame, stage, records, budget
 
-    def execute(self, *, kind="filter", texts=("same", "same"), invoke=None, profile=None, budget=None):
+    def execute(self, *, kind="filter", texts=("same", "same"), invoke=None, profile=None, budget=None,
+                shared_owner=None):
         frame, stage, records, allowance = self.inputs(texts, kind)
         self.budget = allowance if budget is None else budget
         self.messages = [[dict(role="user", content=row.values["reviewText"])] for row in records]
@@ -183,7 +184,43 @@ class NativeStageFixtureTests(unittest.TestCase):
         self.result_frame = frame
         return native_stage.execute_native(frame, stage, records, invoke=complete if invoke is None else invoke,
             engine=self.engine, resources=self.resources, query_id="q",
-            profile=dict(native_lm_max_batch_size=2) if profile is None else profile, budget=self.budget)
+            profile=dict(native_lm_max_batch_size=2) if profile is None else profile, budget=self.budget,
+            shared_owner=shared_owner)
+
+    def test_borrowed_owner_reuses_original_accessors_without_closing_caller_model(self):
+        from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+        owner = LocalNativeModel(self.engine,self.generation,self.resources,2)
+        for _ in range(2):
+            report = self.execute(shared_owner=owner)
+            self.assertEqual(report['calls']['counts']['succeeded'],2)
+            self.assertNotIn('backend_close',report)
+            self.assertIsInstance(report['model_ready_observed_ns'],int)
+            self.assertFalse(owner.closed)
+        self.assertEqual(len(self.owners),1)
+        self.assertIs(FixtureLM.__call__,self.original_lm_call)
+
+    def test_borrowed_failure_preserves_owner_and_partial_calls_for_caller_cleanup(self):
+        from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+        owner = LocalNativeModel(self.engine,self.generation,self.resources,2)
+        def fail():
+            owner.binding.complete_count = 1
+            self.settings.lm(self.messages)
+            raise ValueError('partial native query')
+        with self.assertRaisesRegex(ValueError,'partial native') as caught:
+            self.execute(shared_owner=owner,invoke=fail)
+        self.assertFalse(owner.closed)
+        self.assertEqual(caught.exception.operator_report['calls']['counts']['unknown'],1)
+        self.assertIs(FixtureLM.__call__,self.original_lm_call)
+        self.assertEqual(owner.close(timeout=1)['status'],'closed')
+
+    def test_borrowed_generation_mismatch_rejects_before_model_or_allowance_use(self):
+        from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+        owner = LocalNativeModel(self.engine,GenerationSpec(seed=9),self.resources,2)
+        with self.assertRaisesRegex(ValueError,'resident model binding'):
+            self.execute(shared_owner=owner)
+        self.assertIsNone(owner.binding)
+        self.assertFalse(owner.closed)
+        self.assertEqual(self.budget.attempts,0)
 
     def test_original_frame_duplicate_occurrences_and_settings_survive_all_three_stage_kinds(self):
         for kind in ("filter", "map", "extract"):

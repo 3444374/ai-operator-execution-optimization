@@ -1,5 +1,8 @@
 # 原生基线与具名 Core 历史复现
 
+[原生LOTUS resident日常入口](../../../code/src/baselines/README.md#lotus-native-resident-sembench)
+维护在现有CLI/stage/lifecycle中；固定fd06的Q3a/Q4包只保留原复现身份，不复制为第二套正式控制器。
+
 [Daft 原生单 F/M/E 接线](../../../code/src/baselines/README.md#daft-native-prepared-sembench)
 维护在正式源码，CPU 重放入口是 `python -m tests.baselines.text.replay_daft_sembench`，
 接收 `--config`、`--reference`、`--output-dir`；参考是明确身份的保存答复，模型不启动。
