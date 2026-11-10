@@ -1,6 +1,6 @@
 """Git-owned finite-chain validation entry; site config and receipts stay outside Git.
 
-This is a bounded options, matched-capacity or progression check, not a matrix/host controller. The existing
+This is a bounded options, execution, progression or step-actions check. The existing
 external owner keeps its lease, budgets, CPU/GPU placement and physical checks.
 """
 from dataclasses import asdict
@@ -24,8 +24,9 @@ from src.semantic_methods.lotus.record_types import RecordOccurrence
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
 from src.experiments.record_chain_validation import (
-    make_chain, make_budget, run_case, replay_native_answers, compare,
+    make_chain, make_budget, run_case, replay_native_answers, compare, step_action_cases,
 )
+from src.execution_provider.adapters.records_capacity import CoreRecordsCapacity
 
 CASES = (('fifo-count', False, False), ('fifo-token', True, False),
          ('successor-count', False, True), ('successor-token', True, True))
@@ -41,7 +42,7 @@ def read(path):
 
 def make_resources(config):
     suite = config.get('suite', 'options')
-    if suite not in ('options', 'matched-execution', 'progression'):
+    if suite not in ('options', 'matched-execution', 'progression', 'step-actions'):
         raise ValueError('unknown validation suite')
     resources = RecordsResources(**config['resources'])
     resources.request_capacity()
@@ -83,7 +84,9 @@ def configuration(path):
         require_outside_git(Path(config[name]))
     require_outside_git(Path(config['input']['existing_csv']))
     matched = config.get('suite', 'options') == 'matched-execution'
-    if config.get('suite') == 'progression':
+    if config.get('suite') == 'step-actions':
+        config['cases'] = step_action_cases()
+    elif config.get('suite') == 'progression':
         config['cases'] = [dict(case_id=name, token=False, successor=False,
             progression='record' if name == 'record-count' else 'batch_stage',
             progression_batch_rows=None if name == 'record-count' else config['progression_batch_rows'])
@@ -121,6 +124,8 @@ def check(path):
                   max_requests=engine.max_model_calls * len(config['cases']), models=0, claims=0)
     if config.get('suite') == 'progression':
         report.update(suite='progression', progression_cases=config['cases'])
+    if config.get('suite') == 'step-actions':
+        report.update(suite='step-actions', step_action_cases=config['cases'])
     return report
 
 
@@ -137,8 +142,8 @@ def qualify(path, output, *, require_token_budget=True):
     config, engine, resources, generation = configuration(path)
     if config.get('suite') == 'matched-execution' and require_token_budget:
         raise ValueError('matched-execution requires --count-only qualification')
-    if config.get('suite') == 'progression' and require_token_budget:
-        raise ValueError('progression requires --count-only qualification')
+    if config.get('suite') in ('progression', 'step-actions') and require_token_budget:
+        raise ValueError(config['suite'] + ' requires --count-only qualification')
     if (Path(config['artifact_root']) / 'budget.sqlite').exists():
         raise FileExistsError('never requalify an existing model budget')
     source = checkout_identity(config['public_git_commit'])
@@ -229,6 +234,8 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
             control.mkdir(mode=0o700)
         result = run_case(records, chain, engine, resources, control_dir=control,
                           token_budget=budget if case['token'] else None, priority=case['successor'],
+                          **({} if 'core_capacity' not in case else dict(
+                              capacity=CoreRecordsCapacity(**case['core_capacity']), observe_ready=True)),
                           **{k:case[k] for k in ('execution', 'progression', 'progression_batch_rows') if k in case})
         report.update({k:v for k,v in result.items() if k != 'records'})
         report['actual_calls'] = len(result['calls'])
@@ -292,7 +299,8 @@ def main(argv=None, *, process_started_ns=None):
     parser.add_argument('--config', required=True, type=Path)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--ready', type=Path)
-    parser.add_argument('--case', choices=[name for name, _, _ in CASES + EXECUTION_CASES] + list(PROGRESSION_CASES))
+    parser.add_argument('--case', choices=[name for name, _, _ in CASES + EXECUTION_CASES] +
+                        list(PROGRESSION_CASES) + [c['case_id'] for c in step_action_cases()])
     parser.add_argument('--execute-model', action='store_true')
     parser.add_argument('--count-only', action='store_true', help='qualify count cases without a token budget')
     args = parser.parse_args(argv)
@@ -317,5 +325,5 @@ def main(argv=None, *, process_started_ns=None):
         else:
             result = supervised_case(args.config, args.ready, args.case)
     print(json.dumps({k:result[k] for k in ('status', 'models', 'claims', 'max_requests',
-        'suite', 'progression_cases') if k in result}))
+        'suite', 'progression_cases', 'step_action_cases') if k in result}))
     return 0

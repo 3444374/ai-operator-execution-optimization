@@ -16,6 +16,7 @@
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 查询脚本直接调用实验生命周期；baseline客户端不反向导入实验，作者服务与默认保持 |
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
+| 有限链功能对照 | [validate_record_chain_options.py](experiments/validate_record_chain_options.py) | 既有 options／matched-execution／progression 及[步骤预算对照](#record-chain-step-actions)；项目自定义 MMF，不是原 SemBench 查询 |
 | 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 文件输入与公共 CLIP 实现 |
 | CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[软件检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
 | 直接原生Daft Movie Q3 | [worker／监督入口](../src/experiments/native_daft_query.py) | READY原子结果、独立关闭时钟；[配置与调用](#native-daft-q3-worker) |
@@ -29,6 +30,36 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 资源所有权、持久次数额度和最终关闭证据；`--help`／CPU 检查不证明这些实际环境已可运行。
 新原生 LOTUS 本地 IPC 已有 CPU 检查，官方完整 Q123 因本地缺 `overrides/cdlib/duckdb` 尚未通过，
 没有将 Core 替身当作原生执行资格。
+
+<a id="record-chain-step-actions"></a>
+## 有限链的步骤预算对照
+
+现有验证配置可设 `suite="step-actions"`，`ray_roots` 使用 `one-action` 和
+`default-actions` 两个私有目录。其他配置仍由已有外部 owner 提供：准确干净的
+`public_git_commit`、输入 CSV 及 SHA、模型／tokenizer／driver、生成参数、资源、外部租约和额度。
+本检查沿用前16条 `reviewText`，运行项目自定义的 `Label {text}` → `Label {label_0}` →
+`Is {label_1} positive?`，不能当作原 SemBench 多算子任务。
+
+两臂均为 count／FIFO、record progression、C4、准备／请求 B1，使用同一异步模型路径，
+每查询独立模型。唯一变化为已有 `CoreRecordsCapacity.step_actions=1` 或原默认16；
+MethodDriver 的单次提交／交付上限为 `min(step_actions, held_tasks)`，此配置下分别为1和4。
+Core 的轮询、派发和交付同时共用步骤预算；本对照不能单独归因于回调准备粒度。
+请求槽、驻留行／字节及模型 `max_num_seqs=4` 保持一致。每臂上限48次，总上限96次，
+这只是既有小规模验证协议，不是生产容量默认值。
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py \
+  check --config "$CHAIN_CONFIG"
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_chain_options.py \
+  qualify --count-only --config "$CHAIN_CONFIG" --output "$CHAIN_READY"
+```
+
+`check` 需要 LOTUS SDK，不加载 tokenizer 或模型；`qualify` 只从本地加载 tokenizer。
+真实运行继续由既有外部租约／预算／supervisor 排期，分别执行 `case --case one-action`
+和 `case --case default-actions`，均须提供 `--config/--ready/--execute-model`；完成后用
+`compare --config "$CHAIN_CONFIG" --output "$NEW_COMPARISON"` 核对回执。
+保存完整请求身份、原方法响应回放、输出差异、实际容量、ready／Core offer 事件和完整 owner 时间。
+这些事件只表示方法就绪和 Core 接收，不代表原生引擎入场；CPU 检查和一对小运行都不能证明 GPU 缺活或加速。
 
 <a id="native-daft-q3-worker"></a>
 ## 直接原生Daft Q3的worker与监督
