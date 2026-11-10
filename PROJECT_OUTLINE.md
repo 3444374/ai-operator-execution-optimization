@@ -136,7 +136,7 @@ PG 接入由数据库拥有 SQL、计划、快照、权限、取消与结果生�
 ## 8. 当前执行顺序
 
 1. 先读取代码状态与对应证据，复用已接纳接口；普通文本小单元与原生 LOTUS 核对，不重复建设已完成接点。
-2. 按[首批观察方案](experiments/plans/数据组织.md#dag-first-observation)分别取得单算子、分支汇合和真实串联的有效轨迹，
+2. 按[机制实现与诊断安排](experiments/plans/数据组织.md#gpu-implementation-starts)推进请求／GPU 批、表示／消费者、实际工作／供给三条主线；每项承担采集、分析、原型与干预验证。按[首批观察方案](experiments/plans/数据组织.md#dag-first-observation)分别取得单算子、分支汇合和真实串联的有效轨迹，
    识别准备、GPU 工作、缓存、搬运和消费特性；采集缺项和无机会反例保留，不以一题推断通用规律。
 3. 只对观察支持的[编排候选](docs/research/优化方法依据.md#gpu-engine-coordination)做单独及联合比较；
    调优 fused、原生流水、缓存、同信息简单规则和阶段预算为强对照，后端补丁单列。

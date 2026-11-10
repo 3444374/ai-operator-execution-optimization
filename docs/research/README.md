@@ -5,8 +5,8 @@
 
 | 主题 | 入口 |
 |---|---|
-| 研究问题、最近邻与待证增量 | [研究定位](研究定位.md) |
-| 方法选择、反例与最小实验 | [优化方法依据](优化方法依据.md)、[GPU／引擎协同候选](优化方法依据.md#gpu-engine-coordination) |
+| 研究问题、最近邻与待证增量 | [研究定位](研究定位.md)、[与 Ray Data／Daft 的分工](研究定位.md#native-engine-reuse-and-increment) |
+| 方法选择、反例与最小实验 | [优化方法依据](优化方法依据.md)、[GPU／引擎设计空间](优化方法依据.md#gpu-design-space) |
 | 文献题录与阅读状态 | [文献清单](ai_operator_literature_inventory.md) |
 | 泛读与快速回顾 | [reading_notes/](reading_notes/README.md) |
 | 逐篇精读与图解 | [精读文献笔记](精读文献笔记/README.md) |

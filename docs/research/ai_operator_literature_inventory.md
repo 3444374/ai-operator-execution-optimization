@@ -30,6 +30,11 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | [GraniKV: Asymmetric Granularity KV-Cache Paging for Multi-Agent Systems with Long Shared Prefix](https://arxiv.org/abs/2608.15584v2)，2026-08-23 | **撤回预印本，仅作排除记录**；作者说明吞吐测量方法存在错误，论文细节已弃用 | 本轮复核撤回状态，不采用其机制／性能主张支撑设计、收益或新颖性判断 |
 | [RayOrch: Programming and Executing Lineage-Controlled Multi-Grain Dataflows for Foundation-Model Data Preparation](https://arxiv.org/html/2609.18703v1)，2026-09-16 | 预印本；有限无环层次数据流、跨父项组批与按成员 gather，不是一般 Join 支持 | 数据粒度、父子关联及局部失败已有相关能力 |
 | [GRAPHENE: Packing and Dependency-Aware Scheduling for Data-Parallel Clusters](https://www.usenix.org/system/files/conference/osdi16/osdi16-grandl-graphene.pdf)，OSDI 2016 | 正式论文；依赖和异构资源需求的联合调度 | 观察 DAG 后安排资源是研究起点，需证明语义任务的具体增量 |
+| [EAServe: Encode-Aware Disaggregated Serving for Multimodal Large Language Models](https://arxiv.org/html/2609.31551v1)，2026-09-25 | 作者预印本 v1 的 §2–3；首页注明 PACT 2026、DOI 10.1145/3838684.3846886，本轮机制依据 v1 | encoder 微批、部分 prefill 转移、SM 分配与配置搜索已有近邻；未复现或采用其加速数字 |
+| [Teola: Towards End-to-End Optimization of LLM-based Applications](https://arxiv.org/html/2407.00326v3)，2025-03-31 | 作者预印本 v3 的 §4–5、§7.4；代码仓库名为 Ayo，不采用页面中的出版模板占位信息 | 已知前缀提前计算、图细化和应用感知组批已有先例；拆分本身有执行成本 |
+
+表示／传输继续复用本清单已有 cedar、Selective Late Materialization、FaaSTube；多实例继续复用 Preble 与 Mooncake。
+本轮不因扩大设计空间就将这些异任务系统视为可直接运行的同题性能对照。
 
 固定工程来源如下；tag 解析值用于复核来源，不替代受测环境报告。
 
@@ -41,15 +46,26 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
   [processor cache](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/multimodal/cache.py)、
   [encoder cache](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/core/encoder_cache_manager.py)、
   [cascade 选择](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/attention/backends/flash_attn.py#L1354)、
-  [GPU runner](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu_model_runner.py#L3888)、
-  [CUDA Graph 设计](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/design/cuda_graphs.md)。
-  核查了原生已具备的能力及组合限制；未运行该版本的模型或补丁。
+  [v1 GPU runner](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu_model_runner.py#L3888)、
+  [v2 GPU runner](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu/model_runner.py)、
+  [v2 CPU 输入元数据](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu/input_batch.py)、
+  [CUDA Graph 设计](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/design/cuda_graphs.md)、
+  [独立 encoder 与 ECConnector](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/features/disagg_encoder.md)、
+  [独立 prefill](https://docs.vllm.ai/en/v0.25.1/features/disagg_prefill/)。
+  v1／v2 的接点和能力分别核对，v2 没有上述 cascade dispatch。此清单定位源码；
+  后续准确版本的实机与被动观察见[执行候选报告](https://github.com/3444374/ai-operator-execution-optimization/blob/e009939c6717c6805822212fd56179261766c33f/experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)。
 - Ray `ray-2.56.1`，commit `936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a`：
   [actor 选择](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/operators/actor_pool_map_operator.py)、
   [有效默认](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/interfaces/execution_options.py)、
   [RefBundle](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/interfaces/ref_bundle.py)、
-  [下游背压](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/backpressure_policy/downstream_capacity_backpressure_policy.py)。
+  [下游背压](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/backpressure_policy/downstream_capacity_backpressure_policy.py)、
+  [资源管理](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/resource_manager.py)、
+  [官方 LLM stage](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/llm/_internal/batch/stages/vllm_engine_stage.py)。
   说明文字与构造器默认不一致时，以源码及实际配置解释；逻辑资源、切片估计和物理用量分别报告。
+- Daft `v0.7.21`：[VLLMSink](https://github.com/Eventual-Inc/Daft/blob/v0.7.21/src/daft-local-execution/src/streaming_sink/vllm.rs)、
+  [模型执行与 PrefixRouter](https://github.com/Eventual-Inc/Daft/blob/v0.7.21/daft/execution/vllm.py)。
+  核对字符串字节前缀分桶、异步提交与分布式路由；这些不等于按真实 token／KV 块或 GPU 批进行联合选择。
+  滚动 stable 架构文档与此固定版本分别解释，不由本仓同步 UDF 推断其能力。
 
 
 ## 一、开题 Top 15
