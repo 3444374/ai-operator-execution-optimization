@@ -56,6 +56,13 @@ and query-adapter integration remain pending. Colocated execution remains availa
 The [worker](../../experiments/native_stage_handoff.py) compares exact prompt IDs,
 output IDs, text and finish reasons. Its caller supplies preflight, host lease,
 persistent attempt budget, process supervision and final GPU observation.
+Set `VLLM_LOGGING_LEVEL=DEBUG` for this diagnostic worker. It checks native
+receive completion through the returned producer request ID and the decoder's
+own finished receipt; it does not infer identity from internal ID suffixes.
+Native cumulative NIXL metrics are also retained at close. In the observed sync
+path those counters remained zero beside completed transfer logs, so they cannot
+currently provide transfer bytes or duration. This does not affect the preserved
+output and receive-completion checks.
 See the [plan](../../../../experiments/plans/数据组织.md#native-stage-handoff)
 and [evidence](../../../../experiments/results/diagnostics/native_stage_handoff_20261110/README.md).
 

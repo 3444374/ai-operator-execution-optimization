@@ -4,8 +4,11 @@ The caller owns preflight, the host lease, persistent attempt reservations, the
 outer process supervisor and independent GPU-exit observation.
 """
 import argparse
+import ast
 from dataclasses import replace
+import os
 from pathlib import Path
+import re
 import time
 
 from src.infrastructure.private_artifacts import new_private_directory, read_json, write_private_json
@@ -16,7 +19,51 @@ from src.serving.backends.stage_process_cleanup import StageEngineCleanup
 from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec, _prepared
 
 
+def audit_native_transfers(report, decode_log):
+    """Associate fixed v0.25.1 native receipts through returned remote IDs.
+
+    Internal request suffixes are not interpreted. Public native counters may
+    omit output-free sync iterations, so this audit uses actual completion logs.
+    """
+    starts = re.findall(r'start_load_kv for request (\S+)', decode_log)
+    received = re.findall(r'Finished recving KV transfer for request (\S+)', decode_log)
+    finished, external = {}, {}
+    for line in decode_log.splitlines():
+        match = re.search(r'request_finished\(([^)]+)\), request_status=(\w+), kv_transfer_params=(\{.*\})', line)
+        if match:
+            native_id, status, encoded = match.groups()
+            params = ast.literal_eval(encoded)
+            remote_id = params['remote_request_id']
+            if remote_id in finished:
+                raise ValueError('ambiguous native transfer finish receipt')
+            finished[remote_id] = (native_id, status, params.get('_remote_blocks_processed') is True)
+        match = re.search(r'update_state_after_alloc: num_external_tokens=([1-9][0-9]*), kv_transfer_params=(\{.*\})', line)
+        if match:
+            count, encoded = match.groups()
+            remote_id = ast.literal_eval(encoded)['remote_request_id']
+            if remote_id in external:
+                raise ValueError('ambiguous native external-token receipt')
+            external[remote_id] = int(count)
+    receipts = []
+    for result in report['arms']['split']['results']:
+        producer = result['stage_receipts']['prefill'][0]
+        remote_id = producer['kv_transfer_params']['remote_request_id']
+        native_id, status, processed = finished.get(remote_id, (None, None, False))
+        receipts.append(dict(call_id=result['call_id'], producer_native_id=remote_id,
+            decoder_native_id=native_id, external_tokens=external.get(remote_id),
+            completed=(processed and starts.count(native_id) == received.count(native_id) == 1
+                       and status in ('FINISHED_STOPPED', 'FINISHED_LENGTH_CAPPED')
+                       and remote_id in external)))
+    expected = {row['decoder_native_id'] for row in receipts}
+    return dict(complete=bool(receipts) and all(row['completed'] for row in receipts)
+                and len(expected) == len(receipts) and set(starts) == set(received) == expected,
+                source='vLLM 0.25.1 NIXL load, receive and request-finished logs',
+                transfers=receipts)
+
+
 def run(config, directory):
+    if os.environ.get('VLLM_LOGGING_LEVEL') != 'DEBUG':
+        raise ValueError('this diagnostic worker requires VLLM_LOGGING_LEVEL=DEBUG for transfer receipts')
     engine = EngineSpec.from_dict(config['engine'])
     generation = GenerationSpec.from_dict(config['generation'])
     records = config['rows']
@@ -75,6 +122,10 @@ def run(config, directory):
             equal=all(a[key] == b[key] for key in compared)) for a, b in zip(reference, split, strict=True)]
         if not all(row['equal'] for row in report['parity']):
             raise RuntimeError('native split output differs from colocated reference')
+        report['native_transfer_audit'] = audit_native_transfers(
+            report, (directory / 'split/decode.log').read_text())
+        if not report['native_transfer_audit']['complete']:
+            raise RuntimeError('native KV receive completion was not fully observed')
         report['status'] = 'passed'
     except BaseException as error:
         report['error'] = redact_text(type(error).__name__ + ': ' + str(error))

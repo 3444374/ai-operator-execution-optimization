@@ -1,0 +1,34 @@
+{
+  "complete": true,
+  "source": "vLLM 0.25.1 NIXL load, receive and request-finished logs",
+  "transfers": [
+    {
+      "call_id": "lotus-filter-v1:[\"native-stage-check\",\"row-0\",0,0]",
+      "producer_native_id": "0-bcac133d",
+      "decoder_native_id": "0-a9d96c80",
+      "external_tokens": 154,
+      "completed": true
+    },
+    {
+      "call_id": "lotus-filter-v1:[\"native-stage-check\",\"row-1\",1,0]",
+      "producer_native_id": "1-910f9b34",
+      "decoder_native_id": "1-beb487e6",
+      "external_tokens": 154,
+      "completed": true
+    },
+    {
+      "call_id": "lotus-filter-v1:[\"native-stage-check\",\"row-2\",2,0]",
+      "producer_native_id": "2-884a1320",
+      "decoder_native_id": "2-b1b67cec",
+      "external_tokens": 162,
+      "completed": true
+    },
+    {
+      "call_id": "lotus-filter-v1:[\"native-stage-check\",\"row-3\",3,0]",
+      "producer_native_id": "3-b5112288",
+      "decoder_native_id": "3-a7e762fd",
+      "external_tokens": 154,
+      "completed": true
+    }
+  ]
+}

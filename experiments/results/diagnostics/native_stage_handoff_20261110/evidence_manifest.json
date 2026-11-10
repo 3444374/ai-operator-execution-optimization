@@ -1,0 +1,235 @@
+{
+  "schema": "semloom.native_stage_handoff.evidence.v1",
+  "original_archive_sha256": "840e99ddd17ca5f3c100de2fd2ecb989fc2b327a58d77634079465744661039d",
+  "redaction": "project redactor plus private host/IP and source-root substitutions; originals retained outside Git",
+  "files": [
+    {
+      "source": "cpu-01-failure.txt",
+      "source_bytes": 434,
+      "source_sha256": "fce530ec4e11a68ee1bea7204b09ce55896975619ab633e6831477108da4530f",
+      "public_file": "raw/cpu-01-failure.txt.gz",
+      "public_uncompressed_bytes": 434,
+      "public_uncompressed_sha256": "fce530ec4e11a68ee1bea7204b09ce55896975619ab633e6831477108da4530f"
+    },
+    {
+      "source": "cpu-02.log",
+      "source_bytes": 1277,
+      "source_sha256": "89f8f2840f65f09e5284fb227b110e8916829a4aa7791b8842d73494c2f6052d",
+      "public_file": "raw/cpu-02.log.gz",
+      "public_uncompressed_bytes": 1214,
+      "public_uncompressed_sha256": "52fd144ff4dc43ecb5f3c5c453b265116746d63eff57eb464f856ed628d55527"
+    },
+    {
+      "source": "cpu-03.log",
+      "source_bytes": 487,
+      "source_sha256": "77da5efc627d04e08786c71bd749bbb51bf9d757551574ebbe95d82dfff92b82",
+      "public_file": "raw/cpu-03.log.gz",
+      "public_uncompressed_bytes": 487,
+      "public_uncompressed_sha256": "77da5efc627d04e08786c71bd749bbb51bf9d757551574ebbe95d82dfff92b82"
+    },
+    {
+      "source": "cpu-04.log",
+      "source_bytes": 119,
+      "source_sha256": "44a9c9e0fc5534eae092ec2ddee40919c3afad847bada32f91c02c86d359d103",
+      "public_file": "raw/cpu-04.log.gz",
+      "public_uncompressed_bytes": 119,
+      "public_uncompressed_sha256": "44a9c9e0fc5534eae092ec2ddee40919c3afad847bada32f91c02c86d359d103"
+    },
+    {
+      "source": "cpu-05.log",
+      "source_bytes": 129,
+      "source_sha256": "5ac2a409ff6c50015883de3ed62ce709fc561e785ac567b2ca12a5d926376435",
+      "public_file": "raw/cpu-05.log.gz",
+      "public_uncompressed_bytes": 129,
+      "public_uncompressed_sha256": "5ac2a409ff6c50015883de3ed62ce709fc561e785ac567b2ca12a5d926376435"
+    },
+    {
+      "source": "cpu-06.log",
+      "source_bytes": 100,
+      "source_sha256": "a6707d4eff38012da33ddc34bc6dc076a3b17151cfc9aef223c8790cbe64c3da",
+      "public_file": "raw/cpu-06.log.gz",
+      "public_uncompressed_bytes": 100,
+      "public_uncompressed_sha256": "a6707d4eff38012da33ddc34bc6dc076a3b17151cfc9aef223c8790cbe64c3da"
+    },
+    {
+      "source": "cpu-07.log",
+      "source_bytes": 112,
+      "source_sha256": "4bce5c0fdb1a280b74f292a075cd2a02c6a54e2ca7ad65cf51d91ee7eab4b222",
+      "public_file": "raw/cpu-07.log.gz",
+      "public_uncompressed_bytes": 112,
+      "public_uncompressed_sha256": "4bce5c0fdb1a280b74f292a075cd2a02c6a54e2ca7ad65cf51d91ee7eab4b222"
+    },
+    {
+      "source": "remote_nixl_preview.py.log",
+      "source_bytes": 4299,
+      "source_sha256": "3eded25fead0b86a656e993ec864c0fe0744c091d2bfbe84af2382807393d1a4",
+      "public_file": "raw/remote_nixl_preview.py.log.gz",
+      "public_uncompressed_bytes": 4336,
+      "public_uncompressed_sha256": "4f1f0dae2e0dbac2bd215e338d78cfd0853d53ddabee373a89649fe5e44b462c"
+    },
+    {
+      "source": "remote_nixl_install.py.log",
+      "source_bytes": 4462,
+      "source_sha256": "ba932e7ba409ee6425441b87d4ac3aa0260405bb4cabc96e03f17e7ff46d9bb3",
+      "public_file": "raw/remote_nixl_install.py.log.gz",
+      "public_uncompressed_bytes": 4499,
+      "public_uncompressed_sha256": "90e1c1b4b0c19a159ff33070404d6e16cdd22fc82e029a4c17d14f3d908a98bc"
+    },
+    {
+      "source": "remote_run_r1.py.log",
+      "source_bytes": 280,
+      "source_sha256": "d6eaaf7fde4fcd9fe892713eb2fb8b9d9fc522cb5dc171a4ab8188c63fe7d289",
+      "public_file": "raw/remote_run_r1.py.log.gz",
+      "public_uncompressed_bytes": 275,
+      "public_uncompressed_sha256": "2ec6e8a79f07f322b026f248649b6d5918147dda3ae3518425b133ac4317fb55"
+    },
+    {
+      "source": "remote_run_r1b.py.log",
+      "source_bytes": 465,
+      "source_sha256": "d38cbdab23d198c3728bf2ca32a9caf027832ce0a313e7bd1a6934c336cbc6e0",
+      "public_file": "raw/remote_run_r1b.py.log.gz",
+      "public_uncompressed_bytes": 465,
+      "public_uncompressed_sha256": "d38cbdab23d198c3728bf2ca32a9caf027832ce0a313e7bd1a6934c336cbc6e0"
+    },
+    {
+      "source": "remote_final_inventory.py.log",
+      "source_bytes": 826,
+      "source_sha256": "87d6bf5eb6042c3062ab05bb61a505021612d90015a33da1b9a77aded91b6122",
+      "public_file": "raw/remote_final_inventory.py.log.gz",
+      "public_uncompressed_bytes": 826,
+      "public_uncompressed_sha256": "87d6bf5eb6042c3062ab05bb61a505021612d90015a33da1b9a77aded91b6122"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/config.json",
+      "source_bytes": 5232,
+      "source_sha256": "8bec3a8afe527f680ffb03ff68bbb81cd1024db43cb54e03583e6c2ae2ff9840",
+      "public_file": "raw/native-stage-r1b--config.json.gz",
+      "public_uncompressed_bytes": 5217,
+      "public_uncompressed_sha256": "1fe2c48f1699c511507c81e7e9575c7bdac041df84d29900f580a272f51c45f3"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/source.json",
+      "source_bytes": 140,
+      "source_sha256": "eb7fcfb60ca648ee2e1d354bca472467a8c096e12756fa4233ec2d64ee102582",
+      "public_file": "raw/native-stage-r1b--source.json.gz",
+      "public_uncompressed_bytes": 140,
+      "public_uncompressed_sha256": "eb7fcfb60ca648ee2e1d354bca472467a8c096e12756fa4233ec2d64ee102582"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/driver-preflight.json",
+      "source_bytes": 4598,
+      "source_sha256": "cb931984f57dd213fe39e7c90575ff898b4d9a071bc22e80bd44e75f6be0be2c",
+      "public_file": "raw/native-stage-r1b--driver-preflight.json.gz",
+      "public_uncompressed_bytes": 4563,
+      "public_uncompressed_sha256": "f2fdc820129d6b08f3c75df8a7d1dbd1a6e29ddd94fd90af28b89bf6200715f0"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/model-preflight.json",
+      "source_bytes": 3158,
+      "source_sha256": "d9d04670f8d935b36fee2f3fb8a03e3f6a9f7d3a44b7e145d4e856e77849ba10",
+      "public_file": "raw/native-stage-r1b--model-preflight.json.gz",
+      "public_uncompressed_bytes": 3128,
+      "public_uncompressed_sha256": "abf55878014e2f5af1cf3fa37c88b83668f72c879d796faeeedbef36c61ec97f"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/gpu-before.json",
+      "source_bytes": 113,
+      "source_sha256": "a1981a425bca5023877642295bc3bb50d9fde1767b96c53a0be01cf07989129d",
+      "public_file": "raw/native-stage-r1b--gpu-before.json.gz",
+      "public_uncompressed_bytes": 113,
+      "public_uncompressed_sha256": "a1981a425bca5023877642295bc3bb50d9fde1767b96c53a0be01cf07989129d"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/gpu-after.json",
+      "source_bytes": 37,
+      "source_sha256": "31335a1a2692e427a83df189dc020e812f1a2f0e255d7bc6ee7ba74a95b26537",
+      "public_file": "raw/native-stage-r1b--gpu-after.json.gz",
+      "public_uncompressed_bytes": 37,
+      "public_uncompressed_sha256": "31335a1a2692e427a83df189dc020e812f1a2f0e255d7bc6ee7ba74a95b26537"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/gpu-samples.json",
+      "source_bytes": 494458,
+      "source_sha256": "02f442e8a5265b630a93cc0c7c7143e506702ce00a2da8f42f1554b35567b055",
+      "public_file": "raw/native-stage-r1b--gpu-samples.json.gz",
+      "public_uncompressed_bytes": 494458,
+      "public_uncompressed_sha256": "02f442e8a5265b630a93cc0c7c7143e506702ce00a2da8f42f1554b35567b055"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/supervision/supervisor.json",
+      "source_bytes": 5717,
+      "source_sha256": "199bac68096f280f87c22b39a6fa4868e6799f1ff1d868199f9697978b3df4ce",
+      "public_file": "raw/native-stage-r1b--supervision--supervisor.json.gz",
+      "public_uncompressed_bytes": 5702,
+      "public_uncompressed_sha256": "783c37eeb7d688e5489959245a0b65ab290a8500254520da2ef33ca30c990247"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/worker/report.json",
+      "source_bytes": 109630,
+      "source_sha256": "c761ef73fb6b1aadfcb6ad3ead85cb641df5f679951ce6e30fbfb48f7d648d70",
+      "public_file": "raw/native-stage-r1b--worker--report.json.gz",
+      "public_uncompressed_bytes": 109265,
+      "public_uncompressed_sha256": "f7d0dfdf7f1ec4e81a7b1d515e9ea9d750e73bef466546df220635cb71e89e48"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/worker/colocated/native.log",
+      "source_bytes": 80711,
+      "source_sha256": "fa4208ff809942ddd019d14805a489777e8ac7ec0764d282d2eec3e305c6e75c",
+      "public_file": "raw/native-stage-r1b--worker--colocated--native.log.gz",
+      "public_uncompressed_bytes": 80675,
+      "public_uncompressed_sha256": "3955b1e4bd10c18fbe7d742a3d5f04559c9296499ef90f99585bb883a4ec6401"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/worker/split/prefill.log",
+      "source_bytes": 96220,
+      "source_sha256": "b22f9df27b3914785dda2af0f075196e6d8c0fa22402942b5d44443fbd3bd004",
+      "public_file": "raw/native-stage-r1b--worker--split--prefill.log.gz",
+      "public_uncompressed_bytes": 96174,
+      "public_uncompressed_sha256": "75f33bb15fd91c2b8a71e3d2c8c8fbab66c3274a7cdb29f943eea96c2fb0f012"
+    },
+    {
+      "source": "server-originals/native-stage-r1b/worker/split/decode.log",
+      "source_bytes": 110963,
+      "source_sha256": "7c482853ba526fb5a371902b9570f3ac6e808e38e40c51656d5e41a33d6e4ba7",
+      "public_file": "raw/native-stage-r1b--worker--split--decode.log.gz",
+      "public_uncompressed_bytes": 110917,
+      "public_uncompressed_sha256": "33d2dee38b2f8bfa159a5ae1c1c87521d5a765742c944f5fdf8713ec86cc374b"
+    },
+    {
+      "source": "server-originals/final-inventory.json",
+      "source_bytes": 2988,
+      "source_sha256": "e34b483f0ab29b64ffcf035ec54fd773acfedcd1793f0649f901b0c98545035b",
+      "public_file": "raw/final-inventory.json.gz",
+      "public_uncompressed_bytes": 2988,
+      "public_uncompressed_sha256": "e34b483f0ab29b64ffcf035ec54fd773acfedcd1793f0649f901b0c98545035b"
+    },
+    {
+      "source": "server-originals/native-source-manifest.json",
+      "source_bytes": 1214,
+      "source_sha256": "7faf5abeb084b2601b91df8a05a08858623ef1412f95b88b802363fac4dbff43",
+      "public_file": "raw/native-source-manifest.json.gz",
+      "public_uncompressed_bytes": 1214,
+      "public_uncompressed_sha256": "7faf5abeb084b2601b91df8a05a08858623ef1412f95b88b802363fac4dbff43"
+    },
+    {
+      "source": "server-originals/attempts.jsonl",
+      "source_bytes": 1255,
+      "source_sha256": "2b1119e52a14e84ffccadde443f16fd76870ba3a6d61a290a59735a8c84cff6b",
+      "public_file": "raw/attempts.jsonl.gz",
+      "public_uncompressed_bytes": 1255,
+      "public_uncompressed_sha256": "2b1119e52a14e84ffccadde443f16fd76870ba3a6d61a290a59735a8c84cff6b"
+    },
+    {
+      "source": "server-originals/nixl-pip-install.json",
+      "source_bytes": 33643,
+      "source_sha256": "9e7a56b01f1cfe46c83bb34ec8aab6bf6082f42a6ad5c900f4e5bc44782f5ffd",
+      "public_file": "raw/nixl-pip-install.json.gz",
+      "public_uncompressed_bytes": 33643,
+      "public_uncompressed_sha256": "9e7a56b01f1cfe46c83bb34ec8aab6bf6082f42a6ad5c900f4e5bc44782f5ffd"
+    }
+  ],
+  "analysis_source": {
+    "path": "code/src/experiments/native_stage_handoff.py",
+    "sha256": "8f46c220f8c8f8d1b29ecdc95586a779d6c8034ea9ebae9d8a1cd24d93888bb2"
+  }
+}

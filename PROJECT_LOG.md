@@ -4,7 +4,7 @@
 
 ## 2026-11-10：实现原生文本阶段交接
 
-按用户请求新增显式启用的 prefill/decode owner，使用 vLLM 原生 NIXL 接口，保留完整原请求与两段调用证据。共置执行继续作为参照，阶段绑定、取消和部分启动失败使用现有进程设施；实现、检查与实机范围归[主报告](experiments/results/diagnostics/native_stage_handoff_20261110/README.md)。
+按用户请求新增显式启用的 prefill/decode owner，使用 vLLM 原生 NIXL 接口，保留完整原请求与两段调用证据。共置执行继续作为参照，阶段绑定、取消和部分启动失败使用现有进程设施；实现、检查与实机范围归[主报告](experiments/results/diagnostics/native_stage_handoff_20261110/README.md)。单卡四条请求的原生接收、完整输出和实际清理通过；跨卡与完整查询性能仍待验证。
 
 ## 2026-11-10：实验失败页的完整保留
 
