@@ -2,6 +2,13 @@
 
 本页记录跨目录决定。当前实现、接口和实验结果分别维护在代码说明、状态页和所属报告中。
 
+## 2026-11-10：开始原请求分析与 Core 同语义接入
+
+原始请求画像进入[文本组织研究](code/src/research/data_organization/README.md#native-request-opportunity)，
+补充文本入口通过[独立实验适配](code/src/experiments/sembench_core_operator.py)调用既有 Core owner，不改变原生对照的调度归属。
+真实 Q9 的 CPU 观察与方法／IPC 检查见[主报告](experiments/results/diagnostics/sembench_request_preparation_20261110/README.md)；
+原生引擎观察、增强 Ray／Daft 接入和模型比较仍按各自准备推进。
+
 ## 2026-11-10：以执行 DAG 特性选择异构资源编排方法
 
 总纲与架构明确两项研究内容共用“真实观察、特性归纳、单项干预、完整查询验证”的路线；

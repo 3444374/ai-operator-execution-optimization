@@ -1,4 +1,4 @@
-"""Finite original SemBench text queries over existing native baseline operators.
+"""Finite original SemBench text queries over native operators or SemLoom Core.
 
 Run workers inside the experiment's existing host lease/resource supervisor.
 The entry creates no host lease, tuning loop, retries or performance claim.
@@ -18,7 +18,7 @@ from src.infrastructure.private_artifacts import (
 from src.infrastructure.redact import redact_text
 
 
-BACKENDS = ('lotus-native', 'ray-data', 'daft', 'imlane')
+BACKENDS = ('lotus-native', 'ray-data', 'daft', 'imlane', 'semloom-core')
 
 
 def configuration(path):
@@ -51,6 +51,9 @@ def configuration(path):
         raise ValueError('the existing Daft chain profile accepts runner_threads only')
     elif value['backend'] == 'imlane' and profile:
         raise ValueError('IMLane uses its existing author owner/resource configuration')
+    elif value['backend'] == 'semloom-core':
+        from .sembench_core_operator import configuration as core_configuration
+        core_configuration(profile, resources)
     if value['backend'] != 'lotus-native' and resources.cpu_workers != 1:
         raise ValueError('the existing finite native record graphs support cpu_workers=1')
     if value['backend'] == 'imlane':
@@ -79,8 +82,12 @@ def check(config, query, engine):
         profile=config['profile'], unsupported_backends={
             'kalypso': 'current binding is Movie Filter only; use existing Q4 route; MMQA/Medical/Map/Extract not bound'},
         execution_layout=('original LOTUS accessor / LM / batch_completion' if config['backend']=='lotus-native'
+                          else 'SemLoom finite record-chain Core; original single F/M/E method'
+                          if config['backend']=='semloom-core'
                           else 'existing native finite record-chain graph; one terminal F/M/E operator'),
-        lifecycle='isolated cold query; native runtime/model startup and close included',
+        lifecycle=('isolated cold query; Core/runtime/model startup and close included'
+                   if config['backend']=='semloom-core' else
+                   'isolated cold query; native runtime/model startup and close included'),
         environment_scope='source/method/configuration only; actual driver and model checked before run')
 
 
@@ -93,13 +100,14 @@ def _frame_value(frame):
 
 def run_query(config, query, engine, resources, directory, *, budget=None, context=None,
               execute_operator=None):
-    """One original query; source scan and complete native close stay in its clock."""
+    """One original query; source scan and complete owner close stay in its clock."""
     report = dict(schema='semloom.sembench_text_result.v1', status='failed',
         query=query.describe(), backend=config['backend'], production_core_used=False,
         lifecycle='cold isolated query', result_cache_enabled=False,
         warmup_calls=0, retries=0, performance_claim=False,
-        query_timing_scope='CSV scan and identity check, original selection, native graph/model startup, '
-            'complete operator interpretation and close, original relational sink',
+        query_timing_scope=('CSV scan and identity check, original selection, '
+            + ('Core/runtime/model startup, ' if config['backend']=='semloom-core' else 'native graph/model startup, ')
+            + 'complete operator interpretation and close, original relational sink'),
         evaluation_in_query_seconds=False, physical_gpu_exit_confirmed=None,
         physical_gpu_exit_scope='independent existing outer host supervisor')
     started = time.monotonic()
@@ -107,6 +115,10 @@ def run_query(config, query, engine, resources, directory, *, budget=None, conte
         def execute(operation, invoke):
             if execute_operator is not None:
                 return execute_operator(operation, invoke)
+            if config['backend'] == 'semloom-core':
+                from .sembench_core_operator import execute as execute_core
+                return execute_core(operation, engine=engine, resources=resources,
+                    query_id=query.query_id, profile=config['profile'], control_dir=directory)
             if config['backend'] == 'lotus-native':
                 from src.baselines.text.frameworks.lotus_native_stage import execute_native
                 return execute_native(operation.frame, operation.stage, operation.records, invoke=invoke,
@@ -120,6 +132,7 @@ def run_query(config, query, engine, resources, directory, *, budget=None, conte
         result, operator = query.execute(execute)
         report['query_seconds'] = time.monotonic() - started
         report['operator'] = {} if operator is None else {k:v for k,v in operator.items() if k != 'frame'}
+        report['production_core_used'] = report['operator'].get('production_core_used', False)
         raw_calls = report['operator'].get('calls', [])
         calls = raw_calls['records'] if type(raw_calls) is dict else raw_calls
         expected = query.describe()['expected_model_calls']
@@ -143,6 +156,7 @@ def run_query(config, query, engine, resources, directory, *, budget=None, conte
         operator = getattr(error, 'operator_report', None)
         if operator is not None:
             report['operator'] = {k:v for k,v in operator.items() if k != 'frame'}
+            report['production_core_used'] = report['operator'].get('production_core_used', False)
         report['elapsed_seconds'] = time.monotonic() - started
         error.query_report = report
         raise

@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-10：原请求画像与补充文本 Core 接入
+
+[准备报告](diagnostics/sembench_request_preparation_20261110/README.md)记录固定 SemBench Q9 的256个初始请求、
+完整消息与 token 身份、CPU 前缀和窗口次序分析，以及原方法／关系恢复、原 Q9 评价和真实 CPU IPC 检查。
+重复内容保留全部发生项；原生图的依赖独立性继续检查。没有模型推理或 GPU 实验，不把内容共享统计当缓存命中或查询收益。
+
 ## 2026-11-10：DAG 观察与 GPU／引擎候选的源码、文献核查
 
 来源为公开项目 `f44f174a`、固定 SemBench 以及[本轮一手文献／引擎源码](../../docs/research/ai_operator_literature_inventory.md#dag-gpu-engine-sources)。

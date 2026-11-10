@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[SemBench 请求准备与 Core 接入](sembench_request_preparation_20261110/README.md)：原 Q9 初始消息／token 画像、离线前缀次序、Core 方法恢复及 CPU IPC；真实模型与 GPU 观察另验。
+
 [Records 执行模块与容量责任](records_runtime_refactor_20261104/README.md)：逐批职责整理、容量解析、旧入口退役及准确来源。
 [CLIP职责迁移与SDK断开标记](records_runtime_refactor_20261104/README.md#image-clip-module-owners)保留14组前后输出、22图像CPU及16观测Mock的实际来源；[5b服务器回执](records_runtime_refactor_20261104/README.md#basic-multquery-server-5b)另记28方法、重叠探针与真实Ray，原错误不改写。
 [基础多查询组合](records_runtime_refactor_20261104/README.md#basic-multquery-integrated)分开主线预算／轮转、研究适配、组合检查原错误与历史恢复；[efac七项服务器回执](records_runtime_refactor_20261104/README.md#forwarders-server-efac-seven)按其实际版本另列。

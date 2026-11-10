@@ -196,6 +196,8 @@ sf25 机场关系含一个缺失 `Destinations`：输入 CSV／原 DataFrame 仍
 
 这些是 CPU 接线范围，不是模型质量或性能成绩。原查询／原 accessor、共享链和 NativeStage 的
 软件回复差分与全部十六题 CLI fixture 均运行；真实模型逐行一致性仍待实机检查。
+同一补充文本入口另有项目方法 `semloom-core`，通过[实验适配](../experiments/sembench_core_operator.py)接原有限 Core owner；
+它不属于上表原生对照，也不向原生图注入调度。[Q9 与 F/M/E 软件检查](../../../experiments/results/diagnostics/sembench_request_preparation_20261110/README.md)不代表全部题的真实模型已验证。
 原 aggregate 分数不能排除相抵的分类错误，保留原调用文本和旧普通 Filter 的逐行审计供核对。
 Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFrame；Extract 保留实际额外／碰撞 key
 和原 Index label 写入，不补未返回的声明字段。后处理失败仍保留已完成调用与关闭回执。
