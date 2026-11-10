@@ -1,10 +1,12 @@
-"""One native Daft Q3 worker and result-ready-based process supervision.
+"""Native Daft worker and result-ready-based process supervision.
 
 The caller provides the host lease, permanent attempt reservation, environment
 preflight and final GPU/SHM observation. This entry never installs or retries.
 """
 
 import argparse
+import hashlib
+import json
 import math
 from pathlib import Path
 import time
@@ -27,10 +29,18 @@ def _save_artifact(path, value, *, primary=None, publish=False):
 
 
 def configuration(value):
-    fields = {'schema', 'reviews_csv', 'model', 'sampling_params', 'engine_kwargs',
+    fields = {'schema', 'model', 'sampling_params', 'engine_kwargs',
               'provider_options', 'query_timeout_s', 'cleanup_s', 'stop_grace_s'}
-    if type(value) is not dict or set(value) != fields or value['schema'] != 'semloom.native_daft_q3.v1':
-        raise ValueError('an explicit native Daft Q3 configuration is required')
+    if type(value) is not dict:
+        raise ValueError('an explicit native Daft configuration is required')
+    if value.get('schema') == 'semloom.native_daft_q3.v1':
+        fields |= {'reviews_csv'}
+    elif value.get('schema') == 'semloom.native_daft_map.v1':
+        fields |= {'requests_path', 'requests_sha256', 'request_budget'}
+    else:
+        raise ValueError('native Daft worker requires Q3 rows or prepared Map prompts')
+    if set(value) != fields:
+        raise ValueError('native Daft configuration fields do not match its query schema')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s'):
         number = value[name]
         if type(number) not in (int, float) or not math.isfinite(number) or number <= 0:
@@ -40,27 +50,37 @@ def configuration(value):
     for name in ('sampling_params', 'engine_kwargs', 'provider_options'):
         if type(value[name]) is not dict:
             raise ValueError(name + ' must be an explicit object')
+    if 'request_budget' in value and (type(value['request_budget']) is not dict
+            or set(value['request_budget']) != {'path', 'budget_id', 'limit', 'unit_id'}):
+        raise ValueError('prepared native prompts require an explicit claimed request budget')
     return value
 
 
 class QueryDeadline:
     """One cleanup allowance, including graceful close and forced process stop."""
-    def __init__(self, ready_path, *, query_s, cleanup_s, stop_grace_s, monitor=None, clock=time.monotonic):
+    def __init__(self, ready_path, *, query_s, cleanup_s, stop_grace_s, monitor=None, clock=time.monotonic,
+                 ready_schema='semloom.native_daft_q3.result_ready.v1', on_result_ready=None):
         self.path = Path(ready_path)
         self.clock, self.monitor = clock, monitor
         self.started = clock()
         self.query_deadline = self.started + query_s
         self.cleanup_s, self.stop_grace_s = cleanup_s, stop_grace_s
         self.ready = None
+        self.ready_schema = ready_schema
+        self.on_result_ready = on_result_ready
 
     def __call__(self, identities):
         if self.monitor is not None:
             self.monitor(identities)
         if self.ready is None and self.path.exists():
             value = read_json(self.path)
-            if value['schema'] != 'semloom.native_daft_q3.result_ready.v1':
+            if value['schema'] != self.ready_schema:
                 raise ValueError('unexpected native result-ready artifact')
             self.ready = value['result_ready_monotonic_ns'] / 1e9
+            if self.ready > self.query_deadline:
+                raise TimeoutError('native Daft result exceeded its complete query allowance')
+            if self.on_result_ready is not None:
+                self.on_result_ready(value)
         now = self.clock()
         if self.ready is not None and self.ready > self.query_deadline:
             raise TimeoutError('native Daft result exceeded its complete query allowance')
@@ -82,51 +102,91 @@ def run_worker(config, directory, *, execute_query=None, tokenizer=None):
     directory = Path(directory)
     if not directory.exists():
         new_private_directory(directory)
-    from src.baselines.text.sembench_movie_native import load_q3_source
-
-    source = load_q3_source(config['reviews_csv'])
+    is_map = config['schema'] == 'semloom.native_daft_map.v1'
+    native_sampling = config['sampling_params']
+    if is_map:
+        raw = Path(config['requests_path']).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != config['requests_sha256']:
+            raise ValueError('prepared native Map packet digest changed')
+        packet = json.loads(raw)
+        query_input = packet['requests']
+        if (packet['schema'] != 'semloom.native_daft_prompts.v1'
+                or not query_input
+                or any(type(row) is not dict or set(row) != {'call_id', 'prompt'}
+                       or not isinstance(row['call_id'], str) or not row['call_id']
+                       or not isinstance(row['prompt'], str) for row in query_input)
+                or len({row['call_id'] for row in query_input}) != len(query_input)):
+            raise ValueError('native Map packet requires complete prompts and unique occurrence IDs')
+        source = dict(requests_sha256=config['requests_sha256'], rows=len(query_input))
+    else:
+        from src.baselines.text.sembench_movie_native import load_q3_source
+        loaded = load_q3_source(config['reviews_csv'])
+        source, query_input = loaded['source'], loaded['rows']
+    schema = config['schema'].removesuffix('.v1')
     ready_path = directory / 'result-ready.json'
     if ready_path.exists():
         raise FileExistsError('native query output must not reuse an earlier result')
 
     def ready(result):
         timestamp = result['metadata']['result_ready_monotonic_ns']
-        publish_private_json(ready_path, dict(schema='semloom.native_daft_q3.result_ready.v1',
+        publish_private_json(ready_path, dict(schema=schema + '.result_ready.v1',
             result_ready_monotonic_ns=timestamp, worker_started_monotonic_ns=started,
             cold_result_ready_seconds=(timestamp - started) / 1e9,
-            source=source['source'], result=result))
+            source=source, result=result))
 
-    report = dict(schema='semloom.native_daft_q3.worker.v1', status='failed',
-        source=source['source'], warmup=0, whole_query_retries=0, performance_claim=False,
+    report = dict(schema=schema + '.worker.v1', status='failed',
+        source=source, warmup=0, whole_query_retries=0, performance_claim=False,
         model_ready_query_seconds=None, physical_gpu_exit_confirmed=None,
         result_artifact='result-ready.json', worker_started_monotonic_ns=started)
     primary = None
     try:
         if execute_query is None:
-            from src.baselines.text.frameworks.daft_sembench_native import execute_q3
-            execute_query = execute_q3
-        if tokenizer is None:
+            from src.baselines.text.frameworks.daft_sembench_native import execute_q3, execute_prepared_map
+            execute_query = execute_prepared_map if is_map else execute_q3
+        if tokenizer is None and not is_map:
             from transformers import AutoTokenizer
             tokenizer = AutoTokenizer.from_pretrained(config['model'], local_files_only=True,
                                                        trust_remote_code=False)
-        result = execute_query(source['rows'], model=config['model'], tokenizer=tokenizer,
-            sampling_params=config['sampling_params'], engine_kwargs=config['engine_kwargs'],
+        event_options = {}
+        if is_map:
+            from src.observability.native_model_api_trace import writer
+            event_options['on_native_event'] = writer(directory)
+            if 'request_budget' in config:
+                from src.experiments.attempt_ledger import AttemptBudget
+                from src.experiments.shared_request_budget import SharedClaimedUnit
+                from src.infrastructure.private_artifacts import content_digest
+                budget = config['request_budget']
+                unit = SharedClaimedUnit(Path(budget['path']),
+                    AttemptBudget(budget['budget_id'], budget['limit']), budget['unit_id'])
+                if unit.remaining < len(query_input):
+                    raise ValueError('remaining physical allowance cannot cover the complete native query')
+                def reserve(call_id, request_id, prompt):
+                    unit.reserve(content_digest(dict(call_id=call_id, request_id=request_id, prompt=prompt)))
+                event_options['before_generate'] = reserve
+        result = execute_query(query_input, model=config['model'],
+            **({} if is_map else dict(tokenizer=tokenizer)),
+            **event_options,
+            sampling_params=native_sampling, engine_kwargs=config['engine_kwargs'],
             provider_options=config['provider_options'], on_result_ready=ready,
             close_timeout_s=config['cleanup_s'] - config['stop_grace_s'])
         report.update(status='completed', model_close_receipt=result['metadata']['model_close_receipt'])
+        if is_map:
+            report['native_api'] = result['metadata']['native_api']
     except BaseException as error:
         primary = error
-        partial = getattr(error, 'native_q3_report', None)
+        partial = getattr(error, 'native_query_report', getattr(error, 'native_q3_report', None))
         report.update(error_type=type(error).__name__, error=redact_text(str(error)),
             model_close_receipt=getattr(error, 'model_close_report', None))
         if partial is not None:
+            if is_map:
+                report['native_api'] = partial['metadata'].get('native_api')
             if report['model_close_receipt'] is None:
                 report['model_close_receipt'] = partial['metadata']['model_close_receipt']
             if not ready_path.exists():
                 # Materialized predictions can survive a later count or READY
                 # publication failure. They do not establish a ready result.
                 saved = _save_artifact(directory / 'failed-result.json', dict(
-                    schema='semloom.native_daft_q3.failed_result.v1', source=source['source'],
+                    schema=schema + '.failed_result.v1', source=source,
                     result=partial, error_type=type(error).__name__), primary=error, publish=True)
                 report['result_artifact'] = 'failed-result.json' if saved else None
         raise
@@ -136,14 +196,16 @@ def run_worker(config, directory, *, execute_query=None, tokenizer=None):
     return report
 
 
-def supervised_run(config_path, directory, *, model_python, monitor=None):
+def supervised_run(config_path, directory, *, model_python, monitor=None, on_result_ready=None):
     from src.experiments.lotus_records_supervisor import supervise
 
     config = configuration(read_json(config_path))
     directory = Path(directory)
     new_private_directory(directory)
     deadline = QueryDeadline(directory / 'result-ready.json', query_s=config['query_timeout_s'],
-        cleanup_s=config['cleanup_s'], stop_grace_s=config['stop_grace_s'], monitor=monitor)
+        cleanup_s=config['cleanup_s'], stop_grace_s=config['stop_grace_s'], monitor=monitor,
+        ready_schema=config['schema'].removesuffix('.v1') + '.result_ready.v1',
+        on_result_ready=on_result_ready)
     command = [str(model_python), '-u', '-B', '-m', 'src.experiments.native_daft_query', 'worker',
                '--config', str(config_path), '--output-dir', str(directory)]
     primary = None
@@ -161,11 +223,18 @@ def supervised_run(config_path, directory, *, model_python, monitor=None):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('worker',))
+    parser.add_argument('action', choices=('worker', 'sembench'))
     parser.add_argument('--config', required=True)
     parser.add_argument('--output-dir', required=True)
+    parser.add_argument('--model-python')
     args = parser.parse_args(argv)
-    run_worker(read_json(args.config), args.output_dir)
+    if args.action == 'sembench':
+        if args.model_python is None:
+            parser.error('sembench requires --model-python for its separate native worker')
+        from src.experiments.native_daft_sembench import run_query
+        run_query(read_json(args.config), args.output_dir, model_python=args.model_python)
+    else:
+        run_worker(read_json(args.config), args.output_dir)
     return 0
 
 

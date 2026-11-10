@@ -1,5 +1,14 @@
 # 实验与机制证据台账
 
+## 2026-11-10：Daft 原生 AI 接线整理与完整 sink 边界
+
+[报告](diagnostics/daft_native_semantics_20261110/README.md)记录从已有 Medical Q10/MMQA 私有原生接线恢复的
+prepared prompt worker、按源身份回填的原 parser/查询和 sink 回调。
+新计时不再主动等待模型关闭后才执行原 sink；CPU SDK/软件模型证据与目标真实模型资格分开。
+`ffbc352ac` 的 Q3a25/Q4 24 真实资格已归档；最新 main 整合只追加相同执行代码的 CPU/API/完整关系复验，
+保留 main 已删除的 SDK wrapper，不重复模型、不转授其他17题或暖轮资格。
+历史成绩及失败保留，不将这次保存答复的回放质量算作新模型结果。
+
 ## 2026-11-10：DAG 观察与 GPU／引擎候选的源码、文献核查
 
 来源为公开项目 `f44f174a`、固定 SemBench 以及[本轮一手文献／引擎源码](../../docs/research/ai_operator_literature_inventory.md#dag-gpu-engine-sources)。

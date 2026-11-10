@@ -1,0 +1,67 @@
+{
+  "status": "passed_CPU_main_integration",
+  "base_main": "6b0f4f6efcfe61225ffc0c7ad5a3f4af261dc1bf",
+  "source_change": "ffbc352ac5c31a2d5b89b2bdf8429d5003a329f5",
+  "scope": "Daft-only owned delta; current main cleanup retained; no LOTUS packet or research optimization commits",
+  "source_sha256": {
+    "code/src/baselines/text/frameworks/daft_native_owner.py": "9d5250abc09dec1a31153af54cfd14294d1a0ef2145d85031e02584d9007ddd9",
+    "code/src/baselines/text/frameworks/daft_native_trace.py": "c50f8ab15f06d9f101cbc496748224fef602e25900f542abfb1cab800bd207f5",
+    "code/src/baselines/text/frameworks/daft_sembench_native.py": "427a81ce91e6e6b0ea3ca4113dc17224af92ebf561695fa342bf5e5abf26e95f",
+    "code/src/baselines/text/sembench_prepared.py": "a71eb71e57add62515dd58819f1911c7999162582e888f06ff4b2b7fc732df46",
+    "code/src/experiments/native_daft_query.py": "22412655c47ad7bba0c54ef0e3060686ba149bbfa43da13e20cdc169f3f87b84",
+    "code/src/experiments/native_daft_sembench.py": "0e1206a6de8a455e75eea897585b58bbe437eb7134029054291195fc8ac3eccb"
+  },
+  "execution_files_identical_to_ffbc": true,
+  "main_retired_sdk_wrapper_not_restored": true,
+  "tests": {
+    "passed": 22,
+    "failures": 0,
+    "skips": 0,
+    "log_sha256": "d0da981fb24ba588fdc922054a65952f01452a6b7655fbdf736e40b289cf71cb",
+    "coverage": "original Q3 and prepared native expression, source association, API observer, request budget, deadlines and close/callback boundary"
+  },
+  "cases": [
+    {
+      "query": "q3a",
+      "requests": 25,
+      "CPU_receipt_sha256": "9247dafa6ba7048500d2e174ed67ca1d751145e9fab046d6e62074b4fda04255",
+      "driver_receipt_sha256": "b00be686ca8fbd5988af2914cb5233a788fec191d597b520f858e3f59f0e169c",
+      "full_messages_and_tokens_equal": true,
+      "complete_original_relation_sink_evaluator_equal": true,
+      "source_identity_bound": true,
+      "sink_before_close_and_audit": true
+    },
+    {
+      "query": "q4",
+      "requests": 24,
+      "CPU_receipt_sha256": "a274731e132c0aafc3367f5a3b145cf05b6b62df8550ff988edd22dad8527420",
+      "driver_receipt_sha256": "22ce44fd649389b97d94659bc164bd2851a5d5c544f6a62cd38201a67a80c65e",
+      "full_messages_and_tokens_equal": true,
+      "complete_original_relation_sink_evaluator_equal": true,
+      "source_identity_bound": true,
+      "sink_before_close_and_audit": true
+    }
+  ],
+  "new_model_calls": 0,
+  "new_GPU_runs": 0,
+  "target_SDK_check_repeated": false,
+  "prior_five_software_process_cleanup_tests": "CPU.json original 5 results reused; unchanged code not re-executed",
+  "real_model_evidence": {
+    "commit": "ffbc352ac5c31a2d5b89b2bdf8429d5003a329f5",
+    "run_id": "daft-mmqa-ffbc-native-qualification-20261110-r1",
+    "handoff_sha256": "137903ba7d9c000dab2d803500d7983f1a9c025717029eb82265220a1640497a",
+    "scope": "only MMQA Q3a25 and Q4 24 independent cold; not this candidate GPU run"
+  },
+  "pending": [
+    "17 remaining parameterized tasks",
+    "native same-owner warm, not implemented by this entry",
+    "shared outer host timing and cross-system fairness audit",
+    "coordinator review and main merge"
+  ],
+  "retirement": {
+    "duplicate_controller_added": false,
+    "old_Q3_entry_preserved": "execute_q3 has different original eligibility/count semantics",
+    "historical_Q1_packet": "original evidence retained; activity cannot retire until Q1 mapped sink is qualified",
+    "frozen_LOTUS_and_external_helpers": "still active, unchanged"
+  }
+}

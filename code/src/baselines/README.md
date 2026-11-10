@@ -139,6 +139,42 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
 Daft复测使用[新worker／监督入口](../experiments/native_daft_query.py)，另追加120且保留原消耗；
 外部调用方继续负责host租约、永久额度、preflight、离线评价和最终物理GPU／SHM检查。
 
+<a id="daft-native-prepared-sembench"></a>
+### Daft 原生 AI 的完整文本查询入口
+
+[原 worker](../experiments/native_daft_query.py)的 `sembench` 动作现在调用
+[统一的单查询接线](../experiments/native_daft_sembench.py)，复用原监督器、Daft
+`prompt(provider="vllm-prefix-caching")`、原生 `LocalVLLMExecutor` 和实际模型 owner。
+driver 与模型 Python 依赖保持隔离；共享 LOTUS 完整提示与 parser，
+[原 SemBench 查询](text/sembench_text.py)继续拥有选择、连接、分组、最终 sink 和 evaluator。
+它与上方 native class／batch UDF 接线是不同执行路径，不借用后者的资格。
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.native_daft_query sembench \
+  --config "$FROZEN_CONFIG" --output-dir "$NEW_PRIVATE_OUTPUT" \
+  --model-python "$DAFT_NATIVE_PYTHON"
+```
+
+[配置模板](../../configs/sembench_daft_native.example.json)以 MMQA Q3a 单冷25条为例。
+支持原单 F/M/E 工作负载入口的 Movie Q4/Q8/Q9-map/Q10、MMQA Q1/Q3a–g/Q4/Q6a–c、
+Medical Q1/Q4/Q10；这是参数化接线范围，**不是19题均已完成当前资格**。
+Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON 约束。
+输入完整关系超出 `max_model_calls` 时在模型启动前拒绝；已有 SQLite 预算在每次原生
+`generate` 前扣除，失败不退还，耗尽后不委托第 N+1 次。没有额外预热或整轮自动重试。
+
+原始预测发布后，监督器立即调用原 parser/完整查询 sink；driver 不先等待 worker 关闭。
+`source_start_ns → sink_ready_ns` 含 fresh CSV、prepare、模型启动、原生执行及完整原查询，
+实际 IPC/polling 包含在内；原 sink 后才记录持久化、评价，模型 close/进程退出另列，
+close 可能与 driver 后处理重叠。严格 host controller 入口仍未知，不能把该区间追认为
+包含 host 导入、预检和租约的统一 cold 总时钟。native generate/add/final 为 API 证据，
+引擎首次接受和 kernel 时间没有独立观测。此入口只声明单冷，不伪造同 owner 暖轮。
+
+本地实际 Daft0.7.21 CPU 表达式/执行器、Q3a/Q4保存答复全关系回放、预算及清理结果见
+[资格报告](../../../experiments/results/diagnostics/daft_native_semantics_20261110/README.md)。
+`ffbc352ac` 的 Q3a25/Q4 24 已完成目标原生参数、真实模型和物理清理资格；最新 main 整合候选的
+执行接线另经CPU回归和完整关系回放；后续已把消息摘要及关系序列化移至sink后，旧49条时长不追认为该新边界。未重复GPU。其余17题、同 owner 暖轮与共同 host
+总时钟仍待资格。保留每个系统自己的依赖版本，不以迁移到统一 vLLM 为前提。
+
 <a id="additional-sembench-text"></a>
 ## 补充 SemBench 文本查询
 
