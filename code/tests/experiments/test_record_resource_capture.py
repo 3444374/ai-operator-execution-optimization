@@ -102,6 +102,35 @@ class CaptureTests(unittest.TestCase):
     def gpu(self):
         value=load('record_gpu_observer');value.runner_contract=lambda runner:'v2';return value
 
+    def test_v2_worker_captures_actual_prepared_members_and_graph_descriptor(self):
+        self.observer.settings()['native_vllm_version']='0.25.1'
+        gpu=self.gpu();worker=gpu.ObservedWorker()
+        batch=SimpleNamespace(req_ids=['n1','n2'],num_scheduled_tokens=[7,3],num_tokens=10,
+            num_tokens_after_padding=16,num_reqs=2,num_reqs_after_padding=2,
+            idx_mapping_np=[2,0],num_computed_tokens_np=[5,30])
+        descriptor=SimpleNamespace(cg_mode=SimpleNamespace(name='FULL'),num_tokens=16,num_reqs=2)
+        runner=SimpleNamespace(req_states=SimpleNamespace(prompt_len=SimpleNamespace(np=[31,0,12])),
+            prepare_inputs=lambda scheduled,desc:batch,execute_model_state=None)
+        worker.model_runner=runner
+        scheduled=SimpleNamespace(num_scheduled_tokens={'n1':7,'n2':3},num_common_prefix_blocks=[2],
+            total_num_scheduled_tokens=10,scheduled_encoder_inputs={},scheduled_new_reqs=[])
+        native=sys.modules['vllm.v1.worker.gpu_worker'].Worker
+        def execute(self,value):
+            self.model_runner.prepare_inputs(value,descriptor)
+            self.model_runner.execute_model_state=SimpleNamespace(input_batch=batch)
+            return value
+        original=runner.prepare_inputs
+        with patch.object(native,'execute_model',execute):
+            self.assertIs(worker.execute_model(scheduled),scheduled)
+        self.assertIs(runner.prepare_inputs,original)
+        self.observer.close_events()
+        graph=next(e for e in self.events()if e['event']=='native_graph_decision')
+        self.assertEqual(graph['scheduled_tokens'],{'n1':7,'n2':3})
+        self.assertEqual(graph['prompt_token_counts'],{'n1':12,'n2':31})
+        self.assertEqual(graph['computed_before'],{'n1':5,'n2':30})
+        self.assertEqual((graph['num_tokens'],graph['padded_tokens'],graph['cudagraph_mode']),(10,16,'FULL'))
+        self.assertFalse(graph['use_cascade_attn'])
+
     def worker(self,gpu):
         worker=gpu.ObservedWorker();worker.model_runner=SimpleNamespace(execute_model_state=None)
         worker.next_state=SimpleNamespace(input_batch=SimpleNamespace(req_ids=['native-A'],num_scheduled_tokens=[5]))

@@ -90,6 +90,8 @@ class ObservedWorker(Worker):
             qualified_decisions=kind=='v1' and settings().get('native_vllm_version')=='0.25.1'
             decisions=(_decisions.observe_decisions(self.model_runner,scheduler_output,sequence,emit_buffered)
                        if qualified_decisions else nullcontext())
+            if kind=='v2' and settings().get('native_vllm_version')=='0.25.1':
+                decisions=_decisions.observe_decisions_v2(self.model_runner,scheduler_output,sequence,emit_buffered)
             cache=(_decisions.observe_encoder_cache(self.model_runner,sequence,emit_buffered)
                    if qualified_decisions else nullcontext())
             with decisions,cache:

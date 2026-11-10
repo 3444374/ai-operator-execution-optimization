@@ -11,7 +11,7 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 真实照片 CPU 传输、竞争留存和提前准备；原生 encoder 提示仍为 CPU 状态机探针。
 完整请求可通过原监督入口作实机回放；GPU 运行状态、质量及未完成项以该报告为准。
 
-本分支增加 vLLM 0.25.1 v1 的被动批决策观察与离线诊断，支持实际成员、前缀／cascade、
+本分支增加 vLLM 0.25.1 v1／v2 的被动批决策观察与离线诊断，支持实际成员、前缀／cascade、
 graph／padding 及采集缺项核对；[代码与 CPU 验证](../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)
 说明范围。真实 GPU 开销、请求全链关联、kernel 费用与候选优化收益尚未验证。
 

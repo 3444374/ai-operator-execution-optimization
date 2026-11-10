@@ -88,6 +88,7 @@ def _iteration(key, events):
         prompt_token_counts=graph.get('prompt_token_counts'), computed_before=graph.get('computed_before'),
         new_request_computed_tokens=metadata.get('new_request_computed_tokens'),
         cascade_selected=selected, cascade_call_observed=bool(cascade),
+        cascade_supported=metadata.get('cascade_supported'),
         cascade_prefix_lengths=cascade.get("cascade_prefix_lengths"),
         cudagraph_mode=mode, raw_tokens=raw, padded_tokens=padded,
         padding_tokens=padded - raw if _count(raw) and _count(padded) and padded >= raw else None,
@@ -114,7 +115,8 @@ def diagnose(events, *, capture_issues=None):
     rows = [_iteration(key, value) for key, value in sorted(groups.items())]
     observed = [row for row in rows if row["status"] == "observed"]
     findings = []
-    shared_not_selected = [row for row in observed if any(row["common_prefix_blocks"]) and not row["cascade_selected"]]
+    shared_not_selected = [row for row in observed if any(row["common_prefix_blocks"])
+                           and not row["cascade_selected"] and row['cascade_supported'] is not False]
     padded_rows = [row for row in observed if row["padding_tokens"] > 0]
     if shared_not_selected:
         findings.append(dict(
@@ -140,6 +142,7 @@ def diagnose(events, *, capture_issues=None):
                      unknown_iterations=len(rows) - len(observed),
                      graph_modes=dict(Counter(row["cudagraph_mode"] for row in observed)),
                      cascade_selected_iterations=sum(row["cascade_selected"] for row in observed),
+                     cascade_unsupported_iterations=sum(row['cascade_supported'] is False for row in observed),
                      shared_blocks_without_cascade=len(shared_not_selected),
                      raw_token_slots=raw_total, padding_token_slots=padding_total,
                      padding_over_raw_ratio=padding_total / raw_total if raw_total else None),

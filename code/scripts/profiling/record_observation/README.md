@@ -26,6 +26,8 @@ submit/audit/transfer/feedback hooks retain their existing owners.
 
 在原 `mode=on`、worker／runner 源码摘要核对通过且 vLLM 为 0.25.1 v1 时，
 `record_gpu_observer.py` 为单次 execute 临时安装被动观察；其他版本保留原有成员观察，新增决策不推测。
+v2 runner 另在原 `prepare_inputs` 返回处读取实际 CPU 输入与 graph descriptor；其路径没有 cascade dispatch，
+报告单列不支持。v2 的 encoder 表示缓存尚未接线。初始化内部 warmup 与业务请求按实际原生请求身份分开。
 辅助模块从工具 checkout 的 `code/src/observability/native_gpu_decisions.py` 加载，由准确工具 tree 绑定，
 不要求被测旧源码拥有此模块。更换工具后按下方流程重新资格检查。
 
