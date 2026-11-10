@@ -568,13 +568,7 @@ that measured path and starts no extra thread or RPC. See the
 [source and CPU checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#host-memory-pressure).
 
 <a id="retired-request-feedback"></a>
-The previous request strategy, its named profiles, cross-query hints and request
-admission cache are retired from current entry points. Recover their exact
-implementation and instructions from commit `9da299e90f79fd0b71f2a4983a90884f8ba960b5`:
-[adapter notes](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/src/execution_provider/adapters/README.md), [runtime notes](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/code/src/scheduling/runtime/calibration.README.md) and
-[configuration guide](https://github.com/3444374/ai-operator-execution-optimization/blob/9da299e90f79fd0b71f2a4983a90884f8ba960b5/docs/%E6%89%A7%E8%A1%8C%E9%85%8D%E7%BD%AE%E4%B8%8E%E4%BC%98%E5%8C%96%E5%BC%80%E5%85%B3.md). No compatibility execution route
-is installed for these retired interfaces. The earlier five named source
-projections retain their separate [recovery records](../../../../experiments/reproduction/native_baselines/README.md).
+Current request feedback accepts `resource_feedback`; retired named request profiles and cross-query hint caches are unsupported.
 Fixed-B `batch_feedback` remains supported with its existing
 `SupplyFeedbackConfig` and batch trial implementation. Its `ResourceFeedbackConfig`
 and `ResourceFeedbackController` do not enable the retired request entry.
@@ -1135,12 +1129,6 @@ ACK 不归还 compute／结果／unknown。原帧头及逐候选计量缓存继�
 检查。继承测试不全部算作新方法；默认关闭的回归另核。旧候选一次单许可 CPU 查询明显变慢，
 原结果保留，局部较早派发不证明完整查询变快。没有真实模型、Ray 或 GPU 资格。
 
-
-### 已退役请求反馈的原始说明
-
-旧适配器的等待中快照与采样修订按[固定历史文档](#retired-request-feedback)追溯。
-原失败、原件与具名来源不改写；现用采样继续由 `RecordsNativeSampler` 持有同一个 RPC，
-未知结果保留原责任，不因教程退役而减少收尾检查。
 
 ### Movie 配置到已有准备选项的接线
 

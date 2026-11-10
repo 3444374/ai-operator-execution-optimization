@@ -16,10 +16,8 @@
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 查询脚本直接调用实验生命周期；baseline客户端不反向导入实验，作者服务与默认保持 |
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
-| 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 不要求PG，公共CLIP实现保持；原PG矩阵按[准确来源](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-isolation)恢复 |
-| 历史 PG 图像导入与画像 | [准确原件和恢复方法](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-image-data-tools) | COCO 导入器、配套 SQL 及三个 PG 画像工具独立归档；当前文件图像不调用它们 |
-| 历史 PG 文本导入与诊断 | [准确原件和恢复方法](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#pg-text-data-tools) | 三个导入器与旧PG取数诊断独立归档；当前文件工作负载和原生DuckDB实现保留 |
-| CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[修正与历史来源](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
+| 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 文件输入与公共 CLIP 实现 |
+| CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[软件检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
 | 直接原生Daft Movie Q3 | [worker／监督入口](../src/experiments/native_daft_query.py) | READY原子结果、独立关闭时钟；[配置与调用](#native-daft-q3-worker) |
 | DuckDB＋作者IMLane Q3 | [构建／接线](../integrations/imlane_duckdb/README.md)、[软件CPU](../src/experiments/native_imlane_query.py)、[模型worker](../src/experiments/native_imlane_model_query.py) | 作者SQL／Arrow；模型worker拥有独立baseline服务，software CLI不会启动模型 |
 | 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) | [格式／NA 说明](analysis/OFFLINE_RESULTS.md) |
@@ -27,9 +25,6 @@
 | 实验原件恢复 | [restore_result_evidence.py](analysis/restore_result_evidence.py) | 按存储清单恢复原路径和字节，不重跑实验 |
 
 同步原生函数体检查从[现有 unittest](../tests/records_cpu.md#sync-native-source-check)运行。
-旧 ACK 语法树重放及其一次性包装脚本已退役，[同版本恢复](../../experiments/reproduction/native_baselines/README.md#retired-ack-source-replay)保留原演示。
-无现用调用的独立HTTP容量采样命令也已退役，[准确原件](../../experiments/reproduction/native_baselines/README.md#retired-http-capacity-sampler-source)单独恢复；第三方原生观测不变。
-
 CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／driver Python、源码身份、
 资源所有权、持久次数额度和最终关闭证据；`--help`／CPU 检查不证明这些实际环境已可运行。
 新原生 LOTUS 本地 IPC 已有 CPU 检查，官方完整 Q123 因本地缺 `overrides/cdlib/duckdb` 尚未通过，
@@ -229,26 +224,10 @@ MMQA 配置改为 `scenario=mmqa`、选择 `Q2a/Q2b/Q7`，参数改用 `--data-d
 支持和实机范围见[方法说明](../src/semantic_methods/lotus/README.md#原生-clip-图像检索)，
 不因共享 CLIP worker 就互授多卡、任意 DAG 或新模型性能资格。
 
-## 退役与研究恢复
-
-旧固定 Movie 五后端矩阵、Movie HTTP owner、PG／HTTP 画像和查询 CLI、旧 prepared-call 对照、
-相连专用测试与失效部署示例已退出维护目录。PG 是暂停，C／SQL、部署和接线源码均可按
-[准确索引](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)在隔离 Git 树恢复。
-旧命令只在其冻结树解释，不为它们添加兼容包装。
-
-SAOR 核心调度、原始研究材料和仍能读取历史结果的分析脚本保留；依赖旧 HTTP／PG 启动器的部分随归档隔离。
-已有成绩、成本、失败和 unknown 不修改；新 CPU 测试不构成模型或查询加速证据。
-
 ## 本地时间与额度诊断
 
-[预付计数探针](profiling/mapped_request_probe.py)仅使用本地CPU替身。
-旧Map观察探针依赖已退役的HTTP工厂，准确恢复见[来源记录](../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retired-fixed-http-adapters)。
-现用计数诊断每轮共用实际运行截止，
-后续单项使用剩余时间，不再提前扣 60／30 秒；停止新增后继续取消和清理，已预付计数不退还。
-单独调用 case 仍保留有限默认时限。这些诊断不代表模型或查询性能。
-固定 mapped Core 对照套件和批量持久记账矩阵已退出当前入口，
-完整旧源码及恢复方式见[本地固定套件来源](../../experiments/reproduction/native_baselines/README.md#retired-fixed-local-probe-suites)。
-共享Core／任务能力、映射计数和独立组件检查继续保留。
+[预付计数探针](profiling/mapped_request_probe.py)只使用本地 CPU 替身，按实际剩余时间运行、取消和清理。
+预付计数不退还。共享 Core、任务能力与独立组件检查继续维护；这些检查不代表模型或查询性能。
 
 ## 独立研究与离线分析
 
@@ -260,17 +239,11 @@ SAOR 核心调度、原始研究材料和仍能读取历史结果的分析脚本
 [离线构建器](../src/experiments/operator_costs/semfilter_reference_calibration.py)，保留显式`--source`／`--output`。
 它只处理汇总观测和产物文件，历史固定服务身份不提供当前模型或数据库执行入口。
 
-SAOR 声明与方法说明见[独立材料](../../experiments/saor/README.md)，旧双卡、开题和 phase-change 配方见
-[精确归档](../../experiments/reproduction/legacy_recipes_20261105/README.md)。
-`analysis/summarize_saor_*.py`、`replay_saor_capacity.py`及既有成本／静态曲线分析继续读取历史结果；
-`run_ai_operator_scenarios.py`保留显式 profiler 装配与 CPU 行为核验用途，旧 PG profiler 已归档，
-不能直接用旧配置恢复当前实验。历史方案、原始结果和必要失败证据保持。
-其idle与命令行核对直接使用[实验服务工具](../src/experiments/shared_vllm/preflight.py)，
-0.25.1固定身份留在[源码审计模块](../src/experiments/saor/vllm_0251_source_audit.py)；通用生产工具不再保存旧矩阵的专用校验图。
-
-[audit_phase_change.py](analysis/audit_phase_change.py)保留历史状态／请求／动作的离线核对。
-旧phase-change运行器和数据准备器只从[准确来源](../../experiments/reproduction/native_baselines/README.md#retired-phase-runner-preparation)恢复，
-其孤立配置包已随旧运行器退役；不为复算结果重新接入旧PG／HTTP运行流程。
+SAOR 的离线汇总与容量回放继续读取已有结果，接口见[研究组件](../src/research/multitask/README.md)。
+`run_ai_operator_scenarios.py` 用于显式 profiler 装配和 CPU 行为检查。
+命令行核对由[实验服务工具](../src/experiments/shared_vllm/preflight.py)维护，
+固定版本声明由[源码审计模块](../src/experiments/saor/vllm_0251_source_audit.py)维护。
+[audit_phase_change.py](analysis/audit_phase_change.py)只做状态、请求与动作的离线核对。
 
 <a id="实验结果恢复"></a>
 ## 实验结果恢复

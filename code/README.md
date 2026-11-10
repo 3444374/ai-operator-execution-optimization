@@ -3,8 +3,8 @@
 研究对象是 AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化。
 本目录提供外部执行核心；当前 records 使用 SemBench 等外部工作负载验证数据执行、供给、背压和生命周期，
 LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当前不作为开发或验收前提。
-普通 Movie records 通过本地 IPC 调用模型引擎；不启动旧 Movie HTTP 服务。
-整查询默认不设总期限，显式期限保留，启动和关闭分别等待；旧SemLoom fixed HTTP接线已退出当前树，未来多查询不以HTTP为接入方式。
+普通 Movie records 通过本地 IPC 调用模型引擎。
+整查询默认不设总期限，显式期限保留，启动和关闭分别等待。
 普通records的新关闭请求只取得调用方剩余时间，已到期和在途引用分别处理，见[关闭时长](src/execution_provider/adapters/README.md#records-close-allowance)。
 当前可选能力、默认及验证限制见[配置总览](../docs/执行配置与优化开关.md)和[代码状态](INFRA_STATUS.md)。
 
@@ -62,36 +62,9 @@ IMLane 保留作者桥接；它们可共享 LOTUS 方法、模型内核、IPC �
 三项 vLLM 容量未指定时交引擎解析，显式值保持；[参数归属](src/baselines/README.md#共享层和参数)
 区分模型容量、LOTUS 客户端批大小和原生图批大小。作者 Kalypso 调度、模型提示和输出上限保持。
 
-## 退役、暂停和研究保留
-
-旧 Movie HTTP owner、旧固定五后端矩阵、PG／HTTP 实验 CLI、相连旧对照脚本／配置和专用测试已退出维护树。
-PG 扩展 C／SQL、部署源和实验接线按准确 Git 树归档，当前不推进，是否恢复以后另行决定；若恢复须在隔离树中进行，
-不把历史源重新加入当前生产搜索路径。逐文件摘要与恢复方法见
-[归档索引](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)。
-
-无现用调用的旧PG画像接线、HTTP／共享额度画像配置、CSV总字段和专用请求轨迹模型也已退役，
-专测、旧导出及空包随实现移除；[准确来源与恢复](../experiments/reproduction/native_baselines/README.md#retired-profiler-application)
-保留历史格式，实际Core事件、时钟及Ray运行适配继续由所属模块维护。
-
-SAOR 与多任务共享额度一起由 [research/multitask](src/research/multitask/README.md) 维护，
-离线分析与研究证据继续保留；依赖已退役 HTTP／PG 命令的旧启动胶水随归档隔离。
-当前源码不再承诺这些旧命令可运行。独立 PG provider／通用传输内核和有研究价值的模态／调度组件若仍有消费者则保留，
-不因停止旧实验而删除其公共协议，也不宣称它们已接入当前 SemBench。
-
-所有历史成绩、负结果、unknown、成本和五份具名代码投影保持。
-[历史恢复入口](../experiments/reproduction/native_baselines/README.md)只恢复指定源码，不执行模型。
-当前新增 CPU 检查不转授历史 GPU 资格，不宣称清理带来查询加速。
-
-旧phase-change运行器的配置对象与准备说明也已退出维护树，和[原运行来源](../experiments/reproduction/native_baselines/README.md#retired-phase-runner-preparation)一起恢复；
-现用[audit_phase_change.py](scripts/analysis/audit_phase_change.py)继续独立复算历史状态、请求和动作，不需要旧准备包。
-
-原PG campaign的[M1示例配方](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retained-m1-config)
-随配套执行代码归档，不再列于现用`configs/`；原字节、来源和恢复方法保持。
-
 ## 核心文件职责
 
 下列文件承担不同的可独立修改职责，直接使用现有对象，不增加转发层或重复状态。
-完整改动、原失败、准确受测源码与恢复方式见[重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
 
 | 所属部分 | 文件与责任 |
 |---|---|
