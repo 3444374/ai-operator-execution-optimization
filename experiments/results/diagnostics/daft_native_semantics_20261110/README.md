@@ -36,7 +36,7 @@ Mac arm64 的真实 Daft0.7.21、LOTUS1.2.4、transformers4.57.6、pandas2.3.3�
 | MMQA Q3a | 25条保存答复，完整消息/token、源关联、原 accessor 全关系、sink/evaluator 全等 |
 | MMQA Q4 | 24条保存答复，索引19缺席，完整消息/token、Extract 全关系、genres原分组/sink/evaluator 全等 |
 | 额度 | 各完整 CPU 回放恰好25/24次软件 native generate，第26/25次预算拒绝；直接 generate 委托前拦截另测 |
-| 时钟顺序 | 完整原 sink 在模型 fixture close 之前，先于持久化/评价；严格 controller/GPU 时钟未知 |
+| 首批时钟断言 | 只核sink在fixture close、持久化和评价之前；未覆盖finish内部摘要/序列化，见后续计时修正 |
 
 最初新增 Extract 测试错误地期待 JSON null 得到 Python `None`；实际原 LOTUS 输出字符串
 `"None"`。保留这个失败结论，修正测试预期，未改变 parser。Q3a/Q4历史冻结参考与旧交付包均未修改。
