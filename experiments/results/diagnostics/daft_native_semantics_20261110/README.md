@@ -84,7 +84,7 @@ CPU Python 需要官方 Daft SDK 和 driver 依赖，不安装或调用 vLLM/模
 
 后续独立CPU子项 `baseline-main-integration/daft-q1-cpu` 固定 `9256287f8` 的源码快照，
 真实Daft0.7.21 SDK/executor、LOTUS1.2.4和离线tokenizer完成Q1的25条保存答复重放：完整消息/token、
-原left join/Role/director关系及sink/evaluator一致，第26次预算拒绝，sink先于close/审计。
+原 left join / Role / director 关系及 sink / evaluator 一致，第 26 次预算拒绝；sink 先于 close 及外层后置阶段，未覆盖 finish 内部审计。
 模型/provider和监督器为fixture，新GPU调用0，不授予新入口的Q1真实性能或物理清理资格。
 该子项HANDOFF的SHA-256为 `dc8028176a4528ee257006c60e8ce921db5da01308e5511772730035d58b6478`；本任务仅核验并引用，没有重跑。
 
