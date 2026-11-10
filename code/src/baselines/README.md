@@ -349,7 +349,6 @@ Qwen2-VL-2B-Instruct 的配置、processor、索引及两个权重分片齐全�
 Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一个合法第一，不强求某一结果帧或同时输出全部第一。
 
 当前 `serving/backends/vllm_protocol.py` 的记录模型通道只接文本，sync 引擎也按 token-only 渲染；
-LOTUS 的 `IMAGE_TEXT_PROFILE` 没有当前生产调用者，其旧 prepared-call seam 也不接 Extract 的 `json_object`。
 [原生 LOTUS 视觉运行入口](../../scripts/experiments/run_sembench_lotus_image_query.py)已将这些原查询直接接到原 LM SDK 的 OpenAI-compatible 服务。
 原生 SDK 保留 PNG 消息、并发批调用、`zs-cot` 和 Extract `json_object`，不用 prepared-call seam 或文本 IPC。
 本地多模态 IPC owner 仍未接通；本次服务入口的真实模型、processor／generation 与物理服务关闭待机器验证。
@@ -359,8 +358,13 @@ LOTUS 的 `IMAGE_TEXT_PROFILE` 没有当前生产调用者，其旧 prepared-cal
 服务启动和 GPU 归外部 host owner，入口仅监督查询子进程；该计时为已有服务上的完整查询，不能混入文本冷模型启动成绩。
 私有审计保留原 POST 的内容摘要和 PNG URI 摘要，避免在事件队列复制整幅 base64 图像；原请求字节不变。
 生成配置未给出的值按原 SemBench 8192 token／无 stop 解析，显式值保持，不继承短文本 Filter 的8 token／换行截断。
-Ray／Daft 已有 CLIP 图不构成上述 VLM Filter／Join／Extract 支持；IMLane／Kalypso 当前视觉绑定未建立，
-不由此推断整个上游系统永远不支持视觉。原 LOTUS 明确不支持的音频题留空，其余未验证能力另记。
+[Ray Animals Q7](image/ray_animals_q7/README.md)使用原生 Ray LLM processor，顺序执行两遍64条 Filter和原 City交集；
+两次各自启动/关闭，整体共享128次额度，不能标为同模型 warm。默认示例使用 Ray2.56.1／vLLM0.22.0；
+原128条模型资格与当前清理接口的Linux CPU资格分列，其他环境和完整公平计时另验。
+
+Ray／Daft 的 CLIP 图仍是独立嵌入路径；Q7 的资格不扩大为其他 VLM Join／Extract 支持。
+IMLane／Kalypso 当前视觉绑定未建立，不由此推断整个上游系统永远不支持视觉。
+原 LOTUS 明确不支持的音频题留空，其余未验证能力另记。
 
 CPU 视觉夹具使用真实 ImageArray、原 PNG 格式化、原 Filter／Join／Extract 解析与关系结果。
 MMQA 同一图片的多个匹配行仍逐个 Extract，JSON response_format 保留原值。
