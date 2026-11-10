@@ -212,3 +212,29 @@ Navigation suggestions for the separate documentation integrator: link this READ
 from code/src/baselines/README.md, record c1648 Q7 qualification in the evidence
 registry, and state project lifecycle cleanup versus native scheduling explicitly.
 This branch does not change shared/root documentation owned by other workers.
+
+### Final cleanup migration qualification, 2026-11-10
+
+The earlier target-pending statements above are superseded for the Linux cleanup
+module/interface only. Source 4e8f0a0354fcfef4857e4c2000107de322372eb1 passed target
+module/adapter import and seven mocked cases in r1. The first real fixture was
+protectively rejected because its narrowly sampled lower bound followed the file
+mtime by 4.08ms; that failure and exact-own fallback cleanup remain recorded.
+
+r2 used the genuine outer stage-before boundary and one uniquely self-created
+POSIX semaphore. The unchanged helper passed sem_close, empty holder/error scan
+and actual sem_unlink with no fallback. No timestamp mutation or tolerance was
+introduced. Resources and lease were clean; zero Ray runtimes, models or GPU work.
+This accepts the cleanup-interface migration, not a new Ray engine teardown or
+performance result. The c1648 full128 qualification retains its original identity.
+
+Evidence identities (private archive filenames, no source rewrite):
+- ray-q7-cleanup-main-target-cpu-20261110-r1/HANDOFF.json:
+  949840bc4763bd9124f17671b563bcdf466033a7d5d1b84f315f225befc93d1f
+- ray-q7-cleanup-main-target-cpu-20261110-r2/HANDOFF.json:
+  3cb5b387ba24c8529e7898877a03b332a9c6229358b172d5553b308b35f19d93
+- r2 adds20 verified originals. No earlier receipts or failed evidence were deleted.
+
+New Q7 adapter/config no longer references the historical Q1 controller. Retain
+that file for old frozen experiments and retain the still-active pinned host/socket
+helpers. This change authorizes no blanket deletion of archived evidence.
