@@ -1,0 +1,66 @@
+{
+  "exit_code": 0,
+  "seconds": 36.27325937501155,
+  "tests": [
+    "tests.observability.test_native_gpu_decisions",
+    "tests.experiments.test_native_gpu_diagnostics",
+    "tests.experiments.test_record_resource_capture",
+    "tests.experiments.test_record_dag_observation",
+    "tests.experiments.test_record_resource_handoff",
+    "tests.experiments.test_record_handoff_passivity",
+    "tests.experiments.test_record_prepare_finalization",
+    "tests.experiments.test_git_record_observation",
+    "tests.observability.test_records_telemetry",
+    "tests.observability.test_feedback_identity",
+    "tests.serving.test_native_resource_feedback",
+    "tests.experiments.test_movie_cancellation"
+  ],
+  "model_calls": 0,
+  "gpu": false,
+  "upstream_source_cpu_only": true,
+  "run_id": "native_gpu_decisions_cpu_20261110_01",
+  "passed": 229,
+  "failed": 0,
+  "skipped": 0,
+  "source_base": "70ee0970260a710efee73e5cc3db841abed75ead",
+  "raw_log_sha256": "d11c34bdff7adcdc400d8c2a163286a22d9ed661ef2b7bc6951064663ffe1bd8",
+  "source_files": [
+    {
+      "url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/v1/worker/gpu_model_runner.py",
+      "file": "gpu_model_runner.py",
+      "bytes": 341416,
+      "sha256": "6c92ded8468f44d6df863a617ce588f132fa6df7031feecc0cc421702a41610e"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/v1/core/sched/output.py",
+      "file": "output.py",
+      "bytes": 10291,
+      "sha256": "f2816589726053556dc6eef90e09b901c51f1e08ba41c9b79106d9f4acb89f6d"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.25.1/vllm/v1/cudagraph_dispatcher.py",
+      "file": "cudagraph_dispatcher.py",
+      "bytes": 15494,
+      "sha256": "51f632753af729aeee6ce4a802d9d74b64f22eef02a524f36e2a24b07ef0cf63"
+    }
+  ],
+  "evidence_scope": "CPU fixtures, local IPC and extracted upstream decision function with fixture dispatcher; no GPU or model",
+  "targeted_rechecks": {
+    "cpu-analysis-final.log": {
+      "sha256": "599d1be0a08a449248043523e0cbff4b2e1603a079f497472ed40584b9a92106",
+      "passed": true
+    },
+    "cli-fixture.log": {
+      "sha256": "4758641e05b11c1bbbc3aa6823715030b365ad7ce6bb83c0575c9c87e6184c51",
+      "passed": true
+    },
+    "cpu-analysis-final-02.log": {
+      "sha256": "a395be8bf1d4bea2d28ef70adeb1dfd4f90034cac707417c70c1426f11c6f833",
+      "passed": true
+    }
+  },
+  "final_diagnostic_tests": 7,
+  "worker_sink_integration_recheck": 1,
+  "public_log_sha256": "8a83835d194cb2f30694a6ca7d045cabe7b1a183d3f0ed8cba3f09725cab8573",
+  "public_log_redaction": "local interpreter and checkout roots replaced; raw_log_sha256 identifies the retained original"
+}

@@ -1,0 +1,99 @@
+{
+  "cpu-mechanisms-full-01": {
+    "exit_code": 1,
+    "seconds": 68.28531083301641,
+    "modules": [
+      "tests.observability.test_native_gpu_decisions",
+      "tests.experiments.test_native_gpu_diagnostics",
+      "tests.experiments.test_supply_diagnostics",
+      "tests.experiments.test_prepared_order_replay",
+      "tests.observability.test_native_queue_capture",
+      "tests.execution_provider.test_prepared_order_candidates",
+      "tests.execution_provider.test_prepared_request_organization",
+      "tests.modalities.image.test_shared_media",
+      "tests.modalities.image.test_representation_lifecycle",
+      "tests.experiments.test_record_resource_capture",
+      "tests.experiments.test_record_dag_observation",
+      "tests.experiments.test_record_resource_handoff",
+      "tests.experiments.test_record_handoff_passivity",
+      "tests.experiments.test_record_prepare_finalization",
+      "tests.experiments.test_git_record_observation",
+      "tests.observability.test_records_telemetry",
+      "tests.observability.test_feedback_identity",
+      "tests.serving.test_native_resource_feedback",
+      "tests.experiments.test_movie_cancellation",
+      "tests.execution_provider.test_lotus_async_token_batches",
+      "tests.execution_provider.test_lotus_token_rolling_refill",
+      "tests.execution_provider.test_prepared_supply_opportunity",
+      "tests.execution_provider.test_lotus_batch_supply_feedback",
+      "tests.execution_provider.test_lotus_chain_token_budget",
+      "tests.execution_provider.test_lotus_prepared_reuse"
+    ],
+    "model_calls": 0,
+    "gpu": false
+  },
+  "cpu-mechanisms-full-02": {
+    "exit_code": 0,
+    "seconds": 66.05638479208574,
+    "modules": [
+      "tests.observability.test_native_gpu_decisions",
+      "tests.experiments.test_native_gpu_diagnostics",
+      "tests.experiments.test_supply_diagnostics",
+      "tests.experiments.test_prepared_order_replay",
+      "tests.observability.test_native_queue_capture",
+      "tests.execution_provider.test_prepared_order_candidates",
+      "tests.execution_provider.test_prepared_request_organization",
+      "tests.modalities.image.test_shared_media",
+      "tests.modalities.image.test_representation_lifecycle",
+      "tests.experiments.test_record_resource_capture",
+      "tests.experiments.test_record_dag_observation",
+      "tests.experiments.test_record_resource_handoff",
+      "tests.experiments.test_record_handoff_passivity",
+      "tests.experiments.test_record_prepare_finalization",
+      "tests.experiments.test_git_record_observation",
+      "tests.observability.test_records_telemetry",
+      "tests.observability.test_feedback_identity",
+      "tests.serving.test_native_resource_feedback",
+      "tests.experiments.test_movie_cancellation",
+      "tests.execution_provider.test_lotus_async_token_batches",
+      "tests.execution_provider.test_lotus_token_rolling_refill",
+      "tests.execution_provider.test_prepared_supply_opportunity",
+      "tests.execution_provider.test_lotus_batch_supply_feedback",
+      "tests.execution_provider.test_lotus_chain_token_budget",
+      "tests.execution_provider.test_lotus_prepared_reuse"
+    ],
+    "model_calls": 0,
+    "gpu": false
+  },
+  "cpu-simplification-01": {
+    "exit_code": 0,
+    "seconds": 8.016340791014954,
+    "modules": [
+      "tests.observability.test_native_gpu_decisions",
+      "tests.experiments.test_native_gpu_diagnostics",
+      "tests.experiments.test_supply_diagnostics",
+      "tests.experiments.test_prepared_order_replay",
+      "tests.observability.test_native_queue_capture",
+      "tests.execution_provider.test_prepared_order_candidates",
+      "tests.modalities.image.test_shared_media",
+      "tests.modalities.image.test_representation_lifecycle",
+      "tests.experiments.test_record_handoff_passivity"
+    ],
+    "model_calls": 0,
+    "gpu": false
+  },
+  "counts": {
+    "combined_first": {
+      "total": 342,
+      "failures": 1,
+      "errors": 1
+    },
+    "combined_second": {
+      "passed": 343
+    },
+    "after_simplification": {
+      "passed": 55
+    }
+  },
+  "scope": "Different source states; counts are not additive. No model or GPU. Initial combined failures came from a Core test double lacking the real records mapping and immutable key."
+}

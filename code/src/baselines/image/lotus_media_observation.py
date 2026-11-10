@@ -16,9 +16,10 @@ from src.modalities.image.shared_media import SharedMediaRepresentation, media_k
 class LotusMediaObservation:
     """Frontend owner only; no model scheduling or TaskPreparation authority."""
 
-    def __init__(self, rows, stage_ids, *, retention_bytes, profile, record):
-        if type(retention_bytes) is not int or not 0 <= retention_bytes <= 256 * 1024 * 1024:
-            raise ValueError("media retention must be between zero and 256 MiB")
+    def __init__(self, rows, stage_ids, *, retention_bytes, profile, record,
+                 representation_observer=None, retention_policy=None, retention_enabled=None):
+        if type(retention_bytes) is not int or retention_bytes < 0:
+            raise ValueError("media retention must be a nonnegative byte capacity")
         self.rows, self.stage_ids, self.record = rows, tuple(stage_ids), record
         self.profile = profile
         self.module = importlib.import_module("lotus.dtype_extensions.image")
@@ -34,7 +35,9 @@ class LotusMediaObservation:
         # Zero is off. A one-byte positive MethodBudget can never retain a PNG URI.
         self.owner = SharedMediaRepresentation(plan, capacity_bytes=max(1, retention_bytes),
             max_entries=len(rows), max_item_bytes=8 * 1024 * 1024,
-            max_consumers=len(rows) * len(self.stage_ids), retention_enabled=retention_bytes > 0)
+            max_consumers=len(rows) * len(self.stage_ids),
+            retention_enabled=retention_bytes > 0 if retention_enabled is None else retention_enabled,
+            observer=representation_observer, retention_policy=retention_policy)
         self.retention_bytes = retention_bytes
         self.stage, self.position, self.encoded = None, 0, 0
         self.read_validate_ns = self.encode_ns = self.prepare_ns = 0
@@ -100,7 +103,7 @@ class LotusMediaObservation:
 
     def snapshot(self):
         profile_json = json.dumps(self.profile,sort_keys=True,separators=(",",":"),allow_nan=False)
-        return dict(retention_enabled=self.retention_bytes > 0,
+        return dict(retention_enabled=self.owner.retention_enabled,
             representation_profile=json.loads(profile_json),
             representation_profile_sha256=hashlib.sha256(profile_json.encode()).hexdigest(),
             configured_retention_bytes=self.retention_bytes, cache=self.owner.snapshot(),

@@ -1,5 +1,19 @@
 # 实验与机制证据台账
 
+## 2026-11-10：请求排序与图片留存的本地机制原型
+
+[主报告](diagnostics/semloom_mechanism_prototypes_20261110/README.md)记录原 Q9 请求的模拟窗口回放、
+生成图片的原 LOTUS 准备、默认关闭原型及供给分析软件检查。较小请求组的公共内容增加，较大组的该项计数不变；
+图片留存减少重复准备，但未形成可回收表示竞争，尚不能比较留存策略优劣。
+来源保持 CPU／回放身份，不支持 GPU 缓存节省、GPU 供给瓶颈或完整查询加速。
+失败、修复、后续代码简化和各自验证范围分别保留。
+
+## 2026-11-10：原生批决策观察与离线诊断
+
+[被动观察实现及零模型检查](diagnostics/native_gpu_decisions_20261110/README.md)记录 vLLM 0.25.1 固定源码、
+软件事件、原返回／异常保持与证据缺项行为。能区分公共块／cascade 和 graph／padding 的观察现象，
+不能证明缓存节省、设备瓶颈、查询加速或全部 worker 覆盖；真实模型与 GPU 尚未运行。
+
 ## 2026-11-10：DAG 观察与 GPU／引擎候选的源码、文献核查
 
 来源为公开项目 `f44f174a`、固定 SemBench 以及[本轮一手文献／引擎源码](../../docs/research/ai_operator_literature_inventory.md#dag-gpu-engine-sources)。

@@ -3,7 +3,7 @@ from dataclasses import asdict
 import json
 import time
 
-from src.modalities.text.tokenization import chat_token_count
+from src.modalities.text.tokenization import chat_token_count, chat_token_ids
 from src.scheduling.organization.batching import PendingBatchBuilder, RowArrival
 from src.serving.backends.async_engine_wire import _frame
 from src.serving.backends.vllm_protocol import IDENTITY_FIELDS, _prepared
@@ -57,9 +57,11 @@ class _PreparedPrefix:
 
 
 class PreparedTokenOrganizer:
-    def __init__(self, owner, tokenizer, concurrency):
+    def __init__(self, owner, tokenizer, concurrency, *, prepared_order=None):
         self.owner, self.tokenizer, self.concurrency = owner, tokenizer, concurrency
         self._estimates = {}
+        self._token_prefixes = {}
+        self.prepared_order = prepared_order
         self._header_estimate = self._header_context = None
         self.selected = self.peak_batches = self.peak_requests = 0
         self.selected_seal_reason_counts = dict(token_budget=0, request_capacity=0,
@@ -74,6 +76,7 @@ class PreparedTokenOrganizer:
         """Release completed query candidates while retaining batch statistics."""
         self._prefix = self._prefix_context = None
         self._estimates, self._frontier, self._frontier_set = {}, [], set()
+        self._token_prefixes = {}
         self._header_estimate = self._header_context = None
 
     def usage(self):
@@ -106,7 +109,14 @@ class PreparedTokenOrganizer:
             value = json.loads(candidate.task.payload)
             row, generation = value['row'], value['generation']
             _, conversations = _prepared([row])
-            prompt = chat_token_count(self.tokenizer, conversations[0])
+            if self.prepared_order is None or self.prepared_order.mode == 'length':
+                prompt = chat_token_count(self.tokenizer, conversations[0])
+                if self.prepared_order is not None:
+                    self._token_prefixes[candidate.key] = ()
+            else:
+                tokens = chat_token_ids(self.tokenizer, conversations[0])
+                prompt = len(tokens)
+                self._token_prefixes[candidate.key] = tuple(tokens[:self.prepared_order.prefix_token_limit])
             from src.serving.backends.model_context import model_context_limit
             if prompt + generation['max_tokens'] > model_context_limit(self.owner.engine, self.owner._actors.model_ready):
                 raise ValueError('prepared prompt and output cap exceed effective model context')
@@ -144,6 +154,18 @@ class PreparedTokenOrganizer:
 
     def _plan(self, candidates, available):
         prefix = _PreparedPrefix(self, available)
+        if self.prepared_order is not None:
+            from src.scheduling.organization.prepared_order import RequestOrganizationProfile, order_prepared_window
+            # All members are already accepted complete tasks. No new input is
+            # pulled and the original payload/generation objects are unchanged.
+            candidates = tuple(candidates[:self.prepared_order.candidate_limit])
+            profiles = []
+            by_key = {candidate.key: candidate for candidate in candidates}
+            for candidate in candidates:
+                _, prompt, output, compatibility, _, _ = self._estimate(candidate)
+                profiles.append(RequestOrganizationProfile(candidate.key, compatibility, prompt, output,
+                                                            self._token_prefixes[candidate.key]))
+            candidates = tuple(by_key[key] for key in order_prepared_window(profiles, self.prepared_order))
         for candidate in candidates:
             prefix.consider(candidate)
             if prefix.closed:
@@ -154,6 +176,7 @@ class PreparedTokenOrganizer:
         """Reconcile a prediction after authoritative Core progress, not per row."""
         live = self.owner.core.capacity.records
         self._estimates = {key: value for key, value in self._estimates.items() if key in live}
+        self._token_prefixes = {key: value for key, value in self._token_prefixes.items() if key in live}
         if not live:
             self._header_estimate = self._header_context = None
         available = self._available(active_requests)
@@ -166,14 +189,20 @@ class PreparedTokenOrganizer:
         self._prefix = self._plan(candidates, available) if available else None
 
     def append_ready(self, candidates):
-        """Append new FIFO Core keys; payload ownership remains in Core."""
+        """Append accepted keys; a research order recomputes its finite window."""
         for candidate in candidates:
             if candidate.key in self._frontier_set:
                 continue
             self._frontier.append(candidate.key)
             self._frontier_set.add(candidate.key)
-            if self._prefix is not None and not self._prefix.closed:
+            if self.prepared_order is None and self._prefix is not None and not self._prefix.closed:
                 self._prefix.consider(candidate)
+        if self.prepared_order is not None and self._prefix_context is not None:
+            from src.scheduling.core.session_policy import TaskCandidate
+            records = self.owner.core.capacity.records
+            frontier = tuple(TaskCandidate(key, records[key].task, records[key].spec)
+                             for key in self._frontier)
+            self._prefix = self._plan(frontier, self._prefix_context[0]) if self._prefix_context[0] else None
 
     def dispatch_token(self, can_prepare, active_requests):
         prefix = self._prefix
@@ -201,6 +230,7 @@ class PreparedTokenOrganizer:
             return ()
         live = owner.core.capacity.records
         self._estimates = {k: v for k, v in self._estimates.items() if k in live}
+        self._token_prefixes = {k: v for k, v in self._token_prefixes.items() if k in live}
         if not live:
             self._header_estimate = self._header_context = None
         incremental = getattr(owner, '_event_driven_preparation', False)
@@ -238,6 +268,9 @@ class PreparedTokenOrganizer:
         rolling = (dict(rolling_refill=True, C_request=self.request_window,
                         admission_unit='single_model_requests') if self.owner.rolling_refill else {})
         return dict(policy=None if self.owner.prepared_batching is None else asdict(self.owner.prepared_batching),
+            **(dict(prepared_order=asdict(self.prepared_order),
+                    order_scope='accepted complete requests; prefix and length proxies, not actual GPU batches')
+               if self.prepared_order is not None else {}),
             concurrency=self.concurrency,
             concurrency_unit='application transport batches with unsettled compute members',
             request_limit=self.owner.resources.max_active_batches, active_batches=batches, active_requests=requests,

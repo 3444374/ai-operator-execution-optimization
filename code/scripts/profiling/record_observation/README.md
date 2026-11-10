@@ -20,6 +20,97 @@ The driver installs its scheduler sink on `SessionEngine` from `src.scheduling.c
 Ordinary records and record-chain owners instantiate that same class. Actor preparation and
 submit/audit/transfer/feedback hooks retain their existing owners.
 
+
+<a id="native-gpu-decisions"></a>
+## 原生批决策观察与离线诊断
+
+在原 `mode=on`、worker／runner 源码摘要核对通过且 vLLM 为 0.25.1 v1 时，
+`record_gpu_observer.py` 为单次 execute 临时安装被动观察；其他版本保留原有成员观察，新增决策不推测。
+辅助模块从工具 checkout 的 `code/src/observability/native_gpu_decisions.py` 加载，由准确工具 tree 绑定，
+不要求被测旧源码拥有此模块。更换工具后按下方流程重新资格检查。
+
+事件包括 `native_schedule_metadata`、`native_cascade_decision`、`native_graph_decision` 和提取失败标记。
+前两类记录公共块、已计算 token、cascade 的返回长度以及 encoder 输入数；图执行事件记录实际成员、
+原始／填充 token 数、模式和调用条件。CPU 数组可以读取，GPU tensor 不转换、不同步。
+这些事件通过现有缓冲落盘，不增加执行容量；观察仍有 CPU 与存储成本，真实运行须核对 off/on。
+
+对一次运行的私有 events 目录执行：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/profiling/analyze_native_gpu_decisions.py \
+  --events-dir "$PRIVATE_RUN/events" --output "$NEW_PRIVATE_REPORT"
+```
+
+报告只写入 Git 外的新文件，权限为 0600。`--max-events` 默认 1000000；超过上限停止分析。
+退出 0 只表示报告已生成，采集完整性从 `capture_status` 读取。缺 footer、丢失、重复或矛盾均保留，
+每轮证据带文件／行号。`padding_over_raw_ratio` 是已观察且成员一致轮次的填充槽位总数除以原始槽位总数，
+不是 FLOP、GPU 时间或完整任务开销；不完整采集中的局部计数不得当作总体比例。
+
+报告将“公共块存在但未选 cascade”和“填充槽位”对应到下一项单因素干预。
+供给不足需要合法 ready、真实队列、对齐时钟及 GPU 空闲片段；计算／带宽受限需要 kernel／设备计数器；
+缓存节省与完整查询收益需要各自匹配干预。当前没有自动推断这些结论。
+[实现与验证](../../../../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)保留准确来源与未覆盖项。
+
+<a id="mechanism-prototypes"></a>
+## 请求排序、表示寿命与供给等待
+
+有限 `record_chain` 运行可显式增加 `prepared_requests`；省略时保留原执行方式。
+FIFO 对照令 `order` 为 `null`，候选使用下例对象，其他容量与执行配置匹配。
+示例数字仅说明格式，实际值由具体实验确定；Movie 入口不接受此配置。
+
+```json
+{
+  "prepared_requests": {
+    "token_budget": 4096,
+    "batch_concurrency": 1,
+    "order": {
+      "mode": "prefix_length",
+      "candidate_limit": 32,
+      "prefix_token_limit": 512,
+      "block_tokens": 16
+    }
+  }
+}
+```
+
+排序在被测 Core 的 async prepared 路径执行，需要被测源码包含
+[`prepared_order`](../../../src/execution_provider/adapters/README.md#prepared-request-ordering) 接口。
+它改变应用请求次序；原生 GPU 批仍由引擎决定。对已保存的原始请求做无模型回放：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/profiling/replay_prepared_order.py \
+  --capture "$PRIVATE_REQUEST_CAPTURE" --output "$NEW_PRIVATE_REPLAY" \
+  --candidate-limit 32 --group-requests 8 --prefix-token-limit 512 --block-tokens 16
+```
+
+回放同时报告相邻共享量和组内全体公共块，使用模拟就绪窗口；不报告缓存命中或 GPU 节省。
+原始消息、token 和发生项摘要保留在私有输入，公开结果不复制请求正文。
+
+媒体 owner 新增显式 `observer`，`LotusMediaObservation` 转交 `representation_observer`；
+事件覆盖准备、借用、归还、终结、驱逐和关闭。原 `retention_policy=None` 保留简单留存，
+可选 `lru` 或 `consumer_rebuild_value` 使用相同容量，后者按剩余消费者与实测准备成本选择。
+它只观察该 owner 的 URI 表示；其他表示层需要各自接线。
+接入当前事件 sink 后，使用以下离线入口：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/profiling/analyze_representation_lifetimes.py \
+  --events-dir "$PRIVATE_RUN/events" --output "$NEW_PRIVATE_REPRESENTATION_REPORT"
+"$DRIVER_PYTHON" -B code/scripts/profiling/analyze_supply_waits.py \
+  --events-dir "$PRIVATE_RUN/events" --output "$NEW_PRIVATE_SUPPLY_REPORT"
+```
+
+供给事件来自方法 ready／Core 交接及真实 `NativeStats.record` 队列回调。跨进程关联使用实际
+引擎身份和 Linux 共享单调时钟标识；缺少共享时钟时仅比较同进程事件。分析器保留未闭合等待、
+缺项和下一项干预；队列为空不等于 GPU 空闲，传输返回不等于模型开始。
+三个离线诊断共用事件文件与收尾读取，`capture_status` 表达实际采集完整性。
+
+独立图片准备对照使用 `run_media_retention_study.py --config "$PRIVATE_MEDIA_CONFIG" --output "$NEW_PRIVATE_DIRECTORY"`。
+配置包含 `schema="semloom.media_retention_study.v1"`、本地路径列表 `images`、正整数 `passes`、
+`capacity_bytes`、`repeats` 和 `input_kind="fixture"` 或 `"real_input"`。
+它执行原 LOTUS 图片准备函数，比较关闭留存、简单留存、LRU 和消费者价值；保存每臂事件与内置寿命分析，
+不运行语义算子或模型。[本地结果](../../../../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
+保留负结果、原始重复值和未验证范围。
+
 ## 同步、资格和最小 on/off 配置
 
 在独立、干净的工具 checkout 同步已经审查的提交；命令不会自行联网、安装或连接服务器：

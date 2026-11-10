@@ -2,11 +2,20 @@
 import hashlib
 import inspect
 import importlib.metadata
+import importlib.util
+from contextlib import nullcontext
 import os
 from pathlib import Path
 import torch
 from vllm.v1.worker.gpu_worker import Worker
-from record_observer import emit, settings
+from record_observer import emit, emit_buffered, settings
+
+# Observing an older source checkout must still use the qualified tool helper.
+_helper_path=Path(__file__).resolve().parents[3]/'src/observability/native_gpu_decisions.py'
+_spec=importlib.util.spec_from_file_location('_record_native_gpu_decisions',_helper_path)
+_decisions=importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_decisions)
+cpu_counts=_decisions.cpu_counts
 
 
 _MODULES = {'vllm.v1.worker.gpu_model_runner':'v1', 'vllm.v1.worker.gpu.model_runner':'v2'}
@@ -24,18 +33,6 @@ def runner_contract(runner):
         digest=hashlib.sha256(Path(path).read_bytes()).hexdigest() if path else None
     except (OSError,TypeError,importlib.metadata.PackageNotFoundError):digest=None
     return _MODULES.get(module) if expected is not None and digest==expected else None
-
-
-def cpu_counts(value):
-    if isinstance(value,(list,tuple)):
-        values=list(value)
-    elif type(value).__module__.startswith('numpy'):
-        values=value.tolist()
-    elif type(value).__module__.startswith('torch') and getattr(getattr(value,'device',None),'type',None)=='cpu':
-        values=value.tolist()
-    else:
-        return None  # No .cpu(), GPU .tolist(), synchronization or estimate.
-    return [int(v) for v in values] if all(type(v) is int and v>=0 for v in values) else None
 
 
 def state_members(state, kind):
@@ -90,14 +87,18 @@ class ObservedWorker(Worker):
         opened=range_push(marker)
         succeeded=False
         try:
-            value=super().execute_model(scheduler_output);succeeded=True
+            decisions=(_decisions.observe_decisions(self.model_runner,scheduler_output,sequence,emit_buffered)
+                       if kind=='v1' and settings().get('native_vllm_version')=='0.25.1' else nullcontext())
+            with decisions:
+                value=super().execute_model(scheduler_output);succeeded=True
             return value
         finally:
             range_pop(marker,opened)
             state=getattr(self.model_runner,'execute_model_state',None) if succeeded else None
             # Keep scalar metadata only, never a strong tensor/state reference.
             self._record_handoff=None if state is None else (id(state),sequence)
-            emit('iteration_launch_end',iteration=sequence,marker=marker)
+            emit('iteration_launch_end',iteration=sequence,marker=marker,observer_execute_id=sequence,
+                 status='returned' if succeeded else 'error')
             emit('execute_state_handoff',observer_execute_id=sequence,
                  state_identity=None if state is None else str(os.getpid())+':'+str(id(state)),
                  actual_runner_module=type(self.model_runner).__module__)

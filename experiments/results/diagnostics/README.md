@@ -1,5 +1,9 @@
 # Feasibility Results
 
+[请求排序、图片留存与供给诊断](semloom_mechanism_prototypes_20261110/README.md)：可选机制接线、原 Q9 回放与实际图片准备的分项观察；GPU 和查询收益待验。
+
+[原生 GPU 批决策观察与诊断](native_gpu_decisions_20261110/README.md)：被动采集、证据完整性、软件反例和固定版本源码的 CPU 分支检查；实机效果待验。
+
 [Records 执行模块与容量责任](records_runtime_refactor_20261104/README.md)：逐批职责整理、容量解析、旧入口退役及准确来源。
 [CLIP职责迁移与SDK断开标记](records_runtime_refactor_20261104/README.md#image-clip-module-owners)保留14组前后输出、22图像CPU及16观测Mock的实际来源；[5b服务器回执](records_runtime_refactor_20261104/README.md#basic-multquery-server-5b)另记28方法、重叠探针与真实Ray，原错误不改写。
 [基础多查询组合](records_runtime_refactor_20261104/README.md#basic-multquery-integrated)分开主线预算／轮转、研究适配、组合检查原错误与历史恢复；[efac七项服务器回执](records_runtime_refactor_20261104/README.md#forwarders-server-efac-seven)按其实际版本另列。
