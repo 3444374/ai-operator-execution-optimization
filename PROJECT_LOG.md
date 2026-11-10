@@ -2,6 +2,15 @@
 
 本文件保留有独立追溯价值的跨目录决定；日常变更从 Git 与所属文档读取，不再逐处抄写实现和实验状态。
 
+## 2026-11-10：以执行 DAG 特性选择异构资源编排方法
+
+总纲与架构明确两项研究内容共用“真实观察、特性归纳、单项干预、完整查询验证”的路线；
+[原观察章节](experiments/plans/数据组织.md#dag-first-observation)更新首批对象、采集缺项、资源判定与停止条件，避免另建平行方案。
+[GPU／引擎候选](docs/research/优化方法依据.md#gpu-engine-coordination)补入关系前缀与 attention／CUDA Graph、
+动态消费者与缓存留存、实际未缓存工作和数据位置选择，并区分 MLSys 2025 字段布局的质量前提。
+允许为具体假说修改 vLLM／Ray，根规则和现行说明同步；[比较规范](experiments/plans/reference/对照规范.md#backend-change-comparison)保留原生、单独补丁与联合方法。
+本批只修改研究与实施文档，没有修改执行代码、运行模型或认定候选收益；既往失败、原始结果和未合并原型保持原身份。
+
 ## 2026-11-08：直接链按完整方法状态预览
 
 [Q9方法容量记录](experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)区分有限请求槽与真实方法状态预留。

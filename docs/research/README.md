@@ -9,7 +9,7 @@
 
 | 文件 | 用途 |
 |---|---|
-| [优化方法依据](优化方法依据.md) | 策略选择、反证与最小实验设计；含[模型服务协同](优化方法依据.md#serving-cooperation-candidates)、[多粒度/链路准入评估](优化方法依据.md#granularity-admission-assessment)、[完整流程与场景分层分析](优化方法依据.md#query-specific-execution-opportunities)、[物理需求/表示/准备时机](优化方法依据.md#heterogeneous-demand-supplement)及[执行层分工](优化方法依据.md#engine-ownership-assessment)，实施与结果分别引用计划和报告 |
+| [优化方法依据](优化方法依据.md) | 策略选择、反证与最小实验设计；新增[GPU／引擎协同候选](优化方法依据.md#gpu-engine-coordination)，既有[模型服务协同](优化方法依据.md#serving-cooperation-candidates)、[完整流程分析](优化方法依据.md#query-specific-execution-opportunities)与[物理需求](优化方法依据.md#heterogeneous-demand-supplement)保留原来源；实施与结果分别引用计划和报告 |
 | [研究定位](研究定位.md) | 研究问题、最近邻覆盖范围、[机制采用条件](研究定位.md#execution-transfer-cards)与待证增量；题录、实现、实验和技术细节分别回到所属文档 |
 | `top15_ranked_papers.md` | 开题时期 Top 15 历史选目；当时 15/15 为严格 CCF-A 正式 research paper |
 | `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单；KEN 已加入待精读，题录与摘要已核验，全文及 artifact 分别待核查 |
@@ -46,7 +46,7 @@
 
 1. 明确当前问题属于数据组织、serving capacity、公平调度、代价估计还是写回。
 2. 从 Top 15 和核心补充中提取机制、假设和实验 baseline。
-3. 做迁移审计：本项目不修改 vLLM，资源按实际目标固定，不把 autoscaling、KV migration 或 kernel 优化当可直接实现机制。
+3. 做迁移审计：固定原生版本、可见信息和可操作资源；必要时比较 vLLM／Ray 研究补丁，按[后端修改要求](../../experiments/plans/reference/对照规范.md#backend-change-comparison)保留原生和单独修改对照，不由论文接口推定本项目已经接通。
 4. 先定义强 baseline、相同实验条件和候选被采用前必须满足的正确性/性能标准，再实现候选。
 5. 用真实实验决定是否采用候选；负结果停止参数挖掘并收窄设计空间。
 
