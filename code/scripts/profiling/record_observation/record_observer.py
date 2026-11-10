@@ -27,6 +27,7 @@ _ALLOWED.update(('identities','outstanding','metrics','prompt_tokens','output_to
 _ALLOWED.update(('rss','uss','pss','pid','process_birth'))
 _ALLOWED.add('range_handle')
 _ALLOWED.add('batch_key')
+_ALLOWED.update('computed_tokens common_prefix_blocks cascade_selected cascade_prefix_lengths total_scheduled_tokens encoder_input_counts cascade_enabled microbatching_enabled num_tokens num_reqs padded_tokens padded_reqs cudagraph_mode use_cascade_attn force_eager num_encoder_reqs should_ubatch'.split())
 _ALLOWED.update(('method_row_ref', 'stage_index', 'action', 'selection_reason'))
 _ALLOWED.update('observation_ns accepted source_sequence source_observed_at_s received_at_s decision_at_s expected_engine_uid'.split())
 _ALLOWED.update('control_request_index source_clock_domain received_clock_domain decision_clock_domain'.split())

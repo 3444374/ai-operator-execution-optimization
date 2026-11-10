@@ -20,6 +20,37 @@ The driver installs its scheduler sink on `SessionEngine` from `src.scheduling.c
 Ordinary records and record-chain owners instantiate that same class. Actor preparation and
 submit/audit/transfer/feedback hooks retain their existing owners.
 
+
+<a id="native-gpu-decisions"></a>
+## 原生批决策观察与离线诊断
+
+在原 `mode=on`、worker／runner 源码摘要核对通过且 vLLM 为 0.25.1 v1 时，
+`record_gpu_observer.py` 为单次 execute 临时安装被动观察；其他版本保留原有成员观察，新增决策不推测。
+辅助模块从工具 checkout 的 `code/src/observability/native_gpu_decisions.py` 加载，由准确工具 tree 绑定，
+不要求被测旧源码拥有此模块。更换工具后按下方流程重新资格检查。
+
+事件包括 `native_schedule_metadata`、`native_cascade_decision`、`native_graph_decision` 和提取失败标记。
+前两类记录公共块、已计算 token、cascade 的返回长度以及 encoder 输入数；图执行事件记录实际成员、
+原始／填充 token 数、模式和调用条件。CPU 数组可以读取，GPU tensor 不转换、不同步。
+这些事件通过现有缓冲落盘，不增加执行容量；观察仍有 CPU 与存储成本，真实运行须核对 off/on。
+
+对一次运行的私有 events 目录执行：
+
+```sh
+"$DRIVER_PYTHON" -B code/scripts/profiling/analyze_native_gpu_decisions.py \
+  --events-dir "$PRIVATE_RUN/events" --output "$NEW_PRIVATE_REPORT"
+```
+
+报告只写入 Git 外的新文件，权限为 0600。`--max-events` 默认 1000000；超过上限停止分析。
+退出 0 只表示报告已生成，采集完整性从 `capture_status` 读取。缺 footer、丢失、重复或矛盾均保留，
+每轮证据带文件／行号。`padding_over_raw_ratio` 是已观察且成员一致轮次的填充槽位总数除以原始槽位总数，
+不是 FLOP、GPU 时间或完整任务开销；不完整采集中的局部计数不得当作总体比例。
+
+报告将“公共块存在但未选 cascade”和“填充槽位”对应到下一项单因素干预。
+供给不足需要合法 ready、真实队列、对齐时钟及 GPU 空闲片段；计算／带宽受限需要 kernel／设备计数器；
+缓存节省与完整查询收益需要各自匹配干预。当前没有自动推断这些结论。
+[实现与验证](../../../../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)保留准确来源与未覆盖项。
+
 ## 同步、资格和最小 on/off 配置
 
 在独立、干净的工具 checkout 同步已经审查的提交；命令不会自行联网、安装或连接服务器：

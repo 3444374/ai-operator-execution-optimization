@@ -15,6 +15,7 @@ import tempfile
 from types import ModuleType,SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
+from src.experiments.native_gpu_diagnostics import analyze_directory
 
 ROOT=Path(__file__).resolve().parents[2]/'scripts/profiling/record_observation'
 SECRET='DO_NOT_PERSIST_PRIVATE_PROMPT_OR_CREDENTIAL_1841'
@@ -152,6 +153,36 @@ class CaptureTests(unittest.TestCase):
         worker.sample_tokens(None)
         sample=next(e for e in self.events() if e['event']=='iteration_sample_start')
         self.assertEqual(sample['handoff_step'],1);self.assertEqual(sample['scheduled_tokens'],{'native-A':5})
+
+    def test_v1_decisions_survive_real_sink_and_join_by_execute_identity(self):
+        gpu=self.gpu();gpu.runner_contract=lambda runner:'v1'
+        self.observer.settings()['native_vllm_version']='0.25.1'
+        class Runner:
+            input_batch=SimpleNamespace(req_ids=['native-A'])
+            cascade_attn_enabled=True
+            parallel_config=SimpleNamespace(use_ubatching=False)
+            execute_model_state=None
+            def _compute_cascade_attn_prefix_lens(self,*args):return None
+            def _determine_batch_execution_and_padding(self,**kwargs):
+                return SimpleNamespace(name='FULL'),SimpleNamespace(num_tokens=8,num_reqs=1),False,object(),None
+        worker=gpu.ObservedWorker();worker.model_runner=Runner()
+        scheduled=SimpleNamespace(num_scheduled_tokens={'native-A':5},total_num_scheduled_tokens=5,
+                                  num_common_prefix_blocks=[2],scheduled_encoder_inputs={})
+        def execute(instance,value):
+            runner=instance.model_runner
+            runner._compute_cascade_attn_prefix_lens([5],[32],[2])
+            runner._determine_batch_execution_and_padding(num_tokens=5,num_reqs=1,
+                num_scheduled_tokens_np=[5],max_num_scheduled_tokens=5,use_cascade_attn=False)
+            return value
+        with patch.object(sys.modules['vllm.v1.worker.gpu_worker'].Worker,'execute_model',execute):
+            self.assertIs(worker.execute_model(scheduled),scheduled)
+        self.observer.close_events()
+        report=analyze_directory(self.directory/'events')
+        self.assertEqual(report['capture_status'],'closed_without_recorded_loss')
+        self.assertEqual(report['summary']['locally_consistent_iterations'],1)
+        self.assertEqual(report['summary']['padding_token_slots'],3)
+        self.assertEqual(report['summary']['shared_blocks_without_cascade'],1)
+        self.assertNotIn('_determine_batch_execution_and_padding',vars(worker.model_runner))
 
     def test_NVTX_failures_preserve_original_native_exception_and_single_call(self):
         gpu=self.gpu();base=sys.modules['vllm.v1.worker.gpu_worker'].Worker

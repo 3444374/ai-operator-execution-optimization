@@ -5,6 +5,11 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及所属报告。
 CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释，不把旧版本通过数累加为当前整树结果。
 
+<a id="native-gpu-decision-observation"></a>
+本分支增加 vLLM 0.25.1 v1 的被动批决策观察与离线诊断，支持实际成员、前缀／cascade、
+graph／padding 及采集缺项核对；[代码与 CPU 验证](../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)
+说明范围。真实 GPU 开销、请求全链关联、kernel 费用与候选优化收益尚未验证。
+
 <a id="current-refactor-status"></a>
 <a id="refactor-completion-checklist"></a>
 ## 当前能力与待处理项

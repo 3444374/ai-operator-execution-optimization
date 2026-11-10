@@ -21,6 +21,8 @@ from src.infrastructure.json_content import json_content_equal
 import control_resource_C2 as controller
 
 TESTS = ('tests.experiments.test_record_resource_capture',
+         'tests.observability.test_native_gpu_decisions',
+         'tests.experiments.test_native_gpu_diagnostics',
          'tests.experiments.test_record_dag_observation',
          'tests.experiments.test_record_resource_handoff',
          'tests.experiments.test_record_handoff_passivity',

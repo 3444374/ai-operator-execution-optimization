@@ -8,6 +8,7 @@
 
 | 任务 | 入口 | 范围 |
 |---|---|---|
+| 原生 GPU 批决策分析 | [analyze_native_gpu_decisions.py](profiling/analyze_native_gpu_decisions.py) | 离线核对成员、前缀／cascade、graph／padding 和采集完整性；[说明](profiling/record_observation/README.md#native-gpu-decisions) |
 | 单次 Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) | `check/run` 使用现有方法与执行工厂；Q4 计算原 positivity ratio |
 | 原生 LOTUS 视觉运行 | [run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py) | 已有原生 VLM 服务上的完整查询、原评价和逐 POST 预算；[配置](#sembench-native-vlm-run) |
 | SemBench 图像准备 | [check_sembench_image_query.py](experiments/check_sembench_image_query.py) | 只读输入和像素身份／调用预算，不启动模型；[范围](#sembench-image-preparation) |

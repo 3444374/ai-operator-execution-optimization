@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-10：原生批决策观察与离线诊断
+
+[被动观察实现及零模型检查](diagnostics/native_gpu_decisions_20261110/README.md)记录 vLLM 0.25.1 固定源码、
+软件事件、原返回／异常保持与证据缺项行为。能区分公共块／cascade 和 graph／padding 的观察现象，
+不能证明缓存节省、设备瓶颈、查询加速或全部 worker 覆盖；真实模型与 GPU 尚未运行。
+
 ## 2026-11-10：DAG 观察与 GPU／引擎候选的源码、文献核查
 
 来源为公开项目 `f44f174a`、固定 SemBench 以及[本轮一手文献／引擎源码](../../docs/research/ai_operator_literature_inventory.md#dag-gpu-engine-sources)。
