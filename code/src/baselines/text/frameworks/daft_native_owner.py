@@ -20,10 +20,11 @@ class NativeModelCloseError(RuntimeError):
 
 
 class NativeAsyncModelOwner:
-    def __init__(self, timeout_s):
+    def __init__(self, timeout_s, *, on_model_created=None):
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or timeout_s <= 0:
             raise ValueError('native model close timeout must be finite and positive')
         self.timeout_s = timeout_s
+        self.on_model_created = on_model_created
         self.models = []
         self.construction_attempts = 0
         self.report = dict(status='not_started', captured_models=0,
@@ -41,6 +42,8 @@ class NativeAsyncModelOwner:
             owner.construction_attempts += 1
             model = owner.original.__get__(None, engine_type)(*args, **kwargs)
             owner.models.append(model)
+            if owner.on_model_created is not None:
+                owner.on_model_created(model)
             return model
 
         self.engine_type.from_engine_args = classmethod(construct)
@@ -50,6 +53,7 @@ class NativeAsyncModelOwner:
         # Do not leave a process-global observation hook installed while closing.
         self.engine_type.from_engine_args = self.original
         started = time.monotonic()
+        started_ns = time.monotonic_ns()
         deadline = started + self.timeout_s
         failures = []
         for model in reversed(self.models):
@@ -64,6 +68,7 @@ class NativeAsyncModelOwner:
             construction_attempts=self.construction_attempts, unconfirmed_constructions=unconfirmed,
             engine_api_shutdown_confirmed=False if uncertain else True if self.models else None,
             close_seconds=time.monotonic() - started, timeout_s=self.timeout_s,
+            close_started_monotonic_ns=started_ns, close_finished_monotonic_ns=time.monotonic_ns(),
             errors=[dict(type=type(error).__name__, message=redact_text(str(error))) for error in failures])
         self.models.clear()
         if uncertain:

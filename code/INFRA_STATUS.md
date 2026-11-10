@@ -22,6 +22,12 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 | 观测 | 查询时钟、事件、模型复用、资源采样和额度由各自模块维护 | 事件重叠、API 断开和引用释放不等于物理并发、进程退出或性能收益 |
 | 原生对照 | LOTUS、Ray、Daft、IMLane、Kalypso 保留各自原生图、作者服务或方法职责 | 输入、生成、缓存、生命周期和实际版本匹配后才能比较；不转授其他路径的验证结果 |
 
+Daft 原生 AI 的[单 F/M/E 完整查询入口](src/baselines/README.md#daft-native-prepared-sembench)
+已从历史私有接线整理到正式源码，保留分离依赖和原生执行器，并将完整原 sink 与模型关闭分开计时。
+`ffbc352ac` 已完成 Q3a25/Q4 24 的真实单冷资格；在最新 main 基础上的整合候选保留相同 Daft 执行代码，
+22项 CPU 回归和两题完整消息/token/原 sink 回放通过，见[报告](../experiments/results/diagnostics/daft_native_semantics_20261110/README.md)。
+其余17题、同 owner 暖轮与共同 host 总时钟尚未取得资格，不把旧版本真实记录称为新候选实测。
+
 <a id="pr52-g1-qualified-scope"></a>
 <a id="record-local-sections-c827"></a>
 <a id="record-local-completion-progression"></a>

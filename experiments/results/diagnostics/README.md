@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[Daft 原生 AI 正式接线与 sink 计时修正](daft_native_semantics_20261110/README.md)：
+共用原 worker/监督器，Q3a/Q4真实单冷资格与最新 main 整合 CPU 回归分列，保留未验证范围。
+
 [Records 执行模块与容量责任](records_runtime_refactor_20261104/README.md)：逐批职责整理、容量解析、旧入口退役及准确来源。
 [CLIP职责迁移与SDK断开标记](records_runtime_refactor_20261104/README.md#image-clip-module-owners)保留14组前后输出、22图像CPU及16观测Mock的实际来源；[5b服务器回执](records_runtime_refactor_20261104/README.md#basic-multquery-server-5b)另记28方法、重叠探针与真实Ray，原错误不改写。
 [基础多查询组合](records_runtime_refactor_20261104/README.md#basic-multquery-integrated)分开主线预算／轮转、研究适配、组合检查原错误与历史恢复；[efac七项服务器回执](records_runtime_refactor_20261104/README.md#forwarders-server-efac-seven)按其实际版本另列。

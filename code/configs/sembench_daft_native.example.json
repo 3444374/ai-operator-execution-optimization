@@ -1,0 +1,28 @@
+{
+  "schema": "semloom.native_daft_sembench.v1",
+  "sembench_checkout": "<SEMBENCH_C814_CHECKOUT>",
+  "data_dir": "<FROZEN_MMQA_DATA_DIRECTORY>",
+  "scenario": "mmqa",
+  "query": "3a",
+  "query_id": "DAFT-MMQA-Q3A-COLD-UNIQUE-RUN-ID",
+  "model_name": "openai/local-qwen2.5-7b",
+  "model": "<LOCAL_MODEL_AND_TOKENIZER_DIRECTORY>",
+  "sampling_params": {
+    "n": 1,
+    "max_tokens": 8192,
+    "temperature": 0,
+    "top_p": 1,
+    "seed": 0,
+    "stop": [],
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "repetition_penalty": 1,
+    "response_format": null
+  },
+  "engine_kwargs": {},
+  "provider_options": {},
+  "query_timeout_s": 600,
+  "cleanup_s": 120,
+  "stop_grace_s": 8,
+  "max_model_calls": 25
+}
