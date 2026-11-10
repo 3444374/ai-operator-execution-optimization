@@ -9,15 +9,17 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 本分支继续增加显式就绪工作选择、排队／传输／重建成本路由、有界提前准备与原生引擎可选参数。
 [执行候选报告](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)记录 Q8／Q9 布局、
 真实照片 CPU 传输、竞争留存和提前准备；原生 encoder 提示仍为 CPU 状态机探针。
-完整请求可通过原监督入口作实机回放；GPU 运行状态、质量及未完成项以该报告为准。
+Q8 已完成 960 次实机请求与原评价；该提示变体减少本次请求耗时但质量更差，不作为默认采用。
+GPU 阶段关联、实际配置和未完成项以该报告为准。
 
-本分支增加 vLLM 0.25.1 v1／v2 的被动批决策观察与离线诊断，支持实际成员、前缀／cascade、
-graph／padding 及采集缺项核对；[代码与 CPU 验证](../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)
-说明范围。真实 GPU 开销、请求全链关联、kernel 费用与候选优化收益尚未验证。
+本分支增加 vLLM 0.25.1 v1／v2 的被动批决策观察与离线诊断，支持实际成员、graph／padding 及采集缺项核对；
+v1 另有 cascade 接点，当前 v2 没有该分支。[代码与 CPU 验证](../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)
+说明初始范围；Q8 的实机 off/on、业务请求别名关联与采集到的 kernel 费用见上述执行候选报告。
+完整语义链、其他模型／任务及稳定优化收益尚未验证。
 
 本分支另有默认关闭的完整请求排序、图片 URI 留存选择，以及表示寿命／供给等待诊断。
 [实现与本地证据](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
-区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备和 CPU 检查；真实 GPU、完整查询收益、
+区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备和 CPU 检查；这些排序／媒体／供给策略的真实 GPU 与完整查询收益、
 encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 
 <a id="current-refactor-status"></a>
