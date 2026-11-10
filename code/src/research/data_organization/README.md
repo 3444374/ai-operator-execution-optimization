@@ -4,6 +4,28 @@
 它原先为 PG 画像程序构造输入批；该程序已退役，算法和研究材料继续保留。
 普通 records、链执行和二进制 payload 物化不导入本包。
 
+<a id="native-request-opportunity"></a>
+## 原始请求的前缀机会分析
+
+[prefix_opportunity.py](prefix_opportunity.py)读取同一模型／tokenizer 身份下的完整 token 序列，
+按“父前缀＋本块 token”建立块前缀树；相同字段或块出现在不同前文之后不会被合并。
+重复内容仍保留独立 call_id。原序、长度序和 token 前缀序只在固定源窗口内比较，不产生新请求或推断合法后继。
+
+[采集器](../../experiments/sembench_request_profile.py)使用原 LOTUS formatter、完整 chat template 和本地 tokenizer，
+不加载模型权重；入口为[profile_sembench_text_requests.py](../../../scripts/profiling/profile_sembench_text_requests.py)。
+`requests.json`保存私有原消息、token、生成配置与逐发生项身份；`opportunity.json`保存前缀树、次序与统计。
+重复采集核对请求内容，准备时刻不进入内容摘要。输入采样由`max-rows`明确标识，原查询的源快照仍完整读取。
+
+块尺寸是显式分析假设，窗口是可重排的源记录范围，都不是实测 GPU 批。
+`repeated_full_block_content_tokens`为各前缀块重复出现次数减一后乘块尺寸的总和；
+`adjacent_full_block_content_tokens`为所选次序中相邻请求的完整公共块 token 总和。
+两者都不是缓存命中、避免的 prefill 工作或加速比；原生缓存可能已经覆盖全部重复。
+代表 submit 帧使用固定请求标识和空期限，包含四字节头，不冒充真实传输字节。
+
+完整数据／模板／词表和 tokenizer 实现身份保留在私有记录中；只接受 tokenizer 自带模板，
+显式引擎模板需要单独接入，不静默忽略。格式化、token 化、尺寸测算和组织各自计时，完整工具时间另记。
+原生引擎观察、在线排序和模型质量不由该工具获得验证；首次 Q9 观察见[报告](../../../../experiments/results/diagnostics/sembench_request_preparation_20261110/README.md)。
+
 ## 现有实现
 
 [text_materializers.py](text_materializers.py) 保留原 `OrganizerConfig`、`ArrowOrganizer`、

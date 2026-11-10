@@ -1,0 +1,100 @@
+# SemBench 原请求画像与 Core 接入准备
+
+本报告对应[首批观察计划](../../../plans/数据组织.md#dag-first-observation)和
+[实施设计 PR #96](https://github.com/3444374/ai-operator-execution-optimization/pull/96)。
+完成原请求采集／离线分析，以及补充文本的 Core 接线。来源为真实作者输入、原方法源码与 CPU 软件检查；
+没有模型推理、权重加载、真实 Ray 执行或 GPU 性能结果。
+
+## 实现与检查范围
+
+- [请求采集](../../../../code/src/experiments/sembench_request_profile.py)使用原 LOTUS formatter、本地 tokenizer 和完整 chat template，
+  保留逐发生项、消息、生成配置与 token；重复采集核对内容，准备时刻不进入摘要。
+- [前缀分析](../../../../code/src/research/data_organization/prefix_opportunity.py)以父前缀和实际 token 块建立树，
+  比较固定源窗口内的原序、长度序和前缀序，不模拟缓存或改变实际执行。
+- [Core 适配](../../../../code/src/experiments/sembench_core_operator.py)由原 `TextOperation`构造单阶段有限链，
+  复用融合／逐记录 owner、原结果恢复和评价。生产调度代码及默认值未修改，前缀排序未接入 Core。
+
+检查分为两组：28项工具／Core／文本入口检查通过；随后33项原查询／原生接线与依赖检查中31项通过、2项跳过。
+合计59项实际通过；未取得完整 Medical CSV 和 MMQA sf25 资产的两项真实数据检查保留未运行身份。
+保留原生报告说明文字后，另对8项受影响的入口与 Q9 检查复验通过，不与前述59项重复相加。
+其中包括原 Q9 的 prompt、评分解析、最终关系及评价差分；F/M/E 的重复标签与额外字段；空输入不分配 owner；
+真实 CPU 子进程／三路 socket 的乱序完成、结果源序恢复、actor／模型子进程关闭和 Core 额度归零。
+Ray 调用使用线程替身，模型响应由显式 CPU fixture 提供。它们不证明新接线的真实 Ray 或 GPU 退出。
+
+原生 LOTUS／Ray Data／Daft／IMLane 的旧路径仍通过不导入 Core 调度的检查。
+新配置只有显式 `backend=semloom-core`才加载 Core 实验适配；该路径要求执行模式和有限请求数。
+真实 run 继续使用原持久预算与外部资源监督，`fixture`本身仍是零推理的软件方法检查。
+
+## 真实 Q9 输入的 CPU 观察
+
+运行标识为 `semloom-request-preparation-20261110`，采集为 `q9-original-profile-r1`。
+上游为 [SemBench `c814e3807e72d4cf876b852b17e77f3cc94575c2`](https://github.com/SemBench/SemBench/tree/c814e3807e72d4cf876b852b17e77f3cc94575c2)，
+使用原 `files/movie/data/sf_2000/Reviews.csv` 的2000行与原 Q9-map 选择，最终256个初始发生项全部采集。
+tokenizer 为 [Qwen2.5-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/tree/989aa7980e4cf806f80c7fef2b1adb7bc71aa306)
+的 `989aa7980e4cf806f80c7fef2b1adb7bc71aa306`，仅下载配置／tokenizer文件，没有权重。
+LOTUS 1.2.4、LiteLLM 1.95.0、OpenAI 2.50.0、pandas 2.3.3、Transformers 4.57.6、Python 3.12.6；
+独立 macOS CPU 环境的27项能力检查通过，不借用服务器的软件或 GPU 身份。
+
+原数据含128条不同评论，每条出现两次；采集保留256个不同 call_id、128组相同完整消息和 token 序列。
+总输入57812 token，最短185、中位数224.5、最近秩95分位261、最长275。
+所有请求的完整共同前缀为39 token；原 LOTUS `user_message_formatter`把上下文放在指令前，
+因此 Q9 较长的固定评分指令并未成为所有输入的长前缀。这是该输入、格式和 tokenizer 下的观察。
+
+下表使用16 token 块，只表示所选次序中相邻请求的完整公共块 token 总和。
+窗口是可在其内改变次序的源记录数量，不是模型批；原生 APC（自动前缀缓存）可能已经保留更早的重复前缀。
+
+| 窗口行数 | 原序 | 长度序 | 完整 token 前缀序 |
+|---|---:|---:|---:|
+| 1 | 8160 | 8160 | 8160 |
+| 16 | 8160 | 9136 | 9344 |
+| 64 | 8160 | 11040 | 12576 |
+| 256 | 8160 | 18160 | 32128 |
+
+16 token 块的前缀树包含3494次完整块出现、1486个不同前缀块；按重复内容计数得到32128 token。
+这一数字不是实际命中或可避免的 GPU 工作，最后一个块的处理、容量、驱逐、并发和实际调度均未模拟。
+32 token 块及全部原始派生值见[机器可读观察](observation.json)。
+
+三次原 formatter／tokenizer 采集均保留，未删除首次初始化成本：
+
+| 次数 | formatter 秒 | 请求检查秒 | tokenizer 秒 | 代表帧／记录尺寸测算秒 |
+|---|---:|---:|---:|---:|
+| 1 | 0.002881041 | 0.003140963 | 0.096623660 | 0.010898007 |
+| 2 | 0.002723792 | 0.002881544 | 0.084309642 | 0.009382489 |
+| 3 | 0.002557250 | 0.002807704 | 0.082149671 | 0.009255006 |
+
+这些是本地 CPU 分段时间，不是完整查询或模型性能重复。原读取、依赖初始化、内容摘要、词表身份与写出各有额外成本；
+私有记录保留完整工具时间。代表 submit 帧采用固定请求标识和空期限，不能视为真实网络传输。
+
+## 对后续实验的作用
+
+可以分别检验保持完整请求的次序改变、提示布局变化，以及原生 GPU 批的选择。
+前者保留256次发生项，不能把相同评论合并成128次推理；后者改变 token 次序，需要原任务真实质量评价。
+还需观察原生缓存是否已经覆盖重复、外层次序是否改变 GPU 批、组等待是否抵消节省。
+本次没有缓存命中、实际 prefill／decode、kernel、显存带宽、质量或完整查询加速证据。
+
+Q9 Core 的实际 Ray／模型检查、Ray 官方 Processor／Daft 原生 AI 的 Q9 绑定、vLLM 逐轮观察仍为 pending。
+多阶段、图像、表示位置和多实例设计继续独立推进，不由本题的重复输入决定整条研究路线。
+
+## 来源、失败与恢复
+
+实现基底为 main `70ee0970260a710efee73e5cc3db841abed75ead`；运行时新增源码的逐文件摘要由
+`source-snapshot-before-profile.json`保存，不能把基底提交当作已含新实现。
+该次十份改动源码另保存在`source-at-profile.tar.gz`，逐文件摘要与采集前记录一致；依赖清单单独保存。
+[原件清单](evidence_manifest.json)记录配置、源码摘要、tokenizer文件、请求、分析、全部重复及检查日志的字节数与 SHA-256。
+私有原件从仓库外 artifact 按运行标识及相对路径取得；Git 只保存本报告、紧凑派生观察和原件清单。
+
+初始预检缺依赖，首次安装因本机 Python 的证书链失败；保留原日志，改用系统 CA 验证后完成独立环境安装。
+旧环境元数据读取等待后中断，未修改旧环境；本次没有覆盖或删除历史原件。
+Medical／MMQA 两条跳过项不计入通过。真实模型次数为零，GPU 实验未开始。
+
+离线窗口对照可从同一私有请求文件重新计算；相邻公共块计数为确定性派生量，CPU 组织耗时随运行重新测量：
+
+```python
+from src.research.data_organization.prefix_opportunity import analyze
+
+for window in (1, 16, 64, 256):
+    result = analyze(capture["requests"], block_sizes=[16, 32], window_rows=window)
+    counts = {name: value["adjacent_full_block_content_tokens"]
+              for name, value in result["orders"].items()}
+    print(window, counts)
+```

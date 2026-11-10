@@ -32,6 +32,17 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 - 容量、结果关联及逐行方法的接口见[执行适配](src/execution_provider/adapters/README.md)、
   [LOTUS 方法](src/semantic_methods/lotus/README.md)与[原生对照](src/baselines/README.md)。
 
+<a id="sembench-request-preparation"></a>
+### 补充文本 Core 接入与请求画像
+
+补充文本入口已增加显式 `semloom-core`，可选择融合或逐记录执行，继续使用原 `TextOperation`、
+有限链 owner、结果恢复和原评价。Q9 原查询的固定响应差分、F/M/E 关系恢复、真实 CPU IPC 乱序及关闭已检查；
+该新接线的真实 Ray、模型、质量和性能仍为 pending，其他原查询不能据此取得 Q9 的完整检查范围。
+
+原请求画像复用 formatter 与本地 tokenizer，输出逐发生项私有消息、token、前缀树和窗口内次序。
+它没有执行模型或缓存模拟；Core 仍使用既有 FIFO，离线排序尚未接入调度。
+准确来源、真实 Q9 输入观察和检查范围见[准备报告](../experiments/results/diagnostics/sembench_request_preparation_20261110/README.md)。
+
 <a id="records-runtime-modules-cpu"></a>
 <a id="records-config-refactor-cpu"></a>
 <a id="records-model-context-cpu"></a>

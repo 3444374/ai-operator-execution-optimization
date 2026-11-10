@@ -254,6 +254,30 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         else:
             pd.testing.assert_frame_equal(actual, expected)
 
+    def test_q9_core_preserves_original_prompt_parser_scoring_and_evaluator(self):
+        from src.experiments import sembench_core_operator as core
+        from src.experiments.sembench_text_query import run_query
+        from tests.experiments.test_sembench_core_operator import cpu_owner
+
+        query = self._query('movie', '9')
+        answers = ['5', '1', 'not-a-number', '9', 'NaN']
+        expected, batches = self._reference(query, answers)
+        owner, seen = cpu_owner(answers)
+        engine = EngineSpec('/tmp/q9-cpu', sys.executable, '/tmp/driver', max_model_calls=len(answers))
+        resources = RecordsResources(prepare_batch_rows=2, model_batch_rows=2,
+            max_active_batches=1, query_timeout_s=5, startup_timeout_s=5)
+        with patch.object(core, 'SemLoomRecordChainCore', owner), \
+                patch.object(EngineSpec, 'validate_driver_environment', return_value={}):
+            report = run_query(dict(backend='semloom-core', profile={'execution': 'fused'}),
+                               query, engine, resources, self.data)
+        from src.experiments.sembench_text_query import _frame_value
+        self.assertEqual(report['result'], _frame_value(expected))
+        self.assertEqual(report['model_calls'], len(answers))
+        self.assertTrue(report['production_core_used'])
+        self.assertEqual([json.loads(row['messages_json']) for row, _ in seen],
+                         [message for messages, _ in batches for message in messages])
+        self.assertEqual(report['quality'], query.evaluate(expected))
+
     def _parity(self, query, answers, *, error=None):
         self.assertEqual(len(query.operation.records), len(answers))
         self.assertEqual([row.source_position for row in query.operation.records], list(range(len(answers))))

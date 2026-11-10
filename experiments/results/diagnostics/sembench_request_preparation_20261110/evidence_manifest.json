@@ -1,0 +1,96 @@
+{
+  "run_id": "semloom-request-preparation-20261110",
+  "storage": "private artifact directory, retrieve by run_id and relative_path",
+  "files": [
+    {
+      "relative_path": "preflight-before.json",
+      "bytes": 4748,
+      "sha256": "8356826497cc4a5ec4dd996f16d2b8685506a3221cf1e94dbaf178a1188e026e"
+    },
+    {
+      "relative_path": "preflight-after.json",
+      "bytes": 4766,
+      "sha256": "dfd3b3f71f01b3cf84822f3fa296e343084a4d9d652dad5edc099e8c224f7b7c"
+    },
+    {
+      "relative_path": "source-snapshot-before-profile.json",
+      "bytes": 1360,
+      "sha256": "816b6e67ec5d88264ec7815cea638ae2a288024b9087af489829f8b622c85a25"
+    },
+    {
+      "relative_path": "tokenizer-source.json",
+      "bytes": 275,
+      "sha256": "375b38bce38f5f5b1ece852fc7e6154ad05da84c3fb5dcdfed37f185202baccd"
+    },
+    {
+      "relative_path": "tokenizer-files.json",
+      "bytes": 1079,
+      "sha256": "995bca669aeb766bd2d88e435dc2d1d6d433df7217f029197369e66dba73e7be"
+    },
+    {
+      "relative_path": "q9-profile-config.json",
+      "bytes": 814,
+      "sha256": "6ad299eeee31cb41c60223c248df316df6a095d2c88fc93e33c53bf09c1efa8c"
+    },
+    {
+      "relative_path": "q9-original-profile-r1/requests.json",
+      "bytes": 1397865,
+      "sha256": "e9658c81f5671b6721c1b36ead09fc1ab5000335e604b1b7dadfb5995e37834a"
+    },
+    {
+      "relative_path": "q9-original-profile-r1/opportunity.json",
+      "bytes": 1303022,
+      "sha256": "f25bfe849e72406348405f03a5581dae6338cc9ca467b3ff4289e6a7ee3d66c1"
+    },
+    {
+      "relative_path": "q9-original-profile-r1/window-comparison.json",
+      "bytes": 5047,
+      "sha256": "b62dbb4b762c3ff092d2dd23a99832a8795c8a775c19b82bc37853db24e10d25"
+    },
+    {
+      "relative_path": "logs/install.log",
+      "bytes": 1990,
+      "sha256": "9eb4c4bb45236783b33b4f967287a713f9958998b8862c40a9c826f649c4dd36"
+    },
+    {
+      "relative_path": "logs/install-system-ca.log",
+      "bytes": 46131,
+      "sha256": "3f41db36ce8ef937bd381af57d67181c034906a20b95416dcc4602c161443bfa"
+    },
+    {
+      "relative_path": "logs/install-duckdb.log",
+      "bytes": 396,
+      "sha256": "ae471df5e9ea3d40ad1e5b3c2242e1fc2094f13ebc3f8f26eb9b1f0c9aeb37b1"
+    },
+    {
+      "relative_path": "logs/local-tests-r1.log",
+      "bytes": 8066,
+      "sha256": "0f846aa45700e524307043c935d6560c487a17c7fb5b76e9eba895e109532d6e"
+    },
+    {
+      "relative_path": "logs/query-parity-r1.log",
+      "bytes": 43565,
+      "sha256": "ae89393ee73f56afc98b34ef56ad666b1940e309a3b245c86316205ffbc2c12d"
+    },
+    {
+      "relative_path": "logs/q9-original-profile-r1.log",
+      "bytes": 98,
+      "sha256": "1ec9b4efe6049dd88247ed03bf1244ff6f5ea852598cd65637df0f67a01ef7cf"
+    },
+    {
+      "relative_path": "source-at-profile.tar.gz",
+      "bytes": 25388,
+      "sha256": "e3326b582f93ac9e55d3ebdb38571be00a60a3489840a999296fb9131eac9605"
+    },
+    {
+      "relative_path": "installed-requirements.txt",
+      "bytes": 2910,
+      "sha256": "445f03801ea71550e7ecd5166d7aed051dc0c082817ac60e86b3807c936a8f4a"
+    },
+    {
+      "relative_path": "logs/query-metadata-r2.log",
+      "bytes": 3192,
+      "sha256": "c4f5dcf4af0a2950df201c1c54e6696bc2802dcb3ea431397cbe60e0eb1991a2"
+    }
+  ]
+}

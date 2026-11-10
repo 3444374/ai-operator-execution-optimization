@@ -11,7 +11,8 @@
 | 单次 Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) | `check/run` 使用现有方法与执行工厂；Q4 计算原 positivity ratio |
 | 原生 LOTUS 视觉运行 | [run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py) | 已有原生 VLM 服务上的完整查询、原评价和逐 POST 预算；[配置](#sembench-native-vlm-run) |
 | SemBench 图像准备 | [check_sembench_image_query.py](experiments/check_sembench_image_query.py) | 只读输入和像素身份／调用预算，不启动模型；[范围](#sembench-image-preparation) |
-| 补充 Movie／MMQA／Medical 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
+| 补充 Movie／MMQA／Medical 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价及 Core／原生执行；[配置](#additional-sembench-text-entry) |
+| 原始文本请求画像 | [profile_sembench_text_requests.py](profiling/profile_sembench_text_requests.py) | 原 formatter、本地 tokenizer、前缀树和离线次序；[命令](#sembench-request-profile) |
 | 原生 LOTUS MMQA Q5 聚合 | [run_sembench_lotus_mmqa_aggregate.py](experiments/run_sembench_lotus_mmqa_aggregate.py) | 原分层聚合、无模型首层预检、外部服务及逐 POST 预算；[配置](#sembench-native-mmqa-aggregate) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 查询脚本直接调用实验生命周期；baseline客户端不反向导入实验，作者服务与默认保持 |
@@ -115,10 +116,16 @@ Extract 的 `json_object` 来自原算子，`check.effective_operator_generation
 | `ray-data` | 原 `ray.init` 参数；模型图的 batch／actor 资源仍由 `resources` 声明 | 独立冷 runtime；既有原生有限记录图 |
 | `daft` | 可选 `runner_threads`；空对象保留原 native 默认 | 既有 native class／batch 有限记录图 |
 | `imlane` | 空对象；使用现有作者 owner／resources | `owner_config` 指向现有作者配置、桥构建与显式有限容量 |
+| `semloom-core` | 必填 `execution=fused/record_local_sections`；可选 `capacity`，逐记录模式另可用 `ray_init` | 原有限 Core owner；持久 query unit 与外部资源监督保持 |
 
 非 IMLane 的真实运行配置另含 `budget={path,id,limit,unit_id}`，指向既有已预留 SQLite 额度；
 本入口只 claim，不创建／追加／退回额度。IMLane 沿用原 owner budget／guard。
-CLI 只允许四种已接通对照；Kalypso Map／MMQA／Medical 不设替代算法，Q4 继续用旧 Filter 入口。
+Core 是项目执行方法，四种原生对照继续各自拥有调度；Kalypso Map／MMQA／Medical 不设替代算法，Q4 继续用旧 Filter 入口。
+Core 两种执行均要求显式正整数 `resources.max_active_batches` 和 `cpu_workers=1`。
+融合模式要求 `max_active_batches=1`，不接收 `ray_init`；逐记录模式要求 `prepare_batch_rows=model_batch_rows=1`，
+由本入口建立、关闭独立 Ray runtime，拒绝复用调用方已初始化的 runtime。
+`capacity`分别解析为`CoreChainCapacity`或`CoreRecordsCapacity`；本入口尚未接 rolling、独立资源预算或前缀排序。
+Q9 的原方法／评价与 Core 软件检查见[报告](../../experiments/results/diagnostics/sembench_request_preparation_20261110/README.md)，不转授真实模型资格。
 
 比较时冻结同一输入摘要、模型／有效 dtype、生成参数、DEFAULT 格式与生命周期。
 冷查询的 CSV 扫描及身份检查、启动、算子解释／关闭、原关系后处理全部计入 `query_seconds`，原评价另计；
@@ -127,6 +134,27 @@ CLI 只允许四种已接通对照；Kalypso Map／MMQA／Medical 不设替代�
 旧补充 Movie／MMQA 的省略项行为随此修正改变；公共类型及旧普通 Filter 的默认值不变。
 旧短 Filter 的8 token／换行 stop 不可直接移给 JSON Extract，也不能把更改生成配置后的差异归因于执行加速。
 只有显式上下文才提前做上限检查；未指定的实际容量与物理退出仍由模型 ready 和外部 supervisor 验证。
+
+<a id="sembench-request-profile"></a>
+## 原始文本请求画像
+
+复用补充文本配置，但不运行 `run`、不 claim 模型额度，也不构造执行器。`--tokenizer`必须是已有本地目录，
+使用离线加载且不启用远程代码；输出必须是新的 Git 外私有目录。
+
+```sh
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 LITELLM_LOCAL_MODEL_COST_MAP=True \
+python code/scripts/profiling/profile_sembench_text_requests.py \
+  --config "$SEM_QUERY_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" \
+  --data-dir "$SEM_QUERY_DATA_DIR" --tokenizer "$LOCAL_TOKENIZER" \
+  --max-rows 256 --block-tokens 16 --block-tokens 32 --window-rows 64 \
+  --repeats 3 --output-dir "$REQUEST_PROFILE_OUTPUT"
+```
+
+这里的256、16／32和64只展示参数用法，不是推荐模型容量或硬件配置。
+`complete_initial_operator`区分完整初始算子和源序前缀样本；生成参数按原配置保存，不产生输出 token。
+`max-capture-bytes`默认64 MiB，只限制所选请求的序列化记录，不代表完整源读取、Python 内存或所有产物总量。
+失败保留`failure.json`，已存在输出目录拒绝覆盖；仍有声明算子的零行输入可生成空画像，原查询未产生算子时明确报告。
+内容摘要、字段和统计含义见[分析说明](../src/research/data_organization/README.md#native-request-opportunity)。
 
 <a id="sembench-native-mmqa-aggregate"></a>
 ## 原生 LOTUS MMQA Q5 聚合入口

@@ -104,6 +104,25 @@ class TextEntryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'every original operator input'):
             entry.fixture({},query,['one'],Path('/tmp'))
 
+    def test_core_configuration_requires_explicit_execution_and_keeps_capacity(self):
+        config=dict(schema='semloom.sembench_text_run.v1',scenario='movie',query='9',query_id='q9',
+            backend='semloom-core',model_name='fixture',generation={},
+            engine=dict(model_path='/tmp/model',model_python='/tmp/model-python',
+                        driver_python='/tmp/driver-python',max_model_calls=120),
+            resources=dict(prepare_batch_rows=1,model_batch_rows=1,max_active_batches=4),
+            profile=dict(execution='record_local_sections',capacity=dict(item_input_bytes=65536)))
+        with tempfile.TemporaryDirectory() as raw:
+            path=Path(raw)/'config.json'
+            path.write_text(json.dumps(config))
+            value,engine,_,resources=entry.configuration(path)
+            self.assertEqual(resources.max_active_batches,4)
+            self.assertEqual(value['profile']['capacity']['item_input_bytes'],65536)
+            self.assertIsNone(engine.max_num_seqs)
+            config['profile']={}
+            path.write_text(json.dumps(config))
+            with self.assertRaisesRegex(ValueError,'Core profile requires execution'):
+                entry.configuration(path)
+
     def test_result_projection_preserves_original_ratio_precision(self):
         import pandas as pd
         value=2/3

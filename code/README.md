@@ -13,7 +13,8 @@ LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当�
 | 任务 | 入口 | 职责 |
 |---|---|---|
 | Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](scripts/experiments/run_lotus_records_movie.py) | 原输入、任务与评价，选择执行适配；Q4 为完整输入上的正面比例 |
-| Movie Q4/Q8/Q9-map/Q10 与 MMQA 十二道文本题 | [run_sembench_text_query.py](scripts/experiments/run_sembench_text_query.py) | 原查询选择／汇总与原评价，单个 F/M/E 交既有原生图；[逐题范围](src/baselines/README.md#additional-sembench-text) |
+| Movie Q4/Q8/Q9-map/Q10 与 MMQA 十二道文本题 | [run_sembench_text_query.py](scripts/experiments/run_sembench_text_query.py) | 原查询与评价，单个 F/M/E 交 Core 或原生执行；[逐题范围](src/baselines/README.md#additional-sembench-text) |
+| 初始文本请求画像 | [profile_sembench_text_requests.py](scripts/profiling/profile_sembench_text_requests.py) | 原 formatter、本地 tokenizer、完整前缀与离线次序；零推理，[作用范围](src/research/data_organization/README.md#native-request-opportunity) |
 | 完整查询矩阵／连续查询 | [run_movie_records_matrix.py](scripts/experiments/run_movie_records_matrix.py) | 显式 backend、生命周期、额度与时钟 |
 | 原生 LOTUS 对照 | [lotus_native_local.py](src/baselines/text/frameworks/lotus_native_local.py) | 原算子／LM／LiteLLM batch_completion；仅 provider 使用现有模型 IPC |
 | 独立 Kalypso 对照 | [作者适配说明](src/baselines/text/frameworks/kalypso_native/README.md) | 保留作者服务、参数与调度；不是 LOTUS 后端 |
