@@ -1,0 +1,77 @@
+"""Q7 thin binding: original LOTUS query owns both filters and ordinary sink.
+
+No launcher is provided until full CPU image/token qualification is complete.
+The caller supplies the qualified native Ray executor and global 128-call guard.
+"""
+from copy import deepcopy
+import hashlib
+import json
+import time
+
+
+def message_digest(message):
+    return hashlib.sha256(json.dumps(message, sort_keys=True, ensure_ascii=False,
+                                     separators=(',', ':')).encode()).hexdigest()
+
+
+def reconcile(rows, predictions):
+    expected = [row['call_id'] for row in rows]
+    received = [row['call_id'] for row in predictions]
+    if len(expected) != 64 or len(set(expected)) != 64:
+        raise ValueError('each original Q7 Filter requires exactly 64 unique occurrences')
+    if len(received) != 64 or len(set(received)) != 64 or set(received) != set(expected):
+        raise ValueError('missing, duplicate or unknown native outcome')
+    by_id = {row['call_id']: row['generated_text'] for row in predictions}
+    return [by_id[key] for key in expected]
+
+
+class TwoPassBinding:
+    def __init__(self, execute):
+        self.execute = execute
+        self.passes = []
+
+    def __call__(self, messages):
+        stage = len(self.passes)
+        if stage >= 2 or len(messages) != 64 or any(p['status'] != 'complete' for p in self.passes):
+            raise ValueError('Q7 budget is two passes of 64, without retries or warmup')
+        rows = [dict(call_id=f'q7-pass-{stage}-row-{i}', messages=deepcopy(message))
+                for i, message in enumerate(messages)]
+        # Spend before dispatch: a failed stage must not be retried on this object.
+        self.passes.append(dict(stage=stage, message_sha256=[message_digest(m) for m in messages],
+                                status='dispatched'))
+        result = reconcile(rows, self.execute(rows))
+        self.passes[-1]['status'] = 'complete'
+        return result
+
+    def require_complete(self):
+        if len(self.passes) != 2 or any(p['status'] != 'complete' for p in self.passes):
+            raise ValueError('Q7 incomplete; do not publish a partial sink')
+
+
+def run(dataset, execute):
+    """Native execution must already enforce the process-wide public-generate cap.
+
+    Original runner calls the original parser and full City intersection itself.
+    Reference labels only enter evaluate_original after the query is complete.
+    """
+    import lotus
+    from lotus.models import LM
+    from lotus.types import LMOutput
+    from src.baselines.image.sembench_animals import run_original_query, evaluate_original
+
+    dataset.preflight(7)
+    binding = TwoPassBinding(execute)
+    class NativeLM(LM):
+        def __call__(self, messages, *args, **kwargs):
+            return LMOutput(outputs=binding(messages))
+    lm = NativeLM(model='openai/native-ray-binding', temperature=0, max_tokens=8192,
+                  max_batch_size=4, cache={}, top_p=1, seed=0, stop=[],
+                  frequency_penalty=0, presence_penalty=0, max_ctx_len=32768)
+    with lotus.settings.context(lm=lm, enable_cache=False):
+        result = run_original_query(dataset.checkout, dataset.frame, 7)
+    binding.require_complete()
+    sink_ready = time.monotonic_ns()
+    evaluation_started = time.monotonic_ns()
+    quality = evaluate_original(dataset.checkout, result, dataset.frame(references=True), 7)
+    return result, quality, binding.passes, dict(sink_ready_monotonic_ns=sink_ready,
+        evaluation_started_monotonic_ns=evaluation_started, evaluation_finished_monotonic_ns=time.monotonic_ns())
