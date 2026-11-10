@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+## 2026-11-10：原生文本阶段交接
+
+[主报告](diagnostics/native_stage_handoff_20261110/README.md)记录双进程原生 KV 交接实现、旧路径 CPU 检查及原失败。真实模型检查 pending；不据软件接线声称跨 GPU 收益。
+
 ## 2026-11-10：其余执行候选的分项尝试
 
 [主报告](diagnostics/semloom_execution_candidates_20261110/README.md)保存 Q8／Q9 完整请求布局、COCO 实际传输、

@@ -15,6 +15,50 @@ enter the native `compilation_config`. These controls are experimental inputs,
 not an adaptive policy. [Candidate evidence](../../../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)
 separates constructor checks, CPU metadata and actual device runs.
 
+## Native text prefill/decode handoff
+
+`prefill_decode_process.PrefillDecodeProcess` is an opt-in synchronous owner of
+two native vLLM 0.25.1 processes. `NixlPlacement` assigns each process one visible
+GPU and a distinct localhost side-channel port. Both stages use the same
+`EngineSpec`; `NixlConnector` owns KV memory, reads and native block release.
+The model environment needs `nixl==1.3.0` separately from the driver.
+
+P generates one disposable token and returns an opaque native transfer record.
+D receives the **original full conversation** and the original `GenerationSpec`,
+plus that record through native sampling `extra_args`. Its complete response is
+the logical output. Neither prompts nor output budgets are split. Every result
+retains `stage_receipts` for physical-call and usage accounting; do not count
+only D when computing physical cost. Missing transfer or mismatched association
+stops the owner, and native KV-load errors use `fail`, without automatic retries.
+
+```python
+from src.serving.backends.prefill_decode_process import NixlPlacement, PrefillDecodeProcess
+
+owner = PrefillDecodeProcess(
+    engine, generation, private_control_dir, deadline_monotonic, startup_timeout_s=240,
+    prefill=NixlPlacement("0", 5600), decode=NixlPlacement("1", 5601),
+    kv_buffer_device="cuda",
+)
+try:
+    results = owner.run_prepared(prepared_rows, generation=generation)
+finally:
+    close_report = owner.close(timeout=30)
+```
+
+The caller owns GPU allocation, memory fractions and the total deadline. CPU
+staging is also explicit via `kv_buffer_device="cpu"`. `cancel()` requests both
+processes to stop; `close()` reports each process separately and does not claim
+GPU exit. An unconsumed P handoff remains native-owned until its send expiry or
+process shutdown. Only complete logical requests are serialized in this first
+version; overlap, dynamic routing, live decode migration, vision-encoder splitting
+and query-adapter integration remain pending. Colocated execution remains available.
+
+The [worker](../../experiments/native_stage_handoff.py) compares exact prompt IDs,
+output IDs, text and finish reasons. Its caller supplies preflight, host lease,
+persistent attempt budget, process supervision and final GPU observation.
+See the [plan](../../../../experiments/plans/数据组织.md#native-stage-handoff)
+and [evidence](../../../../experiments/results/diagnostics/native_stage_handoff_20261110/README.md).
+
 Explicit result and control frame allowances may be below 4096 bytes. Frames
 still have to fit their actual encoded bytes, and each submitted identity must
 fit its compact terminal receipt. Defaults remain 2 MiB per result and 64 KiB

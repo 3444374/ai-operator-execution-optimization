@@ -7,6 +7,12 @@
 AutoDL、文本或图像专项 runbook，也不假设所有机器已经下载模型、数据集和可选 Python
 包。
 
+可选原生 KV 传输使用 `native-kv-transfer` 能力组，仅在 vLLM 模型环境检查／安装，
+不并入 LOTUS driver。当前 vLLM 0.25.1 的官方依赖要求 `nixl==1.3.0`；
+安装前预览实际依赖，不升级已有 torch／vLLM。通过导入检查后仍须执行
+[阶段交接功能验证](../../experiments/plans/数据组织.md#native-stage-handoff)，
+导入成功不证明跨 GPU 传输已经通过。
+
 ## 四层合同
 
 | 层 | 权威文件 | 负责什么 | 不负责什么 |

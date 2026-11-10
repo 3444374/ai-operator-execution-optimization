@@ -31,7 +31,7 @@ class ChainEngineProcess(EngineProcess):
         if deadline_expired(deadline):
             raise TimeoutError("Ray LOTUS chain engine deadline expired")
 
-    def run_prepared(self, rows, *, generation):
+    def run_prepared(self, rows, *, generation, kv_transfer_params=None):
         checked = GenerationSpec.from_dict(asdict(generation))
         identities, _ = _prepared(rows)
         with self._lock:
@@ -39,6 +39,8 @@ class ChainEngineProcess(EngineProcess):
                 if self._broken or self._closed:
                     raise RuntimeError("private engine cannot be reused after stop or close")
                 response = self._exchange(dict(op="run", rows=rows, generation=asdict(checked),
+                                               **({'kv_transfer_params': kv_transfer_params}
+                                                  if kv_transfer_params is not None else {}),
                                                deadline=self.deadline), self.deadline)
                 if response.get("kind") != "results" or type(response.get("rows")) is not list:
                     raise RuntimeError("private engine call failed: " + str(response.get("error_type")))
@@ -82,6 +84,8 @@ def serve(result_fd, *, engine_factory=None):
                     send(dict(kind="results", rows=engine.run_prepared(
                         value["rows"],
                         generation=GenerationSpec.from_dict(value["generation"]),
+                        **({'kv_transfer_params': value['kv_transfer_params']}
+                           if 'kv_transfer_params' in value else {}),
                         deadline_monotonic=value["deadline"])))
                 elif engine is not None and value["op"] == "close":
                     close_deadline = value["deadline"]

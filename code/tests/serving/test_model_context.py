@@ -168,7 +168,8 @@ class ContextIPCTests(unittest.TestCase):
 
     def test_real_open_ready_and_submit_keep_model_resolved_context(self):
         with patch.object(EngineSpec,'validate_driver_environment',return_value={}):
-            process = CPUProcess(spec(), GenerationSpec(), startup_timeout_s=5)
+            process = CPUProcess(spec(), GenerationSpec(), startup_timeout_s=5,
+                                limits=kernel.AsyncEngineLimits(max_inflight=1))
         try:
             self.assertIsNone(process.spec.max_model_len)
             self.assertEqual(checked_model_context(process.spec,process.ready_report)['max_model_len'],32768)

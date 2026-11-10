@@ -27,6 +27,7 @@ from .vllm_protocol import (
     result_record,
     result_from_output,
     sampling_params,
+    native_engine_kwargs,
 )
 
 
@@ -84,7 +85,7 @@ class VllmEngine:
             install(self.engine_uid)
         self._llm = vllm.LLM(
             model=engine.model_path, tokenizer=engine.tokenizer_path or engine.model_path,
-            **optional_kwargs, seed=engine.seed,
+            **native_engine_kwargs(engine), seed=engine.seed,
             chat_template=engine.chat_template, tensor_parallel_size=1,
             pipeline_parallel_size=1, distributed_executor_backend="uni",
             trust_remote_code=False, generation_config="vllm",
@@ -171,11 +172,13 @@ class VllmEngine:
         return prompts, expected
 
     def _invoke_native(self, prompts, sampling):
-        self._llm._render_and_add_requests(prompts=iter(prompts), params=[sampling] * len(prompts))
+        params = sampling if isinstance(sampling, list) else [sampling] * len(prompts)
+        self._llm._render_and_add_requests(prompts=iter(prompts), params=params)
         return self._llm.wait_for_completion(use_tqdm=False)
 
     def run_prepared(self, rows: list[dict], *,
                      generation: GenerationSpec | None = None,
+                     kv_transfer_params: list[dict] | None = None,
                      deadline_monotonic: float | None = None) -> list[dict]:
         """Render once in vLLM; in-flight stopping belongs to the supervisor."""
         if deadline_monotonic is not None:
@@ -186,6 +189,11 @@ class VllmEngine:
             raise TypeError("generation must be a GenerationSpec or None")
         generation_kwargs = effective_generation.kwargs()
         identities, conversations = _prepared(rows)
+        if kv_transfer_params is not None:
+            if (self.spec.kv_transfer_config is None or not isinstance(kv_transfer_params, list)
+                    or len(kv_transfer_params) != len(rows)
+                    or any(not isinstance(item, dict) for item in kv_transfer_params)):
+                raise ValueError('KV transfer requires a configured connector and one descriptor per row')
         if self._closed:
             raise RuntimeError("model engine is closed")
         if self._shutdown_failed:
@@ -197,6 +205,9 @@ class VllmEngine:
             if effective_generation.max_tokens > context['max_model_len']:
                 raise ValueError('max_tokens exceeds resolved model context')
             sampling = self._new_sampling(generation_kwargs)
+            if kv_transfer_params is not None:
+                sampling = [self._new_sampling(dict(generation_kwargs,
+                    extra_args={'kv_transfer_params': params})) for params in kv_transfer_params]
             start = time.monotonic()
             if deadline_monotonic is not None and start >= deadline_monotonic:
                 results = [self._result(item, start, start, status="failed", submitted=False,
@@ -257,6 +268,9 @@ class VllmEngine:
                     identity, output, engine_uid=self.engine_uid, start=start, end=end,
                     generation=effective_generation, get_tokenizer=lambda: self._llm.get_tokenizer(),
                 )
+                if self.spec.kv_transfer_config is not None:
+                    result['kv_transfer_params'] = getattr(output, 'kv_transfer_params', None)
+                    result['native_num_cached_tokens'] = getattr(output, 'num_cached_tokens', None)
                 if (expected_ids is not None and result['status'] == 'succeeded'
                         and json.loads(result['prompt_token_ids_json']) != expected_ids[index]):
                     result.update(status='failed', text=None, error_type='PromptTokenMismatch')

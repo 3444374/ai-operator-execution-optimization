@@ -72,7 +72,7 @@ class VllmAsyncEngine:
             distributed_executor_backend="uni", trust_remote_code=False,
             generation_config="vllm", max_logprobs=common.MAX_LOGPROBS,
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
-            **self.spec.optional_kwargs(),
+            **common.native_engine_kwargs(self.spec),
             **({"worker_extension_cls": VLLM_GPU_IDENTITY_EXTENSION}
                if self._feedback is not None else {}),
             **({"enable_mfu_metrics": True} if self.spec.enable_mfu_metrics else {}),

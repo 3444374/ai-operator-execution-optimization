@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[原生文本阶段交接](native_stage_handoff_20261110/README.md)：双模型进程、原生 NIXL 描述与输出／清理检查，区分软件能力和实机证据。
+
+
 [提示布局、图片表示与执行候选](semloom_execution_candidates_20261110/README.md)：真实文本准备、真实照片 CPU 操作、构造消费轨迹和原生接点；分项记录适用范围与待验证内容。
 
 [请求排序、图片留存与供给诊断](semloom_mechanism_prototypes_20261110/README.md)：可选机制接线、原 Q9 回放与实际图片准备的分项观察；GPU 和查询收益待验。
