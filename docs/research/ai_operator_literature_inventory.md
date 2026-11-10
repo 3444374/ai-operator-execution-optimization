@@ -46,11 +46,14 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
   [processor cache](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/multimodal/cache.py)、
   [encoder cache](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/core/encoder_cache_manager.py)、
   [cascade 选择](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/attention/backends/flash_attn.py#L1354)、
-  [GPU runner](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu_model_runner.py#L3888)、
+  [v1 GPU runner](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu_model_runner.py#L3888)、
+  [v2 GPU runner](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu/model_runner.py)、
+  [v2 CPU 输入元数据](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu/input_batch.py)、
   [CUDA Graph 设计](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/design/cuda_graphs.md)、
   [独立 encoder 与 ECConnector](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/features/disagg_encoder.md)、
   [独立 prefill](https://docs.vllm.ai/en/v0.25.1/features/disagg_prefill/)。
-  核查了原生已具备的能力及组合限制；未运行该版本的模型或补丁。
+  v1／v2 的接点和能力分别核对，v2 没有上述 cascade dispatch。此清单定位源码；
+  后续准确版本的实机与被动观察见[执行候选报告](https://github.com/3444374/ai-operator-execution-optimization/blob/e009939c6717c6805822212fd56179261766c33f/experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)。
 - Ray `ray-2.56.1`，commit `936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a`：
   [actor 选择](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/operators/actor_pool_map_operator.py)、
   [有效默认](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/interfaces/execution_options.py)、
