@@ -64,7 +64,6 @@ Movie Session在plan中提供同名字段，预检、owner和每次查询使用�
 
 旧 `LotusBatchExecutor`／`LotusNativeBatchExecutor` 完整 HTTP 前端及 PG／HTTP 实验入口已退役，
 源码、接线和历史测试从[精确归档](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)恢复。
-[sdk.py](sdk.py)只为历史复算记录已安装 SDK 的来源，保留 text 与 image-message 两种 profile。
 孤立的 HTTP 请求准备／响应重放与固定两 Map 原型已退出当前目录，
 准确源码和原投影读取位置见[恢复说明](../../../../experiments/reproduction/native_baselines/README.md#retired-lotus-http-methods)。
 Q2b 独立视觉对照尚未用本次 Movie 文本 provider 替换；当前代码和历史证据分别解释。
