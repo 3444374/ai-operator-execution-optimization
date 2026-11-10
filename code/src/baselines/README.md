@@ -172,7 +172,7 @@ close 可能与 driver 后处理重叠。严格 host controller 入口仍未知�
 本地实际 Daft0.7.21 CPU 表达式/执行器、Q3a/Q4保存答复全关系回放、预算及清理结果见
 [资格报告](../../../experiments/results/diagnostics/daft_native_semantics_20261110/README.md)。
 `ffbc352ac` 的 Q3a25/Q4 24 已完成目标原生参数、真实模型和物理清理资格；最新 main 整合候选的
-相同执行代码另经 CPU 回归和完整关系回放，未重复 GPU。其余17题、同 owner 暖轮与共同 host
+执行接线另经CPU回归和完整关系回放；后续已把消息摘要及关系序列化移至sink后，旧49条时长不追认为该新边界。未重复GPU。其余17题、同 owner 暖轮与共同 host
 总时钟仍待资格。保留每个系统自己的依赖版本，不以迁移到统一 vLLM 为前提。
 
 <a id="additional-sembench-text"></a>

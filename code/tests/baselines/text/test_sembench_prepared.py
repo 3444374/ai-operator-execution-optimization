@@ -1,7 +1,10 @@
 """Source-keyed native parsing and full relational sink, without a model."""
 
 from types import SimpleNamespace
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import Mock, patch
 
 import lotus
 import pandas as pd
@@ -56,8 +59,84 @@ class PreparedSemanticsTests(unittest.TestCase):
         good = [dict(call_id=row['call_id'], generated_text='answer') for row in calls]
         for predictions in (good[:1], [good[0], good[0]],
                             [good[0], dict(call_id='unrelated', generated_text='answer')]):
+            ready = Mock()
             with self.subTest(predictions=predictions), self.assertRaises(ValueError):
-                finish(query, method, calls, predictions)
+                finish(query, method, calls, predictions, on_result_ready=ready)
+            ready.assert_not_called()
+
+    def run_driver(self, root, now):
+        from src.experiments import native_daft_sembench as driver
+        from src.infrastructure.private_artifacts import publish_private_json
+
+        query = self.query('map')
+        execute = query.execute
+        def original_sink(handler):
+            value = execute(handler)
+            now[0] += 3_000_000_000
+            return value
+        query.execute = original_sink
+        query.describe = lambda: {'expected_model_calls': 2}
+        query.evaluate = lambda result: {'rows': len(result)}
+        method, calls, requests = prepare(query, SimpleNamespace(apply_chat_template=lambda m, **kw: str(m)))
+        predictions = [dict(call_id=row['call_id'], generated_text='answer') for row in calls]
+        config = dict(schema='semloom.native_daft_sembench.v1',sembench_checkout='unused',data_dir='unused',
+            scenario='movie',query='8',query_id='clock-fixture',model_name='openai/CPU-only',model='CPU-only',
+            sampling_params=dict(n=1),engine_kwargs={},provider_options={},query_timeout_s=1200,
+            cleanup_s=120,stop_grace_s=8,max_model_calls=2)
+        def supervised(config_path, directory, **options):
+            directory.mkdir()
+            raw = dict(result_ready_monotonic_ns=now[0],result=dict(predictions=predictions))
+            publish_private_json(directory/'result-ready.json',raw)
+            options['on_result_ready'](raw)
+            publish_private_json(directory/'worker.json',dict(status='completed',native_api={},
+                model_close_receipt={'status':'closed'}))
+            return {'status':'CPU fixture'}
+        with patch.object(driver,'SemBenchTextQuery',return_value=query), \
+                patch.object(driver,'prepare',return_value=(method,calls,requests)), \
+                patch.object(driver.time,'monotonic_ns',side_effect=lambda:now[0]), \
+                patch.object(driver.time,'monotonic',side_effect=lambda:now[0]/1e9):
+            return driver.run_query(config,root,model_python='CPU-only',tokenizer=object(),supervise=supervised)
+
+    def test_message_digests_and_relation_serialization_advance_only_post_sink_clock(self):
+        from src.baselines.text import sembench_prepared as semantics
+        from src.experiments import native_daft_sembench as driver
+        now = [1_000_000_000]
+        digest, serialize = semantics.content_digest, semantics.result_value
+        observed = []
+        def audit_digest(value):
+            observed.append(('digest',now[0]));now[0] += 7_000_000_000
+            return digest(value)
+        def audit_relation(value):
+            observed.append(('relation',now[0]));now[0] += 11_000_000_000
+            return serialize(value)
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(semantics,'content_digest',side_effect=audit_digest), \
+                patch.object(semantics,'result_value',side_effect=audit_relation), \
+                patch.object(driver,'result_value',side_effect=audit_relation):
+            report = self.run_driver(Path(directory)/'run',now)
+        self.assertEqual(report['status'],'completed')
+        self.assertEqual(report['source_to_sink_seconds'],3)
+        self.assertEqual([kind for kind,_ in observed],['digest','digest','relation','relation','relation'])
+        self.assertTrue(all(at >= report['sink_ready_ns'] for _,at in observed))
+        self.assertEqual(report['semantic_audit_finished_ns']-report['sink_ready_ns'],25_000_000_000)
+        self.assertLessEqual(report['semantic_audit_finished_ns'],report['sink_persistence_started_ns'])
+
+    def test_post_sink_audit_failure_keeps_native_output_and_failed_driver_receipt(self):
+        from src.baselines.text import sembench_prepared as semantics
+        from src.infrastructure.private_artifacts import read_json
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)/'run'
+            with patch.object(semantics,'content_digest',side_effect=ValueError('CPU audit failure')), \
+                    self.assertRaisesRegex(ValueError,'CPU audit failure'):
+                self.run_driver(root,[1_000_000_000])
+            report = read_json(root/'driver.json')
+            self.assertEqual(report['status'],'failed')
+            self.assertEqual(report['error_type'],'ValueError')
+            self.assertEqual(report['source_to_sink_seconds'],3)
+            self.assertNotIn('semantic_audit_finished_ns',report)
+            self.assertNotIn('quality',report)
+            self.assertEqual(len(read_json(root/'native-worker/result-ready.json')['result']['predictions']),2)
+            self.assertFalse((root/'result-ready.json').exists())
 
 
 if __name__ == '__main__':

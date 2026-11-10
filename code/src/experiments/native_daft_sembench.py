@@ -66,11 +66,18 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
                 raise ValueError('duplicate native result callback')
             report['raw_native_ready_ns'] = raw['result_ready_monotonic_ns']
             report['raw_native_observed_ns'] = time.monotonic_ns()
-            result, semantic = finish(query, method, prepared, raw['result']['predictions'])
-            report['sink_ready_ns'] = time.monotonic_ns()
-            report['source_to_sink_seconds'] = (report['sink_ready_ns'] - started) / 1e9
-            if report['sink_ready_ns'] / 1e9 > deadline:
-                raise TimeoutError('complete original Daft query exceeded its query allowance')
+            def sink_ready(value):
+                nonlocal result
+                result = value
+                report['sink_ready_ns'] = time.monotonic_ns()
+                report['source_to_sink_seconds'] = (report['sink_ready_ns'] - started) / 1e9
+                if report['sink_ready_ns'] / 1e9 > deadline:
+                    raise TimeoutError('complete original Daft query exceeded its query allowance')
+                report['semantic_audit_started_ns'] = time.monotonic_ns()
+
+            _, semantic = finish(query, method, prepared, raw['result']['predictions'],
+                                 on_result_ready=sink_ready)
+            report['semantic_audit_finished_ns'] = time.monotonic_ns()
             # The original sink timestamp precedes serialization and all audit.
             report['sink_persistence_started_ns'] = time.monotonic_ns()
             publish_private_json(directory / 'result-ready.json', dict(result=result_value(result),

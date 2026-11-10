@@ -104,6 +104,8 @@ def replay(config, frozen, output):
     assert [row['text'] for row in actual['semantic']['calls']] == frozen['texts']
     assert report['quality'] == frozen['quality']
     assert report['sink_ready_ns'] < report['model_close_receipt']['close_started_monotonic_ns']
+    assert (report['sink_ready_ns'] <= report['semantic_audit_started_ns']
+            <= report['semantic_audit_finished_ns'] <= report['sink_persistence_started_ns'])
     assert report['sink_ready_ns'] <= report['sink_persistence_started_ns'] < report['evaluation_started_ns']
     receipt = dict(status='passed', model_calls=0, requests=len(requests),
         source_indices=[row.source_index for row in query.operation.records],
