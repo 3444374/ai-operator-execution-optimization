@@ -6,7 +6,7 @@
 | 主题 | 入口 |
 |---|---|
 | 研究问题、最近邻与待证增量 | [研究定位](研究定位.md) |
-| 方法选择、反例与最小实验 | [优化方法依据](优化方法依据.md) |
+| 方法选择、反例与最小实验 | [优化方法依据](优化方法依据.md)、[GPU／引擎协同候选](优化方法依据.md#gpu-engine-coordination) |
 | 文献题录与阅读状态 | [文献清单](ai_operator_literature_inventory.md) |
 | 泛读与快速回顾 | [reading_notes/](reading_notes/README.md) |
 | 逐篇精读与图解 | [精读文献笔记](精读文献笔记/README.md) |
@@ -21,3 +21,5 @@
 
 目录不缓存论文数量、图数、逐次运行结果或实现进度；相应事实由所属笔记、报告与代码状态维护。
 文献阅读和研究证据要求见[本目录规则](AGENTS.md)。
+
+后端研究修改的版本、原生对照与验证要求见[比较规范](../../experiments/plans/reference/对照规范.md#backend-change-comparison)。

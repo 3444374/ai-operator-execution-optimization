@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-10：DAG 观察与 GPU／引擎候选的源码、文献核查
+
+来源为公开项目 `f44f174a`、固定 SemBench 以及[本轮一手文献／引擎源码](../../docs/research/ai_operator_literature_inventory.md#dag-gpu-engine-sources)。
+[首批观察计划](../plans/数据组织.md#dag-first-observation)区分单算子、独立分支和真正 Join→Extract 的接入／数据／质量状态；
+[方法候选](../../docs/research/优化方法依据.md#gpu-engine-coordination)属于推断与待验证设计。
+本次没有新增模型请求、硬件画像或性能结果，不以文档和源码接口存在授予运行资格，也不改变 PR #93／#94 及旧 MMQA 的证据身份。
+
 ## 2026-11-08：直接链的方法状态与请求槽分别计量
 
 [Q9旧设置、同额重算与20项CPU](diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)保留原单份方法状态设置，不将R136或37934宽松计数解释为实际驻留量。

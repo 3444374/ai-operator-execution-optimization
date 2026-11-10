@@ -9,6 +9,49 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 
 精读笔记：`精读文献笔记/`
 
+
+<a id="dag-gpu-engine-sources"></a>
+## DAG、关系组织与 GPU／引擎协同来源（2026-11-10）
+
+本轮为定向题录、机制章节及固定源码核查，未运行论文 artifact，也不改开题 Top 15。
+方法与反例统一见[GPU／引擎候选](优化方法依据.md#gpu-engine-coordination)；正式论文、预印本、作者资料与官方源码分列。
+这些来源不证明 SemLoom 新颖性、当前环境能力或性能。
+
+| 来源／准确版本 | 类型与本轮核对范围 | 对候选的作用 |
+|---|---|---|
+| [Optimizing LLM Queries in Relational Data Analytics Workloads](https://proceedings.mlsys.org/paper_files/paper/2025/file/b5dc49f44db2fadc5c4d717c57f4a424-Paper-Conference.pdf)，MLSys 2025 | 正式论文 §3–4.2、§5、§6.4；重排问题、GGR、JSON 字段关联及单独质量实验 | 保留全表信息成本和模型输出变化，不能把字段换序称普遍等价 |
+| [Hydragen: High-Throughput LLM Inference with Shared Prefixes](https://arxiv.org/abs/2402.05099v2)，2024-05-13 | 作者预印本 v2；共享前缀／独有后缀分解、减少显存读取与批化计算；本轮未核正式 venue | 共享前缀 attention 的直接近邻，不能把已有 kernel 思想称新方法 |
+| [Cascade Inference: Memory Bandwidth Efficient Shared Prefix Batch Decoding](https://flashinfer.ai/2024/02/02/cascade-inference.html)，2024-02-02 | FlashInfer 作者技术资料，非正式研究论文；使用跳转后的实际文章日期 | 共享 KV 读取与批解码的硬件动机 |
+| [BlendServe: Optimizing Offline Inference with Resource-Aware Batching](https://doi.org/10.1145/3779212.3790133)，ASPLOS 2026 | 正式题录；资源需求与前缀复用机制沿已有精读，不混用旧版性能数字 | 未缓存工作组合的强近邻 |
+| [Kalypso: Relational LLM Serving](https://arxiv.org/html/2607.23815v2)，2026-08-14 | 预印本 v2；依赖推进、内存管理和默认 virtual pinning | 消费者／阶段信息和缓存寿命已被研究 |
+| [TOPAS: Workflow-Aware Prefix-State Scheduling for Multi-Agent LLM Serving](https://arxiv.org/html/2608.25523v1)，2026-08-26 | 预印本；驻留前缀与执行请求联合选择，实际接点在 SGLang | 联合留存／推进不是空白；本轮未复现 |
+| [PEEK 作者仓库](https://github.com/xiexbing/peek/blob/3aca72b63c1dd6433193c0857b965acecdbfbb8a/README.md) | 作者公开研究材料／实现，未核实正式发表；安装绑定 vLLM 0.19.1 | 等待队列前缀结构驱动准入／驱逐；不同版本需单独移植验证 |
+| [Simple Is Better: Multiplication May Be All You Need for LLM Request Scheduling](https://arxiv.org/abs/2603.15202v3)，2026-06-05 | 作者论文 v3；缓存未命中 prefill 与实例批大小的简单指标，正式题录见 OSDI 2026 | 多副本路由的低成本强对照 |
+| [GraniKV: Asymmetric Granularity KV-Cache Paging for Multi-Agent Systems with Long Shared Prefix](https://arxiv.org/abs/2608.15584v2)，2026-08-23 | **撤回预印本，仅作排除记录**；作者说明吞吐测量方法存在错误，论文细节已弃用 | 本轮复核撤回状态，不采用其机制／性能主张支撑设计、收益或新颖性判断 |
+| [RayOrch: Programming and Executing Lineage-Controlled Multi-Grain Dataflows for Foundation-Model Data Preparation](https://arxiv.org/html/2609.18703v1)，2026-09-16 | 预印本；有限无环层次数据流、跨父项组批与按成员 gather，不是一般 Join 支持 | 数据粒度、父子关联及局部失败已有相关能力 |
+| [GRAPHENE: Packing and Dependency-Aware Scheduling for Data-Parallel Clusters](https://www.usenix.org/system/files/conference/osdi16/osdi16-grandl-graphene.pdf)，OSDI 2016 | 正式论文；依赖和异构资源需求的联合调度 | 观察 DAG 后安排资源是研究起点，需证明语义任务的具体增量 |
+
+固定工程来源如下；tag 解析值用于复核来源，不替代受测环境报告。
+
+- vLLM `v0.25.1`，commit `752a3a504485790a2e8491cacbb35c137339ad34`：
+  [APC](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/features/automatic_prefix_caching.md)、
+  [KV 块身份](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/core/kv_cache_utils.py#L539)、
+  [scheduler](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/core/sched/scheduler.py)、
+  [scheduler 配置](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/config/scheduler.py)、
+  [processor cache](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/multimodal/cache.py)、
+  [encoder cache](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/core/encoder_cache_manager.py)、
+  [cascade 选择](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/attention/backends/flash_attn.py#L1354)、
+  [GPU runner](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu_model_runner.py#L3888)、
+  [CUDA Graph 设计](https://github.com/vllm-project/vllm/blob/v0.25.1/docs/design/cuda_graphs.md)。
+  核查了原生已具备的能力及组合限制；未运行该版本的模型或补丁。
+- Ray `ray-2.56.1`，commit `936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a`：
+  [actor 选择](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/operators/actor_pool_map_operator.py)、
+  [有效默认](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/interfaces/execution_options.py)、
+  [RefBundle](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/interfaces/ref_bundle.py)、
+  [下游背压](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/backpressure_policy/downstream_capacity_backpressure_policy.py)。
+  说明文字与构造器默认不一致时，以源码及实际配置解释；逻辑资源、切片估计和物理用量分别报告。
+
+
 ## 一、开题 Top 15
 
 本轮按照“正式题录和轨道优先”重排，15/15 均为 CCF-A 正式 research paper。
@@ -62,7 +105,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 | NeurDB | CIDR 2025，非 CCF-A | AI-native database vision 与边界对照 |
 | LLM for Data Management | PVLDB 2024 | DB/LLM 研究版图 |
 | Smart、SmartLite、LEADS、InferDB | 正式数据库论文 | 近数据库推理、模型选择和动态执行对照 |
-| Kalypso: Relational LLM Serving | arXiv:2607.23815，2026；未标注正式 venue | 直接连接 semantic query plan 与 request-centric LLM serving，研究跨算子流水、KV prefix 生命周期和 memory-aware admission；最接近本课题接口，迫使增量收窄到 PostgreSQL query lifecycle、多 Job、多 endpoint 与不修改 vLLM 的外部控制 |
+| Kalypso: Relational LLM Serving | arXiv:2607.23815，2026；未标注正式 venue | 已连接语义查询计划、跨算子推进、KV 前缀寿命与内存接纳；比较实际表示、GPU 工作和动态消费者信息的额外作用，不用前端名称或是否修改 vLLM 区分贡献 |
 | Making Prompts First-Class Citizens for Adaptive LLM Pipelines（SPEAR） | CIDR 2026；vision/initial design 与初步实验，不算 CCF-A full research | [官方论文](https://www.vldb.org/cidrdb/papers/2026/p26-cetintemel.pdf) §2–4：版本化 prompt views/refinement，R3 评估 evidence-first 调整；缓存与 fusion 等仍多为设计机会。约束“多表示＋质量检查”的新颖性主张；后续新增的[精读笔记](精读文献笔记/spear_cidr2026/spear_cidr2026.md)与此前专项章节核验分别保留 |
 
 2026-09-03 的[前缀/表示专项审查](semantic_prefix_reuse_design_audit_20260903.md)进一步收窄上述比较：
@@ -118,7 +161,7 @@ IMLane artifact核查（来源：公开源码，2026-09-10）：[作者仓库](h
 2026-10-15 已核对上述 Palimpzest、Abacus 正式论文的题录及所引章节；不据此补登记全文精读或 artifact 运行完成。
 二者的系统层比较与固定计划执行归因见[研究定位](研究定位.md#palimpzest-comparison)及[对照规范](../../experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)。
 
-以上新增 serving 文献不能全部当作可直接实现的系统 baseline：Past-Future、JITServe、Beyond Prediction 与 FastServe 都进入或修改 serving scheduler，而本项目固定 vLLM 为黑盒。它们在本项目中的角色是：定义输出 work 的不确定性表示、SLO goodput/tail/regret 指标，以及要求保留不依赖预测的强静态回退。可直接落地的首版仍是解析模型 + profile residual + 分位数/区间，作用点位于 Daft/Ray admission 之前。
+以上 serving 文献不能全部当作可直接运行的系统 baseline：Past-Future、JITServe、Beyond Prediction 与 FastServe 均进入或修改 serving scheduler，需各自核对版本和接点。早期分析仅迁移输出 work 的不确定性表示、SLO goodput/tail/regret 指标及强静态回退；当前允许按[后端比较](../../experiments/plans/reference/对照规范.md#backend-change-comparison)评估研究补丁。解析模型、profile residual 与分位数／区间继续作为低成本参照，复杂引擎策略须证明额外价值。
 
 主要来源：
 
