@@ -53,10 +53,10 @@ positive_review_cnt=ready['result']['positive_review_cnt'], checkout=sembench_ch
 
 ## Movie session 配置
 
-普通Movie CLI及参数保持原入口；查询评价和回执合并由
+Movie 查询评价和回执合并由
 [`movie_records_query.py`](../src/experiments/movie_records_query.py)共用，普通模型构造／运行／关闭由
 [`movie_records_worker.py`](../src/experiments/movie_records_worker.py)负责。Session、service和IMLane直接调用所属模块，
-不再从CLI取得旧私有worker或查询函数；生产核心不依赖这些实验模块。
+生产核心不依赖这些实验模块。
 
 普通矩阵已有 `check`、准备、owner／附着与恢复子命令，实际帮助从上述标准入口读取。
 计划的 `backend` 可选择 `semloom-core`、`semloom-static-reference`、`lotus-native`、`daft`、`ray-data`、`imlane`。
@@ -231,13 +231,13 @@ MMQA 配置改为 `scenario=mmqa`、选择 `Q2a/Q2b/Q7`，参数改用 `--data-d
 
 ## 独立研究与离线分析
 
-三个[离线代价入口](../src/experiments/operator_costs/README.md)共用明确的profile／比较模块，不再互相加载脚本。
-比较命令必须选择`--data-csv`或`--ref-json`，context-LOO还须显式给`--output`；Ridge原参数保持。
-新结果不默认写入历史日期目录，旧完整来源从具名投影恢复；这些估计不控制当前单查询。
+三个[离线代价入口](../src/experiments/operator_costs/README.md)使用共享的profile／比较模块。
+比较命令必须选择`--data-csv`或`--ref-json`，context-LOO还须显式给`--output`。
+输出路径由各命令参数确定；这些估计不控制当前单查询。
 
 [SemFilter参考校准命令](analysis/build_semfilter_reference_calibration.py)直接使用
 [离线构建器](../src/experiments/operator_costs/semfilter_reference_calibration.py)，保留显式`--source`／`--output`。
-它只处理汇总观测和产物文件，历史固定服务身份不提供当前模型或数据库执行入口。
+它只处理汇总观测和产物文件，不启动模型或数据库。
 
 SAOR 的离线汇总与容量回放继续读取已有结果，接口见[研究组件](../src/research/multitask/README.md)。
 `run_ai_operator_scenarios.py` 用于显式 profiler 装配和 CPU 行为检查。
