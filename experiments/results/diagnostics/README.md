@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[原生LOTUS同owner与正式resident入口](lotus_mmqa_q3a_native_20261110/README.md)：
+冻结Q3a真实50终态、完整token和物理清理，与当前main的声明式接线/CPU迁移分列。
+
 [Daft 原生 AI 正式接线与 sink 计时修正](daft_native_semantics_20261110/README.md)：
 共用原 worker/监督器，Q3a/Q4真实单冷资格与最新 main 整合 CPU 回归分列，保留未验证范围。
 

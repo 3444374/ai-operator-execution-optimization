@@ -28,6 +28,11 @@ Daft 原生 AI 的[单 F/M/E 完整查询入口](src/baselines/README.md#daft-na
 原整合22项CPU回归通过；后续sink计时修正的19项检查与Q1/Q3a/Q4完整软件回放见[报告](../experiments/results/diagnostics/daft_native_semantics_20261110/README.md)。旧真实时长含部分审计，不能追认为修正后的统一口径。
 其余17题、同 owner 暖轮与共同 host 总时钟尚未取得资格，不把旧版本真实记录称为新候选实测。
 
+LOTUS 的[显式 resident 文本入口](src/baselines/README.md#lotus-native-resident-sembench)复用原生stage、
+模型owner及既有生命周期，默认isolated保持；当前源码/输入/模型绑定通过配置声明。
+124个不同CPU检查及Q3a50/Q4 48条完整软件冷暖回放通过，e097目标环境导入/绑定及CPU监督通过；准确范围按[报告](../experiments/results/diagnostics/lotus_mmqa_q3a_native_20261110/README.md)分列；
+已完成的Q3a50次真实冷暖仍绑定ee625/fd06，不自动成为新正式候选的模型结果。
+
 <a id="pr52-g1-qualified-scope"></a>
 <a id="record-local-sections-c827"></a>
 <a id="record-local-completion-progression"></a>

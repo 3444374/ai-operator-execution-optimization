@@ -2,7 +2,7 @@
 
 The caller binds the stage and invokes the original accessor. LOTUS retains
 formatting, parsing, batching and ordered returns; this adapter owns only its
-cold model lifetime and the occurrence-to-call audit.
+cold model lifetime or explicitly borrows a caller-owned resident model.
 """
 
 from contextlib import contextmanager
@@ -45,13 +45,14 @@ def _observe_messages(lm, records, capture):
 
 
 def execute_native(frame, stage, records, *, invoke, engine, resources,
-                   query_id, profile, budget):
+                   query_id, profile, budget, shared_owner=None):
     """Execute a bound Filter/Map/Extract without replacing its native graph.
 
     ``records`` correspond to ``frame`` occurrences in source order. The fresh
     allowance is supplied by the caller; the existing provider spends it before
     transferring each actual request to IPC. No model or network is allocated
-    for an empty input.
+    for an empty input. A borrowed owner is never closed by this stage, including
+    on failure; its caller must close it after the complete original query.
     """
     if stage.kind == "filter" and stage.method.answer_parser != LOTUS_NATIVE:
         raise ValueError("lotus-native requires the unmodified LOTUS answer parser")
@@ -60,8 +61,10 @@ def execute_native(frame, stage, records, *, invoke, engine, resources,
         query_id=query_id, stage=stage.describe(), protocol="local_async_model_IPC",
         production_core_used=False, original_operators_used=True,
         scheduler_owner="original LOTUS LM / LiteLLM batch_completion",
-        lifecycle="cold local model; startup and close included")
-    owner = binding = method = result = None
+        lifecycle=("borrowed native model; caller owns final close" if shared_owner is not None
+                   else "cold local model; startup and close included"))
+    owner = shared_owner
+    binding = method = result = None
     failure = None
     try:
         if type(profile) is not dict or set(profile) != {"native_lm_max_batch_size"}:
@@ -69,6 +72,9 @@ def execute_native(frame, stage, records, *, invoke, engine, resources,
         concurrency = profile["native_lm_max_batch_size"]
         if type(concurrency) is not int or concurrency < 1:
             raise ValueError("native_lm_max_batch_size must be positive")
+        if shared_owner is not None and (owner.engine != engine or owner.generation != stage.generation
+                or owner.resources != resources or owner.concurrency != concurrency):
+            raise ValueError("native stage differs from the resident model binding")
         stage_expected = [stage_identity(query_id, record, stage.stage_id,
             model_role=stage.model_role) for record in records]
         # The native owner retains its original CallLedger identity contract.
@@ -89,9 +95,11 @@ def execute_native(frame, stage, records, *, invoke, engine, resources,
         with lotus.settings.context(enable_cache=False):
             method = LotusRecordMethod(stage)
             method.lm.max_batch_size = concurrency
-            owner = LocalNativeModel(engine, stage.generation, resources, concurrency)
+            if shared_owner is None:
+                owner = LocalNativeModel(engine, stage.generation, resources, concurrency)
             with owner.query(method.lm, expected, budget, query_id=query_id) as binding:
                 if owner.ready_report is not None:
+                    report["model_ready_observed_ns"] = time.monotonic_ns()
                     report["owner_ready"] = deepcopy(owner.ready_report)
                 with lotus.settings.context(lm=method.lm):
                     with _observe_messages(method.lm, records, binding.capture_prompts):
@@ -104,7 +112,7 @@ def execute_native(frame, stage, records, *, invoke, engine, resources,
     except BaseException as error:
         failure = error
     finally:
-        if owner is not None:
+        if owner is not None and shared_owner is None:
             try:
                 report["backend_close"] = owner.close(**({} if resources.query_timeout_s is None else dict(timeout=resources.query_timeout_s)))
                 if report["backend_close"]["status"] != "closed" and failure is None:

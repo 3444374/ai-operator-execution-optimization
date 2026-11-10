@@ -4,8 +4,75 @@ The caller owns execution and persistence. This module records existing driver
 and model receipts without creating requests or an execution loop.
 """
 from collections import defaultdict
+from contextlib import contextmanager
 import time
 from src.infrastructure.redact import redact_text
+
+
+@contextmanager
+def observe_native_requests(transport, events):
+    """Observe native IPC submissions/terminal delivery without changing policy."""
+    submit, poll = transport.submit, transport.poll
+
+    def observed_submit(row, **options):
+        started = time.monotonic_ns()
+        result = submit(row, **options)
+        events['submit'].append(dict(started_ns=started, returned_ns=time.monotonic_ns(),
+            request_id=result.request_id, status=result.status))
+        return result
+
+    def observed_poll(*args, **options):
+        result = poll(*args, **options)
+        observed = time.monotonic_ns()
+        events['terminal'].extend(dict(observed_ns=observed, request_id=row.request_id,
+            confirmed=row.engine_terminal_confirmed) for row in result)
+        return result
+
+    transport.submit, transport.poll = observed_submit, observed_poll
+    try:
+        yield
+    finally:
+        transport.submit, transport.poll = submit, poll
+
+
+def native_request_boundaries(events, calls):
+    """Check successful request identities and retain the provenance of clocks."""
+    queued = [row for row in events['submit'] if row['status'] == 'queued']
+    terminals = events['terminal']
+    ids = [row['engine_request_id'] for row in calls]
+    if (len(set(ids)) != len(ids) or len(queued) != len(ids) or len(terminals) != len(ids)
+            or {row['request_id'] for row in queued} != set(ids)
+            or {row['request_id'] for row in terminals} != set(ids)
+            or not all(row['confirmed'] for row in terminals)):
+        raise ValueError('native submissions and confirmed terminals differ from original query calls')
+    return dict(first_native_submit_ns=min((r['started_ns'] for r in queued), default=None),
+        last_confirmed_terminal_observed_ns=max((r['observed_ns'] for r in terminals), default=None),
+        first_engine_accept_ns=None, kernel_seconds=None,
+        unavailable_reason='IPC observations do not independently expose engine acceptance or kernels',
+        receipt_start_end_source='native model_start_monotonic/model_end_monotonic, not kernel clocks')
+
+
+def resident_launch_timing(supervision, session, controller_entry_ns):
+    """Keep controller, supervised runner and fresh-query intervals separate."""
+    sinks = [q['query_result_ready_ns'] for q in session['queries']]
+    runner = int(supervision['started_monotonic'] * 1e9)
+    if not sinks or sinks[0] is None or runner > sinks[0]:
+        raise ValueError('resident run has no complete original cold sink after launch')
+    if controller_entry_ns is not None and controller_entry_ns > runner:
+        raise ValueError('controller timestamp follows supervised runner launch')
+    return dict(controller_entry_ns=controller_entry_ns, runner_started_ns=runner,
+        controller_entry_to_sink_seconds=(None if controller_entry_ns is None else
+            (sinks[0] - controller_entry_ns) / 1e9),
+        runner_launch_to_sink_seconds=(sinks[0] - runner) / 1e9,
+        query_full_seconds=[q['full_query_seconds'] for q in session['queries']],
+        controller_scope='script timestamp after import time; excludes interpreter/time import',
+        runner_scope='existing supervisor timestamp before Popen; host preflight/lease excluded',
+        common_cold_total_seconds=None,
+        common_cold_total_reason='cross-system comparison requires the same observed outer boundary',
+        supervised_timeout_s=supervision['timeout_s'],
+        supervisor_cleanup_reserved_s=supervision['cleanup_reserved_s'],
+        outer_host_deadline_seconds=None,
+        outer_host_deadline_reason='host lease/resource cleanup is owned by the external caller')
 
 
 
