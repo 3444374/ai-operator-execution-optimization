@@ -358,7 +358,7 @@ sf25 机场关系含一个缺失 `Destinations`：输入 CSV／原 DataFrame 仍
 | Ray Data | 上述十九题的有限记录图；显式原生 processor 另见上文 | 旧图无独立 sink 边界；原生 processor 不继承旧图时长 |
 | Daft | 上述十九题的有限记录图；原生 AI 另见上文 | 旧图无独立 sink 边界；原生 AI 不继承旧图时长 |
 | IMLane | 有限记录链的语义合同与独立 DuckDB 作者入口分别核验；原生 TINYINT Filter／DOUBLE Map 已有具名真实运行 | 原 `072f8257` 的 VARCHAR 返回通路存在根／子 Arrow schema 错配；不把十九题合同 fixture 或 `398ba063` 工程补丁算作作者原版全部支持 |
-| Kalypso | 正式目录含 Movie Filter；另有 Movie Q10 Map 和 MMQA Q3a–g／Q6a–c 的具名私有原生运行 | 本统一文本 CLI 未暴露作者服务；旧私有结果不自动取得新内存 sink 口径。原 `05024f02` 未透传结构化输出，MMQA Q1／Q4 Extract 留空 |
+| Kalypso | 正式目录含 Movie Filter；另有 Movie Q8/Q9/Q10 Map、MMQA Q3a–g／Q6a–c 和 Medical Q1/Q4 的具名私有原生运行 | 本统一文本 CLI 未暴露作者服务；新接点的私有迁移已做保存响应回放，目标运行绑定待核，旧结果不自动取得新内存 sink 口径。原 `05024f02` 未透传结构化输出，MMQA Q1／Q4 Extract 留空 |
 
 这些是 CPU 接线范围，不是模型质量或性能成绩。原查询／原 accessor、共享链和 NativeStage 的
 软件回复差分与原十六题 CLI fixture 均运行；真实模型逐行一致性按对应源码和运行回执判断。
@@ -385,7 +385,8 @@ Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 �
 原 `_25` 资产有25名患者、仅1条症状，且没有 Q1 的 allergy 或 Q4 的 acne 金标，只适合诊断。
 该诊断切片的 Q1 空集对空集可被原评价记为1，Q4 保留 NaN；不能把这些结果当作模型质量。
 原 Q10 指令的 `DIMORPHIC HEMORRHOID` 与原标签复数拼写也不被适配器改写或归一化。
-`check` 读取原关系并核算实际调用数；所有 baseline 的模型、生成和输入身份须一致。
+`check` 读取原关系并核算实际调用数；尽量匹配模型、可公开配置的生成项和输入身份。
+各系统保留原生依赖及必要策略，不能匹配的实际参数／提示／parser 差异单列，不强改作者算法。
 补充文本入口的 Movie／MMQA／Medical 配置省略生成项时均采用原 LM 的8192 token／无 stop，显式值保留。
 这改变了旧补充 Movie／MMQA 的省略项解析；显式8 token／换行 stop 的旧配置和普通 Filter 类型默认不变，旧结果不改写。
 
@@ -401,6 +402,9 @@ Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求�
 预检使用本地 tokenizer JSON 和原 LM 计数，记录声明的服务上下文、完整首层消息和计数来源，零模型／零额度消耗；
 本地 tokenizer 身份不代替服务端验证。运行使用既有持久预算逐 POST 消费，保留原分层归并、失败尝试和原 JSON 评价。
 该路径计时基于已就绪的外部服务，模型启动／退出另由宿主核查，不能与普通文本冷启动成绩混算。
+`source_to_sink_seconds` 从本地 LM／tokenizer 准备前到完整原聚合结果返回，排除 observer 收尾、评价、
+结果编码和持久化；旧 `query_seconds` 保持原边界。原 sf25 保存输入的软件 SDK 回放不证明目标 tokenizer
+的首层划分，真实调用上限仍需上述目标预检，不能直接使用软件 fixture 的单请求数。
 当前仅原生 LOTUS 聚合已接线，另外四种 baseline 的聚合项留空，不增加替代算法。
 配置与命令见[脚本说明](../../scripts/README.md#sembench-native-mmqa-aggregate)。
 
@@ -459,6 +463,11 @@ Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一
 [Ray Animals Q7](image/ray_animals_q7/README.md)使用原生 Ray LLM processor，顺序执行两遍64条 Filter和原 City交集；
 两次各自启动/关闭，整体共享128次额度，不能标为同模型 warm。默认示例使用 Ray2.56.1／vLLM0.22.0；
 原128条模型资格与当前清理接口的Linux CPU资格分列，其他环境和完整公平计时另验。
+当前 Q7 保留第一 stage 的物理退出及清理，在最后 stage 预测原子发布后执行原 City 交集；
+完整内存 sink 就绪后 ACK，再完成最后 runtime 的公开关闭和宿主清理。第一 stage 的释放仍属于
+该双 worker profile 的必要流程。19 项 CPU 及 128 条保存答复身份／parser 回放通过，完整原 City／
+evaluator 和目标 Ray／GPU 新终点仍待验证；不从公共 runtime 存活推断内部模型 actor 驻留。
+旧结果包含最后关闭，不能减去估计清理时间回填新口径。
 
 Ray／Daft 的 CLIP 图仍是独立嵌入路径；Q7 的资格不扩大为其他 VLM Join／Extract 支持。
 IMLane／Kalypso 当前视觉绑定未建立，不由此推断整个上游系统永远不支持视觉。

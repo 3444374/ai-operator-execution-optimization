@@ -8,6 +8,7 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 Ray 完整文本查询新增[显式原生 processor 接点](src/baselines/README.md#ray-native-prepared-sembench)：
 完整预测物化后、关闭前执行原 parser/关系并记录内存 sink；旧 `query_seconds` 不追认为统一口径。
 `ac4440328` 已完成 Q10 full2000、Q8 120、Q9 Map256 的原生模型、实际 token、原 sink 和物理清理审计；
+共享 `48a6b42d0` 题号绑定的 Ray Q1/Q2/Q3 也已完成 2000/120/120 次真实运行，2240 条终态、0 条 unknown。
 Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，合并后的源码仅做受影响 CPU 回归，
 不把这些冻结来源的成绩改记为整合分支实测，也不称全部 baseline 或全部题的统一计时已完成。
 
@@ -44,18 +45,36 @@ LOTUS 的[显式 resident 文本入口](src/baselines/README.md#lotus-native-res
 完成后的 session 报告按实际大小读取，配置上限与符号链接／非有限数拒绝保持；
 `50eae2e04` 已完成 Movie Q10 冷暖各2000次及离线审计。当前合并不重跑模型。
 Movie Q9 的[显式作者 TopK 候选](src/baselines/README.md#lotus-movie-q9-topk)复用 resident owner，
-保留原 quick、K=N 与比较预算，和 Q9 Map 分开验证；目标资格只按该候选的独立回执解释。
+保留原 quick、K=N 与比较预算，和 Q9 Map 分开验证；`c9cadb1df` 的 8 occurrence 样本实际用了 20 次比较，
+未超过 28 次上限，不授予完整 256 项排序资格。
+
+LOTUS 原视觉查询与 MMQA Q5 聚合现于原完整关系返回时记录内存 sink，source 包括本地 LM／tokenizer
+准备，旧 `query_seconds` 保持。5 项受控时钟检查与 17 项原生 SDK 软件检查通过；Q5 原 sf25 资产已回放，
+但使用软件 tokenizer／生成，不能据此确定目标模型的分层请求数。视觉原查询的新增完整回放缺本地
+Animals manifest／SQL，目标环境验证仍待完成。
 
 [Kalypso 原生客户端](src/baselines/text/frameworks/kalypso_native/README.md#内存结果边界)新增完整原关系
 就绪时间，公共报告从真实 `query_start_ns` 计算 `source_to_sink_seconds`；trace 审计、结果编码、
 评价和证据持久化在该终点后。旧 `answer_ready_s` 保留，缺少新接点的路径明确留空。
-Filter 的 28 项 CPU 检查与公共时钟／生命周期的 42 项检查通过；后置失败仍保留 sink 并报告失败。
-已有私有 Movie Map／MMQA 原生结果分别保留；新接点不自动授予这些旧入口或作者环境／GPU 资格。
+共享接点的 29 项 CPU 检查与公共时钟／生命周期的 42 项检查通过；后置失败仍保留 sink 并报告失败。
+现有 Q10 Map 与 Q3b–g 私有入口已给出新副本迁移补丁；4000 条 Map 保存答复和 12×25 条 MMQA
+归档响应的完整结果／评价回放相等。Q8/Q9 Map、Q3a/Q6a–c、Medical Q1/Q4 的迁移又通过 16 轮保存
+响应回放与 18 个失败边界检查。原 Map 最坏 2N、Filter N 的实际请求额度保持；Linux 依赖、新运行
+绑定及真实 sink／清理仍待验证。Q9 本批独立全输入 hash 未知，原 occurrence／必要 CSV／结果相等，
+不能以其他输入身份补齐该未知项。这些 CPU 结果不是新 GPU 或性能资格。
 
 [IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257` 和可选
-schema-child 工程变体。15 项本地准备／fixture 检查通过，原生 Linux 库构建、PROCESS／THREAD SQL、
+schema-child 工程变体。连同[完整原关系交接](src/experiments/native_imlane_relation.py)，29 项不同 CPU
+检查及 14 份保存 sink 关系回放通过。原生 Linux 库构建、PROCESS／THREAD SQL、
 NULL／offset／长字符串所有权仍待验证。原版 TINYINT Filter／DOUBLE Map 的已有真实结果不受影响；
-不能用一行 schema 修补或 Python fixture 宣称原版 Extract 已支持。
+不能用一行 schema 修补或 Python fixture 宣称原版 Extract 已支持。新交接要求实际 DuckDB/result
+等待完整 sink ACK 后退出；目标原生生命周期尚待验证。联合 150 行的六题批次只有一个批次时钟，
+不能拆成六个独立查询时长。
+
+[Ray Animals Q7](src/baselines/image/ray_animals_q7/README.md)现保留第一 stage 的完整关闭，最终原 City
+关系就绪后才 ACK 并关闭最后 runtime。19 项 CPU、真实本地子进程交接及 128 条旧答复身份／原 parser
+回放通过；完整 City／evaluator 的保存回放缺本地 manifest／SQL，新增终点的真实 Ray／GPU 资格未执行。
+不能从公共 runtime ACK 推断内部模型 actor 驻留或 kernel 时间，原 128 次模型记录仍绑定旧版本。
 
 <a id="pr52-g1-qualified-scope"></a>
 <a id="record-local-sections-c827"></a>
