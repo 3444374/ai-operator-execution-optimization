@@ -143,7 +143,8 @@ class ResidentDriver:
                 relations = []
 
                 def execute(operation, invoke):
-                    topk = operation.describe()['kind'] == 'topk'
+                    kind = operation.describe()['kind']
+                    topk = kind == 'topk'
                     def accessor():
                         if self.owner.transport is None:
                             relation = invoke()
@@ -158,6 +159,10 @@ class ResidentDriver:
                         from src.baselines.text.frameworks.lotus_native_topk import execute_native_topk
                         return execute_native_topk(operation, invoke=accessor, shared_owner=self.owner,
                             query_id=query.query_id, budget=unit)
+                    if kind == 'join':
+                        from src.baselines.text.frameworks.lotus_native_join import execute_native_join
+                        return execute_native_join(operation, invoke=accessor, shared_owner=self.owner,
+                            query_id=query.query_id, budget=unit)
                     return execute_native(operation.frame, operation.stage, operation.records,
                         invoke=accessor, engine=self.engine, resources=self.resources,
                         query_id=query.query_id, profile=self.config['profile'], budget=unit,
@@ -168,6 +173,9 @@ class ResidentDriver:
                 sink = emit('result_ready')
                 report.update(sink_ready_ns=sink, source_to_sink_seconds=(sink-started)/1e9,
                     native_query_seconds=(sink-report['prepare_finished_ns'])/1e9)
+                if operator is not None and query.operation.describe()['kind'] == 'join':
+                    from src.baselines.text.frameworks.lotus_native_join import finish_accounting
+                    finish_accounting(operator)
                 report['operator'] = {} if operator is None else {k:v for k,v in operator.items() if k != 'frame'}
                 state = None if self.owner is None else self.owner.snapshot()
                 report['snapshot_finished_ns'] = time.monotonic_ns()
@@ -194,6 +202,12 @@ class ResidentDriver:
                     from src.baselines.text.frameworks.lotus_native_topk import audit
                     if len(relations) != 1:
                         raise ValueError('TopK must return one complete native relation')
+                    audit(query, operator, result, relations[0])
+                    report['operator_relation'] = result_value(relations[0])
+                elif operator is not None and query.operation.describe()['kind'] == 'join':
+                    from src.baselines.text.frameworks.lotus_native_join import audit
+                    if len(relations) != 1:
+                        raise ValueError('Join must return one complete native relation')
                     audit(query, operator, result, relations[0])
                     report['operator_relation'] = result_value(relations[0])
                 elif operator is not None:
@@ -224,6 +238,12 @@ class ResidentDriver:
         except BaseException as error:
             primary = error
             report['error_type'] = type(error).__name__
+            if hasattr(error, 'operator_report') and '_native_binding' in error.operator_report:
+                from src.baselines.text.frameworks.lotus_native_join import finish_accounting
+                try:
+                    finish_accounting(error.operator_report, require_complete=False)
+                except BaseException as accounting:
+                    error.add_note('Join failure accounting also failed: ' + type(accounting).__name__)
             if getattr(error, 'operator_report', None) is not None:
                 report['operator'] = {k:v for k,v in error.operator_report.items() if k != 'frame'}
             error.query_report = report

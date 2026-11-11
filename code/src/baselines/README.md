@@ -484,13 +484,27 @@ Q2b 无匹配时，原零行 Extract 返回后保留声明的 `color` 列，最�
 原失败记录及46.740秒失败耗时保留，离线评价不补记正常 API 返回或成功端到端计时。
 这些软件回复检查与离线恢复不授予修复版本新的 VLM 质量或性能资格。
 
-### 后续 Join、TopK 与缺失数据
+<a id="lotus-movie-exact-join"></a>
+### Movie Q5/Q6/Q7 原生 exact Join
 
-Movie Q5/Q6/Q7 的原 exact Join 入口和原评价已可直接选择；现有单个 F/M/E worker 不因此支持 Join。
-现有 Ant-Man256行的每题是65536个候选对，模型之后才剔除相同 reviewId 的512对；
-Q5/Q6 的 LIMIT10 也在完整 Join 之后，不能预裁剪、去重或按十次调用申请预算。
-原 LOTUS1.2.4 会先 materialize 全部 pair 的 prompt，须单独验证主机内存、启动／查询期限与原生模型 owner；
-三题单遍预算196608次，暂未申请或运行。
+同一文本 CLI 显式选择 `backend=lotus-native`、`lifecycle=resident`、`scenario=movie` 和 `query=5/6/7`，
+调用[一条共享 Join 接点](text/frameworks/lotus_native_join.py)。原 `sem_join` 拥有全部有序对、formatter、
+LM/LiteLLM batching、Boolean parser 和关系构造；现有 owner/预算/监督继续复用，默认 F/M/E、TopK 不变。
+pair 按左右 source position 关联，原 SDK 有序返回绑定相同消息的不同 occurrence，不能去重。
+完整原查询返回后才转移逐对 receipt 报告，再做原 Join/最终 sink 重放、评价与持久化。
+
+首份 [CPU 资格](../../../experiments/results/diagnostics/lotus_movie_join_native_20261111/README.md)
+只用原 Ant-Man 顺序前 8 条：每题 64 对，Q5/Q6/Q7 分别完成软件 IPC 回放。
+配置复用 [resident 模板](../../configs/sembench_lotus_native.example.json)，单冷设置 `resident.repetitions=1`，
+输入声明改为该份 `Reviews.csv`，原生模型与永久预算分别绑定每题 64 次；CPU 命令见[脚本说明](../../scripts/README.md#additional-sembench-text-entry)。
+这些是合成答复，不是新模型质量、性能或目标物理清理资格。
+
+完整 Ant-Man 256 条的每题是 65,536 个候选对，模型之后才剔除相同 reviewId 的 512 对；
+Q5/Q6 的 `head(10)` 也在完整 Join 之后，不能预裁剪或按 10 次调用申请预算。
+原 LOTUS 1.2.4 会先 materialize 全部 pair prompt。完整输入的主机内存、期限和目标模型资格仍待核；
+三题完整单遍上限 196,608 次没有因此释放。
+
+### 后续 TopK 与缺失数据
 
 Q9 原 TopK 仍须显式选择 `ranking=topk`，不能借用本次 Map 的256次资格。
 其 `quick` 路径随机选 pivot；完整 N=256 排序的候选比较数上界32640，精确次数依赖 pivot 和模型判断，

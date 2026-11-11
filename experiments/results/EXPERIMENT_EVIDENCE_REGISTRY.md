@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-11：LOTUS Movie exact Join 的有限接线
+
+[报告](diagnostics/lotus_movie_join_native_20261111/README.md)记录 Q5/Q6/Q7 共用原生 Join 分支和每题 8×8 软件 IPC 回放。
+原作者拥有比较、parser、全 Join 及最终关系；逐对报告在完整 sink 后构造。
+这批证据支持源码接线和 CPU 时钟/预算正确性，不是模型质量、目标物理清理或完整 256×256 资格。
+
 ## 2026-11-10：原生LOTUS同owner结果与正式入口迁移
 
 [报告](diagnostics/lotus_mmqa_q3a_native_20261110/README.md)保存ee625/fd06的Q3a冷25＋暖25真实资格、

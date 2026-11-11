@@ -1,7 +1,8 @@
 """Original single-operator SemBench text queries and their input boundary.
 
 The upstream query still owns selection and relational postprocessing. An
-execution adapter replaces only its one ordinary Filter, Map or Extract call.
+execution adapter binds its one accessor; exact Join and TopK require the
+explicit original LOTUS resident owner, separate from prepared Filter/Map/Extract.
 """
 
 from contextlib import contextmanager
@@ -20,7 +21,7 @@ from .sembench_source import SEMBENCH_COMMIT, verify_checkout
 
 
 _OPERATOR_SCOPE = threading.RLock()
-MOVIE_QUERY_IDS = ('1', '2', '3', '4', '8', '9', '10')
+MOVIE_QUERY_IDS = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10')
 
 
 @dataclass(frozen=True)
@@ -81,6 +82,24 @@ class TopKOperation:
             pivot='original numpy.random.randint; actual RNG state recorded')
 
 
+@dataclass(frozen=True)
+class JoinOperation:
+    """The author's exact self Join; every ordered source pair is a request."""
+    frame: object
+    model_name: str
+    generation: object
+    instruction: str
+    records: tuple[RecordOccurrence, ...]
+
+    def describe(self):
+        count = len(self.frame)
+        return dict(kind='join', method='exact', input_rows=count, right_input_rows=count,
+            expected_model_calls=count * count, call_count_kind='exact ordered Cartesian pairs',
+            input_columns=list(self.frame.columns), model_columns=['reviewText:left', 'reviewText:right'],
+            instruction=self.instruction, result_cache=False, cascade=False,
+            source_pair_order='left-major; original positions, including same IDs and text')
+
+
 def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
     """Translate only the argument shapes used by the selected original queries."""
     import lotus
@@ -88,6 +107,23 @@ def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
 
     if lotus.settings.serialization_format != SerializationFormat.DEFAULT:
         raise ValueError('this record bridge uses original LOTUS DEFAULT text serialization')
+    if kind == 'join':
+        if (len(args) != 1 or not args[0].equals(frame) or set(kwargs) != {'join_instruction'}
+                or set(lotus.nl_expression.parse_cols(kwargs['join_instruction']))
+                    != {'reviewText:left', 'reviewText:right'}):
+            raise ValueError('only original Movie Q5/Q6/Q7 exact self Join is bound')
+        if generation.response_format is not None or generation.logprobs is not None:
+            raise ValueError('ordinary Join uses the original Boolean answers without helper sampling')
+        records = []
+        rows = list(frame[['reviewText']].iterrows())
+        for left, (left_index, left_row) in enumerate(rows):
+            for right, (right_index, right_row) in enumerate(rows):
+                records.append(RecordOccurrence(query_id + f'-pair-{left}-{right}', len(records),
+                    f'{int(left_index)}:{int(right_index)}',
+                    {'reviewText:left': str(left_row['reviewText']),
+                     'reviewText:right': str(right_row['reviewText'])}))
+        return JoinOperation(frame.copy(deep=True), model_name, generation,
+                             kwargs['join_instruction'], tuple(records))
     if kind == 'topk':
         if (len(args) != 1 or kwargs != dict(K=len(frame), method='quick', return_stats=True)
                 or lotus.nl_expression.parse_cols(args[0]) != ['reviewText']):
@@ -133,7 +169,7 @@ def _operators(handler):
     originals = []
     with _OPERATOR_SCOPE, lotus.settings.context(enable_cache=False):
         try:
-            for kind in ('filter', 'map', 'extract', 'topk'):
+            for kind in ('filter', 'map', 'extract', 'topk', 'join'):
                 cls = type(getattr(pd.DataFrame(), 'sem_' + kind))
                 original = cls.__call__
                 originals.append((cls, original))
@@ -166,7 +202,7 @@ class SemBenchTextQuery:
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
                 or (scenario == 'mmqa' and query in MMQA_QUERY_IDS)
                 or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)):
-            raise ValueError('this entry supports Movie Q1/Q2/Q3/Q4/Q8/Q9-map-or-topk/Q10, twelve ordinary MMQA text queries '
+            raise ValueError('this entry supports Movie Q1-Q10 (Q5-Q7 native Join, Q9 Map or TopK), twelve ordinary MMQA text queries '
                              'and Medical Q1/Q4/Q10')
         if scenario != 'medical' and scale_factor is not None:
             raise ValueError('scale_factor applies only to the Medical authored CSV filenames')

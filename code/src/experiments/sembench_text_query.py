@@ -68,6 +68,9 @@ def configuration(path):
     lifecycle = value.get('lifecycle', 'isolated')
     if value.get('ranking') == 'topk' and (value['backend'] != 'lotus-native' or lifecycle != 'resident'):
         raise ValueError('author TopK requires the explicit native LOTUS resident owner')
+    if (value['scenario'] == 'movie' and str(value['query']).lower().removeprefix('q') in ('5', '6', '7')
+            and (value['backend'] != 'lotus-native' or lifecycle != 'resident')):
+        raise ValueError('author Movie Join requires the explicit native LOTUS resident owner')
     if lifecycle not in ('isolated', 'resident'):
         raise ValueError('choose isolated or explicit native LOTUS resident lifecycle')
     if lifecycle == 'resident':

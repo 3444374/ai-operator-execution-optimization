@@ -48,6 +48,11 @@ Movie Q9 的[显式作者 TopK 候选](src/baselines/README.md#lotus-movie-q9-to
 保留原 quick、K=N 与比较预算，和 Q9 Map 分开验证；`c9cadb1df` 的 8 occurrence 样本实际用了 20 次比较，
 未超过 28 次上限，不授予完整 256 项排序资格。
 
+Movie Q5/Q6/Q7 的[共享原生 Join 候选](src/baselines/README.md#lotus-movie-exact-join)复用上述 resident，
+每个原始有序 pair 独立关联和扣预算，原 parser、完整 Join 与后置筛选/限制不变。
+[首批 CPU 报告](../experiments/results/diagnostics/lotus_movie_join_native_20261111/README.md)
+只覆盖每题 8×8 软件答复回放及 sink 前后边界；没有新的模型、GPU 或完整 256×256 资格。
+
 LOTUS 原视觉查询与 MMQA Q5 聚合现于原完整关系返回时记录内存 sink，source 包括本地 LM／tokenizer
 准备，旧 `query_seconds` 保持。5 项受控时钟检查与 17 项原生 SDK 软件检查通过；Q5 原 sf25 资产已回放，
 但使用软件 tokenizer／生成，不能据此确定目标模型的分层请求数。视觉原查询的新增完整回放缺本地

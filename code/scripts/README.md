@@ -94,6 +94,18 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py check
 
 各变量由本机仓库外 runtime／packet 提供；准备输出必须是新的 Git 外私有目录。
 Movie 数据目录需要 `Reviews.csv`，Q10 另需原 `Movies.csv`，后者仅用于评价。
+Movie Q5/Q6/Q7 只允许[显式原生 LOTUS resident Join](../src/baselines/README.md#lotus-movie-exact-join)。
+它复用同一 `check/run`，不进入 prepared F/M/E；8 条样本每题需完整 64 对预算。
+零模型回放使用已冻结的前 8 条输入、真实 LOTUS SDK 和软件模型 IPC：
+
+```sh
+LITELLM_LOCAL_MODEL_COST_MAP=True PYTHONHASHSEED=3 PYTHONPATH=code "$DRIVER_PYTHON" \
+  -m tests.baselines.text.replay_lotus_join --config "$JOIN_CPU_CONFIG" \
+  --sembench-checkout "$SEMBENCH_CHECKOUT" --data-dir "$JOIN_SAMPLE8_DIR" \
+  --output-dir "$FRESH_CPU_OUTPUT"
+```
+
+该回放不使用模型答案，不能报告真实质量或延迟；目标 `run` 仍需精确源码、模型/输入绑定与外层监督。
 MMQA 准备仅调用原三种文本生成方法并复制固定表，不下载、不生成图片、不调用模型。
 Medical 准备只复制所选已有规模的三份原 CSV，保留 `data/` 布局，不重新采样或启动图音准备：
 

@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[LOTUS Movie 共享 exact Join 接线](lotus_movie_join_native_20261111/README.md)：
+Q5/Q6/Q7 原序前 8 条、每题 64 对的原 SDK/IPC 软件检查；原生算法与后置完整 sink 保留，未运行模型。
+
 [原生LOTUS同owner与正式resident入口](lotus_mmqa_q3a_native_20261110/README.md)：
 冻结Q3a真实50终态、完整token和物理清理，与当前main的声明式接线/CPU迁移分列。
 

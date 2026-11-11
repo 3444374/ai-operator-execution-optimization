@@ -16,6 +16,8 @@ def prepare(query, tokenizer=None):
 
     if query.operation is None:
         return None, [], []
+    if query.operation.describe()['kind'] == 'join':
+        raise ValueError('native Join requires its original LOTUS resident accessor, not prepared F/M/E')
     with lotus.settings.context(enable_cache=False):
         method = LotusRecordMethod(query.operation.stage)
         prepared = method.prepare_rows(query.operation.records, query_id=query.query_id)
