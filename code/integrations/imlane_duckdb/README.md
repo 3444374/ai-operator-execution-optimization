@@ -347,7 +347,8 @@ project resident bridge 保存答复，共 2600 条。Q3 明确保留 bridge 来
 完整 CPU token、原 Filter 关系、head/count/ratio/evaluator、N+1 generate 前拒绝、乱序和
 后置失败保留时钟。Q3 还与旧完整 prompt token 数组匹配；其他历史 GPU 的完整 token
 资格不由 CPU 推导。76 项局部测试通过，空结果保留原 Q1/Q2 的三列 schema；共享 Medical
-cold/warm 2400 条回放作为回归。没有新模型、Linux DSO/SQL 或目标 GPU 资格与性能结论。
+cold/warm 2400 条回放作为回归。这些 CPU 回放不授予 Linux DSO/SQL、目标模型或性能资格；
+后续精确 `5c69f037` 的 Q2 目标验证另列如下。
 
 ### Movie Filter 原生 CLI 修复
 
@@ -363,12 +364,31 @@ cold/warm 2400 条回放作为回归。没有新模型、Linux DSO/SQL 或目标
 [编译执行测试](../../tests/baselines/text/test_imlane_filter_arguments.py) 直接从生产 cpp
 取同一参数函数进行 C++ 编译／实际进程执行，覆盖25/120/1200/2000、非枚举7、非法／缺失／
 重复／非ASCII／溢出参数，并验证旧 driver 在模型实例创建前拒绝。不是全文 driver/SQL 测试。
-Mac 不支持该 Linux 原作者 DSO 链接；目标门仍 pending。新增[Linux零模型门](../../tests/baselines/text/qualify_imlane_movie_filter.py)
+Mac 不支持该 Linux 原作者 DSO 链接；后续 Q2 目标门已通过，Q1/Q3/Q4 未目标验证。
+[Linux零模型门](../../tests/baselines/text/qualify_imlane_movie_filter.py)
 保留真正 driver／Arrow／SQL／完整原 sink／ACK，只在既有 ModelService.spawn 注入
 [软件服务](../../tests/baselines/text/imlane_filter_software_service.py)，禁止模型导入。
 保存答复按 started receipt 的 batch_id、position、occurrence_id 关联，保留完整 token，
 不按消息去重。先执行 Q2 cold 的全120条，再分别检查 missing-row／duplicate-id 在SQL
 计数后、任何 IPC/generate 前失败。外层原 host lease 和进程／SHM 资源监督仍必需。
+
+### Q2 的精确目标验证
+
+实测源码为 `5c69f037cce5ffaca8f0c5012275c6242d31045d`，实测 code tree 为
+`c7ecabffae680af039ba29a1286a9910bad2bda5`。Linux 新薄 driver 链接既有原版 `52bf5763`
+DSO，源码／kernel 摘要和实际加载身份核对通过，未重建作者 DSO。零模型门完成完整120行
+原生 SQL／Arrow／保存答复／原 sink，以及缺行、重复ID两项在任何 generate 前拒绝。
+
+随后仅 Q2 完成一次真实冷轮：120个发生项、119个不同消息，重复消息对应的发生项仍分别执行；
+120次请求全部成功，完整原消息与运行时渲染 token 数组逐发生项匹配。完整 Filter 先于原 head5，
+原评价 precision／recall／F1 均为1；完整内存 sink 先于 ACK、审计、持久化和清理。
+本轮 warm-up=0、整轮重试=0，进程、socket、SHM、GPU 空闲与租约释放均通过。
+
+运行标识为 `imlane-movie-q2-5c69-1111-r1`；245件原件按该标识从运行交接获取，归档 SHA256 为
+`73ba1236ae4325dd90092004247f2c46ad7922ce9a6da78bb8f62de6f600c4b4`。
+`9507` 的零 generate 失败与后续私有 CPU guard 失败分别保留，不改成通过，也不并入成功轮。
+Q1/Q3/Q4 仅有 CPU 准备及保存答复回放，尚无此新增绑定的目标 SQL／模型资格；本轮不支持
+warm、重复稳定性或跨系统性能排名。后续仅文档同步不改变上述实测源码身份。
 
 ## MMQA Q1 工程版接线
 
