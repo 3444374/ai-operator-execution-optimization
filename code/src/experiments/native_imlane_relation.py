@@ -156,8 +156,11 @@ def persist_relation_observation(directory, report, result, *, primary=None):
                     frames={label: frame.to_dict(orient='tight') for label, frame in frames.items()})
             write_private_json(Path(directory) / name, payload)
         except BaseException as error:
+            report['status'] = 'failed'
             if failure is None:
                 failure = error
+                failure.query_report = report
+                failure.query_result = result
             else:
                 failure.add_note(f'{name} persistence also failed: {type(error).__name__}')
     if primary is None and failure is not None:

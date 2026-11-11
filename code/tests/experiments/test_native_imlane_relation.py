@@ -168,6 +168,20 @@ class RelationObservationPersistenceTests(unittest.TestCase):
         self.assertEqual(write.call_args.args, (Path('/unused/author.json'), report))
         self.assertEqual(primary.__notes__, ['full-sink-observed.json persistence also failed: OSError'])
 
+    def test_write_failure_marks_saved_report_failed_and_carries_the_sink(self):
+        report = dict(status='completed', full_sink_observed_monotonic_ns=130,
+            result_ready_monotonic_ns=130, native_alive_after_sink=True)
+        frame = pd.DataFrame({'score': [3.]})
+        failure = OSError('disk')
+        with patch.object(relation, 'write_private_json', side_effect=[failure, None]) as write:
+            with self.assertRaises(OSError) as raised:
+                relation.persist_relation_observation('/unused', report, frame)
+        self.assertIs(raised.exception, failure)
+        self.assertIs(failure.query_report, report)
+        self.assertIs(failure.query_result, frame)
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(write.call_args.args, (Path('/unused/author.json'), report))
+
 
 @unittest.skipUnless(shutil.which('c++'), 'requires the existing local C++ compiler')
 class NativeHandoffTests(unittest.TestCase):
