@@ -32,12 +32,14 @@ only D when computing physical cost. Missing transfer or mismatched association
 stops the owner, and native KV-load errors use `fail`, without automatic retries.
 
 ```python
-from src.serving.backends.prefill_decode_process import NixlPlacement, PrefillDecodeProcess
+from src.serving.backends.prefill_decode_process import NixlPlacement
+from src.serving.backends.pipelined_prefill_decode import PipelinedPrefillDecodeProcess
+from src.serving.backends.vllm_protocol import AsyncEngineLimits
 
-owner = PrefillDecodeProcess(
+owner = PipelinedPrefillDecodeProcess(
     engine, generation, private_control_dir, deadline_monotonic, startup_timeout_s=240,
-    prefill=NixlPlacement("0", 5600), decode=NixlPlacement("1", 5601),
-    kv_buffer_device="cuda",
+    prefill=NixlPlacement("0", 5600), decode=NixlPlacement("0", 5601),
+    limits=AsyncEngineLimits(max_inflight=32), batch_size=16, prefill_window=16,
 )
 try:
     results = owner.run_prepared(prepared_rows, generation=generation)
@@ -46,12 +48,14 @@ finally:
 ```
 
 The caller owns GPU allocation, memory fractions and the total deadline. CPU
-staging is also explicit via `kv_buffer_device="cpu"`. `cancel()` requests both
-processes to stop; `close()` reports each process separately and does not claim
+staging is also explicit via `kv_buffer_device="cpu"`. `cancel()` wakes an active
+pipeline and prevents further admission; `close()` stops and reports each process separately and does not claim
 GPU exit. An unconsumed P handoff remains native-owned until its send expiry or
 process shutdown. The serial implementation remains a functional control.
 Dynamic routing, live decode migration, vision-encoder splitting and query-adapter
 integration remain pending. Colocated execution remains available.
+The `EngineSpec` memory fraction applies to **each** stage; a total fraction of
+0.6 uses 0.3 per stage. Example capacities are illustrative and require calibration.
 
 `pipelined_prefill_decode.PipelinedPrefillDecodeProcess` adds cross-request
 concurrency over two `AsyncEngineProcess` owners. Pass explicit `limits`,
@@ -62,8 +66,9 @@ coordinator; there is no fixed polling sleep. Results restore input order and ke
 both physical receipts. Failure stops admission, drains retained receipts and closes
 both owners. This object accepts one call at a time and supports resident reuse.
 Command-queue capacity release also wakes the coordinator, so a held request cannot
-hide newly available submission space. Stage startup is bounded by both its own
-allowance and the caller's remaining absolute deadline.
+hide newly available submission space. The caller deadline is checked before and
+after environment validation; process creation and the native READY wait honor
+that deadline. Environment metadata probes retain their existing finite limits.
 If the API close is unknown, a dead IPC parent still triggers the existing registered
 process-group cleanup; its observed exit does not turn the unknown API result into
 success. Final process reports retain both the direct-child and group scopes.
@@ -74,6 +79,10 @@ repeat, and separates warmup and startup. Its caller supplies matched total reso
 and the same external safeguards as the functional worker. The async native logger
 captures NIXL updates even in iterations without output; absent or unsupported
 metrics remain explicit. CPU IPC checks establish pipeline behavior, not GPU benefit.
+The [single-GPU comparison](../../../../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#async-pipeline-20261111)
+also verifies native batching, real transfer totals and complete output parity.
+Both tested eager request replays were slower than matched native colocated execution;
+full queries, multiple GPUs and real GPU failure injection remain unqualified.
 
 The [worker](../../experiments/native_stage_handoff.py) compares exact prompt IDs,
 output IDs, text and finish reasons. Its caller supplies preflight, host lease,

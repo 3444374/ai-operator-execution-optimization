@@ -1,0 +1,97 @@
+{
+  "method": "GitHub Contents API full-file blob SHA (line range limits returned text only) compared with canonical blob SHA of installed complete bytes",
+  "files": [
+    {
+      "file": "vllm/v1/engine/async_llm.py",
+      "sha256": "69ea05aea497134204f1c6fd5f53994f4f7bbc35d24f90a768553dd8d6ba0b1a",
+      "git_blob_sha": "61f02092bd1228d40aa2d84a5b9bff29ff776c35",
+      "bytes": 43886,
+      "upstream_url": "https://github.com/vllm-project/vllm/blob/752a3a504485790a2e8491cacbb35c137339ad34/vllm/v1/engine/async_llm.py",
+      "upstream_git_blob_sha": "61f02092bd1228d40aa2d84a5b9bff29ff776c35",
+      "matches_official_tag": true,
+      "tag_lookup_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/engine/async_llm.py"
+    },
+    {
+      "file": "vllm/v1/metrics/stats.py",
+      "sha256": "08eb6bb969ad47e4207ba5568beaec35bdb09192b6db046f046dab4892ac1bf3",
+      "git_blob_sha": "a7a5fb7a2d2fcdc51eca2b3662a18aa39b3602e7",
+      "bytes": 18538,
+      "upstream_url": "https://github.com/vllm-project/vllm/blob/752a3a504485790a2e8491cacbb35c137339ad34/vllm/v1/metrics/stats.py",
+      "upstream_git_blob_sha": "a7a5fb7a2d2fcdc51eca2b3662a18aa39b3602e7",
+      "matches_official_tag": true,
+      "tag_lookup_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/metrics/stats.py"
+    },
+    {
+      "file": "vllm/v1/metrics/loggers.py",
+      "sha256": "3876bd0f5056d84e45804e781330109fe3a56d8c27ffc17bd42ad9a8ea27e6de",
+      "git_blob_sha": "021019dc1cdc66ff900245971a48ba6419f97e16",
+      "bytes": 52160,
+      "upstream_url": "https://github.com/vllm-project/vllm/blob/752a3a504485790a2e8491cacbb35c137339ad34/vllm/v1/metrics/loggers.py",
+      "upstream_git_blob_sha": "021019dc1cdc66ff900245971a48ba6419f97e16",
+      "matches_official_tag": true,
+      "tag_lookup_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/metrics/loggers.py"
+    },
+    {
+      "file": "vllm/entrypoints/llm.py",
+      "sha256": "3a7b7cf9c0e5f0920d1c7f06475809280848d247c5044933a75dbde2fd4cff55",
+      "git_blob_sha": "a3ed94ee0aa9e5b76d6fd3b34e8eedd4b6995ea3",
+      "bytes": 40934,
+      "upstream_url": "https://github.com/vllm-project/vllm/blob/752a3a504485790a2e8491cacbb35c137339ad34/vllm/entrypoints/llm.py",
+      "upstream_git_blob_sha": "a3ed94ee0aa9e5b76d6fd3b34e8eedd4b6995ea3",
+      "matches_official_tag": true,
+      "tag_lookup_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/llm.py"
+    },
+    {
+      "file": "vllm/distributed/kv_transfer/kv_connector/v1/nixl/stats.py",
+      "sha256": "3e710654e0b68d1a8592f0c4735c81b22f4bf698fb1a2dfea126d35bf2dd1ef2",
+      "git_blob_sha": "1e4f5c48e0f75147be6a24f29e44f9b784461a72",
+      "bytes": 9892,
+      "upstream_url": "https://github.com/vllm-project/vllm/blob/752a3a504485790a2e8491cacbb35c137339ad34/vllm/distributed/kv_transfer/kv_connector/v1/nixl/stats.py",
+      "upstream_git_blob_sha": "1e4f5c48e0f75147be6a24f29e44f9b784461a72",
+      "matches_official_tag": true,
+      "tag_lookup_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/distributed/kv_transfer/kv_connector/v1/nixl/stats.py"
+    },
+    {
+      "file": "vllm/distributed/kv_transfer/kv_connector/v1/nixl/pull_scheduler.py",
+      "sha256": "74440e7ae6f0a5d381794f375a3a44112ba1083a8b140d13f9ab3ce7ba191e9a",
+      "git_blob_sha": "8c73461c5cd84d9bda5e1e9497bbc2e7d58d7318",
+      "bytes": 11199,
+      "upstream_url": "https://github.com/vllm-project/vllm/blob/752a3a504485790a2e8491cacbb35c137339ad34/vllm/distributed/kv_transfer/kv_connector/v1/nixl/pull_scheduler.py",
+      "upstream_git_blob_sha": "8c73461c5cd84d9bda5e1e9497bbc2e7d58d7318",
+      "matches_official_tag": true,
+      "tag_lookup_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/distributed/kv_transfer/kv_connector/v1/nixl/pull_scheduler.py"
+    },
+    {
+      "file": "vllm/v1/worker/gpu_worker.py",
+      "sha256": "7e00284da7b453154af47300630483ed7ea5a5d79e724c5ee61d4a24edaf930e",
+      "git_blob_sha": "03433ed75244c93e199910bfea32f9473d472a1e",
+      "bytes": 55064,
+      "upstream_url": "https://github.com/vllm-project/vllm/blob/752a3a504485790a2e8491cacbb35c137339ad34/vllm/v1/worker/gpu_worker.py",
+      "upstream_git_blob_sha": "03433ed75244c93e199910bfea32f9473d472a1e",
+      "matches_official_tag": true,
+      "tag_lookup_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu_worker.py"
+    },
+    {
+      "file": "vllm/v1/worker/gpu/model_runner.py",
+      "sha256": "58f45c58969cdd9cba707863e82fefda818002de45c621032b58b6eb364deedf",
+      "git_blob_sha": "c74307d0b748f0826b6fde8aae6bc66bcf1b8aa5",
+      "bytes": 70009,
+      "upstream_url": "https://github.com/vllm-project/vllm/blob/752a3a504485790a2e8491cacbb35c137339ad34/vllm/v1/worker/gpu/model_runner.py",
+      "upstream_git_blob_sha": "c74307d0b748f0826b6fde8aae6bc66bcf1b8aa5",
+      "matches_official_tag": true,
+      "tag_lookup_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/worker/gpu/model_runner.py"
+    },
+    {
+      "file": "vllm/v1/core/sched/scheduler.py",
+      "sha256": "e25d4c9a95abdbe8e516714ed02574d929ca0d5e8c11c4cc73b84d3a3b905443",
+      "git_blob_sha": "8e01035ae68792759cfe96161e67b51c3210679d",
+      "bytes": 125101,
+      "upstream_url": "https://github.com/vllm-project/vllm/blob/752a3a504485790a2e8491cacbb35c137339ad34/vllm/v1/core/sched/scheduler.py",
+      "upstream_git_blob_sha": "8e01035ae68792759cfe96161e67b51c3210679d",
+      "matches_official_tag": true,
+      "tag_lookup_url": "https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/core/sched/scheduler.py"
+    }
+  ],
+  "upstream_tag": "v0.25.1",
+  "upstream_commit": "752a3a504485790a2e8491cacbb35c137339ad34"
+}
