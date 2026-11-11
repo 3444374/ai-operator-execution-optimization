@@ -1,0 +1,174 @@
+{
+  "schema": "semloom.pr97.target_validation.v1",
+  "tested_source": "c7e78a73ac2e81209e3b684a528113f2baea55b1",
+  "corrected_source": "edd287ff1b3fac141769e19f0e36faec4816dde7",
+  "corrected_source_target_status": "pending_upload_permission",
+  "hardware": "single NVIDIA RTX 4090 24GiB",
+  "model": "Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "vllm": "0.25.1",
+  "author_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+  "reviews_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+  "generation": {
+    "max_tokens": 8192,
+    "temperature": 0,
+    "top_p": 1,
+    "seed": 0,
+    "stop": [],
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "repetition_penalty": 1
+  },
+  "engine": {
+    "dtype": "bfloat16",
+    "max_model_len": 16384,
+    "max_num_seqs": 1,
+    "max_num_batched_tokens": 8192,
+    "gpu_memory_utilization": 0.8,
+    "seed": 0
+  },
+  "resources": {
+    "cpu_workers": 1,
+    "prepare_batch_rows": 1,
+    "model_batch_rows": 1,
+    "max_active_batches": 1
+  },
+  "arms": {
+    "fused": {
+      "status": "completed",
+      "calls": 256,
+      "full_token_matches": 256,
+      "full_message_matches": 256,
+      "actual_terminal_success": 256,
+      "memory_sink_seconds": 73.534884014,
+      "legacy_query_seconds": 73.70515111740679,
+      "quality": {
+        "original_metric": {
+          "spearman_correlation": 0.675370889480167,
+          "kendall_tau": 0.590104802239973
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "final_relation_rows": 256,
+      "final_relation_columns": [
+        "reviewId",
+        "reviewScore"
+      ],
+      "close_status": "closed",
+      "core_usage": {
+        "held_tasks": 0,
+        "input_bytes": 0,
+        "result_bytes": 0,
+        "active_requests": 0,
+        "active_work": 0
+      },
+      "query_complete": true
+    },
+    "record_local_sections": {
+      "status": "completed",
+      "calls": 256,
+      "full_token_matches": 256,
+      "full_message_matches": 256,
+      "actual_terminal_success": 256,
+      "memory_sink_seconds": 62.604972856,
+      "legacy_query_seconds": 67.16218594182283,
+      "quality": {
+        "original_metric": {
+          "spearman_correlation": 0.6895413432282317,
+          "kendall_tau": 0.6026029668792039
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "final_relation_rows": 256,
+      "final_relation_columns": [
+        "reviewId",
+        "reviewScore"
+      ],
+      "close_status": "closed",
+      "core_usage": {
+        "held_tasks": 0,
+        "input_bytes": 0,
+        "result_bytes": 0,
+        "active_requests": 0,
+        "active_work": 0
+      },
+      "query_complete": true
+    }
+  },
+  "comparison": {
+    "same_prompt_tokens": 256,
+    "same_output_tokens": 253,
+    "same_text": 253,
+    "different_positions": [
+      69,
+      177,
+      238
+    ]
+  },
+  "total_actual_calls": 512,
+  "warmup_calls": 0,
+  "retries": 0,
+  "independent_cold_queries": true,
+  "timing_caveat": "fused source clock includes worker close_on_source_complete shutdown; final Core.close excluded but no matched final model-close exclusion. Keep raw, no subtraction.",
+  "performance_claim": false,
+  "semantic_equivalence_claim": false,
+  "local_broad_regression": {
+    "passed": 112,
+    "failed": 1,
+    "skipped": 2,
+    "existing_failure_reproduced_at_clean_base": true
+  },
+  "correction_local_cpu": {
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0,
+    "scope": "real shared worker lifecycle with CPU engine substitute, not target model"
+  },
+  "target_stage_resource_checks": "both passed",
+  "target_archive": {
+    "original_copy_failed": true,
+    "reason": "inactive Ray socket is not a regular file",
+    "regular_file_recovery_verified": 1278,
+    "non_regular_entries_recorded": 2,
+    "model_reruns_for_recovery": 0
+  },
+  "private_evidence_run": "semloom-pr97-query-sink-20261111",
+  "evidence": {
+    "before-r2.log": {
+      "bytes": 7034,
+      "sha256": "f8a0c12a060bf6b4b450fa1e8a02044c8296c7b687be19d69859fbecb2e0fc62"
+    },
+    "timing-current-r4.log": {
+      "bytes": 7451,
+      "sha256": "4ffe60c4cf4a5027d75705e387200f90133cb905d78f50ae03cc95d2997e1da9"
+    },
+    "core-regression-r3.log": {
+      "bytes": 121707,
+      "sha256": "d11bf0b5beb6c50d61c82a050e6d40435956c90619b4a986d4577594f333cffe"
+    },
+    "late-receipt-base-diagnostic.log": {
+      "bytes": 23718,
+      "sha256": "b9cb536a36244c9023eefb7e7d44ba416e19f8c94c46d9eed9388b711086a547"
+    },
+    "late-receipt-current-diagnostic.log": {
+      "bytes": 325,
+      "sha256": "87e2edccee2f0e638b74ed5e5e45bc140fdea396f9abe6ff566b576db060019a"
+    },
+    "native-close-before.log": {
+      "bytes": 3208,
+      "sha256": "afc0b314a752b704050c0d3fc6d09f031b9d61ba7ef561914136ed3f41b26bb4"
+    },
+    "native-close-after-r2.log": {
+      "bytes": 12251,
+      "sha256": "fac94c370bc2d064de7ae09d5411bba3fd866cd4301ec382cb1c0489629e1f40"
+    },
+    "TARGET-AUDIT-c7e78.json": {
+      "bytes": 4463,
+      "sha256": "b75ec01467f4958d64899af4284c92a32314b530aa15ad06a80a0d654289ad85"
+    },
+    "pr97-c7e78-originals-r1.tar.gz": {
+      "bytes": 5432536,
+      "sha256": "e6b8b2d6051490f7720185ff57123e9482de0542a2b5e994878d6dbaa9436a06"
+    }
+  }
+}
