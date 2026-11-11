@@ -89,7 +89,7 @@ def run(config, directory):
             if arm == 'pipeline':
                 item['pipeline'] = owner.last_run_report
             report['rounds'].append(item)
-            write_private_json(directory/'progress.json', redact_json_values(report))
+            write_private_json(directory/('round-'+str(index)+'.json'), redact_json_values(item))
         report['result_sha256'] = first_digest
         report['measured_s'] = sum(row['elapsed_s'] for row in report['rounds'] if not row['warmup'])
         report['status'] = 'passed'
