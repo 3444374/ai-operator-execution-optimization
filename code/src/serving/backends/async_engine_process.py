@@ -77,21 +77,27 @@ class AsyncEngineProcess:
     """
 
     def __init__(self, engine, generation, *, limits, startup_timeout_s=120,
-                 worker_env=None, worker_log=None, result_signal=None):
+                 worker_env=None, worker_log=None, progress_signal=None, startup_deadline=None):
         self.spec = common.EngineSpec.from_dict(asdict(engine))
         self.generation = common.GenerationSpec.from_dict(asdict(generation))
         self.limits = limits
         if type(self.limits) is not AsyncEngineLimits:
             raise TypeError("limits must be AsyncEngineLimits")
         common._number(startup_timeout_s, "startup timeout", low=0, inclusive_low=False)
+        if startup_deadline is not None:
+            common._number(startup_deadline, 'startup deadline', low=0, inclusive_low=False)
+            if time.monotonic() >= startup_deadline:
+                raise TimeoutError('async engine caller deadline expired before startup')
         self.spec.validate_driver_environment()
+        if startup_deadline is not None and time.monotonic() >= startup_deadline:
+            raise TimeoutError('async engine caller deadline expired during environment validation')
         self._owner_uid = uuid.uuid4().hex
         self._sequence = 0
         self._submitted_batches = self._peak_batch_members = self._peak_batch_frame_bytes = 0
         self._slots = {}
         self._data_commands, self._controls, self._ready = deque(), deque(), deque()
         self._condition = threading.Condition()
-        self._result_signal = result_signal
+        self._progress_signal = progress_signal
         self._stop, self._io_done = threading.Event(), threading.Event()
         self._closing = self._close_sent = self._drain_requested = False
         self._close_deadline = None
@@ -127,6 +133,8 @@ class AsyncEngineProcess:
                 environment.update(worker_env or {})
                 log = None if worker_log is None else open(worker_log, 'xb')
                 try:
+                    if startup_deadline is not None and time.monotonic() >= startup_deadline:
+                        raise TimeoutError('async engine caller deadline expired before process creation')
                     self.process = subprocess.Popen(self._command(self.spec, [s.fileno() for s in children]),
                         pass_fds=tuple(s.fileno() for s in children), start_new_session=True,
                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL if log is None else log,
@@ -144,6 +152,8 @@ class AsyncEngineProcess:
             if setup_errors:
                 raise RuntimeError("async engine child socket cleanup failed")
             deadline = time.monotonic() + startup_timeout_s
+            if startup_deadline is not None:
+                deadline = min(deadline, startup_deadline)
             with self._condition:
                 while self.ready_report is None and self._broken is None:
                     remaining = deadline - time.monotonic()
@@ -390,8 +400,8 @@ class AsyncEngineProcess:
                 slot.terminal = dict(confirmed=False, result=None, error_type=reason)
                 self._ready.append(key)
         self._condition.notify_all()
-        if self._result_signal is not None:
-            self._result_signal.set()
+        if self._progress_signal is not None:
+            self._progress_signal.set()
 
     def _receive(self, value, *, results, encoded_bytes=0):
         with self._condition:
@@ -424,8 +434,8 @@ class AsyncEngineProcess:
                 else:
                     self._broken = self._broken or "ModelOutcomeUnknown"
                 self._ready.append(key)
-                if self._result_signal is not None:
-                    self._result_signal.set()
+                if self._progress_signal is not None:
+                    self._progress_signal.set()
             elif op == "ready":
                 if self.ready_report is not None:
                     raise ValueError("duplicate model ready")
@@ -494,6 +504,9 @@ class AsyncEngineProcess:
                                 self.limits.control_frame_bytes))
                     if outgoing[self._data] is None and self._data_commands:
                         outgoing[self._data] = memoryview(self._data_commands.popleft())
+                        self._condition.notify_all()
+                        if self._progress_signal is not None:
+                            self._progress_signal.set()
                 reads, writes, _ = select.select(list(incoming),
                     [sock for sock, data in outgoing.items() if data is not None], [], 0.01)
                 # Control always gets the first bounded read/write opportunity.

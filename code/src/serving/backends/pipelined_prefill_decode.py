@@ -51,8 +51,9 @@ class PipelinedPrefillDecodeProcess:
             try:
                 phase_generation = replace(generation, max_tokens=1) if name == 'prefill' else generation
                 owner = AsyncEngineProcess(configured, phase_generation, limits=limits,
-                    startup_timeout_s=startup_timeout_s, worker_env=placement.environment(),
-                    worker_log=self.control / (name + '.log'), result_signal=self._wakeup)
+                    startup_timeout_s=startup_timeout_s, startup_deadline=deadline,
+                    worker_env=placement.environment(),
+                    worker_log=self.control / (name + '.log'), progress_signal=self._wakeup)
                 self.stages[name] = owner
                 self._register(name, owner)
             except BaseException as error:
@@ -60,7 +61,7 @@ class PipelinedPrefillDecodeProcess:
                 if failed is not None:
                     self.stages[name] = failed
                     self._register(name, failed)
-                self.close(timeout=close_timeout_s)
+                error.pipeline_close_report = self.close(timeout=close_timeout_s)
                 raise
 
     def _register(self, name, owner):
@@ -263,12 +264,28 @@ class PipelinedPrefillDecodeProcess:
                     report = dict(status='unknown', process_exit_confirmed=False, error_type=type(error).__name__)
                 reports[name] = report
                 try:
-                    _publish(self.control / ('engine-' + name + '.json'),
-                             dict(self._process_records[name], **report))
+                    registered = dict(self._process_records[name], **report)
+                    registered['direct_child_exit_confirmed'] = report.get('process_exit_confirmed')
+                    if report.get('status') != 'closed':
+                        # A dead IPC parent does not prove its native children exited.
+                        # Reuse registered process-group cleanup on every unknown close.
+                        registered['process_exit_confirmed'] = False
+                    self._process_records[name] = registered
+                    _publish(self.control / ('engine-' + name + '.json'), registered)
                 except Exception as error:
                     errors.append(name + '_report:' + type(error).__name__)
+            # Each stage already spent its API allowance; no producer can update
+            # these registration files while another grace wait elapses.
             cleanup = StageEngineCleanup(self.control).stop(
-                grace_s=max(0, deadline-time.monotonic()), started=bool(self.stages))
+                grace_s=0, started=bool(self.stages))
+            observed = {(row.get('model_pid'), row.get('process_created')): row for row in cleanup['reports']}
+            for name, registered in self._process_records.items():
+                recovered = observed.get((registered['model_pid'], registered['process_created']))
+                if recovered is not None:
+                    try:
+                        _publish(self.control / ('engine-' + name + '.json'), recovered)
+                    except Exception as error:
+                        errors.append(name + '_cleanup_report:' + type(error).__name__)
             self.last_close_report = dict(
                 status='closed' if not errors and cleanup['process_exit_confirmed'] and all(
                     value['status'] == 'closed' for value in reports.values()) else 'unknown',

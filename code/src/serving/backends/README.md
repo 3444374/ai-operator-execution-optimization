@@ -57,10 +57,16 @@ integration remain pending. Colocated execution remains available.
 concurrency over two `AsyncEngineProcess` owners. Pass explicit `limits`,
 `batch_size` and `prefill_window`. One logical capacity covers P, waiting handoffs
 and D; each P terminal can advance immediately, independent of its IPC batch peers.
-Native vLLM owns physical continuous batching. A shared result event wakes the
+Native vLLM owns physical continuous batching. A shared progress event wakes the
 coordinator; there is no fixed polling sleep. Results restore input order and keep
 both physical receipts. Failure stops admission, drains retained receipts and closes
 both owners. This object accepts one call at a time and supports resident reuse.
+Command-queue capacity release also wakes the coordinator, so a held request cannot
+hide newly available submission space. Stage startup is bounded by both its own
+allowance and the caller's remaining absolute deadline.
+If the API close is unknown, a dead IPC parent still triggers the existing registered
+process-group cleanup; its observed exit does not turn the unknown API result into
+success. Final process reports retain both the direct-child and group scopes.
 
 The [resident worker](../../experiments/native_stage_pipeline.py) compares against
 native `LLM.chat` on the complete request set, retains first outputs and every timed
