@@ -59,22 +59,31 @@ Animals manifest／SQL，目标环境验证仍待完成。
 共享接点的 29 项 CPU 检查与公共时钟／生命周期的 42 项检查通过；后置失败仍保留 sink 并报告失败。
 现有 Q10 Map 与 Q3b–g 私有入口已给出新副本迁移补丁；4000 条 Map 保存答复和 12×25 条 MMQA
 归档响应的完整结果／评价回放相等。Q8/Q9 Map、Q3a/Q6a–c、Medical Q1/Q4 的迁移又通过 16 轮保存
-响应回放与 18 个失败边界检查。原 Map 最坏 2N、Filter N 的实际请求额度保持；Linux 依赖、新运行
-绑定及真实 sink／清理仍待验证。Q9 本批独立全输入 hash 未知，原 occurrence／必要 CSV／结果相等，
+响应回放与 18 个失败边界检查。原 Map 最坏 2N、Filter N 的实际请求额度保持。作者 `05024f0` 的
+Linux 原环境已通过零模型 native import／request object 门检，CUDA 未初始化；此前失败来自门检
+导入次序，按既有服务入口修正后通过，不是作者依赖缺失。新运行绑定及真实 sink／清理仍待验证，
+该门检也不授予作者原版结构化 Extract 资格。Q9 本批独立全输入 hash 未知，原 occurrence／必要 CSV／结果相等，
 不能以其他输入身份补齐该未知项。这些 CPU 结果不是新 GPU 或性能资格。
 
-[IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257` 和可选
-schema-child 工程变体。连同[完整原关系交接](src/experiments/native_imlane_relation.py)，29 项不同 CPU
-检查及 14 份保存 sink 关系回放通过。原生 Linux 库构建、PROCESS／THREAD SQL、
-NULL／offset／长字符串所有权仍待验证。原版 TINYINT Filter／DOUBLE Map 的已有真实结果不受影响；
-不能用一行 schema 修补或 Python fixture 宣称原版 Extract 已支持。新交接要求实际 DuckDB/result
+[IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257`、可选
+schema-child 和 varchar-owned 工程变体。连同[完整原关系交接](src/experiments/native_imlane_relation.py)，
+原接线的 29 项不同 CPU 检查及 14 份保存 sink 关系回放通过。作者原版 Linux 零模型 15 例实际为
+4 过、11 失败：NULL、offset、长字符串借用和 PROCESS 的根 schema 错配已复现；THREAD 字符串
+SQL 实际返回 0 行，不能仅归因于字符串内容。新 varchar-owned 候选处理 child schema、有效位、
+offset 及字符串复制；原头文件语法检查、真实 Arrow C Data 与显式存储替身的 4 项检查通过，
+真实 DuckDB DSO 和 PROCESS／THREAD SQL 仍待资格，不能预先称 THREAD 行数问题已解决。
+schema-child 仅保留独立候选身份，尚无该变体的目标资格。原版 TINYINT Filter／DOUBLE Map 的已有
+真实结果不受影响；不能用工程变体或 Python fixture 宣称原版 Extract 已支持。新交接要求实际 DuckDB/result
 等待完整 sink ACK 后退出；目标原生生命周期尚待验证。联合 150 行的六题批次只有一个批次时钟，
 不能拆成六个独立查询时长。
 
 [Ray Animals Q7](src/baselines/image/ray_animals_q7/README.md)现保留第一 stage 的完整关闭，最终原 City
-关系就绪后才 ACK 并关闭最后 runtime。19 项 CPU、真实本地子进程交接及 128 条旧答复身份／原 parser
-回放通过；完整 City／evaluator 的保存回放缺本地 manifest／SQL，新增终点的真实 Ray／GPU 资格未执行。
-不能从公共 runtime ACK 推断内部模型 actor 驻留或 kernel 时间，原 128 次模型记录仍绑定旧版本。
+关系就绪后才 ACK 并关闭最后 runtime。原 19 项 CPU、真实本地子进程交接及 128 条旧答复身份／原 parser
+回放通过；`909f842c4` 又通过目标 64 张原图／128 条保存答复的完整 City／evaluator 回放，并在独立
+冷轮完成 128 条真实终态、原 City P/R/F1 = 1 和物理清理。此前因本任务未登记的 Python 观察进程
+被 guard 阻断的 64 条失败轮单独保留；改用 shell 观察，未放宽 guard，也不拼接两轮成绩。
+后续失败诊断与 EXIT 状态修正仅有 CPU 资格，不把 `909` 的模型结果改记到新 HEAD。
+不能从公共 runtime ACK 推断内部模型 actor 驻留或 kernel 时间。
 
 <a id="pr52-g1-qualified-scope"></a>
 <a id="record-local-sections-c827"></a>

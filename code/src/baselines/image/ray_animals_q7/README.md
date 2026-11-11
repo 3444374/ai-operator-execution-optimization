@@ -143,8 +143,8 @@ Qualification scope:
 - The final-stage release change has CPU order/failure checks and a real local
   CPU-child handoff through the unchanged supervisor. Ray, GPU and physical-host
   receipt fields in these fixtures are not target-runtime qualifications. The
-  changed final-owner/cleanup ordering still needs a bounded target qualification;
-  the earlier 128 model results do not establish it.
+  target qualification of the changed final-owner/cleanup ordering is recorded
+  separately below; the earlier 128 model results do not establish it.
 - Integrated `909f842c456cae36b45a0bb5921f98570ea43385` passed target zero-model
   replay of the 64 original images, all 128 saved responses, complete original
   City relation and evaluator. Its subsequent native attempt stopped after 64
@@ -155,6 +155,28 @@ Qualification scope:
   final-stage sink. Future
   observation must not add a persistent remote Python process to the exclusive
   stage. No process-name exception or relaxed idle guard is introduced.
+- A separate complete cold run of `909f842c456cae36b45a0bb5921f98570ea43385`
+  subsequently completed 128 confirmed requests, the original City sink with
+  precision/recall/F1 = 1, and final physical cleanup. The sole server coordinator
+  reported completion at 2026-11-11 14:03:47 UTC using shell observation and the
+  unchanged guard. This run is independent of the failed 64-request attempt;
+  neither requests nor clocks are spliced together. The later failed-stage
+  evidence/EXIT-status changes have local CPU qualification only.
+
+The former persistent remote `python3 -u -B -c` status loop is replaced by the
+frozen, one-shot `observe_q7_status.sh` operational artifact. Bind its verified
+path and the current run directories outside the repository:
+
+```sh
+sh "$VERIFIED_Q7_STATUS_SCRIPT" "$CURRENT_RUN_DIR" "$CURRENT_SHORT_DIR"
+```
+
+Each invocation reads existing status files and `ps`, then exits. The local
+coordinator schedules any later observation; no remote polling process remains.
+This changes observation, not the production guard or cleanup ownership rules.
+The old watcher source and failed-run records remain evidence, not active launch
+instructions. The successful target run used shell commands; it does not by
+itself prove deployment of this exact frozen script.
 
 ## Zero-model checks
 
