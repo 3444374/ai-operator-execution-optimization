@@ -1,5 +1,6 @@
 """Run one original text operation through the existing finite Core owner."""
 
+from contextlib import contextmanager
 from copy import deepcopy
 
 from src.execution_provider.adapters.lotus_record_chain_core import SemLoomRecordChainCore
@@ -33,13 +34,24 @@ def configuration(profile, resources):
 
 
 def execute(operation, *, engine, resources, query_id, profile, control_dir):
+    """Retain the standalone operator's close-before-return behavior."""
+    with query_scope(operation, engine=engine, resources=resources, query_id=query_id,
+                     profile=profile, control_dir=control_dir, close_on_eof=True) as report:
+        return report
+
+
+@contextmanager
+def query_scope(operation, *, engine, resources, query_id, profile, control_dir,
+                close_on_eof=False):
+    """Keep the original owner alive through the caller's complete relation sink."""
     options = configuration(profile, resources)
     report = dict(backend='semloom-core', execution=options['execution'], status='failed',
                   production_core_used=False, scheduler_owner='SemLoom SessionEngine')
     if not operation.records:
-        return dict(report, status='completed', frame=operation.result_frame(()), calls=[],
-                    backend_close=dict(status='closed', query_completed=True, cleanup_errors=[]),
-                    scheduler_owner='empty relation; no Core, framework or model allocated')
+        yield dict(report, status='completed', frame=operation.result_frame(()), calls=[],
+                   backend_close=dict(status='closed', query_completed=True, cleanup_errors=[]),
+                   scheduler_owner='empty relation; no Core, framework or model allocated')
+        return
     owner = ray = None
     created_ray = False
     primary = None
@@ -57,12 +69,13 @@ def execute(operation, *, engine, resources, query_id, profile, control_dir):
                         else operation.stage.method.resolved_input_columns)
                    if options['execution'] == 'record_local_sections' else None)
         stream = owner.evaluate(iter(operation.records), chain, expected=operation.records,
-                                query_id=query_id, columns=columns)
+                                query_id=query_id, columns=columns, close_on_eof=close_on_eof)
         rows = list(stream)
         if stream.completed is not True:
             raise RuntimeError('Core operator did not establish complete successful EOF')
         frame = operation.result_frame(rows)
-        report['status'] = 'completed'
+        report.update(status='completed', frame=frame)
+        yield report
     except BaseException as error:
         primary = error
     finally:
@@ -107,4 +120,3 @@ def execute(operation, *, engine, resources, query_id, profile, control_dir):
     if primary is not None:
         primary.operator_report = report
         raise primary
-    return dict(report, frame=frame)

@@ -27,7 +27,8 @@ def _check(deadline, cancelled=None):
 class _RecordLocalRows:
     """Coordinate existing row programs and complete Extracts on one model owner."""
 
-    def __init__(self, owner, records, run, cancelled):
+    def __init__(self, owner, records, run, cancelled, *, close_on_eof=True):
+        self.close_on_eof = close_on_eof
         self.owner, self.source, self.run = owner, iter(records), run
         self.cancelled = cancelled
         self.bindings = {record.row_id: record for record in run.current}
@@ -402,12 +403,14 @@ class _RecordLocalRows:
                         return next(self._output)
                     except StopIteration:
                         self._output_exhausted = True
-                        report = self.owner.finish_query()
-                        if report["status"] != "closed":
-                            error = RuntimeError("record-local query cleanup remains unconfirmed")
-                            error.chain_cleanup_report = report
-                            raise error
-                        self.completed = report["query_completed"] = True
+                        if self.close_on_eof:
+                            report = self.owner.finish_query()
+                            if report["status"] != "closed":
+                                error = RuntimeError("record-local query cleanup remains unconfirmed")
+                                error.chain_cleanup_report = report
+                                raise error
+                            report["query_completed"] = True
+                        self.finished = self.completed = True
                         raise
                 self._tick()
         except StopIteration:

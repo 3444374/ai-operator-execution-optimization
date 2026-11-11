@@ -98,3 +98,22 @@ for window in (1, 16, 64, 256):
               for name, value in result["orders"].items()}
     print(window, counts)
 ```
+
+
+## 完整内存结果计时补充（2026-11-11，目标验证前）
+
+在本 PR 精确 `1cbb2c73eea535d0330a326f0af708800b5bccf4` 上补充独立时钟，保留原
+`query_seconds` 及原查询、调度、formatter/parser、输入和生成配置。`memory_sink_timing`
+从实际 CSV 重读前开始，到原完整关系结果返回后结束；包括冷启动，排除最终 owner/Ray 关闭、
+调用审计、质量评价与写盘。不存在从历史时长扣除估算关闭成本的换算。
+
+成功 EOF 可以显式推迟最终 owner 关闭，由查询作用域保证退出时关闭；默认 iterator 和独立
+operator 调用仍 EOF 关闭。源与 session 收尾、Core 与 transport 清零先于成功 EOF。
+原关系失败没有 sink 终点；sink 之后关闭失败仍判查询失败，并保留已经观测到的时钟。
+
+当前 5 项新增计时／异常／生命周期检查和 6 项既有 Core 入口检查共 11 项通过。
+更广的 115 项回归为 112 通过、1 失败、2 项缺完整资产跳过，不能写为全绿。
+失败为已有 record-local 20ms close 之后迟到回执的 shutdown 状态不确定；clean 的精确旧
+`1cbb` 同样复现，新旧各有通过和失败。该测试未进入此次 EOF 分支。原始日志全部保留，
+本补充不声称解决超短期限取消／关闭问题，也不据此取得该路径的失败恢复资格。
+独立只读审查未发现新增阻断；目标真实 Ray/GPU 完整查询仍待执行。

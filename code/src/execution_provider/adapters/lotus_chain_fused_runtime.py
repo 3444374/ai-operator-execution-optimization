@@ -206,7 +206,8 @@ class _ChainTransport:
 
 
 class _CoreChainRows:
-    def __init__(self, owner, records, spec, cancelled):
+    def __init__(self, owner, records, spec, cancelled, *, close_on_eof=True):
+        self.close_on_eof = close_on_eof
         self.owner, self.source = owner, iter(records)
         self.cancelled = cancelled
         limits = (owner._fused_limits(len(owner.chain.stages))
@@ -443,11 +444,14 @@ class _CoreChainRows:
                     if self.owner._has_next_phase:
                         self.owner._advance_relation_phase(self)
                         continue
-                    report = self.owner.close()
-                    if report["status"] != "closed":
-                        raise RuntimeError("Core chain cleanup remains unconfirmed")
+                    if self.close_on_eof:
+                        report = self.owner.close()
+                        if report["status"] != "closed":
+                            raise RuntimeError("Core chain cleanup remains unconfirmed")
+                        report["query_completed"] = True
+                    elif self._close_query():
+                        raise self._source_close_error
                     self.completed = True
-                    report["query_completed"] = True
                     raise StopIteration
                 if not progress.has_immediate_work:
                     wait = remaining_time(self.owner.deadline, self.owner.capacity.poll_interval_s)

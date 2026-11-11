@@ -430,7 +430,8 @@ class SemLoomRecordChainCore:
         self._accountants[self.phase_stage_ids] = self.results
         stream.begin_relation(completed.records)
 
-    def evaluate(self, records, chain, *, expected, query_id, cancelled=None, columns=None):
+    def evaluate(self, records, chain, *, expected, query_id, cancelled=None, columns=None,
+                 close_on_eof=True):
         """Return a single-pass relation iterator; publish its frame after completed EOF.
 
         ``expected`` binds each source occurrence and its values without prompts.
@@ -449,10 +450,14 @@ class SemLoomRecordChainCore:
         user index labels may repeat. Source EOF/close, complete row finals,
         and drained Core work precede every semantic relation handoff. This
         mode requires caller-owned Ray and one compatible model deployment.
+        With close_on_eof=False, successful EOF retires the query but leaves
+        final model cleanup to the caller after its relational sink. Errors
+        still close immediately; the caller must always close its owner.
         """
         self._control()
         if self.execution == "record_local_sections":
-            return self._evaluate_record_local(records, chain, expected, query_id, cancelled, columns)
+            return self._evaluate_record_local(records, chain, expected, query_id, cancelled, columns,
+                                               close_on_eof=close_on_eof)
         if self._closing or self._active is not None:
             raise RuntimeError("Core chain owner already used or closing")
         chain = LotusRecordChain.from_dict(chain.describe())
@@ -514,7 +519,7 @@ class SemLoomRecordChainCore:
                                        TopologySnapshot((endpoint,), time.monotonic()), "local")
             self.transport = _ChainTransport(self)
             self.core = SessionEngine(limits, self.transport.backend, policies)
-            self._active = _CoreChainRows(self, records, spec, cancelled)
+            self._active = _CoreChainRows(self, records, spec, cancelled, close_on_eof=close_on_eof)
         except BaseException as error:
             try:
                 self.close()
@@ -605,7 +610,8 @@ class SemLoomRecordChainCore:
             shutil.rmtree(self.control)
         self.last_close_report = dict(
             implementation="semloom_record_chain_core", production_core_connected=self.production_core_connected,
-            status="closed" if closed else "unknown", query_completed=False,
+            status="closed" if closed else "unknown",
+            query_completed=bool(self._active is not None and self._active.completed),
             cleanup_scope="core_transport_and_private_engine_api_observed_os_processes",
             physical_gpu_exit_checked=False, gpu_exit_confirmed=None,
             model_owner=worker_report, transport_closed=transport_closed,
@@ -670,7 +676,8 @@ class SemLoomRecordChainCore:
                 self.last_close_report['model_batch_mode'] = 'single_stage_cross_read_token_batches'
         return self.last_close_report
 
-    def _evaluate_record_local(self, records, chain, expected, query_id, cancelled, columns):
+    def _evaluate_record_local(self, records, chain, expected, query_id, cancelled, columns,
+                               *, close_on_eof=True):
         from .lotus_records_async_actor import AsyncRecordsActorOwner
 
         if self._service_runtime_binding is not None:
@@ -776,7 +783,7 @@ class SemLoomRecordChainCore:
                 self.core.sink = sink
                 self._feedback_sink_installed = True
         try:
-            self._active = _RecordLocalRows(self, records, run, cancelled)
+            self._active = _RecordLocalRows(self, records, run, cancelled, close_on_eof=close_on_eof)
             if expected:
                 if self._service_runtime_binding is None:
                     self._start_record_actors(earliest_deadline(self.deadline,

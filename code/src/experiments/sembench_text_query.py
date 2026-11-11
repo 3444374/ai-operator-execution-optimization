@@ -6,6 +6,7 @@ The entry creates no host lease, tuning loop, retries or performance claim.
 
 import argparse
 from collections import Counter
+from contextlib import ExitStack
 from dataclasses import asdict
 import json
 from pathlib import Path
@@ -100,25 +101,32 @@ def _frame_value(frame):
 
 def run_query(config, query, engine, resources, directory, *, budget=None, context=None,
               execute_operator=None):
-    """One original query; source scan and complete owner close stay in its clock."""
+    """Keep the legacy close-inclusive clock and a separate Core memory sink."""
     report = dict(schema='semloom.sembench_text_result.v1', status='failed',
         query=query.describe(), backend=config['backend'], production_core_used=False,
         lifecycle='cold isolated query', result_cache_enabled=False,
         warmup_calls=0, retries=0, performance_claim=False,
         query_timing_scope=('CSV scan and identity check, original selection, '
             + ('Core/runtime/model startup, ' if config['backend']=='semloom-core' else 'native graph/model startup, ')
-            + 'complete operator interpretation and close, original relational sink'),
+            + 'complete operator interpretation, original relational sink and owner close'),
         evaluation_in_query_seconds=False, physical_gpu_exit_confirmed=None,
         physical_gpu_exit_scope='independent existing outer host supervisor')
     started = time.monotonic()
+    if config['backend'] == 'semloom-core':
+        report['memory_sink_timing'] = dict(
+            clock='time.monotonic_ns in query worker', source_start_ns=time.monotonic_ns(),
+            result_ready_ns=None, seconds=None,
+            scope='fresh CSV scan, original selection, Core/runtime/model startup, '
+                  'complete operator and original relational sink; '
+                  'final owner/Ray close, call audit, evaluation and persistence excluded')
     try:
         def execute(operation, invoke):
             if execute_operator is not None:
                 return execute_operator(operation, invoke)
             if config['backend'] == 'semloom-core':
-                from .sembench_core_operator import execute as execute_core
-                return execute_core(operation, engine=engine, resources=resources,
-                    query_id=query.query_id, profile=config['profile'], control_dir=directory)
+                from .sembench_core_operator import query_scope
+                return owners.enter_context(query_scope(operation, engine=engine, resources=resources,
+                    query_id=query.query_id, profile=config['profile'], control_dir=directory))
             if config['backend'] == 'lotus-native':
                 from src.baselines.text.frameworks.lotus_native_stage import execute_native
                 return execute_native(operation.frame, operation.stage, operation.records, invoke=invoke,
@@ -129,7 +137,12 @@ def run_query(config, query, engine, resources, directory, *, budget=None, conte
                 resources=resources, query_id=query.query_id, profile=config['profile'],
                 control_dir=directory, context=context)
 
-        result, operator = query.execute(execute)
+        with ExitStack() as owners:
+            result, operator = query.execute(execute)
+            if config['backend'] == 'semloom-core':
+                timing = report['memory_sink_timing']
+                timing['result_ready_ns'] = time.monotonic_ns()
+                timing['seconds'] = (timing['result_ready_ns'] - timing['source_start_ns']) / 1e9
         report['query_seconds'] = time.monotonic() - started
         report['operator'] = {} if operator is None else {k:v for k,v in operator.items() if k != 'frame'}
         report['production_core_used'] = report['operator'].get('production_core_used', False)

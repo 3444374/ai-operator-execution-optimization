@@ -130,6 +130,10 @@ Q9 的原方法／评价与 Core 软件检查见[报告](../../experiments/resul
 比较时冻结同一输入摘要、模型／有效 dtype、生成参数、DEFAULT 格式与生命周期。
 冷查询的 CSV 扫描及身份检查、启动、算子解释／关闭、原关系后处理全部计入 `query_seconds`，原评价另计；
 它不能与旧普通 records 图的其他时钟口径直接混算。新入口没有隐含预热或重试。
+Core 另记录 `memory_sink_timing`：实际重新读取 CSV 前开始，到原查询完整内存关系准备好结束，
+包括冷 runtime／模型启动，不包括最后 owner／Ray close、调用审计、评价和持久化。
+它使用同一 worker 的 `monotonic_ns`，不由旧时间减去估算成本。关闭失败仍判整查询失败，
+已经观测到的 sink 时间保留；原关系失败时不产生终点。默认独立 Core iterator／operator 的 EOF 关闭行为不变。
 上游原 LM 上限为8192且无换行 stop；本补充入口三种 scenario 的省略生成项现均按该值解析，显式值保持。
 旧补充 Movie／MMQA 的省略项行为随此修正改变；公共类型及旧普通 Filter 的默认值不变。
 旧短 Filter 的8 token／换行 stop 不可直接移给 JSON Extract，也不能把更改生成配置后的差异归因于执行加速。
