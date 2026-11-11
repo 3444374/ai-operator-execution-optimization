@@ -12,6 +12,8 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 Q8 已完成 960 次实机请求与原评价；该提示变体减少本次请求耗时但质量更差，不作为默认采用。
 GPU 阶段关联、实际配置和未完成项以该报告为准。
 后续修正了提前准备取消顺序、CPU 传输超时收尾和布局原对照的重复格式化；
+第二轮审查补齐失败后关闭期间到达的回执，提交／接收／确认／未接收分别记账，见
+[审查和验证](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#second-code-review-20261111)。
 [固定 PR 审查收尾](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#pr100-review-closeout)
 记录 CPU 验证范围、历史计时偏差及仍不支持的结论。
 

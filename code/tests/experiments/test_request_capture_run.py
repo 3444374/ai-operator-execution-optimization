@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
 import tempfile
+import sys
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from src.experiments.request_capture_run import read_capture, run_capture
 from src.infrastructure.private_artifacts import file_identity
@@ -72,6 +74,40 @@ class CaptureRunTests(unittest.TestCase):
         self.assertEqual(len(result['calls']),2)
         self.assertEqual(result['terminal_failures'][0]['request_id'],'call-1')
         self.assertTrue(self.closed)
+
+    def test_failure_preserves_same_batch_terminal_delivered_during_close(self):
+        from src.serving.backends.vllm_protocol import EngineSpec
+        from tests.serving.test_async_engine_process import FixtureProcess, row
+        for i, mode in enumerate(('unknown', 'hold')):
+            self.requests[i].update(row=row(i, mode), token_ids=list(range(11)))
+        path = self.root/'capture.json'
+        path.write_text(json.dumps(dict(schema='semloom.semantic_request_capture.v1', requests=self.requests)))
+        self.config['workload']['input'].update(file_identity(path))
+        self.config['engine'].update(model_python=sys.executable)
+        self.config['resources'].update(startup_timeout_s=3, query_timeout_s=3)
+        self.config['limits']['owner_close_s'] = 2
+        owners = []
+        def factory(*args, **kwargs):
+            owner = FixtureProcess(*args, **kwargs)
+            owners.append(owner)
+            return owner
+        try:
+            with patch.object(EngineSpec, 'validate_driver_environment', return_value={}):
+                result = run_capture(self.config, self.ledger, process_type=factory)
+            self.assertEqual(result['status'], 'failed')
+            self.assertEqual(result['error_type'], 'RuntimeError')
+            self.assertEqual(result['actual_calls'], 2)
+            self.assertEqual({r['call_id'] for r in result['calls']}, {'q:0', 'q:1'})
+            self.assertEqual(result['submitted_requests'], 2)
+            self.assertEqual(result['received_terminal_events'], 2)
+            self.assertEqual(result['confirmed_terminal_events'], 1)
+            self.assertEqual(result['unreceived_request_ids'], [])
+            self.assertEqual(owners[0].poll(max_events=2), ())
+            saved = json.loads((self.root/'REQUEST-RESULTS.json').read_text())
+            self.assertEqual(saved['calls'], result['calls'])
+        finally:
+            for owner in owners:
+                owner.close(timeout=2)
 
     def test_generation_rewrite_is_rejected_before_start(self):
         self.config['generation']=dict(max_tokens=4,stop=[])

@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-11：优化 PR 第二轮代码与目标核查
+
+[两轴审查与原反例](diagnostics/semloom_execution_candidates_20261110/README.md#second-code-review-20261111)
+固定七个代码PR的差异。关闭期间迟到回执遗漏已由真实CPU IPC复现并修复；#101另外两处期限／字节组批
+问题独立归属该PR。新证据为CPU行为与生命周期，不更改旧实机来源、质量退化或性能负结果。
+
 ## 2026-11-10：其余执行候选的分项尝试
 
 [主报告](diagnostics/semloom_execution_candidates_20261110/README.md)保存 Q8／Q9 完整请求布局、COCO 实际传输、
