@@ -95,3 +95,144 @@ class HostAdapterTests(unittest.TestCase):
                         sockets.cleanup_inactive_socket_nodes.assert_called_once()
                         semaphores.cleanup_inactive_semaphores.assert_called_once()
                 api.supervise.assert_called_once()
+
+
+class HostFailureEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        from copy import deepcopy
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from src.baselines.image.ray_animals_q7.host_adapter import StageSupervisor
+        temporary = TemporaryDirectory(prefix='q7-rejected-stage-')
+        self.addCleanup(temporary.cleanup)
+        self.root, self.saved = Path(temporary.name), {}
+        self.guard = RuntimeError('foreign Python, Ray or model work was observed; nothing was signalled')
+        self.resources = dict(passed=False, failures=[], remaining_new_shm_names=['sem.mp-fixture'])
+
+        def save(path, value):
+            self.saved[path.name] = deepcopy(value)
+
+        self.host = SimpleNamespace(snapshot=Mock(return_value={'foreign_work': ['fixture-observer']}),
+            private_json=Mock(side_effect=save), assert_idle=Mock(side_effect=[None, self.guard]),
+            report_identities=Mock(return_value={(123, 42.)}), live_owned=Mock(return_value=[]),
+            cleanup_owned=Mock())
+        self.api = SimpleNamespace(supervise=Mock(return_value={'worker_exit': 0}))
+        self.monitor = SimpleNamespace(finish=Mock(return_value=self.resources))
+        self.sockets = SimpleNamespace(cleanup_inactive_socket_nodes=Mock())
+        self.semaphores = SimpleNamespace(cleanup_inactive_semaphores=Mock())
+        self.adapter = StageSupervisor(self.host, self.api, self.sockets, self.semaphores,
+            {'shared_resources': {}}, lambda _: self.monitor, 60)
+
+    def test_foreign_guard_failure_records_exit_and_resources_without_unlink(self):
+        import os
+        from unittest.mock import patch
+        with patch.dict(os.environ, TMPDIR='original-temp', RAY_TMPDIR='original-ray', VLLM_RPC_BASE_PATH='original-rpc'):
+            with self.assertRaises(RuntimeError) as caught:
+                self.adapter(['CPU-fixture'], 0, self.root)
+            self.assertEqual(os.environ['TMPDIR'], 'original-temp')
+            self.assertEqual(os.environ['RAY_TMPDIR'], 'original-ray')
+            self.assertEqual(os.environ['VLLM_RPC_BASE_PATH'], 'original-rpc')
+        self.assertIs(caught.exception, self.guard)
+        self.host.cleanup_owned.assert_not_called()
+        self.sockets.cleanup_inactive_socket_nodes.assert_not_called()
+        self.semaphores.cleanup_inactive_semaphores.assert_not_called()
+        exit = self.saved['EXIT.json']
+        self.assertEqual(exit['status'], 'failed')
+        self.assertEqual(exit['host_idle_guard'], 'rejected')
+        self.assertTrue(exit['worker_exit_zero'])
+        self.assertTrue(exit['owned_processes_exited'])
+        self.assertFalse(exit['physical_idle'])
+        self.assertFalse(exit['socket_cleanup_attempted'])
+        self.assertFalse(exit['semaphore_cleanup_attempted'])
+        self.assertEqual(self.saved['resources-at-failure.json'], self.resources)
+
+    def test_worker_failure_remains_primary_if_guard_also_rejects(self):
+        failure = ValueError('native worker fixture failure')
+        failure.report = {'worker_exit': 1}
+        self.api.supervise.side_effect = failure
+        with self.assertRaises(ValueError) as caught:
+            self.adapter(['CPU-fixture'], 0, self.root)
+        self.assertIs(caught.exception, failure)
+        self.assertFalse(self.saved['EXIT.json']['worker_exit_zero'])
+        self.assertEqual(self.saved['EXIT.json']['failure']['message'], str(failure))
+        self.assertEqual(self.saved['EXIT.json']['finalization_failure']['message'], str(self.guard))
+        self.assertTrue(any('stage finalization also failed' in note for note in failure.__notes__))
+
+    def test_resource_violation_still_prevents_unlink_after_idle_guard_passes(self):
+        self.host.assert_idle.side_effect = None
+        self.resources['failures'] = ['resource fixture violation']
+        with self.assertRaisesRegex(RuntimeError, 'resource failure remains'):
+            self.adapter(['CPU-fixture'], 0, self.root)
+        self.assertEqual(self.saved['EXIT.json']['host_idle_guard'], 'passed')
+        self.sockets.cleanup_inactive_socket_nodes.assert_not_called()
+        self.semaphores.cleanup_inactive_semaphores.assert_not_called()
+
+    def test_diagnostic_write_failure_cannot_replace_guard_failure(self):
+        original = self.host.private_json.side_effect
+
+        def save(path, value):
+            if path.name == 'EXIT.json':
+                raise OSError('fixture diagnostic storage failure')
+            original(path, value)
+
+        self.host.private_json.side_effect = save
+        with self.assertRaises(RuntimeError) as caught:
+            self.adapter(['CPU-fixture'], 0, self.root)
+        self.assertIs(caught.exception, self.guard)
+        self.assertIn('resources-at-failure.json', self.saved)
+        self.assertTrue(any('exit evidence also failed' in note for note in self.guard.__notes__))
+
+    def test_supervisor_evidence_write_failure_preserves_known_worker_exit(self):
+        original = self.host.private_json.side_effect
+        failure = OSError('fixture supervisor storage failure')
+
+        def save(path, value):
+            if path.name == 'supervisor.json':
+                raise failure
+            original(path, value)
+
+        self.host.private_json.side_effect = save
+        with self.assertRaises(OSError) as caught:
+            self.adapter(['CPU-fixture'], 0, self.root)
+        self.assertIs(caught.exception, failure)
+        self.assertTrue(self.saved['EXIT.json']['worker_exit_zero'])
+        self.assertTrue(self.saved['EXIT.json']['owned_processes_exited'])
+        self.assertEqual(self.saved['EXIT.json']['host_idle_guard'], 'rejected')
+
+    def test_resource_observation_failure_still_records_failed_exit(self):
+        failure = OSError('fixture resource snapshot failure')
+        self.monitor.finish.side_effect = failure
+        with self.assertRaises(OSError) as caught:
+            self.adapter(['CPU-fixture'], 0, self.root)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(self.saved['EXIT.json']['status'], 'failed')
+        self.assertEqual(self.saved['EXIT.json']['host_idle_guard'], 'not_reached')
+        self.assertTrue(self.saved['EXIT.json']['worker_exit_zero'])
+        self.assertTrue(self.saved['EXIT.json']['owned_processes_exited'])
+        self.assertIsNone(self.saved['EXIT.json']['resource_passed'])
+        self.semaphores.cleanup_inactive_semaphores.assert_not_called()
+
+    def test_worker_error_with_safe_cleanup_writes_only_failed_exit(self):
+        from pathlib import Path
+        from unittest.mock import patch
+        self.host.assert_idle.side_effect = None
+        self.resources.update(passed=True, remaining_new_shm_names=[])
+        for stage, worker_exit in enumerate((1, None)):
+            with self.subTest(worker_exit=worker_exit):
+                failure = ValueError('worker fixture failure')
+                failure.report = {'worker_exit': worker_exit}
+                self.api.supervise.side_effect = failure
+                with patch.object(Path, 'read_text', return_value=''):
+                    with self.assertRaises(ValueError) as caught:
+                        self.adapter(['CPU-fixture'], stage, self.root)
+                self.assertIs(caught.exception, failure)
+                exit = self.saved['EXIT.json']
+                self.assertEqual(exit['status'], 'failed')
+                self.assertIs(exit['worker_exit_zero'], False if worker_exit == 1 else None)
+                self.assertEqual(exit['host_idle_guard'], 'passed')
+                self.assertTrue(exit['socket_cleanup_attempted'])
+                self.assertTrue(exit['semaphore_cleanup_attempted'])
+        writes = [call for call in self.host.private_json.call_args_list if call.args[0].name == 'EXIT.json']
+        self.assertEqual(len(writes), 2)

@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 
+from src.infrastructure.redact import redact_text
+
 
 def load_verified(name, spec):
     path = Path(spec['path'])
@@ -34,6 +36,13 @@ class StageSupervisor:
         monitor = self.monitor_factory(self.resources['shared_resources'])
         owned = set()
         report = None
+        worker_failure = None
+        receipt = dict(status='failed', worker_exit_zero=None, physical_idle=False,
+                       resource_passed=None, owned_processes_exited=None,
+                       private_sockets_clear=None, host_idle_guard='not_reached',
+                       socket_cleanup_attempted=False, semaphore_cleanup_attempted=False,
+                       evidence=str(evidence),
+                       lifecycle_owner='project binding using unchanged pinned Q1 host helpers')
         keys = ('TMPDIR', 'VLLM_RPC_BASE_PATH', 'RAY_TMPDIR')
         previous = {key: os.environ.get(key) for key in keys}
         os.environ.update({key: str(temp) for key in keys})
@@ -44,43 +53,74 @@ class StageSupervisor:
                 owned |= host.report_identities(report)
                 host.private_json(evidence / 'supervisor.json', report)
             except BaseException as error:
-                report = getattr(error, 'report', None)
-                if report is not None:
+                worker_failure = error
+                failed_report = getattr(error, 'report', None)
+                if failed_report is not None:
+                    report = failed_report
                     owned |= host.report_identities(report)
                     host.private_json(evidence / 'supervisor.json', report)
                 raise
             finally:
+                worker_exit = report['worker_exit'] if report is not None else None
+                receipt['worker_exit_zero'] = worker_exit == 0 if worker_exit is not None else None
                 if host.live_owned(api, owned):
                     host.cleanup_owned(api, owned, 20)
                 live = host.live_owned(api, owned)
+                receipt['owned_processes_exited'] = not live
                 resources = monitor.finish()
                 after = host.snapshot(api, self.resources, f'q7-stage-{stage}-after', owned)
                 host.private_json(evidence / 'after.json', after)
                 host.private_json(evidence / 'resources-before-cleanup.json', resources)
+                receipt['resource_passed'] = resources['passed']
                 # assert_idle rejects unknown GPU/foreign ownership before any unlink.
-                host.assert_idle(after, self.resources)
+                try:
+                    host.assert_idle(after, self.resources)
+                except BaseException:
+                    receipt['host_idle_guard'] = 'rejected'
+                    raise
+                receipt['host_idle_guard'] = 'passed'
                 if live or resources['failures']:
                     raise RuntimeError('Owned process or resource failure remains after native stage')
+                receipt['socket_cleanup_attempted'] = True
                 socket_receipt = self.sockets.cleanup_inactive_socket_nodes(temp, Path('/proc/net/unix').read_text())
                 host.private_json(evidence / 'socket-cleanup.json', socket_receipt)
+                receipt['semaphore_cleanup_attempted'] = True
                 semaphore_receipt = self.semaphores.cleanup_inactive_semaphores(
                     resources['remaining_new_shm_names'], before, after)
                 host.private_json(evidence / 'semaphore-cleanup.json', semaphore_receipt)
                 resources = monitor.finish()
                 host.private_json(evidence / 'resources-final.json', resources)
                 sockets_clear = not any(path.is_socket() for path in temp.rglob('*'))
-                receipt = dict(worker_exit_zero=report is not None and report['worker_exit'] == 0,
-                               physical_idle=not live and resources['passed'] and sockets_clear,
-                               resource_passed=resources['passed'], owned_processes_exited=not live,
-                               private_sockets_clear=sockets_clear, evidence=str(evidence),
-                               lifecycle_owner='project binding using unchanged pinned Q1 host helpers')
+                receipt.update(status='completed', physical_idle=not live and resources['passed'] and sockets_clear,
+                               resource_passed=resources['passed'], private_sockets_clear=sockets_clear)
+        except BaseException as error:
+            failure = worker_failure or error
+            receipt.update(status='failed', physical_idle=False,
+                           failure=dict(type=type(failure).__name__, message=redact_text(str(failure))))
+            if error is not failure:
+                failure.add_note('stage finalization also failed: ' + redact_text(str(error)))
+                receipt['finalization_failure'] = dict(type=type(error).__name__, message=redact_text(str(error)))
+            # Preserve the rejected boundary without granting permission to unlink.
+            try:
+                resources = monitor.finish()
+                receipt['resource_passed'] = resources['passed']
+                host.private_json(evidence / 'resources-at-failure.json', resources)
+            except BaseException as recording:
+                failure.add_note('resource failure evidence also failed: ' + redact_text(str(recording)))
+            try:
                 host.private_json(evidence / 'EXIT.json', receipt)
+            except BaseException as recording:
+                failure.add_note('stage exit evidence also failed: ' + redact_text(str(recording)))
+            if failure is not error:
+                raise failure from error
+            raise
         finally:
             for key, value in previous.items():
                 if value is None:
                     os.environ.pop(key, None)
                 else:
                     os.environ[key] = value
+        host.private_json(evidence / 'EXIT.json', receipt)
         return receipt
 
 

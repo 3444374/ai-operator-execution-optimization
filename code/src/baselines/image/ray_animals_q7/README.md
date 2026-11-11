@@ -90,6 +90,15 @@ published as a successful run. Stale input, prediction or release files are
 rejected before dispatch. The public runtime hold does not change Ray Data's
 internal actor lifetime or establish that its model engine remains resident.
 
+If the post-stage idle guard rejects foreign work or a resource check fails,
+`stage-N-supervision/EXIT.json` records a failed boundary, the observed worker
+exit, resource/ownership checks and which cleanup steps were attempted.
+`resources-at-failure.json` retains the last successful resource observation.
+Unknown checks remain null or `not_reached`; a zero worker exit does not imply
+host idleness. The idle guard still runs before socket/semaphore unlink, and a
+rejection cannot authorize that cleanup. An original worker failure remains
+primary if finalization also fails; evidence-write failures are attached to it.
+
 ## Evidence and timing
 
 The outer controller reconciles both predictions files, native events and the
@@ -136,6 +145,16 @@ Qualification scope:
   receipt fields in these fixtures are not target-runtime qualifications. The
   changed final-owner/cleanup ordering still needs a bounded target qualification;
   the earlier 128 model results do not establish it.
+- Integrated `909f842c456cae36b45a0bb5921f98570ea43385` passed target zero-model
+  replay of the 64 original images, all 128 saved responses, complete original
+  City relation and evaluator. Its subsequent native attempt stopped after 64
+  confirmed first-stage requests: a separately launched Python status observer
+  was absent from the declared host process identities. Its command identity is
+  confirmed; CPU/RSS use and performance impact were not measured. The existing
+  guard refused cleanup; this attempt remains failed and did not exercise the
+  final-stage sink. Future
+  observation must not add a persistent remote Python process to the exclusive
+  stage. No process-name exception or relaxed idle guard is introduced.
 
 ## Zero-model checks
 
