@@ -265,6 +265,17 @@ class KalypsoMemorySinkTests(unittest.TestCase):
                 adapter.response_decisions(rows,dict(model_name='m',num_output_rows=len(indices),
                     results=[dict(idx=index) for index in indices]),'m')
 
+    def test_Map_texts_keep_original_outputs_and_order_for_required_parser(self):
+        response=dict(model_name='m',num_output_rows=2,results=[
+            dict(idx=1,outputs=[dict(op='SemMap',value='Answer: 2')]),
+            dict(idx=0,outputs=[dict(op='SemMap',value='unparsed text')])])
+        self.assertEqual(adapter.response_map_texts(response,'m',2),['unparsed text','Answer: 2'])
+        for results in (response['results'][:1],
+                [dict(idx=0,outputs=[]),response['results'][0]],
+                [dict(idx=0,outputs=[dict(value=None)]),response['results'][0]]):
+            with self.subTest(results=results),self.assertRaises(ValueError):
+                adapter.response_map_texts(dict(response,num_output_rows=len(results),results=results),'m',2)
+
 
 if __name__=='__main__':
     unittest.main()

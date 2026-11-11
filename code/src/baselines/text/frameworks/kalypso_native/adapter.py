@@ -76,26 +76,45 @@ def read_trace(path, query_id):
     return rows
 
 
-def response_decisions(eligible, response, model):
-    """Restore the complete Filter relation from the author's returned indices.
-
-    The native HTTP handler awaits the entire query before returning its surviving
-    contexts. Per-call trace reconciliation is a separate, post-sink audit.
-    """
+def response_results(response, model, expected):
+    """Validate the complete native HTTP relation before task materialization."""
     if not isinstance(response,dict) or response.get('model_name')!=model:
         raise ValueError('Semantic response model differs from the loaded 7B model')
     results=response.get('results')
     if not isinstance(results,list) or any(not isinstance(row,dict) for row in results):
         raise ValueError('Missing complete native results')
     indices=[row.get('idx') for row in results]
-    if (any(type(index) is not int or not 0<=index<len(eligible) for index in indices)
+    if (any(type(index) is not int or not 0<=index<expected for index in indices)
             or len(set(indices))!=len(indices)
             or type(response.get('num_output_rows')) is not int
             or response['num_output_rows']!=len(indices)):
         raise ValueError('Native returned rows have invalid occurrence indices or cardinality')
-    passed=set(indices)
+    return results
+
+
+def response_decisions(eligible, response, model):
+    """Restore Filter occurrences; trace reconciliation remains a post-sink audit.
+
+    The native handler awaits the entire query before returning surviving contexts.
+    """
+    passed={row['idx'] for row in response_results(response,model,len(eligible))}
     return [dict(row_id=row['row_id'],source_position=row['source_position'],decision=index in passed)
             for index,row in enumerate(eligible)]
+
+
+def response_map_texts(response, model, expected):
+    """Read original Map texts in occurrence order, before its required parser."""
+    results=response_results(response,model,expected)
+    if len(results)!=expected:
+        raise ValueError('Native Map response lost occurrence identities')
+    texts={}
+    for row in results:
+        outputs=row.get('outputs')
+        if (not isinstance(outputs,list) or len(outputs)!=1 or not isinstance(outputs[0],dict)
+                or not isinstance(outputs[0].get('value'),str)):
+            raise ValueError('Native Map requires one final text output per occurrence')
+        texts[row['idx']]=outputs[0]['value']
+    return [texts[index] for index in range(expected)]
 
 
 @contextmanager
@@ -210,7 +229,7 @@ class NativeQueryDriver:
         status=None
         self.http_body=None
         self.http_clock=dict(schema='semloom.kalypso_http_clock.v2',started_ns=started,
-            returned_ns=None,records_per_POST='entire native Filter query',
+            returned_ns=None,records_per_POST='entire native semantic query',
             scope='native HTTP response read/close; excludes JSON parsing and audit persistence',
             automatically_replayed=False)
         try:
@@ -262,98 +281,34 @@ class NativeQueryDriver:
             self.save(directory/'memory-sink-timing.json',timing)
         except BaseException as error:
             errors.append(error)
+            timing['evidence_write_errors'].append(type(error).__name__)
         return errors
 
-    def query(self,spec,emit):
-        from src.baselines.text.movie_records import MovieRecordSource
-        from src.baselines.text.movie_tasks import MovieTask
-        from src.baselines.text.sembench_movie import evaluate_original,classification_audit
-        # The reused outer query clock has already started, before source validation/scan.
-        if spec!=self.unit['queries'][self.next_query]:
-            raise ValueError('Query order differs from the finite unit declaration')
-        self.next_query+=1
-        directory=self.output/spec['query_id'];directory.mkdir(mode=0o700)
+    @contextmanager
+    def query_evidence(self,spec,directory,*,sink_scope,source_scope):
+        """Observe an existing native query; never execute or schedule its operators."""
         self.http_body=self.http_clock=None
         self.defer_http_evidence=True
         timing=dict(schema='semloom.kalypso_memory_sink.v1',memory_sink_ready_ns=None,
             clock='time.monotonic_ns in client process',phases={},trace_audit_status='not_started',
-            sink_scope='complete native HTTP relation plus original Movie projection/aggregation in memory',
-            source_scope='fresh manifest validation/read and author-required native-input.csv materialization',
-            result_ready_scope='legacy trace-audited encoded result; not the unified memory sink',
+            sink_scope=sink_scope,source_scope=source_scope,
+            result_ready_scope='legacy trace-audited result; not the unified memory sink',
             historical_timings_reconstructed=False)
         report=dict(status='failed',backend='Kalypso-native',query_id=spec['query_id'],
                     memory_sink_timing=timing)
         artifacts={}
-        eligible=None
         failure=None
         try:
-            with query_phase(timing,'source_and_required_input'):
-                if sha(spec['manifest'])!=spec['manifest_sha256']:
-                    raise ValueError('Fixed input manifest changed')
-                source=MovieRecordSource.from_manifest(spec['manifest'])
-                rows=source.rows()
-                task=MovieTask.from_config(spec['task'])
-                eligible=[r for r in rows if task.accepts(r)]
-                if len(eligible)!=spec['expected_calls']:
-                    raise ValueError('Unexpected ordinary predicate cardinality')
-                csv_path=directory/'native-input.csv'
-                with csv_path.open('x',newline='') as stream:
-                    writer=csv.DictWriter(stream,fieldnames=['data']);writer.writeheader()
-                    writer.writerows({'data':r['reviewText']} for r in eligible)
-                payload=dict(data_path=str(csv_path),ops=[dict(op='sem_filter',
-                    args=dict(prompt=self.cfg['native_instruction']))],blocking=False)
-            # Audit copies are retained in memory until the relation has reached its sink.
-            artifacts['request.json']=payload
-            with query_phase(timing,'native_HTTP_and_JSON_parse'):
-                response=self.transport(payload,spec['query_id'],directory)
-            with query_phase(timing,'original_relation'):
-                frame=task.result_frame(rows,response_decisions(eligible,response,self.cfg['model']))
-            timing['memory_sink_ready_ns']=time.monotonic_ns()
-            emit('memory_sink_ready')
-            with query_phase(timing,'trace_audit'):
-                timing['trace_audit_status']='running'
-                events=read_trace(self.cfg['native_trace'],spec['query_id'])
-                decisions=reconcile(eligible,response,events,self.cfg['model'])
-                artifacts['decisions.json']=decisions
-                apis=[e for e in events if e.get('event')=='native_API_end']
-                ids={e['request_id'] for e in apis}
-                if ids&self.request_ids or {e.get('model_uid') for e in apis}!={self.model_uid}:
-                    raise ValueError('Request IDs reused or loaded model UID changed across complete queries')
-                self.request_ids.update(ids)
-                timing['trace_audit_status']='passed'
-            with query_phase(timing,'result_encoding'):
-                report['result']=task.encode_result(frame)
-            emit('result_ready')
-            with query_phase(timing,'quality_evaluation'):
-                labeled=source.labeled_frame()
-                quality=evaluate_original(self.cfg['sembench'],task.query,frame,labeled)
-                with (Path(spec['manifest']).parent/'references.csv').open() as reference_stream:
-                    labels={r['row_id']:label['scoreSentiment'] for r,label in zip(rows,
-                        csv.DictReader(reference_stream)) if task.accepts(r)}
-                quality['row_audit']=classification_audit(labels,[(r['row_id'],
-                    'POSITIVE' if r['decision'] else 'NEGATIVE') for r in decisions])
-                quality['native_nonliteral_verdicts']=sum(r['native_verdict'] not in ('true','false') for r in decisions)
-                artifacts['quality.json']=quality
-                report.update(quality=quality,calls=dict(expected=len(eligible),native_completed=len(apis)),
-                    source_prefix_rows=len(rows),ordinary_predicate_rows=len(eligible),
-                    scan_pass_count='not instrumented; existing input validator may reread inside the query clock',
-                    native_API_units=apis,native_server_latency_sec=response.get('latency_sec'),
-                    scheduling_owner='author Kalypso/vLLM; adapter has no row dispatch loop',
-                    MFU=dict(status='unavailable',reason='Fixed vLLM 0.13.0rc4 exports no verified native FLOPs numerator'),
-                    prompt_parser_identity='native sem_filter; absence of false passes; not matched LOTUS requests')
-            report['status']='completed'
-            return report
+            yield report,artifacts,timing
         except BaseException as error:
             failure=error
-            report['failure_type']=type(error).__name__
+            report.update(status='failed',failure_type=type(error).__name__)
             if timing['trace_audit_status']=='running':
                 timing['trace_audit_status']='failed'
             error.query_report=report
             raise
         finally:
             self.defer_http_evidence=False
-            if eligible is not None:
-                artifacts['occurrences.json']=[{k:r[k] for k in ['row_id','source_position','reviewId']} for r in eligible]
             recording_errors=self.persist_query_evidence(directory,artifacts,timing)
             if recording_errors:
                 report['status']='failed'
@@ -366,6 +321,80 @@ class NativeQueryDriver:
                     raise failure
                 for recording in recording_errors:
                     failure.add_note('query evidence also failed: '+type(recording).__name__)
+
+    def query(self,spec,emit):
+        from src.baselines.text.movie_records import MovieRecordSource
+        from src.baselines.text.movie_tasks import MovieTask
+        from src.baselines.text.sembench_movie import evaluate_original,classification_audit
+        # The reused outer query clock has already started, before source validation/scan.
+        if spec!=self.unit['queries'][self.next_query]:
+            raise ValueError('Query order differs from the finite unit declaration')
+        self.next_query+=1
+        directory=self.output/spec['query_id'];directory.mkdir(mode=0o700)
+        with self.query_evidence(spec,directory,
+                sink_scope='complete native HTTP relation plus original Movie projection/aggregation in memory',
+                source_scope='fresh manifest validation/read and author-required native-input.csv materialization') as (report,artifacts,timing):
+            eligible=None
+            try:
+                with query_phase(timing,'source_and_required_input'):
+                    if sha(spec['manifest'])!=spec['manifest_sha256']:
+                        raise ValueError('Fixed input manifest changed')
+                    source=MovieRecordSource.from_manifest(spec['manifest'])
+                    rows=source.rows()
+                    task=MovieTask.from_config(spec['task'])
+                    eligible=[r for r in rows if task.accepts(r)]
+                    if len(eligible)!=spec['expected_calls']:
+                        raise ValueError('Unexpected ordinary predicate cardinality')
+                    csv_path=directory/'native-input.csv'
+                    with csv_path.open('x',newline='') as stream:
+                        writer=csv.DictWriter(stream,fieldnames=['data']);writer.writeheader()
+                        writer.writerows({'data':r['reviewText']} for r in eligible)
+                    payload=dict(data_path=str(csv_path),ops=[dict(op='sem_filter',
+                        args=dict(prompt=self.cfg['native_instruction']))],blocking=False)
+                # Audit copies are retained in memory until the relation has reached its sink.
+                artifacts['request.json']=payload
+                with query_phase(timing,'native_HTTP_and_JSON_parse'):
+                    response=self.transport(payload,spec['query_id'],directory)
+                with query_phase(timing,'original_relation'):
+                    frame=task.result_frame(rows,response_decisions(eligible,response,self.cfg['model']))
+                timing['memory_sink_ready_ns']=time.monotonic_ns()
+                emit('memory_sink_ready')
+                with query_phase(timing,'trace_audit'):
+                    timing['trace_audit_status']='running'
+                    events=read_trace(self.cfg['native_trace'],spec['query_id'])
+                    decisions=reconcile(eligible,response,events,self.cfg['model'])
+                    artifacts['decisions.json']=decisions
+                    apis=[e for e in events if e.get('event')=='native_API_end']
+                    ids={e['request_id'] for e in apis}
+                    if ids&self.request_ids or {e.get('model_uid') for e in apis}!={self.model_uid}:
+                        raise ValueError('Request IDs reused or loaded model UID changed across complete queries')
+                    self.request_ids.update(ids)
+                    timing['trace_audit_status']='passed'
+                with query_phase(timing,'result_encoding'):
+                    report['result']=task.encode_result(frame)
+                emit('result_ready')
+                with query_phase(timing,'quality_evaluation'):
+                    labeled=source.labeled_frame()
+                    quality=evaluate_original(self.cfg['sembench'],task.query,frame,labeled)
+                    with (Path(spec['manifest']).parent/'references.csv').open() as reference_stream:
+                        labels={r['row_id']:label['scoreSentiment'] for r,label in zip(rows,
+                            csv.DictReader(reference_stream)) if task.accepts(r)}
+                    quality['row_audit']=classification_audit(labels,[(r['row_id'],
+                        'POSITIVE' if r['decision'] else 'NEGATIVE') for r in decisions])
+                    quality['native_nonliteral_verdicts']=sum(r['native_verdict'] not in ('true','false') for r in decisions)
+                    artifacts['quality.json']=quality
+                    report.update(quality=quality,calls=dict(expected=len(eligible),native_completed=len(apis)),
+                        source_prefix_rows=len(rows),ordinary_predicate_rows=len(eligible),
+                        scan_pass_count='not instrumented; existing input validator may reread inside the query clock',
+                        native_API_units=apis,native_server_latency_sec=response.get('latency_sec'),
+                        scheduling_owner='author Kalypso/vLLM; adapter has no row dispatch loop',
+                        MFU=dict(status='unavailable',reason='Fixed vLLM 0.13.0rc4 exports no verified native FLOPs numerator'),
+                        prompt_parser_identity='native sem_filter; absence of false passes; not matched LOTUS requests')
+                report['status']='completed'
+                return report
+            finally:
+                if eligible is not None:
+                    artifacts['occurrences.json']=[{k:r[k] for k in ['row_id','source_position','reviewId']} for r in eligible]
 
     def close(self):
         return dict(status='closed',cleanup_errors=[],scope='attached HTTP client only; service shutdown belongs to GPU owner')

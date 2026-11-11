@@ -29,6 +29,19 @@ trace 完整发生项、request ID 和 model UID 核对在 sink 后执行，审�
 其原生入口与历史结果。本次[受控时钟测试](../../../../../tests/baselines/text/test_kalypso_memory_sink.py)
 仅验证本地顺序、输出和失败证据，不授予新的作者环境或 GPU 资格。
 
+私有查询的迁移复用 `NativeQueryDriver.query_evidence()`，它仅统一延迟证据写入、阶段计时和
+异常回执，不运行查询、服务或模型。`response_map_texts()` 校验完整 Map 返回并恢复原顺序，
+随后仍须调用该查询已有的 parser；只有原 `query.execute()` 的完整投影／聚合返回后才能记录
+sink。Filter 使用 `response_decisions()` 恢复发生项，再交回原查询完成关系计算。逐行 prompt
+表被作者 hook 实际读取时也属于必需执行输入，仍在 sink 前写入。
+
+Q10 Map 与 MMQA Q3b–g 的现有私有入口已有独立副本迁移补丁，保留 `make_query`、`prepare`、
+`reconcile` 和 owner／CLI 编排。前者的两次 2000 行原 CPU 响应、后者的十二次归档真实 HTTP
+响应已做本地原查询／parser／评价器差分回放；新结果及评价与各自原件一致。后者旧 CPU fixture
+缺少 `model_name`，不能通过新边界的必要校验，失败记录保留；没有补造字段。
+回放中的 `original_query` 阶段包含输入、HTTP、parser 和原关系计算，和嵌套阶段不可直接相加。
+这些是新私有副本的 CPU 候选；未部署、未运行新的 GPU 查询，其余私有题入口仍须各自迁移。
+
 `adapter.py`只负责输入、完整发生项核验、源序恢复和观测接入；作者服务继续拥有Filter执行、生成设置、批处理和调度。原生parser以结果不含`false`判通过，与LOTUS不同。`native_server.py`保留实际worker模型元数据及物理设备旁录；客户端关闭不代表服务退出。`cpu_native.py`需要已有作者环境和模型tokenizer；本次没有安装或启动它们。
 
 attached比较流程与CLI维护在`src/experiments/kalypso_query_lifecycle.py`，查询脚本`run_kalypso_sembench_query.py`直接调用该模块。`adapter.py`保留作者服务客户端，不导入实验编排。旧`adapter.run_attached`与原模块CLI可从Git提交`5b25197dafc03d6ae7fa48e7c0f7460122e85e51`的完整树恢复。
