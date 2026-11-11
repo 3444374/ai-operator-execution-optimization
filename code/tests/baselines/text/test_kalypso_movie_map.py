@@ -132,18 +132,22 @@ class MovieMapContracts(unittest.TestCase):
         manager=NS(reset_stages=lambda:None,tokenizer=tokenizer)
         executor=NS(_build_chat_request=lambda prompt,cap,pin,priority:NS(messages=prompt,max_tokens=cap,
             add_generation_prompt=True,add_special_tokens=False))
-        data=NS(_data_source=lambda *a:[NS(state=NS()) for _ in range(256)])
-        original=NS(operation=NS(stage=NS(method=NS(instruction='original instruction'))))
+        data=NS(_data_source=lambda *a:[NS(state=NS(idx=i)) for i in range(256)])
+        inputs=[dict(spec=spec,table=dict(instruction='original instruction',
+            rows=[dict(row_id=str(i),source_position=i,source_index=i,reviewId='duplicate') for i in range(256)]),
+            paths=dict(csv=Path('fixture.csv'),prompt=Path('prompts')/(spec['query_id']+'.json')))
+            for spec in unit()['queries']]
+        cfg=dict(units=[unit()],native_cpu_inputs=dict(sha256='CPU-fixture'))
         with patch.dict('sys.modules',{module.__name__:module,estimator.__name__:estimator}), \
-                patch.object(movie_map_cpu,'install'),patch.object(movie_map_cpu,'make_query',return_value=original), \
-                patch.object(movie_map_cpu,'prepare',return_value=([dict(row_id=str(i)) for i in range(256)],Path('fixture.csv'))):
+                patch.object(movie_map_cpu,'install'), \
+                patch.object(movie_map_cpu,'load_inputs',return_value=(dict(binding={}),inputs)):
             for limit in (8222,8221):
                 with tempfile.TemporaryDirectory() as raw:
                     if limit==8221:
                         with self.assertRaisesRegex(ValueError,'retry cap'):
-                            movie_map_cpu.check(dict(units=[unit()]),Path(raw),executor,manager,Plan,data,limit)
+                            movie_map_cpu.check(cfg,Path(raw),executor,manager,Plan,data,limit)
                     else:
-                        result=movie_map_cpu.check(dict(units=[unit()]),Path(raw),executor,manager,Plan,data,limit)
+                        result=movie_map_cpu.check(cfg,Path(raw),executor,manager,Plan,data,limit)
                         self.assertEqual([p['logical_occurrences'] for p in result['plans']],[256,256])
                         self.assertTrue((Path(raw)/'cold-native-prompts.json').is_file())
 

@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 
 from .native_server import check_author_source, native_launch_report, server_argv
-from src.baselines.text.movie_tasks import MovieTask
 
 
 def main():
@@ -51,6 +50,7 @@ def main():
         (a.output/'CPU-NATIVE-RESULT.json').write_text(json.dumps(report,indent=2)+'\n')
         print(json.dumps(report,indent=2))
         return
+    from src.baselines.text.movie_tasks import MovieTask
     plans=[]
     for profile in ('qualification','warmup','full'):
         for q in sorted(MovieTask.from_config(name).query for name in cfg['reference_inputs'][profile]):

@@ -135,8 +135,9 @@ Map prompt，原 `_planned_max_tokens`、`estimate_tokens`、ratio update/reset�
 `source_to_sink_seconds` 是 ready 服务后的新鲜逐题查询时间；`startup_inclusive_cold_seconds`
 在没有本次外部 owner 启动事件时留空，不把 attach 当模型加载，也不拆分／减算旧批次时钟。
 
-标准 CPU 入口对专属 Q9 unit 调用 `movie_map_cpu.check`，使用原 tokenizer／planner／request
-对象核对完整 prompt 和重试 cap 的 context 长度，保存每发生项消息摘要及 token IDs；不创建引擎。
+标准 CPU 入口对专属 Q9 unit 调用 `movie_map_cpu.check`，仅消费 driver 已冻结的输入，使用原
+tokenizer／planner／request 对象核对完整 prompt 和重试 cap 的 context 长度，保存每发生项完整
+消息、token IDs、row_id、source_position、source_index 和 reviewId；不创建引擎。
 该入口仍需要**已经存在的作者隔离环境**，不能用本机 source-method fixture 代替目标运行资格。
 
 本次本地 CPU 检查包含既有 Filter 回归、新 Q9 事件／预算负例、完整 256×2 保存响应与原评价器
@@ -160,3 +161,38 @@ CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHO
 目标原生 CPU 命令仍是 `check_kalypso_native_cpu.py --config "$NEW_CONFIG" --output "$NEW_CPU_EVIDENCE"`；
 服务只由既有 owner 通过 `owner_cli_bindings` 返回的 maintained CLI 启动。新 Linux owner/source/
 native CPU 与实际 GPU／完整 sink／物理清理资格仍待验证，不复用归档 LAUNCH、期限或模型成绩。
+
+
+### Q9 CPU 预检的双 Python 边界
+
+204faa 的目标零模型检查在作者 Python 调用 `SemBenchTextQuery` 时因缺 pandas 失败。
+作者环境没有 pandas 是正常隔离边界，不安装新依赖，也不将 driver 的 site-packages 混入作者环境。
+旧提交、失败与归档保留。修正版沿用两个正式 CLI 和既有 owner：
+
+1. 既有 driver Python 负责原 SemBench c814 查询选择、完整 256 occurrence、原 CSV 和精确指令。
+   对每题冻结 CSV、prompt 表、原 source 描述，输出 `CPU-INPUTS.json` 和其 SHA256。
+2. 把输出路径和摘要作为 `native_cpu_inputs={"manifest": ".../CPU-INPUTS.json", "sha256": "..."}`
+   写入新的私有配置并按既有 owner 重封配置摘要。作者 Python 只验证／消费冻结输入，运行原生
+   plan、tokenizer 和 request 检查；不导入或执行 SemBench、pandas、LOTUS 或评价器。
+
+```sh
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 \
+PYTHONPATH="$VERIFIED_REPO/code" "$DRIVER_PYTHON" -B \
+  "$VERIFIED_REPO/code/scripts/experiments/run_kalypso_sembench_query.py" \
+  --config "$NEW_CONFIG" --unit "$UNIT" --output "$NEW_CPU_INPUTS" --prepare-native-cpu
+
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 \
+PYTHONPATH="$VERIFIED_REPO/code" "$AUTHOR_PYTHON" -B \
+  "$VERIFIED_REPO/code/scripts/experiments/check_kalypso_native_cpu.py" \
+  --config "$NEW_CONFIG_WITH_INPUT_HASH" --output "$NEW_CPU_EVIDENCE"
+```
+
+准备模式要求 `execution_enabled=false`、`CPU_fixture_only=true`。这不是模型执行模式，也不
+修改原 owner 的启动／清理。每一步复核真实 Git HEAD、tree、code tree、code 清洁状态与实际参与
+文件摘要，对照配置内 owner 已固定的 `adapter_commit`／`adapter_tree`；不能只信清单自述版本。
+冻结清单同时绑定 model/revision、tokenizer template、原作者版本、完整源 CSV 摘要、完整 unit、
+每题指令／输入文件摘要及发生项身份；任何变化均在原生 planning 前失败，不隐式重新准备或回退。
+
+输入预检不替代每次模型查询的新鲜原 source 扫描，也不改变 Map 重试、评分、排序或计时口径。
+没有 pandas 的 `-I -S` 子解释器测试通过实际 CPU CLI，显式原生替身只存在于测试脚本；生产 CLI
+没有替身选项。该测试不能授予目标作者 runtime／tokenizer／GPU 资格，仍须在原隔离环境重跑两步。

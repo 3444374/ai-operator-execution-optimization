@@ -73,7 +73,9 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 [Kalypso Movie Q9 Map 维护接线](src/baselines/text/frameworks/kalypso_native/README.md#movie-q9-map-维护版接线)
 已进入原 query/server/CPU CLI，保留完整 256 发生项、原评分／排序／评价和作者 length→8192
 重试，物理上界为每题 512；不是 TopK。新增本地完整保存输出／token／时钟回放通过，但不继承
-旧模型成绩；新目标 owner/source/CPU 与 GPU 运行仍待资格检查。当前输入完整 SHA 独立绑定，
+旧模型成绩。204faa 的目标 CPU 预检暴露作者环境无 pandas 的边界错误，修正版把原查询准备
+放回 driver Python，作者 CPU CLI 仅消费摘要绑定的完整输入；不安装或混用环境。新目标两步
+CPU／owner 与 GPU 运行仍待资格检查。当前输入完整 SHA 独立绑定，
 不补写旧 Q9 缺少 full-source hash 的历史未知项。
 
 [IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257`、可选

@@ -68,13 +68,19 @@ def main():
     parser.add_argument('--config',type=Path,required=True)
     parser.add_argument('--unit',required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--prepare-native-cpu',action='store_true',
+        help='prepare frozen Q9 inputs in driver Python; no model or native runtime')
     args=parser.parse_args()
     cfg=json.loads(args.config.read_text())
     server_argv(cfg)  # Reject legacy engine overrides before client/service attachment.
     unit=next(u for u in cfg['units'] if u['unit_id']==args.unit)
+    if 'sembench' not in cfg:cfg['sembench']=str(Path(cfg['baseline_packet'])/'sembench')
+    if args.prepare_native_cpu:
+        from src.baselines.text.frameworks.kalypso_native.movie_map_inputs import prepare_inputs
+        print(json.dumps(prepare_inputs(cfg,unit,args.output)))
+        return
     cfg.update(url='http://127.0.0.1:'+str(cfg['port']),native_trace=str(args.output.parent/'native-trace.jsonl'),
-               loaded_model_proof=str(args.output.parent/'loaded-model.json'),
-               sembench=cfg.get('sembench',str(Path(cfg['baseline_packet'])/'sembench')))
+               loaded_model_proof=str(args.output.parent/'loaded-model.json'))
     query_driver_type(unit)
     if not cfg['execution_enabled'] or cfg.get('CPU_fixture_only'):
         raise ValueError('GPU owner must explicitly bind an enabled private runtime config')
