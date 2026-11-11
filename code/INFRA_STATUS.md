@@ -112,6 +112,12 @@ batch position 与本地 occurrence ID 关联 43 个重复消息组，不改变�
 各题保留原 source、prompt/parser、head/count/ratio/evaluator 和独立 cold／ready 实际时钟；
 本新增绑定的 Linux DSO／SQL、目标 GPU、模型质量与性能仍 pending，不继承旧结果。
 
+Movie Filter 的 `9507` 目标 Q2 尝试在旧 native CLI 的25/1200白名单处失败，generate=0、
+无 sink，资源已清理。现修复为必填正 int64 与实际 count／DISTINCT 一致，无枚举或默认25；
+当前 driver 源 SHA 在模型启动前校验，必须重链薄 driver，DSO/kernel不变。生产参数函数
+实际 C++ 编译执行和旧driver前置拒绝检查通过；新增软件服务的真实子进程／Unix IPC 120条
+完整 token／逐发生项答复本机通过。Linux完整driver／SQL门仍 pending，详见上述模块说明。
+
 [Ray Animals Q7](src/baselines/image/ray_animals_q7/README.md)现保留第一 stage 的完整关闭，最终原 City
 关系就绪后才 ACK 并关闭最后 runtime。原 19 项 CPU、真实本地子进程交接及 128 条旧答复身份／原 parser
 回放通过；`909f842c4` 又通过目标 64 张原图／128 条保存答复的完整 City／evaluator 回放，并在独立

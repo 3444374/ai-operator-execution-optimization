@@ -1,4 +1,4 @@
-// One original SemBench MMQA Q3/Q6 Filter through the pinned author's DuckDB prediction operator.
+// One original SemBench Filter through the pinned author's DuckDB prediction operator.
 // The coordinator, Python executor and model are owned by the outer run scope.
 #include "duckdb.hpp"
 #include "dbend/c/imlane_dbend.hpp"
@@ -63,7 +63,7 @@ std::string literal(const std::string &text) {
 std::map<std::string, std::string> arguments(int argc, char **argv) {
     const std::string usage = "mmqa-filter --input CSV --module PY --function NAME "
                               "--kind process|thread --output JSON [--threads N] --sink-release PATH "
-                              "[--expected-rows 25|1200]";
+                              "--expected-rows N";
     std::map<std::string, std::string> result;
     for (int index = 1; index < argc; index += 2) {
         const std::string key = argv[index];
@@ -74,7 +74,7 @@ std::map<std::string, std::string> arguments(int argc, char **argv) {
             throw std::invalid_argument(usage);
         }
     }
-    for (const char *name : {"--input", "--module", "--function", "--kind", "--output", "--sink-release"}) {
+    for (const char *name : {"--input", "--module", "--function", "--kind", "--output", "--sink-release", "--expected-rows"}) {
         if (!result.count(name) || result.at(name).empty()) throw std::invalid_argument(usage);
     }
     if (result.at("--kind") != "process" && result.at("--kind") != "thread") {
@@ -85,9 +85,10 @@ std::map<std::string, std::string> arguments(int argc, char **argv) {
         if (value.empty() || value.find_first_not_of("0123456789") != std::string::npos ||
             std::stoull(value) == 0) throw std::invalid_argument("threads must be a positive integer");
     }
-    if (!result.count("--expected-rows")) result["--expected-rows"] = "25";
-    if (result.at("--expected-rows") != "25" && result.at("--expected-rows") != "1200") {
-        throw std::invalid_argument("expected rows must bind MMQA 25 or Medical Q4 1200 occurrences");
+    const auto &expected = result.at("--expected-rows");
+    if (expected.empty() || expected.find_first_not_of("0123456789") != std::string::npos ||
+            std::stoll(expected) <= 0) {
+        throw std::invalid_argument("expected rows must be a positive int64 integer");
     }
     return result;
 }
@@ -161,7 +162,7 @@ void execute(const std::map<std::string, std::string> &args, Json &report, int d
         duckdb::string_t>(alias, unexpected_local_call,
         duckdb::LogicalType::INVALID, kind, DEFAULT_PREDICTION_BATCH_SIZE);
 
-    // This is the complete gold-free source, not a Python-filtered eligible table.
+    // This is the complete gold-free semantic operator input selected by the original query.
     // force_not_null preserves CSV empty strings from the original source contract.
     const auto source = "read_csv(" + literal(args.at("--input")) +
         ", header=true, auto_detect=false, delim=',', columns={"

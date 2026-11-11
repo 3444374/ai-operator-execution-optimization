@@ -309,7 +309,8 @@ average_acne_age 结果均保留；空集合、重复行、NULL age 和原 panda
 共享 provider 的可选 occurrence_ids 只记录到本地回执，与原有 batch position 绑定，
 不进入模型消息或 request。原始回复按 occurrence 对应，不去重、不按到达顺序匹配，
 不把最后一个重复回复覆盖到其他行。解析继续 true-before-false/default-true。
-薄 driver 的 `--expected-rows 1200` 只声明这道题的完整输入，旧 MMQA 默认仍为 25。
+薄 driver 必须显式 `--expected-rows N`，只接受正十进制 int64；无题目白名单或默认25。
+随后以实际 SQL count 与 DISTINCT occurrence_id 检查完整输入，仍在 prediction 前失败。
 
 计时沿用真实双起点：ready 后 fresh source/prompt/token 准备和必要传输到完整内存
 join/filter/mean sink；另保留含模型启动的 cold worker／supervisor 起点。完整 sink 先于
@@ -337,7 +338,7 @@ Q4 同 120 个计算比例。Q2 引号、Q3 无末尾句点、Q4 有末尾句点
 持久化和 owner close 在后，沿用上述单题入口。发生项使用完整 call_id，不按重复消息去重。
 零模型检查用 `native_imlane_filters check`；首个目标门只选 Q2 全 120 行，不能自动放行
 Q1 2000 次。既有 `run` CLI、host lease、进程/SHM/GPU 清理条件和原始 DSO hash 不变。
-只在目标环境重新核对当前 kernel/driver 绑定，不重建 DSO 或安装替代 DuckDB。
+必须重链当前薄 driver，并核对当前 driver 源码和 kernel 身份；不重建 DSO 或安装替代 DuckDB。
 
 [CPU 回放](../../tests/baselines/text/replay_imlane_movie_filters.py)验证 Q1 的 2000 条、Q2/Q4
 cold/warm 各 120 条原 native 保存答复，以及 Q3 的 120 条 `168bc` LOTUS-compatible
@@ -347,6 +348,27 @@ project resident bridge 保存答复，共 2600 条。Q3 明确保留 bridge 来
 后置失败保留时钟。Q3 还与旧完整 prompt token 数组匹配；其他历史 GPU 的完整 token
 资格不由 CPU 推导。76 项局部测试通过，空结果保留原 Q1/Q2 的三列 schema；共享 Medical
 cold/warm 2400 条回放作为回归。没有新模型、Linux DSO/SQL 或目标 GPU 资格与性能结论。
+
+### Movie Filter 原生 CLI 修复
+
+`9507f9799` 的 Q2 目标尝试揭示薄 driver 尚有旧 `25/1200` 白名单：源准备通过，模型已
+启动约 52.728 秒，但 CLI 在 SQL 前拒绝120，实际 generate=0、预算 consumed=0、无 sink。
+旧失败和已领取预算保留；该启动时间不是查询时长。此前76项测试与保存回复回放未覆盖
+真实 native CLI，不能作为 Linux SQL 资格，也不能沿用旧薄 driver。
+
+修复删除白名单和默认25，保留必填正 int64、实际 source count／唯一 occurrence 与显式期望
+一致的合同。`verified_build` 在任何 ModelService 启动前核当前 `driver_source` SHA；旧
+二进制即使 kernel/DSO 不变也会前置拒绝。作者算法、DSO、kernel、预算及 sink 不变。
+
+[编译执行测试](../../tests/baselines/text/test_imlane_filter_arguments.py) 直接从生产 cpp
+取同一参数函数进行 C++ 编译／实际进程执行，覆盖25/120/1200/2000、非枚举7、非法／缺失／
+重复／非ASCII／溢出参数，并验证旧 driver 在模型实例创建前拒绝。不是全文 driver/SQL 测试。
+Mac 不支持该 Linux 原作者 DSO 链接；目标门仍 pending。新增[Linux零模型门](../../tests/baselines/text/qualify_imlane_movie_filter.py)
+保留真正 driver／Arrow／SQL／完整原 sink／ACK，只在既有 ModelService.spawn 注入
+[软件服务](../../tests/baselines/text/imlane_filter_software_service.py)，禁止模型导入。
+保存答复按 started receipt 的 batch_id、position、occurrence_id 关联，保留完整 token，
+不按消息去重。先执行 Q2 cold 的全120条，再分别检查 missing-row／duplicate-id 在SQL
+计数后、任何 IPC/generate 前失败。外层原 host lease 和进程／SHM 资源监督仍必需。
 
 ## MMQA Q1 工程版接线
 

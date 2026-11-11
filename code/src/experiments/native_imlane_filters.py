@@ -124,6 +124,8 @@ def verified_build(path):
     if (record['schema'] != 'semloom.imlane.filter_driver_build.v1' or record['status'] != 'built'
             or record['variant'] != 'original-author' or record['duckdb_library']['sha256'] != DSO_SHA256):
         raise ValueError('the original 072f typed DSO and single-query Filter driver are required')
+    if file_identity(CODE / 'integrations/imlane_duckdb/mmqa_filter.cpp') != record.get('driver_source'):
+        raise ValueError('Filter build must bind the current native driver source; relink the thin driver')
     for name in ('binary', 'duckdb_library', 'kernel'):
         if file_identity(Path(record[name + '_path'])) != record[name]:
             raise ValueError('native Filter build artifact changed: ' + name)
