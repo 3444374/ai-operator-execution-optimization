@@ -1,6 +1,7 @@
 """Native relation timing and original sinks, with no author library or model."""
 
 import os
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -16,7 +17,8 @@ from src.infrastructure.private_artifacts import publish_private_json
 
 
 class PublishedRelationTimingTests(unittest.TestCase):
-    def run_fixture(self, *, exit_code=0, audit_failure=False, sink_failure=False, early_exit=False):
+    def run_fixture(self, *, exit_code=0, audit_failure=False, sink_failure=False, early_exit=False,
+                    close_failure=False, exit_during_sink=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -29,9 +31,11 @@ class PublishedRelationTimingTests(unittest.TestCase):
             def __exit__(self, *_args):
                 events.append('author-close')
                 clock[0] = 400_000_000_000
+                if close_failure:
+                    raise RuntimeError('author close failed')
         process = SimpleNamespace(returncode=None)
         def poll():
-            if early_exit or (root / 'sink-release.ack').exists():
+            if process.returncode is None and (early_exit or (root / 'sink-release.ack').exists()):
                 process.returncode = exit_code
                 clock[0] = 150_000_000_000
             return process.returncode
@@ -51,6 +55,8 @@ class PublishedRelationTimingTests(unittest.TestCase):
             clock[0] = 130_000_000_000
             if sink_failure:
                 raise ValueError('original sink failed')
+            if exit_during_sink:
+                process.returncode = 7
             return [row['title'] for row in native['accepted_occurrences']]
         def audit(_native, result):
             self.assertEqual(result, ['actual native row'])
@@ -109,6 +115,28 @@ class PublishedRelationTimingTests(unittest.TestCase):
         self.assertEqual(report['source_to_sink_seconds'], 30)
         self.assertEqual(report['status'], 'failed')
 
+    def test_audit_and_close_failures_carry_the_completed_sink_and_report(self):
+        for failure in ('audit_failure', 'close_failure'):
+            with self.subTest(failure=failure):
+                report, _events, _result, error = self.run_fixture(**{failure: True})
+                self.assertIsNotNone(error)
+                self.assertIs(error.query_report, report)
+                self.assertEqual(error.query_result, ['actual native row'])
+                self.assertEqual(report['full_sink_observed_monotonic_ns'], 130_000_000_000)
+                self.assertTrue(report['native_alive_after_sink'])
+                self.assertEqual(report['status'], 'failed')
+
+    def test_exit_during_sink_keeps_observation_without_qualified_readiness(self):
+        report, events, _result, error = self.run_fixture(exit_during_sink=True)
+        self.assertIsInstance(error, RuntimeError)
+        self.assertIs(error.query_report, report)
+        self.assertEqual(error.query_result, ['actual native row'])
+        self.assertEqual(report['full_sink_observed_monotonic_ns'], 130_000_000_000)
+        self.assertFalse(report['native_alive_after_sink'])
+        self.assertNotIn('result_ready_monotonic_ns', report)
+        self.assertNotIn('audit', events)
+        self.assertEqual(report['status'], 'failed')
+
     def test_sink_failure_publishes_abort_before_reaping_and_author_close(self):
         report, events, _result, error = self.run_fixture(sink_failure=True)
         self.assertIsInstance(error, ValueError)
@@ -116,6 +144,29 @@ class PublishedRelationTimingTests(unittest.TestCase):
         self.assertNotIn('result_ready_monotonic_ns', report)
         self.assertEqual(events[-1], 'author-close')
         self.assertEqual(report['status'], 'failed')
+
+
+class RelationObservationPersistenceTests(unittest.TestCase):
+    def test_failed_query_saves_complete_frame_and_failed_report(self):
+        report = dict(status='failed', full_sink_observed_monotonic_ns=130,
+            result_ready_monotonic_ns=130, native_alive_after_sink=True)
+        frame = pd.DataFrame({'title': ['second', 'first', 'second']}, index=[2, 0, 4])
+        with tempfile.TemporaryDirectory() as directory:
+            relation.persist_relation_observation(directory, report, {'3b': frame}, primary=ValueError('audit'))
+            saved = json.loads((Path(directory) / 'full-sink-observed.json').read_text())
+            pd.testing.assert_frame_equal(pd.DataFrame.from_dict(saved['frames']['3b'], orient='tight'), frame)
+            self.assertEqual(saved['status'], 'failed')
+            self.assertEqual(json.loads((Path(directory) / 'author.json').read_text()), report)
+
+    def test_secondary_write_failure_does_not_replace_primary_and_still_saves_report(self):
+        report = dict(status='failed', full_sink_observed_monotonic_ns=130,
+            native_alive_after_sink=False)
+        primary = RuntimeError('native exited')
+        with patch.object(relation, 'write_private_json', side_effect=[OSError('disk'), None]) as write:
+            relation.persist_relation_observation('/unused', report, pd.DataFrame({'score': [3.]}), primary=primary)
+        self.assertEqual(write.call_count, 2)
+        self.assertEqual(write.call_args.args, (Path('/unused/author.json'), report))
+        self.assertEqual(primary.__notes__, ['full-sink-observed.json persistence also failed: OSError'])
 
 
 @unittest.skipUnless(shutil.which('c++'), 'requires the existing local C++ compiler')
@@ -226,13 +277,13 @@ class OriginalRelationSinkTests(unittest.TestCase):
             sources = [dict(occurrence_id=code + '-r' + str(i), source_position=group * 3 + i)
                        for i in range(3)]
             bindings[code] = (query, sources)
-            for index in (2, 0) if group == 0 else (1,):
+            for index in (1, 0) if group == 0 else (2, 0):
                 accepted.append(dict(sources[index], title=query.operation.frame.iloc[index]['title']))
         native = dict(return_type='TINYINT', full_filter_materialized_before_title_sink=True,
             source_rows=6, eligible_rows=6, accepted_occurrences=accepted)
         results = relation.finish_mmqa_filters(native, bindings)
-        self.assertEqual(results['3b'].iloc[:, 0].tolist(), ['Mean Girls', 'Mean Girls'])
-        self.assertEqual(results['3c'].iloc[:, 0].tolist(), ['Orange County'])
+        self.assertEqual(results['3b'].iloc[:, 0].tolist(), ['Mean Girls', 'Orange County'])
+        self.assertEqual(results['3c'].iloc[:, 0].tolist(), ['Mean Girls', 'Mean Girls'])
         native['accepted_occurrences'].append(accepted[0])
         with self.assertRaisesRegex(ValueError, 'duplicate or unknown'):
             relation.finish_mmqa_filters(native, bindings)

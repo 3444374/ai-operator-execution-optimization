@@ -13,7 +13,7 @@ import time
 
 from integrations.imlane_duckdb.runtime import DuckDBScope
 from integrations.imlane_records import owner
-from src.infrastructure.private_artifacts import open_private_text, read_json
+from src.infrastructure.private_artifacts import open_private_text, read_json, write_private_json
 
 ACK_PROTOCOL = 'semloom.imlane.relation_ack.v1'
 
@@ -39,11 +39,12 @@ def run_relation_query(args, report, *, kernel, command, window, query_started_n
     """
     result_path = Path(args.output) / 'query.json'
     release_path = Path(args.output) / 'sink-release.ack'
-    if result_path.exists() or release_path.exists():
-        raise ValueError('native relation query requires fresh relation and ACK paths')
     report['status'] = 'running'
     scope = None
+    result = None
     try:
+        if result_path.exists() or release_path.exists():
+            raise ValueError('native relation query requires fresh relation and ACK paths')
         with DuckDBScope(args, report, kernel=kernel) as scope:
             handoff_ready, released, primary = None, False, None
             try:
@@ -67,6 +68,8 @@ def run_relation_query(args, report, *, kernel, command, window, query_started_n
                 if native.get('sink_handoff') != dict(protocol=ACK_PROTOCOL, release_path=str(release_path)):
                     raise ValueError('driver must retain its DuckDB relation until the matching sink ACK')
                 handoff_ready = native_ready
+                report.update(query_started_monotonic_ns=query_started_ns,
+                    native_relation_ready_monotonic_ns=native_ready)
                 window.check()
                 scope.check()
                 check()
@@ -74,12 +77,12 @@ def run_relation_query(args, report, *, kernel, command, window, query_started_n
                     raise RuntimeError('native driver exited without waiting for the original sink')
                 result = sink(native)
                 ready = time.monotonic_ns()
-                if process.poll() is not None:
+                report['full_sink_observed_monotonic_ns'] = ready
+                report['native_alive_after_sink'] = process.poll() is None
+                if not report['native_alive_after_sink']:
                     raise RuntimeError('native driver exited before the original sink completed')
                 window.accept_ready(ready, clock='CLOCK_MONOTONIC')
-                report.update(query_started_monotonic_ns=query_started_ns,
-                    native_relation_ready_monotonic_ns=native_ready,
-                    result_ready_monotonic_ns=ready,
+                report.update(result_ready_monotonic_ns=ready,
                     source_to_sink_seconds=(ready - query_started_ns) / 1e9,
                     result_clock='CLOCK_MONOTONIC',
                     result_scope='source start through complete original relation sink, including native '
@@ -122,12 +125,43 @@ def run_relation_query(args, report, *, kernel, command, window, query_started_n
                         primary.add_note('relation abort/reap also failed: ' + type(cleanup).__name__)
         report['status'] = 'completed'
         return result, audited
-    except BaseException:
+    except BaseException as error:
         report['status'] = 'failed'
+        error.query_report = report
+        error.query_result = result
         raise
     finally:
         if scope is not None:
             report['author_cleanup'] = owner.resource_state(scope)
+
+
+def persist_relation_observation(directory, report, result, *, primary=None):
+    """Save the observed original sink and report after execution, even on failure.
+
+    Call from the worker's finally block. A write failure cannot replace the
+    query's primary error; saving an observed sink never promotes a failed query.
+    """
+    failure = primary
+    names = ['author.json'] if result is None else ['full-sink-observed.json', 'author.json']
+    for name in names:
+        try:
+            if name == 'author.json':
+                payload = report
+            else:
+                frames = result if isinstance(result, dict) else {'result': result}
+                payload = dict(status=report['status'],
+                    full_sink_observed_monotonic_ns=report['full_sink_observed_monotonic_ns'],
+                    result_ready_monotonic_ns=report.get('result_ready_monotonic_ns'),
+                    native_alive_after_sink=report['native_alive_after_sink'],
+                    frames={label: frame.to_dict(orient='tight') for label, frame in frames.items()})
+            write_private_json(Path(directory) / name, payload)
+        except BaseException as error:
+            if failure is None:
+                failure = error
+            else:
+                failure.add_note(f'{name} persistence also failed: {type(error).__name__}')
+    if primary is None and failure is not None:
+        raise failure
 
 
 def finish_mmqa_filters(native, bindings):
@@ -164,7 +198,9 @@ def finish_mmqa_filters(native, bindings):
         if (value['source_position'] != source['source_position']
                 or value['title'] != str(query.operation.frame.iloc[record.source_position]['title'])):
             raise ValueError('native Filter result differs from its source occurrence')
-        selected[label].append(record)
+    for occurrence, (label, record, _source, _query) in expected.items():
+        if occurrence in seen:
+            selected[label].append(record)
     results = {}
     for label, (query, _sources) in bindings.items():
         def original_operator(operation, _invoke):

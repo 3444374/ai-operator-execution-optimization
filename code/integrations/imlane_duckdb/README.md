@@ -207,6 +207,8 @@ SQL 保存实际完整关系；完整关系复制后、校验／文件输出／n
 然后发布 ACK、等待 driver 实际退出，最后做回执审计与作者关闭。`finish_mmqa_filters` 只绑定
 MMQA Q3a–g 的原 title sink，`finish_movie_scores` 只绑定 Movie Q10 原分组 sink；它们分别消费
 `accepted_occurrences` 与 `mapped_occurrences.score`，不从模型回执重建结果。
+Filter 成员由 native 决定，原输入 occurrence 顺序决定恢复顺序；不按 native 返回顺序、title
+排序或去重。服务 `check()` 只检查存活与期限，逐请求 terminal／receipt 遍历放到 `audit()`。
 联合 Q3b–g 的150行执行只产生整批时钟，不能当作六个独立逐题延迟；逐题运行使用单题 binding。
 
 Python scope 尚在不代表 C++ runtime 尚在。适配的 driver 必须在完整关系发布之前创建
@@ -231,6 +233,10 @@ ACK用独立新私有路径，已存在ACK不能作为新完成。正常 sink �
 调用方提供已有 workload 的 `command`／`kernel`、原完整 `sink(native)`、后置
 `audit(native, result)` 和服务 `check()`。需要重新编译带 ACK 的薄driver并将worker接到本入口；
 未携带匹配 `sink_handoff` 的旧driver会被拒绝。历史packet原字节保留，只在新副本应用适配。
+失败异常携带 `query_report` 和已经得到的 `query_result`；worker 在 `finally` 调用
+`persist_relation_observation` 保存报告及完整原关系，次生写失败只给主异常追加说明。
+若 sink 已完成而 driver 提前退出，保留 `full_sink_observed_monotonic_ns` 和完整关系，
+标记 `native_alive_after_sink=false`，不接纳 `result_ready_monotonic_ns` 或成功资格。
 本地 C++ publisher检查与保存关系回放不代表真实 DuckDB／Linux 进程生命周期已完成资格。
 
 ## 外层运行资源与回执
