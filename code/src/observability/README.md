@@ -8,6 +8,11 @@ over the execution policy it observes.
 - `native_query_timing.py` reads existing query and model receipts. An unconfirmed native
   submission whose outcome is `unknown` remains unknown; it is not proof that nothing was sent.
   Such a receipt contributes neither a confirmed API-call count nor a measured model duration.
+  The Kalypso adapter's explicit `memory_sink_timing` receipt provides
+  `source_to_sink_seconds` from the session's `query_start_ns` to the complete original
+  relation in memory. Legacy `answer_ready_s` and API-return clocks keep their meanings;
+  absent or invalid sink receipts remain unavailable. An observed sink survives a later
+  audit/close failure and does not turn that query into a successful result.
 - `process_resources/supervised.py` samples the supervisor's birth-matched process RSS,
   declared affinity and host SHM delta under an exclusive lease. Its `ResourceMonitor`
   preserves the original implementation used by the external Kalypso owner helper;

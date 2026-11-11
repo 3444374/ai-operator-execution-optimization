@@ -31,13 +31,20 @@ def run_attached(cfg,unit,output,observer=None):
     from src.observability.native_query_timing import ObservationStore,timed_driver_type,query_timing
     store=ObservationStore();driver=timed_driver_type(native.NativeQueryDriver,store)
     backends=('kalypso-native',)
-    result=sessions.run_sequence(unit['queries'],lambda path,first:driver(cfg,unit,path),
-        output,backend='kalypso-native',lifecycle='resident',observer=observer,
-        supported_backends=backends,resident_backends=backends)
-    for q in result['queries']:
-        q['complete_query_timing']=query_timing(q)
-    result['service_lifecycle_scope']='external GPU owner: startup/warmup/queries/shutdown all charged to unit total'
-    return result
+    result=None
+    try:
+        result=sessions.run_sequence(unit['queries'],lambda path,first:driver(cfg,unit,path),
+            output,backend='kalypso-native',lifecycle='resident',observer=observer,
+            supported_backends=backends,resident_backends=backends)
+        return result
+    except BaseException as error:
+        result=getattr(error,'session_report',None)
+        raise
+    finally:
+        if result is not None:
+            for q in result['queries']:
+                q['complete_query_timing']=query_timing(q)
+            result['service_lifecycle_scope']='external GPU owner: startup/warmup/queries/shutdown all charged to unit total'
 
 
 def main():

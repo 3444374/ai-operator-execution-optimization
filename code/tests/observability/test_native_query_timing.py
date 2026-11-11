@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from src.observability.native_query_timing import (ObservationStore,model_API_samples,
                              offline_scan_total,query_timing,timed_driver_type)
@@ -58,6 +59,80 @@ class QueryTests(unittest.TestCase):
         self.assertIsNone(timing['API_return_s']);self.assertIn('ordering',timing['reason'])
 
 
+
+
+class MemorySinkTests(unittest.TestCase):
+    def query(self):
+        return dict(status='completed',query_start_ns=1_000_000_000,
+            query_result_ready_ns=22_000_000_000,query_terminal_ns=30_000_000_000,
+            backend_report=dict(status='completed',
+                memory_sink_timing=dict(schema='semloom.kalypso_memory_sink.v1',
+                    memory_sink_ready_ns=4_000_000_000,sink_scope='complete original relation'),
+                comparison_timing=dict(complete=True,driver_entered_ns=2_000_000_000,
+                    API_returned_ns=29_000_000_000)))
+
+    def test_audit_and_event_delivery_do_not_extend_memory_sink(self):
+        q=self.query()
+        first=query_timing(q)
+        q['query_result_ready_ns']+=4_000_000_000
+        q['events']=[dict(event='memory_sink_ready',monotonic_ns=10_000_000_000)]
+        later=query_timing(q)
+        self.assertEqual(first['source_to_sink_seconds'],3.)
+        self.assertEqual(later['source_to_sink_seconds'],3.)
+        self.assertEqual(first['answer_ready_s'],21.)
+        self.assertEqual(later['answer_ready_s'],25.)
+        self.assertEqual(later['API_return_s'],28.)
+
+    def test_sink_is_independent_of_optional_API_return_receipt(self):
+        q=self.query()
+        del q['backend_report']['comparison_timing']
+        result=query_timing(q)
+        self.assertEqual(result['source_to_sink_seconds'],3.)
+        self.assertIsNone(result['API_return_s'])
+        self.assertIsNone(result['source_to_sink_unavailable_reason'])
+
+    def test_no_sink_never_falls_back_to_legacy_or_terminal(self):
+        for report in (None,{},dict(memory_sink_timing={'schema':'unrecognized'})):
+            with self.subTest(report=report):
+                q=self.query();q['backend_report']=report
+                result=query_timing(q)
+                self.assertIsNone(result['source_to_sink_seconds'])
+                self.assertIsNone(result['memory_sink_ready_ns'])
+                self.assertIn('not substituted',result['source_to_sink_unavailable_reason'])
+                self.assertEqual(result['answer_ready_s'],21.)
+
+    def test_invalid_sink_boundaries_are_unavailable_not_clamped(self):
+        for sink in (None,True,-1,500_000_000,1_500_000_000,23_000_000_000,31_000_000_000):
+            with self.subTest(sink=sink):
+                q=self.query()
+                q['backend_report']['memory_sink_timing']['memory_sink_ready_ns']=sink
+                result=query_timing(q)
+                self.assertIsNone(result['source_to_sink_seconds'])
+                self.assertTrue(result['source_to_sink_unavailable_reason'])
+
+    def test_failed_audit_keeps_observed_sink_without_claiming_success(self):
+        q=self.query();q['status']='failed';q['query_result_ready_ns']=None
+        q['backend_report']['status']='failed'
+        result=query_timing(q)
+        self.assertEqual(result['source_to_sink_seconds'],3.)
+        self.assertIsNone(result['answer_ready_s'])
+        self.assertEqual(q['status'],'failed')
+
+    def test_attached_failure_keeps_timing_and_original_exception(self):
+        from src.experiments import kalypso_query_lifecycle as attached
+        from src.experiments import native_query_lifecycle as sessions
+        q=self.query();q['status']='failed';q['query_result_ready_ns']=None
+        q['backend_report']['status']='failed'
+        failure=RuntimeError('post-sink audit failed')
+        failure.session_report=dict(status='failed',queries=[q])
+        with patch.object(attached,'server_argv'), \
+             patch.object(attached.native,'load_dependencies'), \
+             patch.object(sessions,'run_sequence',side_effect=failure):
+            with self.assertRaises(RuntimeError) as caught:
+                attached.run_attached({},dict(queries=[]),'unused-fixture-output')
+        self.assertIs(caught.exception,failure)
+        self.assertEqual(q['complete_query_timing']['source_to_sink_seconds'],3.)
+        self.assertEqual(failure.session_report['status'],'failed')
 
 
 class UnitTests(unittest.TestCase):
