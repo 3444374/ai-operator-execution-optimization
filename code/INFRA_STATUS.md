@@ -11,6 +11,9 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 真实照片 CPU 传输、竞争留存和提前准备；原生 encoder 提示仍为 CPU 状态机探针。
 Q8 已完成 960 次实机请求与原评价；该提示变体减少本次请求耗时但质量更差，不作为默认采用。
 GPU 阶段关联、实际配置和未完成项以该报告为准。
+后续修正了提前准备取消顺序、CPU 传输超时收尾和布局原对照的重复格式化；
+[固定 PR 审查收尾](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#pr100-review-closeout)
+记录 CPU 验证范围、历史计时偏差及仍不支持的结论。
 
 本分支增加 vLLM 0.25.1 v1／v2 的被动批决策观察与离线诊断，支持实际成员、graph／padding 及采集缺项核对；
 v1 另有 cascade 接点，当前 v2 没有该分支。[代码与 CPU 验证](../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)
