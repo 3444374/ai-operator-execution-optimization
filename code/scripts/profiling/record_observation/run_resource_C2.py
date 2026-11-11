@@ -218,7 +218,7 @@ def main(root):
         if config['workload'].get('qualification') is not None:
             report['call_accounting_complete']=report['actual_call_count_complete']
             report['actual_call_count_complete']=report['actual_call_count_complete'] and all(c['status']=='succeeded' for c in report.get('calls',[]))
-        report['actual_calls_scope']='known ledger records; incomplete on failure'
+        report.setdefault('actual_calls_scope','known ledger records; incomplete on failure')
         write_private_json(root/'WORKER-RESULT.json',report)
     print(json.dumps({key:report[key] for key in ('status','actual_calls','worker_wall_s')}),flush=True)
     if report['status']!='completed':raise SystemExit(1)

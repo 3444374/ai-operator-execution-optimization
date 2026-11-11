@@ -122,6 +122,9 @@ FIFO 对照令 `order` 为 `null`，候选使用下例对象，其他容量与�
 `resources.startup_timeout_s/query_timeout_s` 和 `limits.owner_close_s` 明确给出各自时限。
 输出 `REQUEST-RESULTS.json` 保留完整结果、实际 prompt token、组时间和关闭回执；本入口不运行原查询解析或评价。
 若返回页内含失败，先保存这一页所有已返回成员，再停止后续请求组；缺失终态保持未知。
+关闭后再读取一整结果槽页，保存关闭期间到达的同组终态。`submitted_requests` 表示已接纳请求数，
+`received_terminal_events/confirmed_terminal_events` 分别计接收和已确认终态，`unreceived_request_ids`
+保留尚未收到终态的身份；`actual_calls` 只计已保存结果记录，不代替物理模型提交次数。
 它是请求层实验，不是完整查询或新增 baseline。full profile 使用原 GPU 观察器，off/on 必须匹配其他配置。
 [本轮协议与证据](../../../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)记录有限工作量与质量缺项。
 

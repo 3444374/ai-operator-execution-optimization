@@ -8,6 +8,12 @@
 以 `ea1644a4d` 补齐跨请求推进、批提交、共同容量及原生传输统计；记录独立审查修复、校准和交错常驻重复。
 单卡、eager 的 Q8请求回放与合成长输出均慢于原生整批共置，完整输出一致；这不是完整查询或多GPU结论。
 
+## 2026-11-11：优化 PR 第二轮代码与目标核查
+
+[两轴审查与原反例](diagnostics/semloom_execution_candidates_20261110/README.md#second-code-review-20261111)
+固定七个代码PR的差异。关闭期间迟到回执遗漏已由真实CPU IPC复现并修复；#101另外两处期限／字节组批
+问题独立归属该PR。新证据为CPU行为与生命周期，不更改旧实机来源、质量退化或性能负结果。
+
 ## 2026-11-10：其余执行候选的分项尝试
 
 [主报告](diagnostics/semloom_execution_candidates_20261110/README.md)保存 Q8／Q9 完整请求布局、COCO 实际传输、
