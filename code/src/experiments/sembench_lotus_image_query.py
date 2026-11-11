@@ -84,11 +84,30 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         driver_initialization_in_query_seconds=False, service_startup_in_query_seconds=False,
         complete_cli_timing="supervisor.elapsed_s includes driver imports, preflight, evaluation and audit flush",
         warmup_calls=0, retries=0, performance_claim=False,
-        query_timing_scope="source identity/decode and CSV reads, native PNG formatting, complete original operators and sink",
+        query_timing_scope="legacy source/query interval including post-result stage and response accounting",
+        source_started_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
+        source_to_sink_timing_scope="source identity/decode and CSV reads, native PNG formatting, complete original operators and memory sink; "
+            "post-result audit, serialization, evaluation and audit flush excluded",
         evaluation_in_query_seconds=False)
     started = time.monotonic()
-    writer = audit = lm = None
+    report["source_started_ns"] = time.monotonic_ns()
+    writer = audit = lm = result = None
     failure = None
+
+    def preserve_failure(error, phase):
+        nonlocal failure
+        if failure is None:
+            failure = error
+        else:
+            failure.add_note(phase + " failed: " + type(error).__name__)
+
+    def serialize_result():
+        report["result_serialization_started_ns"] = time.monotonic_ns()
+        try:
+            report["result"] = json_metric(result.to_dict(orient="split"))
+        finally:
+            report["result_serialization_finished_ns"] = time.monotonic_ns()
+
     try:
         checked = check(config, checkout, data_dir=data_dir, manifest=manifest, manifest_digest=manifest_digest)
         inputs = report["inputs"] = checked["inputs"]
@@ -104,51 +123,85 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
                     from src.baselines.image.sembench_animals import AnimalsDataset, run_original_query, evaluate_original
                     source = AnimalsDataset(Path(checkout), Path(manifest), manifest_digest)
                     result = run_original_query(checkout, source.frame, inputs["query_id"])
-                    expected_stages = [inputs["rows"]] * inputs["native_filter_passes"]
                 else:
                     from src.baselines.image.sembench_mmqa import run_original_query, evaluate_original
                     result = run_original_query(checkout, data_dir, config["query"])
-                    expected_stages = [inputs["exact_join_candidates"]]
-                    if inputs["query"] == "Q2b":
-                        expected_stages.append(len(result))
-        if ([stage["input_occurrences"] for stage in audit.lm_calls] != expected_stages
-                or any(stage["post_attempts"] != stage["input_occurrences"] for stage in audit.lm_calls)):
-            raise RuntimeError("native visual calls differ from the complete uncached original query")
-        accounting = audit.snapshot()
-        if accounting["succeeded"] != sum(expected_stages) or accounting["failed"] or accounting["unknown"] or accounting["unfinished"]:
-            raise RuntimeError("native visual POSTs lack complete successful response/model evidence")
+                # The original relation is ready before observer teardown or audit.
+                report["sink_ready_ns"] = time.monotonic_ns()
+                report["source_to_sink_seconds"] = (report["sink_ready_ns"] - report["source_started_ns"]) / 1e9
+        report["post_sink_audit_started_ns"] = time.monotonic_ns()
+        try:
+            if config["scenario"] == "animals":
+                expected_stages = [inputs["rows"]] * inputs["native_filter_passes"]
+            else:
+                expected_stages = [inputs["exact_join_candidates"]]
+                if inputs["query"] == "Q2b":
+                    expected_stages.append(len(result))
+            if ([stage["input_occurrences"] for stage in audit.lm_calls] != expected_stages
+                    or any(stage["post_attempts"] != stage["input_occurrences"] for stage in audit.lm_calls)):
+                raise RuntimeError("native visual calls differ from the complete uncached original query")
+            accounting = audit.snapshot()
+            if accounting["succeeded"] != sum(expected_stages) or accounting["failed"] or accounting["unknown"] or accounting["unfinished"]:
+                raise RuntimeError("native visual POSTs lack complete successful response/model evidence")
+        finally:
+            report["post_sink_audit_finished_ns"] = time.monotonic_ns()
         report["query_seconds"] = time.monotonic() - started
-        report["result"] = json_metric(result.to_dict(orient="split"))
+        serialize_result()
         evaluated = time.monotonic()
-        report["quality"] = json_metric(evaluate_original(checkout, result, source.frame(references=True), inputs["query_id"])
-            if config["scenario"] == "animals" else evaluate_original(checkout, config["query"], result))
-        report["evaluation_seconds"] = time.monotonic() - evaluated
+        report["evaluation_started_ns"] = time.monotonic_ns()
+        try:
+            report["quality"] = json_metric(evaluate_original(checkout, result, source.frame(references=True), inputs["query_id"])
+                if config["scenario"] == "animals" else evaluate_original(checkout, config["query"], result))
+        finally:
+            report["evaluation_finished_ns"] = time.monotonic_ns()
+            report["evaluation_seconds"] = time.monotonic() - evaluated
         report["status"] = "completed"
     except BaseException as error:
         failure = error
         report.update(error_type=type(error).__name__, error=redact_text(str(error)))
     finally:
+        # Audit failure must not discard a complete original relation. Serialize
+        # it once outside the legacy query interval; retain the object on failure.
+        if result is not None and "result_serialization_started_ns" not in report:
+            try:
+                serialize_result()
+            except BaseException as error:
+                preserve_failure(error, "result serialization")
+        report["audit_finalization_started_ns"] = time.monotonic_ns()
         if audit is not None:
-            report.update(calls=audit.snapshot(), native_lm_calls=audit.lm_calls, model_calls=len(audit.requests))
+            report.update(native_lm_calls=audit.lm_calls, model_calls=len(audit.requests))
+            try:
+                report["calls"] = audit.snapshot()
+            except BaseException as error:
+                preserve_failure(error, "native audit snapshot")
         else:
             report["model_calls"] = 0
         if lm is not None:
-            report["lm"] = lm_report(lm)
+            try:
+                report["lm"] = lm_report(lm)
+            except BaseException as error:
+                preserve_failure(error, "native LM report")
+        report["audit_finalization_finished_ns"] = time.monotonic_ns()
         if writer is not None:
+            report["audit_flush_started_ns"] = time.monotonic_ns()
             try:
                 writer.close()
             except BaseException as error:
-                if failure is None:
-                    failure = error
-                else:
-                    failure.add_note("native audit close failed: " + type(error).__name__)
-            report["event_writer"] = writer.snapshot()
+                preserve_failure(error, "native audit close")
+            finally:
+                report["audit_flush_finished_ns"] = time.monotonic_ns()
+            try:
+                report["event_writer"] = writer.snapshot()
+            except BaseException as error:
+                preserve_failure(error, "native audit writer snapshot")
         report["elapsed_seconds"] = time.monotonic() - started
     if failure is not None:
         report["status"] = "failed"
         report.setdefault("error_type", type(failure).__name__)
         report.setdefault("error", redact_text(str(failure)))
         failure.query_report = report
+        if result is not None:
+            failure.query_result = result
         raise failure
     return report
 
