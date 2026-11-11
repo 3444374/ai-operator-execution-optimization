@@ -39,9 +39,10 @@ class MovieMapContracts(unittest.TestCase):
     def test_standard_query_selection_is_Map_and_does_not_accept_TopK_or_other_tasks(self):
         self.assertIs(query_driver_type(unit()),movie_map.MapDriver)
         self.assertIs(query_driver_type(dict(queries=[dict(task='movie-q4')])),adapter.NativeQueryDriver)
-        for task in ('movie-q9-topk','movie-q10','medical-q4'):
+        for task in ('movie-q9-topk','movie-q10','medical-q4','fixture'):
             with self.assertRaisesRegex(ValueError,'not TopK'):
                 query_driver_type(dict(queries=[dict(task=task)]))
+        with self.assertRaises(ValueError):query_driver_type(dict(queries=[]))
         mixed=unit();mixed['queries'][1]['task']='movie-q1'
         with self.assertRaises(ValueError):query_driver_type(mixed)
 

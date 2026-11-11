@@ -129,7 +129,7 @@ class MemorySinkTests(unittest.TestCase):
              patch.object(attached.native,'load_dependencies'), \
              patch.object(sessions,'run_sequence',side_effect=failure):
             with self.assertRaises(RuntimeError) as caught:
-                attached.run_attached({},dict(queries=[]),'unused-fixture-output')
+                attached.run_attached({},dict(queries=[dict(task='movie-q2')]),'unused-fixture-output')
         self.assertIs(caught.exception,failure)
         self.assertEqual(q['complete_query_timing']['source_to_sink_seconds'],3.)
         self.assertEqual(failure.session_report['status'],'failed')

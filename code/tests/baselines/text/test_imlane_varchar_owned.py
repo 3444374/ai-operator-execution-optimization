@@ -1,15 +1,18 @@
 """Real Arrow C Data, exact patched converter body, explicit storage test double.
 
 Set SEMLOOM_IMLANE_AUTHOR_CHECKOUT to a local repository containing the pinned
-author commit. No author DSO, SQL engine, model, network or installation is used.
+author commit. No author DSO, SQL query, model, network or installation is used.
+The optional isolation regression preloads the installed Python DuckDB library.
 """
 import ctypes as c
 import gc
 import hashlib
+import importlib.util
 import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -136,6 +139,21 @@ class VarcharOwnedConverterTests(unittest.TestCase):
             self.check_values(pa.array(['first', '', 'last'], type=pa.string()), ['first', '', 'last'], vector=vector)
         finally:
             self.native.delete_vector(vector)
+
+
+@unittest.skipUnless(CHECKOUT and shutil.which('c++') and importlib.util.find_spec('duckdb'),
+                     'requires pinned source, local C++ compiler and Python DuckDB')
+class VarcharFixtureIsolationTests(unittest.TestCase):
+    def test_storage_double_isolated_from_loaded_duckdb(self):
+        # Load DuckDB before compiling/loading the fixture to exercise symbol
+        # collisions independently of the surrounding suite's import order.
+        result = subprocess.run([
+            sys.executable, '-B', '-c',
+            'import duckdb; import unittest; '
+            'unittest.main(module=None, argv=["fixture", '
+            '"tests.baselines.text.test_imlane_varchar_owned.VarcharOwnedConverterTests"], verbosity=2)',
+        ], capture_output=True, text=True, timeout=90)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == '__main__':

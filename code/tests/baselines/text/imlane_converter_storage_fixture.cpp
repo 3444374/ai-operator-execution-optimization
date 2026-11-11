@@ -11,6 +11,9 @@
 #include "arrow/c/abi.h"
 
 #define D_ASSERT(condition) do { if (!(condition)) throw std::runtime_error(#condition); } while (false)
+// Keep storage doubles and the included converter local to this fixture DSO.
+// A Python DuckDB import may otherwise interpose incompatible duckdb symbols.
+namespace {
 namespace duckdb {
 using idx_t = uint64_t;
 using data_ptr_t = uint8_t *;
@@ -83,6 +86,7 @@ union arrow_string_view_t {
 // Generated directly from the hash-bound patched author header, never a
 // separately maintained converter implementation.
 #include "converter_body.inc"
+}
 
 extern "C" {
 void *new_vector() { return new duckdb::Vector(); }
