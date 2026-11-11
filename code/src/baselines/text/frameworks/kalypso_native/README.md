@@ -25,7 +25,7 @@ trace 完整发生项、request ID 和 model UID 核对在 sink 后执行，审�
 现有私有 Map／MMQA 查询重载 `query()` 并继承 `post()`，后者默认仍同步保存 HTTP 证据。
 这些入口未迁移时不能使用本次内存 sink 资格；只在迁移的 query 内开启延迟持久化。退役该兼容
 行为的条件是所有实际调用者都采用显式内存 sink，并在新私有副本完成回归，不能修改冻结包。
-此目录的 Filter 绑定不是 Kalypso 已完成题目的全集；既有 Movie Map 和 MMQA 私有运行另外保留
+此目录的 Filter／Q9 Map 绑定不是 Kalypso 已完成题目的全集；既有 Movie Map 和 MMQA 私有运行另外保留
 其原生入口与历史结果。本次[受控时钟测试](../../../../../tests/baselines/text/test_kalypso_memory_sink.py)
 仅验证本地顺序、输出和失败证据，不授予新的作者环境或 GPU 资格。
 
@@ -103,3 +103,60 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 声明来自适配代码，没有新增CLI／JSON配置项，也不改变作者Filter、生成或服务调度。
 [复现、回归与源码](../../../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)
 记录观察器构造失败和两个会话交错退出的CPU反例；它们不代表真实作者服务并发或模型资格。
+
+
+## Movie Q9 Map 维护版接线
+
+`run_kalypso_sembench_query.py` 的专属 `movie-q9` unit 现在选择 `movie_map.MapDriver`；
+其余已支持的 Movie Q1–Q4 仍走原 Filter driver。Q9 使用原 SemBench c814 的
+`ranking="map"` 数字评分、完整排序关系和原评价器，不调用 TopK，也不宣布支持其他私有题。
+私有 `map_query.py`、`map_server.py` 不再作为新 Q9 运行入口；历史副本及原结果保持不变。
+
+新配置除了现有 owner／模型／输入绑定，还必须有：
+
+- 每题 `task="movie-q9"`、`expected_calls=256`、`max_native_calls=512`；两题 unit 的
+  `call_cap=1024`，分别记录实际物理次数。外层 owner 仍验证总预算及逐题预算之和。
+- `sembench` 指向固定 c814 原查询／评价器，`data_dir` 指向完整 Movie CSV；
+  `source_data_sha256` 至少绑定完整 `Reviews.csv`，可同时记录 `Movies.csv`。
+- `map_prompt_root` 指向新私有空目录。每次查询重新扫描原输入，选出全部 256 个 Ant-Man
+  发生项，写入作者实际消费的 CSV 和逐发生项 prompt 表。重复业务 ID 不去重。
+- `native_launch="author_defaults"` 且没有 `engine`；保持原作者 05024 checkout、同一 maintained
+  source、依赖 SHA、worker 观察模块、新 CPU evidence 和新 owner 的时限／账本绑定。
+
+`map_observation.py` 迁入已经验证的 Q9 字段格式化和被动观察：精确 rubric／review 嵌入原作者
+Map prompt，原 `_planned_max_tokens`、`estimate_tokens`、ratio update/reset、pin/KV、采样和执行器
+不改写。作者首请求输出额度动态估计；仅 `finish_reason=length` 且额度小于 8192 时，原算法
+重入一次并使用 8192。第二次仍为 length 也不会再重试。因此 256 是逻辑发生项，512 是物理
+上界；HTTP 和外层 lifecycle 都不自动重试。通用 SemBench 的无重试元数据不代表禁用此作者分支。
+
+完整原查询关系返回即记录 memory sink，随后才执行 API start/sampling/end 身份审计、source
+快照、原评价器、编码、持久化和客户端 close。逐请求序号、请求 ID、idx、model UID、采样与
+原生重试分支均核对。审计失败可保留已观察 sink，但查询失败，不能产生合格成绩。
+`source_to_sink_seconds` 是 ready 服务后的新鲜逐题查询时间；`startup_inclusive_cold_seconds`
+在没有本次外部 owner 启动事件时留空，不把 attach 当模型加载，也不拆分／减算旧批次时钟。
+
+标准 CPU 入口对专属 Q9 unit 调用 `movie_map_cpu.check`，使用原 tokenizer／planner／request
+对象核对完整 prompt 和重试 cap 的 context 长度，保存每发生项消息摘要及 token IDs；不创建引擎。
+该入口仍需要**已经存在的作者隔离环境**，不能用本机 source-method fixture 代替目标运行资格。
+
+本次本地 CPU 检查包含既有 Filter 回归、新 Q9 事件／预算负例、完整 256×2 保存响应与原评价器
+回放，以及真实维护版 query CLI 的受控时钟检查。全部 256 条原消息和 tokenizer IDs 与原归档
+一致；原方法体在显式 API/KV 替身下覆盖全 256 条 length→8192→length，最多两次，观察 hook
+保持原 generator 对象。它们不是新模型分数、全作者模块导入、目标 planner 或 GPU 资格。
+共享目录的名字不能作为版本证据：名含 05024 的本地资产实际还可能是 9e919 工程变体，必须
+核对 Git HEAD 和源码摘要；本次方法核对从原 05024 Git 对象取字节，不修改共享资产。
+
+零模型维护回归：
+
+```sh
+CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHON" -B -m unittest \
+  tests.baselines.text.test_kalypso_movie_map \
+  tests.baselines.text.test_kalypso_native_observation \
+  tests.baselines.text.test_kalypso_native_launch \
+  tests.baselines.text.test_kalypso_memory_sink \
+  tests.experiments.test_kalypso_owner_cli_binding
+```
+
+目标原生 CPU 命令仍是 `check_kalypso_native_cpu.py --config "$NEW_CONFIG" --output "$NEW_CPU_EVIDENCE"`；
+服务只由既有 owner 通过 `owner_cli_bindings` 返回的 maintained CLI 启动。新 Linux owner/source/
+native CPU 与实际 GPU／完整 sink／物理清理资格仍待验证，不复用归档 LAUNCH、期限或模型成绩。

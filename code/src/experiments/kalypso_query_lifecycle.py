@@ -1,4 +1,4 @@
-"""Source/sink and observation adapter; the author service owns all Filter work."""
+"""Source/sink and observation adapter; the author service owns all semantic work."""
 import json
 import os
 from pathlib import Path
@@ -24,12 +24,24 @@ def owner_cli_bindings(cfg):
         cpu_reference_root=str(Path(cfg['native_cpu_evidence'])))
 
 
+def query_driver_type(unit):
+    tasks={q['task'] for q in unit['queries']}
+    if tasks=={'movie-q9'}:
+        from src.baselines.text.frameworks.kalypso_native.movie_map import MapDriver
+        from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
+        physical_call_caps(unit)
+        return MapDriver
+    if tasks and tasks <= {'movie-q1','movie-q2','movie-q3','movie-q4'}:
+        return native.NativeQueryDriver
+    raise ValueError('Maintained Kalypso CLI supports Movie Filter Q1-Q4 or Q9 Map only; not TopK')
+
+
 def run_attached(cfg,unit,output,observer=None):
     server_argv(cfg)
     native.load_dependencies(cfg)
     from src.experiments import native_query_lifecycle as sessions
     from src.observability.native_query_timing import ObservationStore,timed_driver_type,query_timing
-    store=ObservationStore();driver=timed_driver_type(native.NativeQueryDriver,store)
+    store=ObservationStore();driver=timed_driver_type(query_driver_type(unit),store)
     backends=('kalypso-native',)
     result=None
     try:
@@ -44,6 +56,9 @@ def run_attached(cfg,unit,output,observer=None):
         if result is not None:
             for q in result['queries']:
                 q['complete_query_timing']=query_timing(q)
+            result['retry_scope']='automatic_retries describes the outer lifecycle, not native SemMap length retries'
+            result['startup_inclusive_cold_seconds']=None
+            result['startup_inclusive_cold_reason']='requires a fresh external native owner startup timestamp; client attach is not model initialization'
             result['service_lifecycle_scope']='external GPU owner: startup/warmup/queries/shutdown all charged to unit total'
 
 
@@ -59,7 +74,8 @@ def main():
     unit=next(u for u in cfg['units'] if u['unit_id']==args.unit)
     cfg.update(url='http://127.0.0.1:'+str(cfg['port']),native_trace=str(args.output.parent/'native-trace.jsonl'),
                loaded_model_proof=str(args.output.parent/'loaded-model.json'),
-               sembench=str(Path(cfg['baseline_packet'])/'sembench'))
+               sembench=cfg.get('sembench',str(Path(cfg['baseline_packet'])/'sembench')))
+    query_driver_type(unit)
     if not cfg['execution_enabled'] or cfg.get('CPU_fixture_only'):
         raise ValueError('GPU owner must explicitly bind an enabled private runtime config')
     if args.output.exists():raise ValueError('Output exists; no automatic request replay')

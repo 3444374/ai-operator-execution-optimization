@@ -132,9 +132,29 @@ def __getattr__(name):
     return extension
 
 
+def physical_call_caps(unit):
+    """Keep logical occurrences separate from the author's finite Map retry cap."""
+    queries=unit['queries']
+    caps={}
+    for query in queries:
+        logical=query['expected_calls']
+        cap=query.get('max_native_calls',logical)
+        if query.get('task')=='movie-q9':
+            if logical!=256 or cap!=512:
+                raise ValueError('Complete Q9 Map requires 256 logical and 512 physical calls')
+        elif cap!=logical:
+            raise ValueError('Only Movie Q9 Map binds a native length retry allowance')
+        if type(cap) is not int or cap<=0 or query['query_id'] in caps:
+            raise ValueError('Invalid or duplicate native query budget')
+        caps[query['query_id']]=cap
+    if type(unit['call_cap']) is not int or unit['call_cap']<=0:
+        raise ValueError('Native unit needs a finite positive physical call cap')
+    return caps
+
+
 def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_class=None):
     directory=Path(directory)
-    allowed={q['query_id']:q['expected_calls'] for q in unit['queries']}
+    allowed=physical_call_caps(unit)
     counters=dict(reserved_calls=0,cap=unit['call_cap'],query_calls=dict.fromkeys(allowed,0),
                   observation_errors=[],model_uid=None)
     from src.infrastructure.redact import redact_json_values
@@ -205,6 +225,15 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         finally:
             ROW.reset(token)
 
+    if any(q.get('task')=='movie-q9' for q in unit['queries']):
+        if any(q.get('task')!='movie-q9' for q in unit['queries']):
+            raise ValueError('Q9 Map requires its own finite owner unit')
+        from vllm.kalypso.sem_ops.map import SemMap
+        from vllm.kalypso.controller.map_estimator import MapRatioEstimator
+        from src.baselines.text.frameworks.kalypso_native.map_observation import install, install_response_observation
+        binding=install(cfg,unit,directory,sys.modules[__name__],SemMap,MapRatioEstimator)
+        counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
+        counters['map_binding']=binding
     executor_class.chatcomplete=chat
     filter_class._run_single=filtered
     if hasattr(executor_class,'_build_chat_request'):

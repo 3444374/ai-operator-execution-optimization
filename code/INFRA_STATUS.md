@@ -70,6 +70,12 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 该门检也不授予作者原版结构化 Extract 资格。Q9 本批独立全输入 hash 未知，原 occurrence／必要 CSV／结果相等，
 不能以其他输入身份补齐该未知项。这些 CPU 结果不是新 GPU 或性能资格。
 
+[Kalypso Movie Q9 Map 维护接线](src/baselines/text/frameworks/kalypso_native/README.md#movie-q9-map-维护版接线)
+已进入原 query/server/CPU CLI，保留完整 256 发生项、原评分／排序／评价和作者 length→8192
+重试，物理上界为每题 512；不是 TopK。新增本地完整保存输出／token／时钟回放通过，但不继承
+旧模型成绩；新目标 owner/source/CPU 与 GPU 运行仍待资格检查。当前输入完整 SHA 独立绑定，
+不补写旧 Q9 缺少 full-source hash 的历史未知项。
+
 [IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257`、可选
 schema-child 和 varchar-owned 工程变体。连同[完整原关系交接](src/experiments/native_imlane_relation.py)，
 原接线的 29 项不同 CPU 检查及 14 份保存 sink 关系回放通过。作者原版 Linux 零模型 15 例实际为
