@@ -16,6 +16,7 @@
 | [build.py](build.py) | 隔离导出固定作者源码、记录版本／缺源恢复和便携配置，另行编译薄driver；不安装软件或改canonical前缀 |
 | [missing_sources.json](missing_sources.json) | 三件必要构建源的准确官方提交、Git blob、SHA256；没有每批源码版本门槛 |
 | [qualify_varchar.py](qualify_varchar.py)、[C++ driver](varchar_qualification.cpp)、[fixture](varchar_fixture.py) | 零模型 VARCHAR 的真实 DSO／PROCESS／THREAD 资格入口；原作者与 schema-child 工程版分开记录 |
+| [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 
 输入四VARCHAR依次为`occurrence_id/id/reviewId/reviewText`，作者转换器按位置命名`c0..c3`。
 输出为TINYINT，SQL比较`=1`；不走尚未资格的位图Arrow Boolean转换。完整cohort先进入DuckDB；
@@ -194,6 +195,43 @@ buffer。若确认借用，释放后不解引用悬垂指针，所有权 case �
 SQL 保存实际完整关系；完整关系复制后、校验／文件输出／native析构前取结果时钟，进程退出及
 作者 namespace 清理另记。失败、崩溃或超时不能由回执或正确的中间值改判为通过。
 本入口新增的是可执行资格程序；Linux native 编译、各项 SQL 与退出仍须真实运行后才填写结果。
+
+## 完整关系 sink 与原生结果交接
+
+已有标量 COUNT 的 C++ 就绪点无需调整。Filter／DOUBLE Map 的原关系后处理需要在作者关闭前完成；
+等待 driver 退出、退出 `DuckDBScope` 后才执行原 title／group sink 的旧时间只能保持原口径。
+不能从旧记录减去估计的关闭时间，也不能把 projection 就绪时钟改名为完整查询就绪。
+
+`run_relation_query` 复用现有 `DuckDBScope`、owner、`QueryWindow` 与外层资源监督。
+它在作者 scope 内读取原子发布的 `query.json`，从 native relation 执行原 sink、记完整结果时钟，
+然后发布 ACK、等待 driver 实际退出，最后做回执审计与作者关闭。`finish_mmqa_filters` 只绑定
+MMQA Q3a–g 的原 title sink，`finish_movie_scores` 只绑定 Movie Q10 原分组 sink；它们分别消费
+`accepted_occurrences` 与 `mapped_occurrences.score`，不从模型回执重建结果。
+联合 Q3b–g 的150行执行只产生整批时钟，不能当作六个独立逐题延迟；逐题运行使用单题 binding。
+
+Python scope 尚在不代表 C++ runtime 尚在。适配的 driver 必须在完整关系发布之前创建
+`RelationHandoff`、将其 protocol 与本轮唯一 `sink-release.ack` 路径写入 `sink_handoff`，并在
+发布之后、其 DuckDB result／connection／database 离开作用域之前调用有界 `Wait`。例如：
+
+```cpp
+semloom_imlane::RelationHandoff handoff(release_path, native_ready_ns);
+report["sink_handoff"] = Json{{"protocol", semloom_imlane::RELATION_ACK_PROTOCOL},
+                              {"release_path", release_path}};
+publish(descriptor, pending, output, report);
+handoff.Wait(std::chrono::seconds(120));
+```
+
+ACK用独立新私有路径，已存在ACK不能作为新完成。正常 sink 完成后发布 `complete`；sink失败时
+发布 `abort` 并等待原进程回收，再走既有 owner 关闭。没有 ACK、错误 ACK、早退、退出失败和
+回执审计失败都不能判为成功。接点分别保留 source、native relation、full sink、ACK发布与driver
+退出观察事件。source→sink 包括必要的原生关系发布／传输，额外保存、回执审计与关闭在其后。
+冷暖共用模型的 worker 应保留整体服务期限，并给每次 native query 一个既有 `QueryWindow`；
+不能在冷查询 sink 后提前启动整个常驻模型的最终关闭期限。
+
+调用方提供已有 workload 的 `command`／`kernel`、原完整 `sink(native)`、后置
+`audit(native, result)` 和服务 `check()`。需要重新编译带 ACK 的薄driver并将worker接到本入口；
+未携带匹配 `sink_handoff` 的旧driver会被拒绝。历史packet原字节保留，只在新副本应用适配。
+本地 C++ publisher检查与保存关系回放不代表真实 DuckDB／Linux 进程生命周期已完成资格。
 
 ## 外层运行资源与回执
 
