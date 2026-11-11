@@ -14,6 +14,8 @@ GPU 阶段关联、实际配置和未完成项以该报告为准。
 后续修正了提前准备取消顺序、CPU 传输超时收尾和布局原对照的重复格式化；
 第二轮审查补齐失败后关闭期间到达的回执，提交／接收／确认／未接收分别记账，见
 [审查和验证](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#second-code-review-20261111)。
+同一回执实现已在整合源码完成真实模型失败补验，关闭期间到达的unknown及已知用量保持，见
+[修复版服务器补验](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#server-revalidation-20261111)。
 [固定 PR 审查收尾](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#pr100-review-closeout)
 记录 CPU 验证范围、历史计时偏差及仍不支持的结论。
 
@@ -24,7 +26,8 @@ v1 另有 cascade 接点，当前 v2 没有该分支。[代码与 CPU 验证](..
 
 本分支另有默认关闭的完整请求排序、图片 URI 留存选择，以及表示寿命／供给等待诊断。
 [实现与本地证据](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
-区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备和 CPU 检查；这些排序／媒体／供给策略的真实 GPU 与完整查询收益、
+区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备和 CPU 检查；完整请求排序已在新批次不变配置完成一对真实模型严格一致性诊断，见上述修复版补验。
+这些排序／媒体／供给策略的稳定GPU性能与完整查询收益、
 encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 
 <a id="current-refactor-status"></a>
@@ -36,9 +39,12 @@ encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 可选异步 owner 已补跨请求推进、批提交和共同在途上限，CPU 子进程验证覆盖慢批成员、取消与失败回执。
 已完成单卡原生批／KV统计及同资源配置的常驻请求回放：Q8与合成长输出均慢于原生共置，
 具体来源与全部重复见[异步流水比较](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#async-pipeline-20261111)。
-启动期限、命令槽唤醒与未知关闭的进程组回收已有独立CPU反例验证；GPU失败注入和完整查询接入仍未验证。
+启动期限、命令槽唤醒与未知关闭的进程组回收已有独立CPU反例验证；完整查询接入仍未验证。
 后续[边界复核](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#second-review-boundaries)
-补齐按实际输入字节缩批、共用关闭deadline及重试身份保留；不扩大旧实机资格。
+补齐按实际输入字节缩批、共用关闭deadline及重试身份保留；旧实机数据保留原身份。
+修复版已完成服务器CPU、真实模型窄字节／失败回执及同资源常驻重复，仍未建立单卡流水优势。
+极短期限取消保留unknown并确认注册进程退出，但留下的具名信号量需要外层定向收尾；
+该格不具备完整自动资源回收资格，原失败与补充收尾证据见上述修复版补验。
 
 ## 当前能力与待处理项
 
