@@ -170,7 +170,7 @@ def persist_relation_observation(directory, report, result, *, primary=None):
 
 
 def finish_mmqa_filters(native, bindings):
-    """Run each original MMQA title sink from one joint native Filter relation.
+    """Run original MMQA title/Airlines sinks from native Filter relations.
 
     ``bindings`` maps a query label to ``(SemBenchTextQuery, source_rows)``.
     Source rows follow that query's operation.records order and explicitly carry
@@ -182,9 +182,10 @@ def finish_mmqa_filters(native, bindings):
         raise ValueError('the complete native TINYINT Filter relation is required')
     expected = {}
     for label, (query, sources) in bindings.items():
-        if (query.scenario != 'mmqa' or not query.query.startswith('3')
+        if (query.scenario != 'mmqa' or query.query not in
+                ('3a', '3b', '3c', '3d', '3e', '3f', '3g', '6a', '6b', '6c')
                 or query.operation.stage.kind != 'filter'):
-            raise ValueError('this sink binds original MMQA Q3 title Filters only')
+            raise ValueError('this sink binds original MMQA Q3/Q6 Filters only')
         for record, source in zip(query.operation.records, sources, strict=True):
             occurrence = source['occurrence_id']
             if occurrence in expected:
@@ -200,8 +201,9 @@ def finish_mmqa_filters(native, bindings):
             raise ValueError('duplicate or unknown native Filter result occurrence')
         seen.add(occurrence)
         label, record, source, query = expected[occurrence]
+        column = 'Airlines' if query.query.startswith('6') else 'title'
         if (value['source_position'] != source['source_position']
-                or value['title'] != str(query.operation.frame.iloc[record.source_position]['title'])):
+                or value['title'] != str(query.operation.frame.iloc[record.source_position][column])):
             raise ValueError('native Filter result differs from its source occurrence')
     for occurrence, (label, record, _source, _query) in expected.items():
         if occurrence in seen:

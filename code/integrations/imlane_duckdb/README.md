@@ -19,6 +19,7 @@
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 | [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
 | [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | MMQA Q1 原题准备／完整 sink，复用既有作者、模型 owner 与监督器；25 次物理预算 |
+| [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 显式单题 MMQA Q3a–g／Q6a–c；原版 TINYINT Filter、每题 25 次上限、完整 title／Airlines sink 后 ACK |
 
 输入四VARCHAR依次为`occurrence_id/id/reviewId/reviewText`，作者转换器按位置命名`c0..c3`。
 输出为TINYINT，SQL比较`=1`；不走尚未资格的位图Arrow Boolean转换。完整cohort先进入DuckDB；
@@ -226,12 +227,45 @@ header 应用补丁，用作者 DuckDB headers 做 C++ 语法检查，再将同�
 
 `run_relation_query` 复用现有 `DuckDBScope`、owner、`QueryWindow` 与外层资源监督。
 它在作者 scope 内读取原子发布的 `query.json`，从 native relation 执行原 sink、记完整结果时钟，
-然后发布 ACK、等待 driver 实际退出，最后做回执审计与作者关闭。`finish_mmqa_filters` 只绑定
-MMQA Q3a–g 的原 title sink，`finish_movie_scores` 只绑定 Movie Q10 原分组 sink；它们分别消费
+然后发布 ACK、等待 driver 实际退出，最后做回执审计与作者关闭。`finish_mmqa_filters` 绑定
+MMQA Q3a–g 的原 title sink 和 Q6a–c 的原 Airlines sink，`finish_movie_scores` 只绑定 Movie Q10 原分组 sink；它们分别消费
 `accepted_occurrences` 与 `mapped_occurrences.score`，不从模型回执重建结果。
 Filter 成员由 native 决定，原输入 occurrence 顺序决定恢复顺序；不按 native 返回顺序、title
 排序或去重。服务 `check()` 只检查存活与期限，逐请求 terminal／receipt 遍历放到 `audit()`。
 联合 Q3b–g 的150行执行只产生整批时钟，不能当作六个独立逐题延迟；逐题运行使用单题 binding。
+
+### MMQA 原版 Filter 的单题入口
+
+[配置模板](../../configs/sembench_imlane_mmqa_filter.example.json)的 `query_id` 只选一道
+`3a`–`3g` 或 `6a`–`6c`，每次完整保留 25 个 occurrence。`prompt_columns` 显式冻结原 LOTUS
+实际列顺序，经过已有 `resolved_input_columns` 接口序列化；不随 Python hash seed 改变提示，
+不改谓词、parser 或原完整关系。Q3 的 `title/text` 与 Q6 的 `Airlines/Destinations` 仅在 native
+传输列中使用共同别名。无额外预热、无自动重试，本入口一次冷查询，不将重启称为暖轮。
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/integrations/imlane_duckdb/build.py filter-driver \
+  --root "$AUTHOR_ROOT" --duckdb-source "$ORIGINAL_DUCKDB_SOURCE" \
+  --duckdb-build "$ORIGINAL_DUCKDB_BUILD" --duckdb-sha256 "$ORIGINAL_DSO_SHA256" \
+  --output "$RUN_DIR/bin/mmqa-filter"
+PYTHONPATH=code "$DRIVER_PYTHON" -B -m src.experiments.native_imlane_filters check \
+  --config "$CONFIG" --output "$RUN_DIR/check"
+PYTHONPATH=code "$DRIVER_PYTHON" -B -m src.experiments.native_imlane_filters run \
+  --config "$CONFIG" --output "$RUN_DIR/run" --build-record "$RUN_DIR/bin/mmqa-filter.build.json" \
+  --author-root "$AUTHOR_ROOT" --method-python "$METHOD_PYTHON" --kind thread --execute-model
+```
+
+`filter-driver` 仅链接已有原版 DSO 并记录实际加载路径；不会重建 DuckDB。实际运行继续由既有
+宿主资源监督和唯一协调者获取租约，禁止直接脱离该外层启动。模型 ready 后重新读取 source、
+准备完整提示，原生预测关系经原 sink 完成后立即记录 `ready_source_to_sink_seconds`，再 ACK、
+driver 退出、审计、评价、持久化和模型关闭。`cold_worker_entry_to_sink_seconds` 另含 worker
+入口后的预检及模型启动；外层 `cold_supervised_runner_to_sink_seconds` 从既有 supervisor 的
+Popen 前起点计时。它们不包含更早的宿主导入／预检／取租约；未知最早入口保持空白。
+
+本次 CPU 保存答复回放覆盖 Q3b–g、Q6a–c 共 225 条，真实 Arrow／Unix IPC、原消息和完整 CPU
+token、原关系／sink／评价、预算第 26 次拒绝及 ACK 时序。author SQL、模型与引擎为明确软件
+fixture，不能据此授予新原生 SQL 或 GPU 时长。Linux 新薄 driver 链接原 DSO、实际逐题 SQL 和
+物理清理仍待目标验证。旧联合包保留为历史原件，其总时长不能拆为逐题值；正式替代验证后
+迁移旧私有启动引用，唯一原始成功／失败证据不删除。Q1 的 VARCHAR 工程变体保持独立。
 
 Python scope 尚在不代表 C++ runtime 尚在。适配的 driver 必须在完整关系发布之前创建
 `RelationHandoff`、将其 protocol 与本轮唯一 `sink-release.ack` 路径写入 `sink_handoff`，并在
