@@ -1,7 +1,7 @@
 """Original single-operator semantics around identity-keyed native predictions.
 
 This is source/prompt/parser/sink wiring, not a model executor. The native
-framework receives complete chat-serialized prompts and owns their scheduling.
+framework receives complete messages or serialized prompts and owns scheduling.
 """
 
 from copy import deepcopy
@@ -11,7 +11,7 @@ from src.infrastructure.private_artifacts import content_digest, json_metric
 from src.semantic_methods.lotus.record_method import LotusRecordMethod
 
 
-def prepare(query, tokenizer):
+def prepare(query, tokenizer=None):
     import lotus
 
     if query.operation is None:
@@ -19,8 +19,17 @@ def prepare(query, tokenizer):
     with lotus.settings.context(enable_cache=False):
         method = LotusRecordMethod(query.operation.stage)
         prepared = method.prepare_rows(query.operation.records, query_id=query.query_id)
-    requests = [dict(call_id=row['call_id'], prompt=tokenizer.apply_chat_template(
-        json.loads(row['messages_json']), tokenize=False, add_generation_prompt=True)) for row in prepared]
+    # Ray's public processor owns chat templating/tokenization. Daft consumes
+    # serialized prompts. Both retain the same original occurrence and messages.
+    requests = []
+    for row in prepared:
+        messages = json.loads(row['messages_json'])
+        request = dict(call_id=row['call_id'])
+        if tokenizer is None:
+            request['messages'] = messages
+        else:
+            request['prompt'] = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        requests.append(request)
     return method, prepared, requests
 
 

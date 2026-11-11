@@ -5,6 +5,12 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及所属报告。
 CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释，不把旧版本通过数累加为当前整树结果。
 
+Ray 完整文本查询新增[显式原生 processor 接点](src/baselines/README.md#ray-native-prepared-sembench)：
+完整预测物化后、关闭前执行原 parser/关系并记录内存 sink；旧 `query_seconds` 不追认为统一口径。
+Q10 的 2,000 条保存答复完成软件消息/token、重复 occurrence、原关系/sink/evaluator 等价回放；
+受控时钟及失败路径通过 CPU 检查。目标 Ray SDK、原生模型/版本、实际 token 和物理清理仍待资格，
+不能称全部 baseline 或全部题的统一计时已完成。
+
 <a id="current-refactor-status"></a>
 <a id="refactor-completion-checklist"></a>
 ## 当前能力与待处理项

@@ -175,6 +175,50 @@ close 可能与 driver 后处理重叠。严格 host controller 入口仍未知�
 执行接线另经CPU回归和完整关系回放；后续已把消息摘要及关系序列化移至sink后，旧49条时长不追认为该新边界。未重复GPU。其余17题、同 owner 暖轮与共同 host
 总时钟仍待资格。保留每个系统自己的依赖版本，不以迁移到统一 vLLM 为前提。
 
+<a id="ray-native-prepared-sembench"></a>
+### Ray 原生完整查询的内存 sink
+
+现有 `run_sembench_text_query.py` 使用
+[显式 `ray_native` 配置](../../configs/sembench_ray_native.example.json)时，调用
+[原生 processor 接点](text/frameworks/ray_data_sembench_native.py)的 `execute_prepared`。
+Ray Data LLM processor 拥有图、chat template、tokenization、batching、模型 actor 和调度；
+[准备及完成接口](text/sembench_prepared.py)复用原 LOTUS 消息/parser 与固定 SemBench 原查询。
+不调用 SemLoom Core、原自写记录链或 HTTP 替代模型。
+
+[查询编排](../experiments/native_ray_sembench.py)重新读取已核输入，按 occurrence `call_id` 接收完整预测。
+`materialize().take_all()` 后，在 `ray.shutdown()` 前执行原 parser 和完整关系查询；
+原查询返回的内存结果立即标记 `sink_ready_ns`。`source_to_sink_seconds` 包含本轮新鲜 source/prepare、
+Ray/模型启动及原关系计算；消息摘要、关系序列化、评价、持久化和关闭在 sink 后另记事件。
+`query_seconds` 仍是包含审计和 runtime close 的较宽区间，不能代替 sink 指标。
+最早 host/controller 入口未在此 worker 观察，保持空值；AsyncLLM 首提交、末确认终态与构造返回事件
+保存在 `native-events-*.jsonl` 并在查询报告汇总，不能称为引擎接受或 GPU kernel 时间。
+
+`profile` 是本地独占 `ray.init` 参数；`ray_native.processor_options` 保留未覆盖的原生默认。
+引擎显式设置由 `engine` 与 `ray_native.engine_kwargs` 一致组合，冲突拒绝。
+模型 actor 的 `py_executable` 使用声明的原生环境；不套用项目模型桥的固定 vLLM 版本。
+Ray 2.56.1 / 官方 vLLM 0.22 可作为目标组合，实际版本由 actor 回执核验。
+actor setup hook 复用已核 Q7 的版本相关接点；目标 SDK、跨解释器加载和 tokenizer 仍须独立资格。
+
+调用方先预留永久 SQLite 的单次单位，worker 领取后由原生 `AsyncLLM.generate` 前的
+[预算观察器](text/frameworks/ray_native_observer.py)逐次扣除；相同提示不去重，失败不返还。
+模型 stage 明确设置 `max_restarts=0` / `max_task_retries=0`，不重跑整查询。
+单位计数和原生终态不完整时不能报成功。原 parser、后置审计、close 或持久化失败均保留失败状态
+及已有答复；已观察到 sink 不会因此擦除。外层继续使用既有 host 租约、资源监督和物理清理，
+`ray.shutdown` 的 driver 断开本身不证明模型进程、SHM 或 GPU 已释放。
+`startup_timeout_s + query_timeout_s + 30` 是既有监督器的 worker 总窗口，包含其退出预留；
+不是独立 host 全流程期限。此入口只实现单冷，不声称同 owner 暖轮。
+
+CPU 回放使用 `python -m tests.baselines.text.replay_ray_sembench --help`，Ray API 与模型为明确的软件替身。
+Movie Q10 的 2,000 条真实保存答复保留 1,864 个不同提示及 136 个重复提示 occurrence；
+完整消息/token、原 Map 关系、105 电影 sink 和原 evaluator 与冻结参考一致，2,001 次申请被拒绝。
+这些答复来自历史 Daft Q10，只用于接线等价，不是新 Ray 质量或性能。受控时钟证明后置摘要、
+序列化和关闭不进入 sink 区间；成功、解析/审计/关闭失败、空输入和乱序关联均有软件检查。
+目标 Ray SDK/模型/实际 tokenizer、物理清理及其余题的完整资格仍待执行。
+
+旧的无 `ray_native` 配置继续作为明确标注的历史记录图入口；其耗时不纳入新口径。
+该入口及 `execute_q3` 各有现行调用者，本次不删除。完成目标资格及调用方配置迁移后，
+再退出被替代的完整文本记录图；不删除原始成功/失败证据或活跃公共清理 helper。
+
 <a id="lotus-native-resident-sembench"></a>
 ### 原生 LOTUS 的显式 resident 文本查询
 
@@ -220,7 +264,9 @@ source→完整 sink 与最早脚本事件→sink、监督器 Popen 前事件→
 原生 LOTUS 保留 accessor、LM、LiteLLM 原批调用与解析，provider 复用现有本地模型 IPC。
 它观察原 LM 的真实消息，不额外格式化预遍。旧 ledger 的 `lotus-filter-v1` 是保留的身份协议，
 Map／Extract 的真实类型另由 stage 和有限阶段 ID 映射记录，不把它们当 Filter 算法。
-Ray／Daft／IMLane 使用原来已有的有限记录图和单个阶段；它们与旧普通 Filter 图是分别命名的执行布局。
+无 `ray_native` 的 Ray／旧 Daft／IMLane 使用原来已有的有限记录图和单个阶段；
+新的 [Ray 原生完整查询](#ray-native-prepared-sembench)及 Daft AI 入口另行明确选择。
+它们与旧普通 Filter 图是分别命名的执行布局。
 原 Q1/Q2/Q3 及 Q4 的普通 records、session、矩阵入口继续保留。
 
 **旧 isolated 计时不能直接进入统一 source→内存 sink 比较。**

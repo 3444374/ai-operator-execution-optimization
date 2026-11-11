@@ -29,7 +29,7 @@ def configuration(path):
     required = {'schema', 'scenario', 'query', 'query_id', 'backend', 'model_name',
                 'generation', 'engine', 'resources', 'profile'}
     if (type(value) is not dict or not required <= value.keys()
-            or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident'}
+            or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident', 'ray_native'}
             or value['schema'] != 'semloom.sembench_text_run.v1'
             or value['backend'] not in BACKENDS or type(value['profile']) is not dict):
         raise ValueError('an explicit single-operator SemBench text configuration is required')
@@ -42,6 +42,16 @@ def configuration(path):
     generation = GenerationSpec.from_dict(generation_config)
     resources = RecordsResources(**value['resources'])
     profile = value['profile']
+    if 'ray_native' in value:
+        spec = value['ray_native']
+        if (value['backend'] != 'ray-data' or type(spec) is not dict
+                or set(spec) != {'engine_kwargs', 'processor_options'}
+                or any(type(item) is not dict for item in spec.values())
+                or profile.get('address', 'local') != 'local'
+                or resources.query_timeout_s is None):
+            raise ValueError('ray_native requires native engine/processor options and an owned local runtime')
+        from src.baselines.text.frameworks.ray_data_sembench_native import _options
+        _options(spec['processor_options'])
     if value['backend'] == 'lotus-native':
         if (set(profile) != {'native_lm_max_batch_size'}
                 or type(profile['native_lm_max_batch_size']) is not int
@@ -84,12 +94,15 @@ def check(config, query, engine):
         backend=config['backend'], engine=asdict(engine), generation=asdict(query.generation),
         effective_operator_generation=(None if query.operation is None else
                                        asdict(query.operation.stage.generation)),
-        profile=config['profile'], unsupported_backends={
+        profile=config['profile'], native_processor=config.get('ray_native'), unsupported_backends={
             'kalypso': 'current binding is Movie Filter only; use existing Q4 route; MMQA/Medical/Map/Extract not bound'},
-        execution_layout=('original LOTUS accessor / LM / batch_completion' if config['backend']=='lotus-native'
+        execution_layout=('public Ray Data LLM processor; complete original sink before close' if 'ray_native' in config
+                          else 'original LOTUS accessor / LM / batch_completion' if config['backend']=='lotus-native'
                           else 'existing native finite record-chain graph; one terminal F/M/E operator'),
         lifecycle='isolated cold query; native runtime/model startup and close included',
-        environment_scope='source/method/configuration only; actual driver and model checked before run')
+        environment_scope=('source/method/configuration only; native Ray SDK, engine interpreter and model remain unverified'
+                           if 'ray_native' in config else
+                           'source/method/configuration only; actual driver and model checked before run'))
 
 
 def _frame_value(frame):
@@ -192,6 +205,11 @@ def fixture(config, query, responses, directory):
 
 
 def run_worker(config, query, engine, resources, directory):
+    if 'ray_native' in config:
+        from .native_ray_sembench import run_query as run_native_ray
+        # Native Ray owns its engine/dependencies. Do not impose the separate
+        # SemLoom bridge's vLLM version on the author's official native profile.
+        return run_native_ray(config, query, engine, resources, directory)
     engine.validate_driver_environment()
     if config['backend'] == 'imlane':
         from integrations.imlane_records.chain_runtime import read_owner, preflight_owner, AuthorRunGuard
