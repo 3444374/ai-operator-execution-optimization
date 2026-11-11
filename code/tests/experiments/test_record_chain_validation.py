@@ -1,7 +1,9 @@
 """Private-config and captured-receipt fixtures; never start Ray or native models."""
 from copy import deepcopy
+from contextlib import redirect_stdout
 from dataclasses import asdict
 import hashlib
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -233,6 +235,30 @@ class CapturedUidTests(unittest.TestCase):
 
     def test_positive_distinct_native_engines(self):
         self.assertTrue(self.compare()['outputs_strictly_comparable'])
+
+    def test_compare_cli_retains_differences_and_fails_on_token_or_relation_changes(self):
+        original = deepcopy(self.reports)
+        self.config['artifact_root'] = str(self.root)
+        self.save()
+        for changed in ('none', 'output_tokens', 'final_relation'):
+            with self.subTest(changed=changed):
+                self.reports = deepcopy(original)
+                if changed == 'output_tokens':
+                    self.reports[1]['calls'][0]['output_token_ids_json'] = '[3]'
+                elif changed == 'final_relation':
+                    self.reports[1]['outputs'] = [{'row_id': 'different'}]
+                self.compare()
+                output = self.root / (changed + '-comparison.json')
+                stdout = io.StringIO()
+                with redirect_stdout(stdout):
+                    status = entry.main(['compare', '--config', str(self.path),
+                                         '--output', str(output)])
+                saved = json.loads(output.read_text())
+                self.assertEqual(saved['outputs_strictly_comparable'], changed == 'none')
+                self.assertEqual(status, 0 if changed == 'none' else 1)
+                self.assertEqual(json.loads(stdout.getvalue())['outputs_strictly_comparable'],
+                                 saved['outputs_strictly_comparable'])
+                self.assertIn('not established', saved['performance_qualification'])
 
     def test_null_empty_missing_and_nonstring_UIDs_reject(self):
         for value in (None,'',' ',17,False,[],{},' padded '):

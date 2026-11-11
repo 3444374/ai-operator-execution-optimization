@@ -325,5 +325,5 @@ def main(argv=None, *, process_started_ns=None):
         else:
             result = supervised_case(args.config, args.ready, args.case)
     print(json.dumps({k:result[k] for k in ('status', 'models', 'claims', 'max_requests',
-        'suite', 'progression_cases', 'step_action_cases') if k in result}))
-    return 0
+        'suite', 'progression_cases', 'step_action_cases', 'outputs_strictly_comparable') if k in result}))
+    return int(args.action == 'compare' and not result['outputs_strictly_comparable'])

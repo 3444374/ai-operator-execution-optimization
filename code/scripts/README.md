@@ -58,6 +58,8 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_cha
 真实运行继续由既有外部租约／预算／supervisor 排期，分别执行 `case --case one-action`
 和 `case --case default-actions`，均须提供 `--config/--ready/--execute-model`；完成后用
 `compare --config "$CHAIN_CONFIG" --output "$NEW_COMPARISON"` 核对回执。
+比较命令先保存完整差异，再在任一请求字段或最终关系不一致时退出1；一致时退出0。
+标准输出同时给出 `outputs_strictly_comparable`。退出0只说明这组回执严格一致，不授予性能资格。
 保存完整请求身份、原方法响应回放、输出差异、实际容量、ready／Core offer 事件和完整 owner 时间。
 这些事件只表示方法就绪和 Core 接收，不代表原生引擎入场；CPU 检查和一对小运行都不能证明 GPU 缺活或加速。
 

@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-11：有限链回执比较的退出状态
+
+[原反例和修复检查](diagnostics/record_chain_comparison_20261111/README.md)证明旧比较命令在输出不一致时仍返回0，
+新行为先保存差异，再返回1并在标准输出给出严格一致标记。来源为本地临时回执和 CPU 验证，
+没有模型或服务器调用；既有61项服务器 CPU 检查仍绑定原提交，不转授为本次修改的服务器验证。
+
 ## 2026-11-10：DAG 观察与 GPU／引擎候选的源码、文献核查
 
 来源为公开项目 `f44f174a`、固定 SemBench 以及[本轮一手文献／引擎源码](../../docs/research/ai_operator_literature_inventory.md#dag-gpu-engine-sources)。
