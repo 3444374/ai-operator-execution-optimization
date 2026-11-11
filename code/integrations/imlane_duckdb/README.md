@@ -19,7 +19,7 @@
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 | [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
 | [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | MMQA Q1 原题准备／完整 sink，复用既有作者、模型 owner 与监督器；25 次物理预算 |
-| [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 显式单题 Movie Q1（2000 次）／Q2–Q4（120 次）、MMQA Q3a–g／Q6a–c（25 次）或 Medical Q4（1200 次）；原版 TINYINT Filter、完整原查询 sink 后 ACK |
+| [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 显式单题 Movie Q1（2000 次）／Q2–Q4（120 次）、MMQA Q3a–g／Q6a–c（25 次）或 Medical Q1/Q4（1200 次）；原版 TINYINT Filter、完整原查询 sink 后 ACK |
 
 输入四VARCHAR依次为`occurrence_id/id/reviewId/reviewText`，作者转换器按位置命名`c0..c3`。
 输出为TINYINT，SQL比较`=1`；不走尚未资格的位图Arrow Boolean转换。完整cohort先进入DuckDB；
@@ -294,6 +294,26 @@ ACK用独立新私有路径，已存在ACK不能作为新完成。正常 sink �
 若 sink 已完成而 driver 提前退出，保留 `full_sink_observed_monotonic_ns` 和完整关系，
 标记 `native_alive_after_sink=false`，不接纳 `result_ready_monotonic_ns` 或成功资格。
 本地 C++ publisher检查与保存关系回放不代表真实 DuckDB／Linux 进程生命周期已完成资格。
+
+## Medical Q1 原版 Filter 接线
+
+[Q1 配置](../../configs/sembench_imlane_medical_q1.example.json)选择完整 1200 条原 symptoms，
+沿用同一原版 TINYINT Filter。原 allergy prompt、true-before-false/default-true parser、
+patient_id Series（原索引、顺序、重复值与 dtype）及原 evaluator 不变；原标签只用于评价。
+审计按原结果类型比较 Series，不为通过测试改成 DataFrame。
+
+完整历史 cold/warm 各 1200 条保存答复已通过共享 CPU Arrow／Unix IPC／原生 provider
+预算回放，并逐条核对历史 CPU 完整 token 数组。重复消息的不同回复按 occurrence 保留，
+包括 raw Answer: False 但原 parser 判 True 的记录。该回放的 SQL/模型是 fixture，
+不授予新的模型质量、性能或 Linux DSO 资格；旧 GPU 只有 token 长度，也不升级为完整 token 资格。
+
+Linux 零模型门复用 [现有 gate](../../tests/baselines/text/qualify_imlane_movie_filter.py)，
+Medical Q1 的 `--original-run` 指向冻结原件 `model-output/run/cold`，依次单独执行
+`--case complete`、`missing-row`、`duplicate-id`。完整门必须真实执行原 DSO/SQL/Arrow/IPC，
+核对 1200 次、原 Series 序列化／质量和 sink→ACK；两个反例须在 prediction 前失败且零请求。
+复用 build 时必须匹配当前 driver_source/kernel，否则只重链薄 driver，不重编 DSO。
+本机未链接 Linux DSO，目标门仍 pending。目标第一轮仅独立 cold 1200/hardcap1200，
+无 warmup/retry，不自动暖跑；实际冷起点与 ready 后完整 sink 事件各自计时，禁止估减旧时长。
 
 ## Medical Q4 原版 Filter 接线
 

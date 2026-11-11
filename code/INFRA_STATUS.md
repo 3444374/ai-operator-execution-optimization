@@ -98,6 +98,12 @@ schema-child 仅保留独立候选身份，尚无该变体的目标资格。原�
 不能拆成六个独立查询时长。
 
 
+[IMLane Medical Q1](integrations/imlane_duckdb/README.md#medical-q1-原版-filter-接线)已最小接入同一
+TINYINT Filter／owner／ACK，原 patient_id Series、parser 和 evaluator 不变。完整历史
+cold/warm 各1200保存答复经真实 CPU Arrow／Unix IPC 回放，历史 CPU 完整token数组逐条相等；
+原 GPU 仅长度不升级资格。Linux 原DSO/SQL与新模型运行仍 pending，首轮仅独立冷1200、
+hardcap1200、无warmup/retry，未验证不合主线。
+
 [IMLane Medical Q4](integrations/imlane_duckdb/README.md#medical-q4-原版-filter-接线) 复用原版
 TINYINT 单题入口，1200 个发生项进入完整原 join/filter/mean 内存 sink 后才 ACK；回执通过
 batch position 与本地 occurrence ID 关联 43 个重复消息组，不改变模型请求。历史 cold/warm

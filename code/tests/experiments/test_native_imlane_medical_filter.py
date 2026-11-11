@@ -59,6 +59,25 @@ class OccurrenceAuditTests(unittest.TestCase):
 
 @unittest.skipUnless(CHECKOUT, 'set SEMLOOM_NATIVE_TEST_CHECKOUT to the pinned source')
 class MedicalRelationTests(unittest.TestCase):
+    def test_q1_retains_patient_series_order_duplicates_nulls_and_empty(self):
+        from src.baselines.text.sembench_text import SemBenchTextQuery
+        from src.serving.backends.vllm_protocol import GenerationSpec
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); (root / 'data').mkdir()
+            symptoms = pd.DataFrame(dict(patient_id=[1., 1., None, 2.], symptoms=['same', 'same', None, 'other']))
+            symptoms.to_csv(root / 'data/text_symptoms_data.csv', index=False)
+            pd.DataFrame(dict(patient_id=[1., 2.], disease=['Allergy', 'Allergy'])).to_csv(
+                root / 'data/patient_data_with_labels.csv', index=False)
+            query = SemBenchTextQuery(CHECKOUT, root, 'medical', '1', execution_id='medical-q1-fixture',
+                model_name='cpu-no-model', generation=GenerationSpec(max_tokens=8192), scale_factor=11112)
+            sources = [dict(occurrence_id='row-' + str(i), source_position=i,
+                            title=str(query.operation.frame.iloc[i]['patient_id'])) for i in range(4)]
+            for chosen in ([3, 2, 1, 0], [1, 0], [2], []):
+                native = dict(return_type='TINYINT', full_filter_materialized_before_title_sink=True,
+                    source_rows=4, eligible_rows=4, accepted_occurrences=[sources[i] for i in chosen])
+                result = finish_mmqa_filters(native, {'1': (query, sources)})['1']
+                pd.testing.assert_series_equal(result, query.operation.frame.iloc[sorted(chosen)]['patient_id'])
+
     def test_original_join_duplicates_nulls_empty_and_reordered_membership(self):
         from src.baselines.text.sembench_text import SemBenchTextQuery
         from src.serving.backends.vllm_protocol import GenerationSpec

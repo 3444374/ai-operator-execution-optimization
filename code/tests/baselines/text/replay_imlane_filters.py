@@ -73,7 +73,7 @@ def timed_relation(bound, accepted, directory, expected, sampling, receipt_dir, 
     def sink(value):
         assert process.returncode is None and not release.exists()
         frame = bound.sink(value)
-        assert json_metric(frame.to_dict(orient='split')) == expected
+        assert original_value(frame) == expected
         events.append('full-original-memory-sink'); clock[0] = 103_000_000_000
         return frame
     original_digest, original_value = sembench_prepared.content_digest, sembench_prepared.result_value

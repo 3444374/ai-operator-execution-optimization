@@ -18,27 +18,37 @@ from tests.baselines.text.replay_imlane_movie_filters import reference, bridge_q
 
 def prepare_fixture(config, original_run):
     query, method, prepared, requests, tokens, rows = binding.prepare_query(config)
-    frozen = (bridge_q3_reference(original_run, config) if config['query_id'] == '3'
-              else reference(original_run, config['query_id']))
+    if config['schema'] == binding.MEDICAL_SCHEMA:
+        from tests.baselines.text.replay_imlane_medical_filter import reference as medical_reference
+        original_run = Path(original_run)
+        if original_run.name != 'cold' or original_run.parent.name != 'run':
+            raise ValueError('Medical Q1 gate requires the frozen model-output/run/cold directory')
+        frozen = medical_reference(original_run.parents[2], 'cold', '1')
+        frozen['labels_and_texts'] = [(str(row['patient_id']), row['symptoms']) for row in frozen['rows']]
+    else:
+        frozen = (bridge_q3_reference(original_run, config) if config['query_id'] == '3'
+                  else reference(original_run, config['query_id']))
     assert [r['messages'] for r in requests] == frozen['messages']
     assert [(r['title'],r['text']) for r in rows] == frozen['labels_and_texts']
     return dict(rows=[dict(r,token_ids=t,generated_text=text)
                 for r,t,text in zip(rows,tokens,frozen['texts'],strict=True)],
-                original_reference=frozen['evidence'], models=0, software_fixture=True)
+                original_reference=frozen['evidence'], original_result=frozen['result'], original_quality=frozen['quality'],
+                models=0, software_fixture=True)
 
 
 def run(args):
     if sys.platform != 'linux':
         raise RuntimeError('native Filter DSO/SQL gate requires Linux; local parser tests are not SQL qualification')
     config, _generation = binding.configuration(read_json(args.config))
-    if config['schema'] != binding.MOVIE_SCHEMA:
-        raise ValueError('this gate requires one explicitly bound original Movie Filter query')
+    if not (config['schema'] == binding.MOVIE_SCHEMA or
+            (config['schema'], config['query_id']) == (binding.MEDICAL_SCHEMA, '1')):
+        raise ValueError('this gate requires one explicitly bound Movie Filter or Medical Q1 query')
     expected = config['max_model_calls']
     # Fail stale native driver before any owner or software service allocation.
     binding.verified_build(args.build_record)
     root = args.output.resolve(); new_private_directory(root)
     config['model_service'] = dict(model_python=sys.executable,model=config['tokenizer'],
-        served_model_name='imlane-zero-model-movie',dtype='bfloat16',engine_options={})
+        served_model_name='imlane-zero-model-filter',dtype='bfloat16',engine_options={})
     fixture = prepare_fixture(config,args.original_run)
     fixture_path = root/'fixture.json';write_private_json(fixture_path,fixture)
     args.output = root/'worker'
@@ -85,6 +95,8 @@ def run(args):
         if failure is not None: raise failure
         assert worker['status']=='completed' and software['software_generate']==expected
         assert worker['budget']['consumed_requests']==expected
+        assert worker['result'] == fixture['original_result']
+        assert worker['quality'] == fixture['original_quality']
         assert worker['native_alive_after_sink'] and worker['sink_release']['outcome']=='complete'
         assert len(software['calls'])==len({c['occurrence_id'] for c in software['calls']})==expected
     else:

@@ -64,11 +64,13 @@ class FilterBindingTests(unittest.TestCase):
                 kernel.infer_mmqa(pa.table({'c0':['a'],'c1':['a'],'c2':['b']}))
             self.assertEqual(infer.call_count, 1)
 
-    def test_medical_q4_declares_exact_patient_scale_and_occurrence_budget(self):
+    def test_medical_filters_declare_exact_patient_scale_and_occurrence_budget(self):
         value = config()
         value.update(schema=entry.MEDICAL_SCHEMA, query_id='4', scale_factor=11112, max_model_calls=1200)
-        self.assertEqual(entry.configuration(value)[0], value)
-        for changes in (dict(query_id='1'), dict(scale_factor=1200), dict(max_model_calls=25),
+        for query_id in ('1', '4'):
+            value['query_id'] = query_id
+            self.assertEqual(entry.configuration(value)[0], value)
+        for changes in (dict(query_id='10'), dict(scale_factor=1200), dict(max_model_calls=25),
                         dict(scale_factor=None), dict(schema=entry.SCHEMA)):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 entry.configuration(dict(value, **changes))

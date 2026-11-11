@@ -1,4 +1,4 @@
-"""Medical Q4 saved-answer replay with explicit occurrence fixture correlation.
+"""Medical Q1/Q4 saved-answer replay with explicit occurrence fixture correlation.
 
 The real Arrow/Unix IPC/provider/budget/parser/sink run on CPU. Only author SQL
 and generation are fixtures. The fixture binds batch ID and position out of
@@ -34,8 +34,8 @@ from tests.baselines.text.replay_imlane_filters import timed_relation
 from tests.baselines.text.test_imlane_duckdb_model_ipc_worker import FakeEngine, FakeSampling
 
 
-def reference(originals, phase):
-    root = Path(originals) / 'output/run' / phase
+def reference(originals, phase, query_id='4'):
+    root = Path(originals) / ('model-output/run' if query_id == '1' else 'output/run') / phase
     prepared = read_json(root / 'input/prepared.json')
     saved = read_json(root / 'result-ready.json')['result']
     predictions = {row['occurrence_id']: row for row in saved['predictions']}
@@ -55,8 +55,14 @@ def reference(originals, phase):
 
 
 async def replay(config, originals, phase, output):
-    frozen = reference(originals, phase)
+    frozen = reference(originals, phase, config['query_id'])
     frozen['labels_and_texts'] = [(str(row['patient_id']), row['symptoms']) for row in frozen['rows']]
+    if config['query_id'] == '1':
+        token_reference = Path(originals) / 'packet/cpu-qualification-r1/token-reference.json'
+        token_rows = read_json(token_reference)
+        assert [row['messages'] for row in token_rows] == frozen['messages']
+        frozen['token_ids'] = [row['ids'] for row in token_rows]
+        frozen['evidence']['historical_CPU_token_reference'] = file_identity(token_reference)
     result = await replay_saved_filter(config, frozen, phase, output)
     assert (result['unique_messages'], result['repeated_groups'], result['extra_occurrences']) == (1153, 43, 47)
     result.update(budget1201_rejected_before_generate=True, full1200_post_sink_failure_preserves_clock=True)
@@ -72,6 +78,8 @@ async def replay_saved_filter(config, frozen, phase, output):
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     assert tokens == [tokenizer.apply_chat_template(value, tokenize=True, add_generation_prompt=True)
                       for value in frozen['messages']]
+    if 'token_ids' in frozen:
+        assert tokens == frozen['token_ids']
     groups = Counter(content_digest(row['messages']) for row in requests)
     sampling = query.operation.generation.kwargs()
     budget = AttemptBudget(config['execution_id'] + '-' + phase, count)
@@ -170,7 +178,7 @@ async def replay_saved_filter(config, frozen, phase, output):
                     assert error.query_report['status'] == 'failed'
                     assert error.query_report['source_to_sink_seconds'] == 3
                     assert error.query_report['sink_release']['outcome'] == 'complete'
-                    assert json_metric(error.query_result.to_dict(orient='split')) == frozen['result']
+                    assert binding.result_value(error.query_result) == frozen['result']
                     write_private_json(output / 'FAILURE.json', error.query_report)
                 else:
                     raise AssertionError('post-sink failure was hidden')

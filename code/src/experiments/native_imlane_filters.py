@@ -1,4 +1,4 @@
-"""One original Movie Q1–Q4, MMQA Q3/Q6 or Medical Q4 Filter and full sink on author IMLane.
+"""One original Movie Q1–Q4, MMQA Q3/Q6 or Medical Q1/Q4 Filter and full sink on author IMLane.
 
 The native TINYINT SQL, owner, request budget, result ACK and supervisor retain
 their existing implementations. One invocation selects one complete query;
@@ -50,14 +50,14 @@ def configuration(value):
     movie = type(value) is dict and value.get('schema') == MOVIE_SCHEMA
     if medical:
         fields.add('scale_factor')
-    queries = ('4',) if medical else ('1', '2', '3', '4') if movie else QUERIES
+    queries = ('1', '4') if medical else ('1', '2', '3', '4') if movie else QUERIES
     limit = 1200 if medical else (2000 if value.get('query_id') == '1' else 120) if movie else 25
     if (type(value) is not dict or set(value) != fields
             or value['schema'] not in (SCHEMA, MEDICAL_SCHEMA, MOVIE_SCHEMA)
             or value['query_id'] not in queries
             or value['max_model_calls'] != limit
             or medical and value['scale_factor'] != 11112):
-        raise ValueError('select Movie Q1 with 2000 calls, Q2–Q4 with 120, MMQA Q3/Q6 with 25, or Medical Q4 with 1200 and scale 11112')
+        raise ValueError('select Movie Q1 with 2000 calls, Q2–Q4 with 120, MMQA Q3/Q6 with 25, or Medical Q1/Q4 with 1200 and scale 11112')
     generation = GenerationSpec.from_dict(value['generation'])
     if generation.response_format is not None or generation.max_tokens != 8192:
         raise ValueError('native Filter requires the original unstructured 8192-token generation')
@@ -145,7 +145,8 @@ class FilterRelation:
         return finish_mmqa_filters(native, {self.query.query: (self.query, self.rows)})[self.query.query]
 
     def audit(self, native, result, directory, sampling):
-        from pandas.testing import assert_frame_equal
+        from pandas import Series
+        from pandas.testing import assert_frame_equal, assert_series_equal
         predictions = []
         for path in Path(directory).glob('*.terminal.json'):
             batch = read_json(path, max_bytes=path.stat().st_size)
@@ -158,7 +159,10 @@ class FilterRelation:
                      zip(self.rows, relation['parsed_outputs'], strict=True) if positive}
         if positives != {row['occurrence_id'] for row in native['accepted_occurrences']}:
             raise ValueError('native Filter membership differs from original parser decisions')
-        assert_frame_equal(result, reconstructed)
+        if isinstance(reconstructed, Series):
+            assert_series_equal(result, reconstructed)
+        else:
+            assert_frame_equal(result, reconstructed)
         return dict(ipc=ipc, semantic=audit_relation(self.prepared, relation),
                     quality=json_metric(self.query.evaluate(result)))
 
