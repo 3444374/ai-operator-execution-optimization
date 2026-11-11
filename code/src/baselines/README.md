@@ -357,8 +357,8 @@ sf25 机场关系含一个缺失 `Destinations`：输入 CSV／原 DataFrame 仍
 | 原生 LOTUS | 上述十九题，原 accessor／LM 路径 | 原查询差分与 resident 分开验证；实际模型范围按冻结提交判断 |
 | Ray Data | 上述十九题的有限记录图；显式原生 processor 另见上文 | 旧图无独立 sink 边界；原生 processor 不继承旧图时长 |
 | Daft | 上述十九题的有限记录图；原生 AI 另见上文 | 旧图无独立 sink 边界；原生 AI 不继承旧图时长 |
-| IMLane | 上述十九题的原作者有限记录链 | 作者构建、Arrow ABI、显式有限容量及实际启动仍需绑定／验证 |
-| Kalypso | 旧 Movie Filter 路径可组合 Q4 ratio，CPU 辅助按显式任务清单检查 | 当前原生绑定没有 Movie Map 或 MMQA；不新增算法补齐，相关项留空 |
+| IMLane | 有限记录链的语义合同与独立 DuckDB 作者入口分别核验；原生 TINYINT Filter／DOUBLE Map 已有具名真实运行 | 原 `072f8257` 的 VARCHAR 返回通路存在根／子 Arrow schema 错配；不把十九题合同 fixture 或 `398ba063` 工程补丁算作作者原版全部支持 |
+| Kalypso | 正式目录含 Movie Filter；另有 Movie Q10 Map 和 MMQA Q3a–g／Q6a–c 的具名私有原生运行 | 本统一文本 CLI 未暴露作者服务；旧私有结果不自动取得新内存 sink 口径。原 `05024f02` 未透传结构化输出，MMQA Q1／Q4 Extract 留空 |
 
 这些是 CPU 接线范围，不是模型质量或性能成绩。原查询／原 accessor、共享链和 NativeStage 的
 软件回复差分与原十六题 CLI fixture 均运行；真实模型逐行一致性按对应源码和运行回执判断。
@@ -379,8 +379,9 @@ Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 �
 原评价源码使用 Python 3.12 的 f-string 语法，运行 driver 需要 Python 3.12。
 
 固定上游完整资产有11112名患者、1200条症状及对应标签；三题各1200次调用，每个 baseline 共3600次，
-LOTUS／Ray Data／Daft／IMLane 四种共14400次。上述四种复用既有普通 F/M/E 接线，实际模型与作者桥仍需机器验证；
-Kalypso 当前没有 Medical 绑定，留空。`scale_factor` 表示患者规模，不能直接当模型输入行数：
+四种普通 F/M/E 合同的计划额度合计14400次，不表示四种原版均支持或全部通过；IMLane 的 VARCHAR
+限制同上。Kalypso 未由本统一 CLI 暴露，私有作者入口按其独立绑定／回执判断，不能据此 CLI 判为
+整个系统不支持 Medical。`scale_factor` 表示患者规模，不能直接当模型输入行数：
 原 `_25` 资产有25名患者、仅1条症状，且没有 Q1 的 allergy 或 Q4 的 acne 金标，只适合诊断。
 该诊断切片的 Q1 空集对空集可被原评价记为1，Q4 保留 NaN；不能把这些结果当作模型质量。
 原 Q10 指令的 `DIMORPHIC HEMORRHOID` 与原标签复数拼写也不被适配器改写或归一化。

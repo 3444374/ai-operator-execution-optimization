@@ -46,6 +46,17 @@ LOTUS 的[显式 resident 文本入口](src/baselines/README.md#lotus-native-res
 Movie Q9 的[显式作者 TopK 候选](src/baselines/README.md#lotus-movie-q9-topk)复用 resident owner，
 保留原 quick、K=N 与比较预算，和 Q9 Map 分开验证；目标资格只按该候选的独立回执解释。
 
+[Kalypso 原生客户端](src/baselines/text/frameworks/kalypso_native/README.md#内存结果边界)新增完整原关系
+就绪时间，公共报告从真实 `query_start_ns` 计算 `source_to_sink_seconds`；trace 审计、结果编码、
+评价和证据持久化在该终点后。旧 `answer_ready_s` 保留，缺少新接点的路径明确留空。
+Filter 的 28 项 CPU 检查与公共时钟／生命周期的 42 项检查通过；后置失败仍保留 sink 并报告失败。
+已有私有 Movie Map／MMQA 原生结果分别保留；新接点不自动授予这些旧入口或作者环境／GPU 资格。
+
+[IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257` 和可选
+schema-child 工程变体。15 项本地准备／fixture 检查通过，原生 Linux 库构建、PROCESS／THREAD SQL、
+NULL／offset／长字符串所有权仍待验证。原版 TINYINT Filter／DOUBLE Map 的已有真实结果不受影响；
+不能用一行 schema 修补或 Python fixture 宣称原版 Extract 已支持。
+
 <a id="pr52-g1-qualified-scope"></a>
 <a id="record-local-sections-c827"></a>
 <a id="record-local-completion-progression"></a>
