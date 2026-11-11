@@ -76,8 +76,11 @@ def run(args):
             binding.run_worker(args,config)
     except BaseException as error:
         failure = error
-    worker = read_json(args.output/'worker.json')
-    software = read_json(args.output/'model-service/software-service-final.json')
+    # These are freshly completed owned receipts, not untrusted config inputs.
+    worker_path = args.output/'worker.json'
+    software_path = args.output/'model-service/software-service-final.json'
+    worker = read_json(worker_path, max_bytes=worker_path.stat().st_size)
+    software = read_json(software_path, max_bytes=software_path.stat().st_size)
     if args.case == 'complete':
         if failure is not None: raise failure
         assert worker['status']=='completed' and software['software_generate']==expected
