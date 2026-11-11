@@ -1,4 +1,4 @@
-"""One original MMQA Q3/Q6 or Medical Q4 Filter and full sink on author IMLane.
+"""One original Movie Q1–Q4, MMQA Q3/Q6 or Medical Q4 Filter and full sink on author IMLane.
 
 The native TINYINT SQL, owner, request budget, result ACK and supervisor retain
 their existing implementations. One invocation selects one complete query;
@@ -36,6 +36,7 @@ from src.semantic_methods.lotus.record_method import LotusRecordMethod
 
 SCHEMA = 'semloom.imlane.mmqa_filter.v1'
 MEDICAL_SCHEMA = 'semloom.imlane.medical_filter.v1'
+MOVIE_SCHEMA = 'semloom.imlane.movie_filter.v1'
 QUERIES = ('3a', '3b', '3c', '3d', '3e', '3f', '3g', '6a', '6b', '6c')
 DSO_SHA256 = '52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf'
 CODE = Path(__file__).resolve().parents[2]
@@ -46,14 +47,17 @@ def configuration(value):
               'model_name', 'tokenizer', 'generation', 'prompt_columns', 'model_service', 'max_model_calls',
               'query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'}
     medical = type(value) is dict and value.get('schema') == MEDICAL_SCHEMA
+    movie = type(value) is dict and value.get('schema') == MOVIE_SCHEMA
     if medical:
         fields.add('scale_factor')
+    queries = ('4',) if medical else ('1', '2', '3', '4') if movie else QUERIES
+    limit = 1200 if medical else (2000 if value.get('query_id') == '1' else 120) if movie else 25
     if (type(value) is not dict or set(value) != fields
-            or value['schema'] not in (SCHEMA, MEDICAL_SCHEMA)
-            or value['query_id'] not in (('4',) if medical else QUERIES)
-            or value['max_model_calls'] != (1200 if medical else 25)
+            or value['schema'] not in (SCHEMA, MEDICAL_SCHEMA, MOVIE_SCHEMA)
+            or value['query_id'] not in queries
+            or value['max_model_calls'] != limit
             or medical and value['scale_factor'] != 11112):
-        raise ValueError('select MMQA Q3/Q6 with 25 calls or Medical Q4 with 1200 calls and patient scale 11112')
+        raise ValueError('select Movie Q1 with 2000 calls, Q2–Q4 with 120, MMQA Q3/Q6 with 25, or Medical Q4 with 1200 and scale 11112')
     generation = GenerationSpec.from_dict(value['generation'])
     if generation.response_format is not None or generation.max_tokens != 8192:
         raise ValueError('native Filter requires the original unstructured 8192-token generation')
@@ -68,7 +72,8 @@ def prepare_query(config):
     from transformers import AutoTokenizer
     config, generation = configuration(config)
     medical = config['schema'] == MEDICAL_SCHEMA
-    query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], 'medical' if medical else 'mmqa',
+    scenario = {SCHEMA: 'mmqa', MEDICAL_SCHEMA: 'medical', MOVIE_SCHEMA: 'movie'}[config['schema']]
+    query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], scenario,
         config['query_id'], execution_id=config['execution_id'], model_name=config['model_name'],
         generation=generation, **(dict(scale_factor=config['scale_factor']) if medical else {}))
     if {name: item['sha256'] for name, item in query.files.items()} != config['input_sha256']:
@@ -91,8 +96,12 @@ def prepare_query(config):
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     tokens = [tokenizer.apply_chat_template(row['messages'], tokenize=True, add_generation_prompt=True)
               for row in requests]
-    label, text = ('patient_id', 'symptoms') if medical else (
-        ('Airlines', 'Destinations') if query.query.startswith('6') else ('title', 'text'))
+    if scenario == 'movie':
+        label, text = 'reviewId', 'reviewText'
+    elif medical:
+        label, text = 'patient_id', 'symptoms'
+    else:
+        label, text = ('Airlines', 'Destinations') if query.query.startswith('6') else ('title', 'text')
     rows = []
     for record, request in zip(query.operation.records, requests, strict=True):
         source = query.operation.frame.iloc[record.source_position]

@@ -170,7 +170,7 @@ def persist_relation_observation(directory, report, result, *, primary=None):
 
 
 def finish_mmqa_filters(native, bindings):
-    """Run original MMQA or Medical Q4 sinks from native Filter relations.
+    """Run original Movie Q1–Q4, MMQA or Medical Q4 sinks from native Filters.
 
     ``bindings`` maps a query label to ``(SemBenchTextQuery, source_rows)``.
     Source rows follow that query's operation.records order and explicitly carry
@@ -184,9 +184,10 @@ def finish_mmqa_filters(native, bindings):
     for label, (query, sources) in bindings.items():
         supported = (query.scenario == 'mmqa' and query.query in
             ('3a', '3b', '3c', '3d', '3e', '3f', '3g', '6a', '6b', '6c')) or (
-            query.scenario == 'medical' and query.query == '4')
+            query.scenario == 'medical' and query.query == '4') or (
+            query.scenario == 'movie' and query.query in ('1', '2', '3', '4'))
         if not supported or query.operation.stage.kind != 'filter':
-            raise ValueError('this sink binds original MMQA Q3/Q6 or Medical Q4 Filters')
+            raise ValueError('this sink binds original Movie Q1–Q4, MMQA Q3/Q6 or Medical Q4 Filters')
         for record, source in zip(query.operation.records, sources, strict=True):
             occurrence = source['occurrence_id']
             if occurrence in expected:
@@ -202,8 +203,9 @@ def finish_mmqa_filters(native, bindings):
             raise ValueError('duplicate or unknown native Filter result occurrence')
         seen.add(occurrence)
         label, record, source, query = expected[occurrence]
-        column = 'patient_id' if query.scenario == 'medical' else (
-            'Airlines' if query.query.startswith('6') else 'title')
+        column = ('reviewId' if query.scenario == 'movie' else
+                  'patient_id' if query.scenario == 'medical' else
+                  'Airlines' if query.query.startswith('6') else 'title')
         if (value['source_position'] != source['source_position']
                 or value['title'] != str(query.operation.frame.iloc[record.source_position][column])):
             raise ValueError('native Filter result differs from its source occurrence')

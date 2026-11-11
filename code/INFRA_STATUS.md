@@ -105,6 +105,13 @@ batch position 与本地 occurrence ID 关联 43 个重复消息组，不改变�
 回放通过，后置失败不隐藏，cold 与 ready 起点独立保留。77 项受影响 CPU 测试通过；协调器另报告 `6a31cc38` 的冷轮1200次及完整 sink
 通过，来源与当前组合 CPU 分列，不改记历史质量／时长。
 
+[IMLane Movie Q1–Q4](integrations/imlane_duckdb/README.md#movie-q1q4-原版-filter-接线) 已接入现有
+单题 TINYINT owner／provider／完整 sink ACK：Q1 2000 次，Q2–Q4 每题 120 次，首个目标门
+只选 Q2。76 项局部 CPU 测试与 2600 条 Movie 保存回复回放通过；Q3 的 120 条来源是旧
+`168bc` project resident bridge，不是作者默认。共享 Medical 2400 条保存回复回归通过。
+各题保留原 source、prompt/parser、head/count/ratio/evaluator 和独立 cold／ready 实际时钟；
+本新增绑定的 Linux DSO／SQL、目标 GPU、模型质量与性能仍 pending，不继承旧结果。
+
 [Ray Animals Q7](src/baselines/image/ray_animals_q7/README.md)现保留第一 stage 的完整关闭，最终原 City
 关系就绪后才 ACK 并关闭最后 runtime。原 19 项 CPU、真实本地子进程交接及 128 条旧答复身份／原 parser
 回放通过；`909f842c4` 又通过目标 64 张原图／128 条保存答复的完整 City／evaluator 回放，并在独立

@@ -55,21 +55,28 @@ def reference(originals, phase):
 
 
 async def replay(config, originals, phase, output):
-    query, method, prepared, requests, tokens, rows = binding.prepare_query(config)
     frozen = reference(originals, phase)
+    frozen['labels_and_texts'] = [(str(row['patient_id']), row['symptoms']) for row in frozen['rows']]
+    result = await replay_saved_filter(config, frozen, phase, output)
+    assert (result['unique_messages'], result['repeated_groups'], result['extra_occurrences']) == (1153, 43, 47)
+    result.update(budget1201_rejected_before_generate=True, full1200_post_sink_failure_preserves_clock=True)
+    return result
+
+
+async def replay_saved_filter(config, frozen, phase, output):
+    query, method, prepared, requests, tokens, rows = binding.prepare_query(config)
+    count = config['max_model_calls']
     assert [row['messages'] for row in requests] == frozen['messages']
-    assert [row['source_position'] for row in rows] == list(range(1200))
-    for row, old in zip(rows, frozen['rows'], strict=True):
-        assert (row['title'], row['text']) == (str(old['patient_id']), old['symptoms'])
+    assert [row['source_position'] for row in rows] == list(range(count))
+    assert [(row['title'], row['text']) for row in rows] == frozen['labels_and_texts']
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     assert tokens == [tokenizer.apply_chat_template(value, tokenize=True, add_generation_prompt=True)
                       for value in frozen['messages']]
     groups = Counter(content_digest(row['messages']) for row in requests)
-    assert len(groups) == 1153 and sum(n > 1 for n in groups.values()) == 43
     sampling = query.operation.generation.kwargs()
-    budget = AttemptBudget(config['execution_id'] + '-' + phase, 1200)
+    budget = AttemptBudget(config['execution_id'] + '-' + phase, count)
     ledger = CellBudgetLedger.create(output / 'budget.sqlite', budget, deadline_utc=None)
-    ledger.reserve_unit('query', 1200); unit = ledger.claim_shared_unit('query')
+    ledger.reserve_unit('query', count); unit = ledger.claim_shared_unit('query')
     for name in ('model-calls', 'overflow-calls'): (output / name).mkdir(mode=0o700)
     write_private_json(output / 'messages.json', dict(rows=rows))
     write_private_json(output / 'tokens.json', dict(token_ids=tokens))
@@ -110,12 +117,12 @@ async def replay(config, originals, phase, output):
         factories.append(deepcopy(value))
         return worker.NativeModel(engine, FakeSampling, 'final-only', object(), 'software-no-model', FakeSampling)
     primary = None
-    with tempfile.TemporaryDirectory(prefix='imlane-medical-', dir='/tmp') as temporary:
+    with tempfile.TemporaryDirectory(prefix='imlane-filter-', dir='/tmp') as temporary:
         socket_path = Path(temporary) / 'model.sock'
-        worker_config = dict(model='/software-fixture/no-weights', served_model_name='medical-software-fixture',
+        worker_config = dict(model='/software-fixture/no-weights', served_model_name='filter-software-fixture',
             dtype='bfloat16', engine_options={}, socket_path=str(socket_path),
             ready_path=str(output / 'ready.json'), shutdown_path=str(output / 'shutdown.json'),
-            request_budget=dict(path=str(ledger.path), budget_id=budget.budget_id, limit=1200, unit_id='query'))
+            request_budget=dict(path=str(ledger.path), budget_id=budget.budget_id, limit=count, unit_id='query'))
         with patch.object(model_provider, '_run_batch', side_effect=correlate), \
                 patch.object(worker.ModelWorker, '_row', new=row_fixture):
             task = asyncio.create_task(worker.serve(worker_config, model_factory=factory, stop=stop, install_signals=False))
@@ -128,7 +135,7 @@ async def replay(config, originals, phase, output):
                     socket_path=str(socket_path), model=worker_config['served_model_name'], sampling_params=sampling,
                     request_timeout_s=120, receipt_dir=str(output / 'model-calls'))
                 write_private_json(output / 'provider.json', provider)
-                order = list(range(1198, -1, -2)) + list(range(1199, 0, -2))
+                order = list(range(count - 1, -1, -2)) + list(range(count - 2, -1, -2))
                 batches = [order[i:i + 137] for i in range(0, len(order), 137)]
                 async def batch(indices):
                     chosen = [rows[i] for i in indices]
@@ -141,10 +148,10 @@ async def replay(config, originals, phase, output):
                 with patch.dict(os.environ, {model_provider.CONFIG_ENV: str(output / 'provider.json'),
                                              mmqa_filter_udf.CONFIG_ENV: str(output / 'messages.json')}):
                     accepted = await asyncio.gather(*(batch(part) for part in batches))
-                assert len(engine.calls) == unit.attempts == 1200
+                assert len(engine.calls) == unit.attempts == count
                 returned = [call for path in (output / 'model-calls').glob('*.terminal.json')
                             for call in read_json(path)['calls']]
-                assert len(returned) == len({call['occurrence_id'] for call in returned}) == 1200
+                assert len(returned) == len({call['occurrence_id'] for call in returned}) == count
                 for call in returned:
                     assert call['response']['generated_text'] == frozen['texts'][positions[call['occurrence_id']]]
                 for prompt, effective, _, _ in engine.calls:
@@ -167,7 +174,7 @@ async def replay(config, originals, phase, output):
                     write_private_json(output / 'FAILURE.json', error.query_report)
                 else:
                     raise AssertionError('post-sink failure was hidden')
-                # Compare the entire selected joined frame, not just its mean.
+                # Compare the entire selected relation, not just its final scalar/head.
                 original_frame = query.operation.frame.iloc[[i for i, text in enumerate(frozen['texts']) if q3_decision(text)]]
                 actual = pd.DataFrame(**timing['complete_relation'])
                 pd.testing.assert_frame_equal(actual, original_frame, check_dtype=False)
@@ -175,12 +182,12 @@ async def replay(config, originals, phase, output):
                 with patch.dict(os.environ, {model_provider.CONFIG_ENV: str(output / 'overflow-provider.json')}):
                     try: await asyncio.to_thread(model_provider.infer_batch, [requests[0]['messages']])
                     except model_provider.ModelBatchError as error: overflow = error.imlane_model_provider_report
-                    else: raise AssertionError('1201st request reached generate')
-                assert len(engine.calls) == unit.attempts == 1200
+                    else: raise AssertionError('N+1 request reached generate')
+                assert len(engine.calls) == unit.attempts == count
                 assert not overflow['calls'][0]['attempted']
                 assert overflow['calls'][0]['response']['error_type'] == 'BudgetExhausted'
                 assert overflow['engine_generate_invocations'] == 0
-                write_private_json(output / 'BUDGET.json', dict(consumed=1200, refunded=0, rejected1201=True))
+                write_private_json(output / 'BUDGET.json', dict(consumed=count, refunded=0, next_request_rejected=True, **{f'rejected{count + 1}': True}))
             except BaseException as error:
                 primary = error; raise
             finally:
@@ -192,13 +199,13 @@ async def replay(config, originals, phase, output):
                     if primary is None: raise
                     primary.add_note('software owner close also failed: ' + repr(error))
         assert not socket_path.exists() and len(engine.shutdowns) == len(factories) == 1 and not engine.active
-    return dict(status='passed', phase=phase, saved_answers=1200, unique_messages=1153,
-        repeated_groups=43, extra_occurrences=47, duplicate_raw_answers_retained=True,
+    return dict(status='passed', phase=phase, saved_answers=count, unique_messages=len(groups),
+        repeated_groups=sum(n > 1 for n in groups.values()), extra_occurrences=count-len(groups), duplicate_raw_answers_retained=True,
         original_messages_equal=True, complete_CPU_token_arrays_equal=True,
         historical_GPU_full_token_arrays_qualified=False, full_relation_sink_evaluator_equal=True,
         real_Arrow_and_AF_UNIX=True, reversed_source_and_concurrent_batches=True,
-        budget1201_rejected_before_generate=True, software_owner_closed=True, socket_removed=True,
-        timing=timing, full1200_post_sink_failure_preserves_clock=True, real_model_calls=0, author_DSO_SQL=False, GPU=False,
+        next_request_rejected_before_generate=True, software_owner_closed=True, socket_removed=True,
+        timing=timing, post_sink_failure_preserves_clock=True, real_model_calls=0, author_DSO_SQL=False, GPU=False,
         quality_scope='saved answers only; no new model quality or performance', reference=frozen['evidence'])
 
 

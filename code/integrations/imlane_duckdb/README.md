@@ -19,7 +19,7 @@
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 | [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
 | [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | MMQA Q1 原题准备／完整 sink，复用既有作者、模型 owner 与监督器；25 次物理预算 |
-| [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 显式单题 MMQA Q3a–g／Q6a–c（25 次）或 Medical Q4（1200 次）；原版 TINYINT Filter、完整原查询 sink 后 ACK |
+| [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 显式单题 Movie Q1（2000 次）／Q2–Q4（120 次）、MMQA Q3a–g／Q6a–c（25 次）或 Medical Q4（1200 次）；原版 TINYINT Filter、完整原查询 sink 后 ACK |
 
 输入四VARCHAR依次为`occurrence_id/id/reviewId/reviewText`，作者转换器按位置命名`c0..c3`。
 输出为TINYINT，SQL比较`=1`；不走尚未资格的位图Arrow Boolean转换。完整cohort先进入DuckDB；
@@ -322,6 +322,31 @@ ACK、回执审计、评价、持久化和最后 owner close，后置失败仍�
 后置审计失败与 ACK 时钟已验证。历史 GPU 回执没有完整 token 数组，因此不授予其逐 token
 一致资格。模型和作者 SQL 是软件 fixture，这不是新模型质量或性能。协调器另报告
 `6a31cc38` 冷轮1200次及完整 sink 通过，按[隔离组合报告](../../../experiments/results/diagnostics/baseline_validated_integration_20261111/README.md)与本地组合 CPU 分列。旧 cold/warm 时长不得通过减估关闭来修复。
+
+## Movie Q1–Q4 原版 Filter 接线
+
+[单题入口](../../src/experiments/native_imlane_filters.py)的 Movie schema 复用现有 TINYINT
+Arrow kernel、ModelService、provider、原版 DSO、物理预算和完整 sink ACK，不新增 controller
+或修改作者 runtime／算法。使用[Q2 配置模板](../../configs/sembench_imlane_movie_filter.example.json)。
+原 SemBench `c814e380` 拥有 CSV 输入、普通选择、逐题 prompt/parser、最终关系和 evaluator：
+Q1 全 2000 个发生项后取前 5；Q2 对 taken_3 的 120 个发生项后取前 5；Q3 同 120 个计数；
+Q4 同 120 个计算比例。Q2 引号、Q3 无末尾句点、Q4 有末尾句点保持原文。
+普通选择位于原 SemBench source，选中的所有发生项进入作者 native Filter，不提前 head5。
+
+每题独立新 source→完整原内存 sink，先记录 ready／cold 实际时钟再 ACK；审计、评价、
+持久化和 owner close 在后，沿用上述单题入口。发生项使用完整 call_id，不按重复消息去重。
+零模型检查用 `native_imlane_filters check`；首个目标门只选 Q2 全 120 行，不能自动放行
+Q1 2000 次。既有 `run` CLI、host lease、进程/SHM/GPU 清理条件和原始 DSO hash 不变。
+只在目标环境重新核对当前 kernel/driver 绑定，不重建 DSO 或安装替代 DuckDB。
+
+[CPU 回放](../../tests/baselines/text/replay_imlane_movie_filters.py)验证 Q1 的 2000 条、Q2/Q4
+cold/warm 各 120 条原 native 保存答复，以及 Q3 的 120 条 `168bc` LOTUS-compatible
+project resident bridge 保存答复，共 2600 条。Q3 明确保留 bridge 来源，不冒充作者默认；
+其旧 `3c80` native 尝试在 generate 前停止，不能声称已有答复。全部逐发生项检查原消息／
+完整 CPU token、原 Filter 关系、head/count/ratio/evaluator、N+1 generate 前拒绝、乱序和
+后置失败保留时钟。Q3 还与旧完整 prompt token 数组匹配；其他历史 GPU 的完整 token
+资格不由 CPU 推导。76 项局部测试通过，空结果保留原 Q1/Q2 的三列 schema；共享 Medical
+cold/warm 2400 条回放作为回归。没有新模型、Linux DSO/SQL 或目标 GPU 资格与性能结论。
 
 ## MMQA Q1 工程版接线
 
