@@ -1,5 +1,6 @@
 import types
 import unittest
+from unittest.mock import Mock
 
 from src.experiments.request_layout_study import prefix_tree_opportunity, text_layout
 
@@ -23,6 +24,24 @@ class PrefixTreeOpportunityTest(unittest.TestCase):
                 raise RuntimeError('stop')
         self.assertIs(instructions.user_message_formatter, original)
         self.assertIs(method.columns, columns)
+
+    def test_each_layout_formats_the_context_once_and_keeps_complete_messages(self):
+        for first, instruction in ((False, 'Instruction: score'),
+                                   (True, 'Instruction: score'), (True, None)):
+            with self.subTest(instruction_first=first, instruction=instruction):
+                instructions = types.SimpleNamespace(context_formatter=Mock(return_value=('body', [])))
+                def original(data, instruction=None):
+                    text, _ = instructions.context_formatter(data)
+                    return dict(role='user', content=f'Context:\n{text}\n\n{instruction}')
+                instructions.user_message_formatter = original
+                method = types.SimpleNamespace(instructions=instructions, columns=['body'])
+                with text_layout(method, instruction_first=first, columns=['body']):
+                    message = instructions.user_message_formatter('input', instruction)
+                expected = (f'{instruction}\n\nContext:\nbody' if first and instruction is not None
+                            else f'Context:\nbody\n\n{instruction}')
+                self.assertEqual(message, dict(role='user', content=expected))
+                instructions.context_formatter.assert_called_once_with('input')
+                self.assertIs(instructions.user_message_formatter, original)
 
 
 if __name__ == '__main__':

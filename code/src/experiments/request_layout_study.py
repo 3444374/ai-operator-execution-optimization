@@ -22,15 +22,16 @@ def text_layout(method, *, instruction_first, columns):
     original, original_columns = instructions.user_message_formatter, method.columns
 
     def format_user(data, instruction=None):
+        if instruction is None:
+            return original(data, instruction)
         text, images = instructions.context_formatter(data)
         if images:
             raise ValueError('this layout study only supports text requests')
-        if not instruction_first or instruction is None:
-            return original(data, instruction)
         return dict(role='user', content=f'{instruction}\n\nContext:\n{text}')
 
     try:
-        instructions.user_message_formatter = format_user
+        if instruction_first:
+            instructions.user_message_formatter = format_user
         method.columns = tuple(columns)
         yield
     finally:
