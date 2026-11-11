@@ -236,3 +236,26 @@ class HostFailureEvidenceTests(unittest.TestCase):
                 self.assertTrue(exit['semaphore_cleanup_attempted'])
         writes = [call for call in self.host.private_json.call_args_list if call.args[0].name == 'EXIT.json']
         self.assertEqual(len(writes), 2)
+
+    def test_last_resource_rejection_returns_failed_exit_without_changing_cleanup(self):
+        from pathlib import Path
+        from unittest.mock import patch
+        self.host.assert_idle.side_effect = None
+        self.monitor.finish.side_effect = [
+            dict(passed=True, failures=[], remaining_new_shm_names=[]),
+            dict(passed=False, failures=[], remaining_new_shm_names=['sem.mp-late-fixture']),
+        ]
+        self.sockets.cleanup_inactive_socket_nodes.return_value = {}
+        self.semaphores.cleanup_inactive_semaphores.return_value = []
+        with patch.object(Path, 'read_text', return_value=''):
+            receipt = self.adapter(['CPU-fixture'], 0, self.root)
+        self.assertEqual(receipt['status'], 'failed')
+        self.assertEqual(self.saved['EXIT.json']['status'], 'failed')
+        self.assertTrue(receipt['worker_exit_zero'])
+        self.assertTrue(receipt['owned_processes_exited'])
+        self.assertTrue(receipt['private_sockets_clear'])
+        self.assertFalse(receipt['resource_passed'])
+        self.assertFalse(receipt['physical_idle'])
+        self.assertEqual(receipt['host_idle_guard'], 'passed')
+        self.sockets.cleanup_inactive_socket_nodes.assert_called_once()
+        self.semaphores.cleanup_inactive_semaphores.assert_called_once()

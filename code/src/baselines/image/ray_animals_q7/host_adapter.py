@@ -91,8 +91,11 @@ class StageSupervisor:
                 resources = monitor.finish()
                 host.private_json(evidence / 'resources-final.json', resources)
                 sockets_clear = not any(path.is_socket() for path in temp.rglob('*'))
-                receipt.update(status='completed', physical_idle=not live and resources['passed'] and sockets_clear,
+                receipt.update(physical_idle=not live and resources['passed'] and sockets_clear,
                                resource_passed=resources['passed'], private_sockets_clear=sockets_clear)
+                required = ('worker_exit_zero', 'physical_idle', 'resource_passed',
+                            'owned_processes_exited', 'private_sockets_clear')
+                receipt['status'] = 'completed' if all(receipt[key] is True for key in required) else 'failed'
         except BaseException as error:
             failure = worker_failure or error
             receipt.update(status='failed', physical_idle=False,
