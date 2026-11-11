@@ -7,6 +7,8 @@ import threading
 import time
 import uuid
 
+from src.infrastructure.deadlines import earliest_deadline, remaining_time
+
 
 class StageEngineCleanup:
     """Own only this stage's private directory and recorded PID/create-time pairs."""
@@ -61,25 +63,25 @@ class StageEngineCleanup:
                     report_file=path.name, cleanup_errors=["engine_report_read: " + type(error).__name__]))
         return reports
 
-    def stop(self, *, grace_s=5.5, started=True):
+    def stop(self, *, grace_s=5.5, started=True, deadline=None):
         self.request_stop()
-        if not self._lock.acquire(timeout=grace_s + 2):
+        if not self._lock.acquire(timeout=remaining_time(deadline, grace_s + 2)):
             return dict(reports=[], errors=["stage_engine_cleanup_still_running"], process_exit_confirmed=False)
         try:
-            deadline = time.monotonic() + grace_s
+            grace_deadline = earliest_deadline(deadline, time.monotonic() + grace_s)
             reports = self._read()
             # The stop file is visible during EngineProcess construction too.
             # Give its own bounded cleanup time to register and close its child
             # before the Ray actor can be terminated by the graph watchdog.
             while started and (not reports or any(not r.get("process_exit_confirmed") for r in reports)):
-                if time.monotonic() >= deadline:
+                if time.monotonic() >= grace_deadline:
                     break
-                time.sleep(min(0.02, max(0, deadline - time.monotonic())))
+                time.sleep(min(0.02, max(0, grace_deadline - time.monotonic())))
                 reports = self._read()
             for index, report in enumerate(reports):
                 if not report.get("process_exit_confirmed"):
                     try:
-                        reports[index] = self._stop_registered(report)
+                        reports[index] = self._stop_registered(report, deadline=deadline)
                         key = (report.get("model_pid"), report.get("process_created"))
                         self._driver_reports[key] = reports[index]
                     except BaseException as error:
@@ -105,7 +107,7 @@ class StageEngineCleanup:
             self._lock.release()
 
     @staticmethod
-    def _stop_registered(report):
+    def _stop_registered(report, *, deadline=None):
         import psutil
         from src.infrastructure.owned_processes import _live, _observe, _signal, _wait
 
@@ -131,13 +133,13 @@ class StageEngineCleanup:
             if not _live(owned):
                 break
             _signal(owned, pid, created, signum)
-            deadline = time.monotonic() + 0.5
+            wait_deadline = earliest_deadline(deadline, time.monotonic() + 0.5)
             try:
-                _wait(owned, pid, created, deadline)
+                _wait(owned, pid, created, wait_deadline)
             except (PermissionError, psutil.AccessDenied) as error:
                 errors.append("process_tree_wait: " + type(error).__name__)
-                while _live(owned) and time.monotonic() < deadline:
-                    time.sleep(min(0.02, max(0, deadline - time.monotonic())))
+                while _live(owned) and time.monotonic() < wait_deadline:
+                    time.sleep(min(0.02, max(0, wait_deadline - time.monotonic())))
         remaining = _live(owned)
         return dict(report, status="unknown", process_exit_confirmed=not remaining,
                     live_observed_processes=len(remaining), gpu_exit_confirmed=None,

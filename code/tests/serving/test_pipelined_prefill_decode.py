@@ -32,18 +32,83 @@ class PipelineTests(unittest.TestCase):
         self.transport.start()
         self.addCleanup(self.transport.stop)
 
-    def owner(self, *, result_bytes=8192, deadline=None, command_slots=None,
+    def owner(self, *, result_bytes=8192, deadline=None, command_slots=None, input_bytes=None,
+              item_input_bytes=4096, control_dir=None,
               batch_size=2, prefill_window=2):
         owner = pipeline.PipelinedPrefillDecodeProcess(
             EngineSpec('/tmp/CPU-phase-model', sys.executable, '/tmp/CPU-driver', max_model_len=2048),
-            GenerationSpec(max_tokens=12, stop=()), self.temp.name,
+            GenerationSpec(max_tokens=12, stop=()), control_dir or self.temp.name,
             time.monotonic()+10 if deadline is None else deadline, 5,
             prefill=pipeline.NixlPlacement('0', 15600), decode=pipeline.NixlPlacement('1', 15601),
-            limits=AsyncEngineLimits(max_inflight=3, item_input_bytes=4096, item_result_bytes=result_bytes,
+            limits=AsyncEngineLimits(max_inflight=3, item_input_bytes=item_input_bytes,
+                                     input_bytes=input_bytes, item_result_bytes=result_bytes,
                                      command_slots=command_slots),
             batch_size=batch_size, prefill_window=prefill_window, close_timeout_s=3)
         self.addCleanup(owner.close)
         return owner
+
+    def test_byte_limited_prefill_and_decode_batches_keep_complete_requests(self):
+        for width, phase in [(700, 'prefill'), (500, 'decode')]:
+            with self.subTest(phase=phase):
+                owner = self.owner(input_bytes=2048, item_input_bytes=2048,
+                                   control_dir=Path(self.temp.name)/phase)
+                producer = owner.stages['prefill']
+                original_poll = producer.poll
+                # Hold both P receipts together only for the decode-byte case.
+                def poll(max_events):
+                    if phase == 'decode' and producer.snapshot()['ready_results'] < 2:
+                        return ()
+                    return original_poll(max_events)
+                records = [row(i, 'x' * width) for i in range(2)]
+                with patch.object(producer, 'poll', side_effect=poll):
+                    results = owner.run_prepared(records)
+                self.assertEqual([r['call_id'] for r in results], [r['call_id'] for r in records])
+                self.assertTrue(all(r['status'] == 'succeeded' for r in results), owner.last_run_report)
+                self.assertEqual(owner.last_run_report['batch_frames'][phase], {1: 2})
+                for stage in owner.stages.values():
+                    self.assertEqual(stage.snapshot()['issued_submissions'], 2)
+                    self.assertEqual(stage.snapshot()['held_requests'], 0)
+                owner.close()
+
+    def test_registered_cleanup_uses_close_deadline_and_keeps_retry_identities(self):
+        import psutil
+        import subprocess
+        import threading
+        from types import SimpleNamespace
+        marker = Path(self.temp.name) / 'ignores-term'
+        child = subprocess.Popen([sys.executable, '-c',
+            'import signal,sys,time; from pathlib import Path; '
+            'signal.signal(signal.SIGTERM,signal.SIG_IGN); '
+            'Path(sys.argv[1]).touch(); time.sleep(20)', str(marker)], start_new_session=True)
+        try:
+            until = time.monotonic() + 2
+            while not marker.exists():
+                self.assertLess(time.monotonic(), until)
+                time.sleep(.005)
+            owner = pipeline.PipelinedPrefillDecodeProcess.__new__(pipeline.PipelinedPrefillDecodeProcess)
+            owner._cancelled, owner._wakeup = threading.Event(), threading.Event()
+            owner._close_lock = threading.Lock()
+            owner._closed = False
+            owner.control = Path(self.temp.name)
+            owner.last_close_report = None
+            owner._process_records = {}
+            stage = SimpleNamespace(process=child, process_created=psutil.Process(child.pid).create_time(),
+                ready_report={'engine_uid': 'cpu'},
+                close=lambda timeout: dict(status='unknown', process_exit_confirmed=False))
+            owner.stages = {'prefill': stage}
+            owner._register('prefill', stage)
+            started = time.monotonic()
+            report = owner.close(timeout=.02)
+            elapsed = time.monotonic() - started
+            self.assertLess(elapsed, .2, 'registered cleanup must not open another fixed wait')
+            self.assertEqual(report['status'], 'unknown')
+            recovered = report['registered_process_cleanup']['reports'][0]
+            self.assertEqual(owner._process_records['prefill']['owned_processes'], recovered['owned_processes'])
+            child.wait(timeout=2)
+        finally:
+            if child.poll() is None:
+                child.kill()
+            child.wait(timeout=2)
 
     def test_expired_total_deadline_starts_neither_stage(self):
         with patch('subprocess.Popen') as spawn:

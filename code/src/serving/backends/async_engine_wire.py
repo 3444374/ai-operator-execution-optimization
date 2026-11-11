@@ -8,13 +8,17 @@ _HEADER = struct.Struct("!I")
 _OPEN_FRAME_BYTES = 64 * 1024
 
 
+class FrameCapacityExceeded(ValueError):
+    """Encoding stopped before acceptance because the frame cannot fit."""
+
+
 def _frame(value, maximum):
     data = bytearray()
     for piece in json.JSONEncoder(ensure_ascii=False, allow_nan=False,
                                   separators=(",", ":")).iterencode(value):
         piece = piece.encode()
         if len(data) + len(piece) > maximum:
-            raise ValueError("async engine IPC item exceeds its byte capacity")
+            raise FrameCapacityExceeded("async engine IPC item exceeds its byte capacity")
         data.extend(piece)
     return _HEADER.pack(len(data)) + data
 

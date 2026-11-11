@@ -6,6 +6,7 @@ import threading
 import time
 
 from .async_engine_process import AsyncEngineProcess
+from .async_engine_wire import FrameCapacityExceeded
 from .prefill_decode_process import NixlPlacement
 from .stage_process_cleanup import StageEngineCleanup
 from .vllm_protocol import AsyncEngineLimits, GenerationSpec, _integer, _number, _prepared, result_record
@@ -162,19 +163,35 @@ class PipelinedPrefillDecodeProcess:
 
         def submit(name, indexes):
             nonlocal failure
-            descriptors = ([dict(do_remote_decode=True, do_remote_prefill=False) for _ in indexes]
-                if name == 'prefill' else [active[i]['receipts']['prefill'][0]['kv_transfer_params'] for i in indexes])
-            outcome = self.stages[name].submit_batch([rows[i] for i in indexes],
-                generation=replace(effective, max_tokens=1) if name == 'prefill' else effective,
-                deadline_monotonic=self.deadline, kv_transfer_params=descriptors)
+            while True:
+                descriptors = ([dict(do_remote_decode=True, do_remote_prefill=False) for _ in indexes]
+                    if name == 'prefill' else [active[i]['receipts']['prefill'][0]['kv_transfer_params'] for i in indexes])
+                options = dict(generation=replace(effective, max_tokens=1) if name == 'prefill' else effective,
+                               deadline_monotonic=self.deadline)
+                try:
+                    if len(indexes) == 1:
+                        outcome = self.stages[name].submit(rows[indexes[0]],
+                            kv_transfer_params=descriptors[0], **options)
+                    else:
+                        outcome = self.stages[name].submit_batch([rows[i] for i in indexes],
+                            kv_transfer_params=descriptors, **options)
+                except FrameCapacityExceeded:
+                    if len(indexes) == 1:
+                        raise
+                    # No member was accepted. Repack complete requests within
+                    # the byte allowance; this never retries model execution.
+                    indexes = indexes[:len(indexes)//2]
+                    continue
+                break
             if outcome.status == 'queued':
-                pending[name].update(zip(outcome.request_ids, indexes, strict=True))
+                keys = (outcome.request_id,) if len(indexes) == 1 else outcome.request_ids
+                pending[name].update(zip(keys, indexes, strict=True))
                 batches[name][len(indexes)] += 1
                 peak_pending[name] = max(peak_pending[name], len(pending[name]))
-                return True
+                return len(indexes)
             if outcome.status != 'backpressure':
                 failure = 'StageSubmissionRejected:' + str(outcome.reason)
-            return False
+            return 0
 
         try:
             while completed < len(rows):
@@ -189,8 +206,9 @@ class PipelinedPrefillDecodeProcess:
                 count = min(len(waiting), self.batch_size, stage_slots-len(pending['decode']))
                 if count:
                     indexes = list(waiting)[:count]
-                    if submit('decode', indexes):
-                        for _ in indexes:
+                    accepted = submit('decode', indexes)
+                    if accepted:
+                        for _ in range(accepted):
                             waiting.popleft()
                         progress = True
                 count = min(len(rows)-next_index, self.batch_size,
@@ -199,10 +217,11 @@ class PipelinedPrefillDecodeProcess:
                 if count and not failure:
                     indexes = list(range(next_index, next_index+count))
                     queued_at = time.monotonic()
-                    if submit('prefill', indexes):
-                        for index in indexes:
+                    accepted = submit('prefill', indexes)
+                    if accepted:
+                        for index in indexes[:accepted]:
                             active[index] = dict(started=queued_at, receipts={})
-                        next_index += count
+                        next_index += accepted
                         peak_active = max(peak_active, len(active))
                         progress = True
                 overlapping_owners |= bool(pending['prefill'] and pending['decode'])
@@ -277,11 +296,12 @@ class PipelinedPrefillDecodeProcess:
             # Each stage already spent its API allowance; no producer can update
             # these registration files while another grace wait elapses.
             cleanup = StageEngineCleanup(self.control).stop(
-                grace_s=0, started=bool(self.stages))
+                grace_s=0, started=bool(self.stages), deadline=deadline)
             observed = {(row.get('model_pid'), row.get('process_created')): row for row in cleanup['reports']}
             for name, registered in self._process_records.items():
                 recovered = observed.get((registered['model_pid'], registered['process_created']))
                 if recovered is not None:
+                    self._process_records[name] = recovered
                     try:
                         _publish(self.control / ('engine-' + name + '.json'), recovered)
                     except Exception as error:
