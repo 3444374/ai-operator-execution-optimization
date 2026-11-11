@@ -21,8 +21,8 @@ def validate_configuration(config):
     if config['backend'] != 'lotus-native' or set(spec) != {
             'repetitions', 'timeout_s', 'cleanup_s', 'python_hash_seed', 'binding'}:
         raise ValueError('explicit native LOTUS resident configuration required')
-    if type(spec['repetitions']) is not int or spec['repetitions'] < 2:
-        raise ValueError('resident requires a cold query and at least one fresh warm query')
+    if type(spec['repetitions']) is not int or spec['repetitions'] < 1:
+        raise ValueError('resident requires at least one complete cold query; later queries are fresh warm queries')
     if (type(spec['timeout_s']) not in (int, float) or type(spec['cleanup_s']) not in (int, float)
             or not 0 < spec['cleanup_s'] < spec['timeout_s'] < float('inf')):
         raise ValueError('finite resident supervision and cleanup allowance required')
@@ -94,6 +94,7 @@ def verify_binding(config, query, engine, *, assets=True):
         occurrences_sha256=spec['binding']['occurrences_sha256'], config_sha256=content_digest(config),
         model_files=spec['binding']['model_files'], tokenizer_files=spec['binding']['tokenizer_files'],
         asset_hashes_checked=assets, logical_requests=count * spec['repetitions'],
+        request_count_kind=('upper_bound' if query.describe().get('ranking') == 'topk' else 'exact'),
         per_query_requests=count, phase_labels=['cold'] + ['warm'] * (spec['repetitions'] - 1))
 
 
@@ -134,7 +135,7 @@ class ResidentDriver:
                 if unit.attempts or unit.remaining != max(1, expected_count):
                     raise ValueError('resident query requires its fresh exact permanent allowance')
                 if self.owner is None and query.operation is not None:
-                    self.owner = LocalNativeModel(self.engine, query.operation.stage.generation,
+                    self.owner = LocalNativeModel(self.engine, query.operation.generation,
                         self.resources, self.config['profile']['native_lm_max_batch_size'])
                 first_model = self.owner is not None and self.owner.ready_report is None
                 events = dict(submit=[], terminal=[])
@@ -142,6 +143,7 @@ class ResidentDriver:
                 relations = []
 
                 def execute(operation, invoke):
+                    topk = operation.describe()['kind'] == 'topk'
                     def accessor():
                         if self.owner.transport is None:
                             relation = invoke()
@@ -150,8 +152,12 @@ class ResidentDriver:
                                 relation = invoke()
                         # Retain the native relation before original grouping can
                         # mutate it; serialize and validate it only after full sink.
-                        relations.append(relation.copy(deep=True))
+                        relations.append((relation[0] if topk else relation).copy(deep=True))
                         return relation
+                    if topk:
+                        from src.baselines.text.frameworks.lotus_native_topk import execute_native_topk
+                        return execute_native_topk(operation, invoke=accessor, shared_owner=self.owner,
+                            query_id=query.query_id, budget=unit)
                     return execute_native(operation.frame, operation.stage, operation.records,
                         invoke=accessor, engine=self.engine, resources=self.resources,
                         query_id=query.query_id, profile=self.config['profile'], budget=unit,
@@ -178,13 +184,19 @@ class ResidentDriver:
                     self.previous = state
                 calls = complete_calls(query, operator)
                 boundaries = native_request_boundaries(events, calls)
-                if unit.attempts != expected_count:
+                if unit.attempts != len(calls):
                     raise RuntimeError('permanent native attempts differ from complete original occurrences')
                 ids = {c['engine_request_id'] for c in calls}
                 if self.request_ids & ids:
                     raise RuntimeError('native request identity reused across fresh queries')
                 self.request_ids |= ids
-                if operator is not None:
+                if operator is not None and query.describe().get('ranking') == 'topk':
+                    from src.baselines.text.frameworks.lotus_native_topk import audit
+                    if len(relations) != 1:
+                        raise ValueError('TopK must return one complete native relation')
+                    audit(query, operator, result, relations[0])
+                    report['operator_relation'] = result_value(relations[0])
+                elif operator is not None:
                     method = LotusRecordMethod(query.operation.stage)
                     prepared = method.prepare_rows(query.operation.records, query_id=query.query_id)
                     actual = {operator['stage_call_ids'][c['call_id']]: c for c in calls}

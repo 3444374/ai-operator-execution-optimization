@@ -7,9 +7,9 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 
 Ray 完整文本查询新增[显式原生 processor 接点](src/baselines/README.md#ray-native-prepared-sembench)：
 完整预测物化后、关闭前执行原 parser/关系并记录内存 sink；旧 `query_seconds` 不追认为统一口径。
-Q10 的 2,000 条保存答复完成软件消息/token、重复 occurrence、原关系/sink/evaluator 等价回放；
-受控时钟及失败路径通过 CPU 检查。目标 Ray SDK、原生模型/版本、实际 token 和物理清理仍待资格，
-不能称全部 baseline 或全部题的统一计时已完成。
+`ac4440328` 已完成 Q10 full2000、Q8 120、Q9 Map256 的原生模型、实际 token、原 sink 和物理清理审计；
+Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，合并后的源码仅做受影响 CPU 回归，
+不把这些冻结来源的成绩改记为整合分支实测，也不称全部 baseline 或全部题的统一计时已完成。
 
 <a id="current-refactor-status"></a>
 <a id="refactor-completion-checklist"></a>
@@ -32,12 +32,19 @@ Daft 原生 AI 的[单 F/M/E 完整查询入口](src/baselines/README.md#daft-na
 已从历史私有接线整理到正式源码，保留分离依赖和原生执行器，并将完整原 sink 与模型关闭分开计时。
 `ffbc352ac` 已完成 Q3a25/Q4 24 的真实单冷资格；最初的 main 整合保留相同 Daft 执行代码，
 原整合22项CPU回归通过；后续sink计时修正的19项检查与Q1/Q3a/Q4完整软件回放见[报告](../experiments/results/diagnostics/daft_native_semantics_20261110/README.md)。旧真实时长含部分审计，不能追认为修正后的统一口径。
-其余17题、同 owner 暖轮与共同 host 总时钟尚未取得资格，不把旧版本真实记录称为新候选实测。
+Movie Q1/Q2/Q3 已开放正式单算子查询绑定，复用同一 Daft native AI、原 parser 与完整 sink；
+`48a6b42d0` 已完成 2000/120/120 次真实单冷及逐条审计，完整 Filter 后的 head(5)／COUNT、
+原提示、重复 occurrence 和全阴性 schema 由[原查询回归](tests/experiments/test_sembench_text_original.py)保留。
+其余题按各自来源判断；同 owner 暖轮仍未取得资格，不把旧版本真实记录称为整合候选实测。
 
 LOTUS 的[显式 resident 文本入口](src/baselines/README.md#lotus-native-resident-sembench)复用原生stage、
 模型owner及既有生命周期，默认isolated保持；当前源码/输入/模型绑定通过配置声明。
 124个不同CPU检查及Q3a50/Q4 48条完整软件冷暖回放通过，e097目标环境导入/绑定及CPU监督通过；准确范围按[报告](../experiments/results/diagnostics/lotus_mmqa_q3a_native_20261110/README.md)分列；
 已完成的Q3a50次真实冷暖仍绑定ee625/fd06，不自动成为新正式候选的模型结果。
+完成后的 session 报告按实际大小读取，配置上限与符号链接／非有限数拒绝保持；
+`50eae2e04` 已完成 Movie Q10 冷暖各2000次及离线审计。当前合并不重跑模型。
+Movie Q9 的[显式作者 TopK 候选](src/baselines/README.md#lotus-movie-q9-topk)复用 resident owner，
+保留原 quick、K=N 与比较预算，和 Q9 Map 分开验证；目标资格只按该候选的独立回执解释。
 
 <a id="pr52-g1-qualified-scope"></a>
 <a id="record-local-sections-c827"></a>

@@ -336,6 +336,81 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         self.assertIs(module.GenericLotusRunner, canonical.GenericLotusRunner)
         self.assertEqual(source.read_bytes(), original_bytes)
 
+    def test_movie_q123_keep_full_filter_occurrences_before_limit_or_count(self):
+        reviews = pd.read_csv(self.data / 'Reviews.csv')
+        extra = reviews.iloc[[0, 2, 3, 0]].copy()
+        reviews = pd.concat([reviews, extra], ignore_index=True)
+        reviews.to_csv(self.data / 'Reviews.csv', index=False)
+        instructions = {}
+        for key in ('1', '2', '3'):
+            with self.subTest(query=key), redirect_stdout(io.StringIO()):
+                query = self._query('movie', key)
+                selected = reviews if key == '1' else reviews[reviews.id == 'taken_3']
+                self.assertEqual(len(query.operation.records), len(selected))
+                self.assertGreater(len(selected), 5)
+                self.assertEqual(query.operation.frame.index.tolist(), selected.index.tolist())
+                self.assertGreater(len(selected), selected.reviewId.nunique())
+                instructions[key] = query.operation.stage.method.instruction
+                result, chain, native = self._parity(query, ['True'] * len(selected))
+                self.assertEqual(len(chain['calls']), len(selected))
+                self.assertEqual(len(native['calls']['records']), len(selected))
+                if key in ('1', '2'):
+                    self.assertEqual(result.reviewId.tolist(), selected.head(5).reviewId.tolist())
+                    self.assertEqual(len(result), 5)
+                else:
+                    self.assertEqual(result.positive_review_cnt.tolist(), [len(selected)])
+                if key in ('1', '2'):
+                    self.assertEqual(query.evaluate(result)['supplement']['returned_rows'], 5)
+        self.assertEqual(instructions['1'], instructions['2'])
+        self.assertNotEqual(instructions['2'], instructions['3'])
+
+    def test_movie_q123_all_negative_keep_original_empty_or_zero_sink(self):
+        for key in ('1', '2', '3'):
+            with self.subTest(query=key), redirect_stdout(io.StringIO()):
+                query = self._query('movie', key)
+                result, _, _ = self._parity(query, ['False'] * len(query.operation.records))
+                if key in ('1', '2'):
+                    self.assertEqual(result.columns.tolist(), ['reviewId', 'movieId', 'reviewText'])
+                    self.assertTrue(result.empty)
+                else:
+                    self.assertEqual(result.positive_review_cnt.tolist(), [0])
+
+    def test_movie_q9_topk_keeps_native_full_ranking_separate_from_default_map(self):
+        import lotus
+        import numpy as np
+        from lotus.types import LMOutput
+        from src.baselines.text.frameworks.lotus_native_topk import make_lm
+
+        rng = np.random.get_state()
+        self.addCleanup(np.random.set_state, rng)
+        default = self._query('movie', '9')
+        query = SemBenchTextQuery(CHECKOUT, self.data, 'movie', '9',
+            execution_id='software-movie-topk', model_name='openai/local-fixture',
+            generation=self.generation, ranking='topk')
+        self.assertEqual(default.describe()['ranking'], 'map')
+        self.assertEqual(default.operation.stage.kind, 'map')
+        self.assertEqual(query.operation.describe()['kind'], 'topk')
+        self.assertEqual(query.operation.frame.index.tolist(), default.operation.frame.index.tolist())
+        lm = make_lm(query.operation, 2)
+        prompts = []
+
+        def answer(current, messages, **options):
+            prompts.extend(messages)
+            return LMOutput(outputs=['Document 1'] * len(messages))
+
+        def execute(operation, invoke):
+            with lotus.settings.context(lm=lm, enable_cache=False), patch.object(type(lm), '__call__', answer):
+                frame, stats = invoke()
+            return dict(frame=frame, native_stats=stats)
+
+        with redirect_stdout(io.StringIO()):
+            result, operator = query.execute(execute)
+        count = len(query.operation.records)
+        self.assertEqual(len(prompts), count * (count - 1) // 2)
+        self.assertEqual(operator['native_stats']['total_llm_calls'], len(prompts))
+        self.assertCountEqual(result.reviewId.tolist(), query.operation.frame.reviewId.tolist())
+        self.assertEqual(result.reviewScore.tolist(), [5.0, 4.0, 3.0, 2.0, 1.0])
+
     def test_all_sixteen_original_queries_match_native_accessor_and_record_chain(self):
         movie = {
             "4": ["True", "True", "False"],

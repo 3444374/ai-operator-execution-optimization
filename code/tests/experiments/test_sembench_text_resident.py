@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from src.experiments import sembench_text_query as entry
 from src.experiments import sembench_text_resident as resident
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
@@ -111,6 +112,59 @@ class ResidentBindingTests(unittest.TestCase):
         self.assertEqual(driver.closes,1)
         self.assertEqual(failure.session_report['skipped_queries'],['test-1'])
         self.assertEqual(failure.session_report['queries'][0]['backend_report']['unknown_calls'],1)
+
+
+class ResidentReportTests(unittest.TestCase):
+    def run_controller(self, root, write_report):
+        config = dict(lifecycle='resident', resident=dict(timeout_s=600, cleanup_s=30))
+        supervision = dict(started_monotonic=2, timeout_s=600, cleanup_reserved_s=30)
+
+        def supervise(command, output, **options):
+            self.assertEqual(command[-2:], ['--execute-model', '--worker'])
+            self.assertEqual(options, dict(timeout_s=600, grace_s=30))
+            (output/'session').mkdir()
+            write_report(output/'session/session.json')
+            return supervision
+
+        from src.experiments import lotus_records_supervisor
+        with patch.object(entry, 'configuration', return_value=(config, None, None, None)), \
+                patch.object(entry, 'query_from_config'), patch.object(entry, 'check', return_value={}), \
+                patch.object(resident, 'verify_binding', return_value={}), \
+                patch.object(lotus_records_supervisor, 'supervise', side_effect=supervise):
+            return entry.main(['run', '--config', 'config.json', '--data-dir', 'data',
+                '--sembench-checkout', 'checkout', '--output-dir', str(root), '--execute-model'],
+                controller_entry_ns=1_000_000_000)
+
+    def test_controller_accepts_large_completed_session_without_changing_clocks(self):
+        session = dict(queries=[dict(query_result_ready_ns=5_000_000_000, full_query_seconds=1.5),
+                               dict(query_result_ready_ns=7_000_000_000, full_query_seconds=.4)],
+                       retained_responses='x' * (9 * 1024**2))
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)/'run'
+            self.assertEqual(self.run_controller(root, lambda path: path.write_text(json.dumps(session))), 0)
+            self.assertGreater((root/'session/session.json').stat().st_size, 8 * 1024**2)
+            timing = json.loads((root/'resident-timing.json').read_text())
+            self.assertEqual(timing, resident_launch_timing(
+                dict(started_monotonic=2, timeout_s=600, cleanup_reserved_s=30), session, 1_000_000_000))
+
+    def test_controller_still_rejects_symlink_and_nonfinite_reports(self):
+        with tempfile.TemporaryDirectory() as raw:
+            target = Path(raw)/'target.json'
+            target.write_text('{}')
+            for name, write_report, error in (
+                    ('symlink', lambda path: path.symlink_to(target), 'bounded regular JSON'),
+                    ('nonfinite', lambda path: path.write_text('{"queries": NaN}'), 'nonfinite JSON')):
+                root = Path(raw)/name
+                with self.subTest(name=name), self.assertRaisesRegex(ValueError, error):
+                    self.run_controller(root, write_report)
+                self.assertFalse((root/'resident-timing.json').exists())
+
+    def test_configuration_keeps_small_file_limit(self):
+        with tempfile.TemporaryDirectory() as raw:
+            path = Path(raw)/'config.json'
+            path.write_text(json.dumps(dict(model_name='x' * (9 * 1024**2))))
+            with self.assertRaisesRegex(ValueError, 'bounded regular JSON'):
+                entry.configuration(path)
 
 
 class ResidentClockTests(unittest.TestCase):

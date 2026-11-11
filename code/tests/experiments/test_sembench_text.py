@@ -104,6 +104,17 @@ class TextEntryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'every original operator input'):
             entry.fixture({},query,['one'],Path('/tmp'))
 
+    def test_native_ray_config_keeps_full_sink_route_and_rejects_topk(self):
+        template = Path(__file__).parents[2] / 'configs/sembench_ray_native.example.json'
+        config, _, _, _ = entry.configuration(template)
+        self.assertIn('ray_native', config)
+        config.update(query='9', ranking='topk')
+        with tempfile.TemporaryDirectory() as raw:
+            path = Path(raw) / 'config.json'
+            path.write_text(json.dumps(config))
+            with self.assertRaisesRegex(ValueError, 'TopK requires.*LOTUS resident'):
+                entry.configuration(path)
+
     def test_result_projection_preserves_original_ratio_precision(self):
         import pandas as pd
         value=2/3

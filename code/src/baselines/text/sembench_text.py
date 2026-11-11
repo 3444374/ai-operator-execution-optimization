@@ -20,7 +20,7 @@ from .sembench_source import SEMBENCH_COMMIT, verify_checkout
 
 
 _OPERATOR_SCOPE = threading.RLock()
-MOVIE_QUERY_IDS = ('4', '8', '9', '10')
+MOVIE_QUERY_IDS = ('1', '2', '3', '4', '8', '9', '10')
 
 
 @dataclass(frozen=True)
@@ -28,6 +28,10 @@ class TextOperation:
     frame: object
     stage: StageSpec
     records: tuple[RecordOccurrence, ...]
+
+    @property
+    def generation(self):
+        return self.stage.generation
 
     def describe(self):
         return dict(kind=self.stage.kind, stage=self.stage.describe(),
@@ -58,6 +62,25 @@ class TextOperation:
         return result
 
 
+@dataclass(frozen=True)
+class TopKOperation:
+    """The author's full quick ranking; requests are comparisons, not rows."""
+    frame: object
+    model_name: str
+    generation: object
+    instruction: str
+    records: tuple[RecordOccurrence, ...]
+
+    def describe(self):
+        count = len(self.records)
+        return dict(kind='topk', method='quick', K=count, input_rows=count,
+            expected_model_calls=count * (count - 1) // 2,
+            call_count_kind='upper_bound; one request per native binary comparison',
+            input_columns=list(self.frame.columns), model_columns=['reviewText'],
+            instruction=self.instruction, result_cache=False, cascade=False,
+            pivot='original numpy.random.randint; actual RNG state recorded')
+
+
 def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
     """Translate only the argument shapes used by the selected original queries."""
     import lotus
@@ -65,6 +88,17 @@ def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
 
     if lotus.settings.serialization_format != SerializationFormat.DEFAULT:
         raise ValueError('this record bridge uses original LOTUS DEFAULT text serialization')
+    if kind == 'topk':
+        if (len(args) != 1 or kwargs != dict(K=len(frame), method='quick', return_stats=True)
+                or lotus.nl_expression.parse_cols(args[0]) != ['reviewText']):
+            raise ValueError('only original Movie Q9 quick TopK with K=N is bound')
+        if (generation.response_format is not None or generation.logprobs is not None
+                or generation.repetition_penalty != 1):
+            raise ValueError('ordinary TopK uses plain binary answers without helper sampling')
+        records = tuple(RecordOccurrence(query_id + '-row-' + str(i), i,
+            int(label) if isinstance(label, Integral) else label, {'reviewText': str(row['reviewText'])})
+            for i, (label, row) in enumerate(frame[['reviewText']].iterrows()))
+        return TopKOperation(frame.copy(deep=True), model_name, generation, args[0], records)
     if kind in ('filter', 'map'):
         if len(args) != 1 or kwargs:
             raise ValueError('this original query profile uses one ordinary instruction without overrides')
@@ -99,7 +133,7 @@ def _operators(handler):
     originals = []
     with _OPERATOR_SCOPE, lotus.settings.context(enable_cache=False):
         try:
-            for kind in ('filter', 'map', 'extract'):
+            for kind in ('filter', 'map', 'extract', 'topk'):
                 cls = type(getattr(pd.DataFrame(), 'sem_' + kind))
                 original = cls.__call__
                 originals.append((cls, original))
@@ -123,7 +157,7 @@ class SemBenchTextQuery:
     """A finite frozen input snapshot and the unchanged original query/evaluator."""
 
     def __init__(self, checkout, data_dir, scenario, query_id, *, execution_id,
-                 model_name, generation, scale_factor=None):
+                 model_name, generation, scale_factor=None, ranking=None):
         import pandas as pd
         from .sembench_medical import FULL_SCALE_FACTOR, TEXT_QUERY_IDS as MEDICAL_QUERY_IDS, text_files
         from .sembench_mmqa import TEXT_QUERY_IDS as MMQA_QUERY_IDS
@@ -132,14 +166,17 @@ class SemBenchTextQuery:
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
                 or (scenario == 'mmqa' and query in MMQA_QUERY_IDS)
                 or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)):
-            raise ValueError('this entry supports Movie Q4/Q8/Q9-map/Q10, twelve ordinary MMQA text queries '
+            raise ValueError('this entry supports Movie Q1/Q2/Q3/Q4/Q8/Q9-map-or-topk/Q10, twelve ordinary MMQA text queries '
                              'and Medical Q1/Q4/Q10')
         if scenario != 'medical' and scale_factor is not None:
             raise ValueError('scale_factor applies only to the Medical authored CSV filenames')
+        if ranking is not None and (scenario != 'movie' or query != '9' or ranking not in ('map', 'topk')):
+            raise ValueError('ranking=map/topk applies only to Movie Q9')
         if type(execution_id) is not str or not execution_id.strip():
             raise ValueError('each execution needs a nonempty independent query_id')
         self.checkout = verify_checkout(checkout)
         self.scenario, self.query, self.query_id = scenario, query, execution_id
+        self.ranking = ranking or 'map'
         self.model_name, self.generation = model_name, generation
         self.data_dir = Path(data_dir).resolve()
         self.evaluation_files = set()
@@ -193,7 +230,7 @@ class SemBenchTextQuery:
     def _original(self):
         if self.scenario == 'movie':
             from .sembench_movie import run_original_lotus_query
-            ranking = dict(ranking='map') if self.query == '9' else {}
+            ranking = dict(ranking=self.ranking) if self.query == '9' else {}
             return run_original_lotus_query(self.checkout, int(self.query),
                 lambda: self._load('Reviews.csv'), **ranking)
         if self.scenario == 'medical':
@@ -208,7 +245,7 @@ class SemBenchTextQuery:
         return dict(schema='semloom.sembench_text_query.v1', sembench_commit=SEMBENCH_COMMIT,
             scenario=self.scenario, query='Q' + self.query, query_id=self.query_id,
             files=self.files, operation=operation,
-            **(dict(ranking='map') if self.scenario == 'movie' and self.query == '9' else {}),
+            **(dict(ranking=self.ranking) if self.scenario == 'movie' and self.query == '9' else {}),
             **(dict(scale_factor=self.scale_factor, scale_unit='patient rows; model rows are query-specific')
                if self.scenario == 'medical' else {}),
             expected_model_calls=0 if operation is None else operation['expected_model_calls'],
@@ -243,10 +280,12 @@ class SemBenchTextQuery:
                 raise ValueError('the query emitted an undeclared additional semantic operator')
             actual = _operation(kind, frame, args, kwargs, model_name=self.model_name,
                                 generation=self.generation, query_id=self.query_id)
-            if actual.stage != self.operation.stage or not frame.equals(self.operation.frame):
+            if actual.describe() != self.operation.describe() or not frame.equals(self.operation.frame):
                 raise ValueError('the original operator input or arguments changed after preflight')
             used = True
             operator_report = execute_operator(actual, invoke)
+            if kind == 'topk':
+                return operator_report['frame'], operator_report['native_stats']
             return operator_report['frame']
 
         try:

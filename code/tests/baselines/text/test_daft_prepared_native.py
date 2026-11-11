@@ -10,8 +10,8 @@ from tests.baselines.text.native_sdk_fixtures import module_entries, recorded_ma
 
 
 class PreparedDaftTests(unittest.TestCase):
-    def test_actual_sdk_executor_keeps_identity_and_closes_observed_model(self):
-        requests = [dict(call_id=identity, prompt='prompt-' + identity) for identity in ('b', 'a', 'c')]
+    def test_actual_sdk_executor_keeps_duplicate_prompt_occurrences_and_closes_model(self):
+        requests = [dict(call_id=identity, prompt='same-prompt') for identity in ('b', 'a', 'c')]
         texts = ['False', 'True', 'ambiguous']
         reserved, ready = [], []
         with recorded_map_provider(requests, texts) as cpu:

@@ -6,6 +6,7 @@ fixtures here; physical supervision is tested separately.
 """
 
 import argparse
+from collections import Counter
 from importlib.metadata import version
 import json
 from pathlib import Path
@@ -16,6 +17,30 @@ from unittest.mock import patch
 from src.infrastructure.private_artifacts import (
     content_digest, read_json, write_private_json, publish_private_json,
 )
+
+
+def saved_reply_bindings(calls, frozen):
+    """Bind each occurrence; message lookup is only for the native reference.
+
+    LOTUS's message-only fixture cannot distinguish equal messages with
+    different saved answers. Reject that ambiguity instead of assigning by
+    arrival order. Daft always receives the separate call-ID bindings.
+    """
+    by_call, by_message = {}, {}
+    for call, saved, text in zip(calls, frozen['calls'], frozen['texts'], strict=True):
+        message = json.loads(call['messages_json'])
+        if (call['source_position'] != saved['source_position']
+                or message != json.loads(saved['messages_json'])):
+            raise ValueError('saved reply source occurrence or message differs')
+        call_id = call['call_id']
+        if call_id in by_call:
+            raise ValueError('duplicate replay call ID')
+        by_call[call_id] = text
+        digest = content_digest(message)
+        if digest in by_message and by_message[digest] != text:
+            raise ValueError('equal messages have different saved replies; native reference needs occurrence identity')
+        by_message[digest] = text
+    return by_call, by_message
 
 
 def replay(config, frozen, output):
@@ -39,15 +64,14 @@ def replay(config, frozen, output):
         generation=GenerationSpec.from_dict(sampling), scale_factor=config.get('scale_factor'))
     method, calls, requests = prepare(query, tokenizer)
     messages = [json.loads(row['messages_json']) for row in calls]
-    assert messages == [json.loads(row['messages_json']) for row in frozen['calls']]
+    by_call, by_message = saved_reply_bindings(calls, frozen)
     tokens = [tokenizer.encode(row['prompt'], add_special_tokens=False) for row in requests]
     assert tokens == frozen['token_ids']
     assert [tokenizer.encode(row['prompt']) for row in requests] == tokens
-    by_message = {content_digest(message): text for message, text in zip(messages, frozen['texts'], strict=True)}
-    by_prompt = {row['prompt']: text for row, text in zip(requests, frozen['texts'], strict=True)}
-    assert len(by_message) == len(by_prompt) == len(requests)
+    native_reference_messages = []
 
     def saved_native(data, options, *args):
+        native_reference_messages.extend(content_digest(message) for message, _ in data)
         return [ModelResponse(model=method.lm.model, choices=[dict(index=0, finish_reason='stop',
             message=dict(role='assistant', content=by_message[content_digest(message)]))],
             usage=dict(prompt_tokens=0, completion_tokens=0, total_tokens=0)) for message, _ in data]
@@ -59,6 +83,7 @@ def replay(config, frozen, output):
         return dict(frame=relation)
     with lotus.settings.context(lm=method.lm, enable_cache=False):
         original, _ = query.execute(accessor)
+    assert Counter(native_reference_messages) == Counter(content_digest(message) for message in messages)
     assert result_value(original) == frozen['result']
     if 'relation' in frozen:
         assert relations[0] == frozen['relation']
@@ -68,7 +93,7 @@ def replay(config, frozen, output):
         worker = read_json(config_path)
         actual_requests = read_json(worker['requests_path'])['requests']
         assert actual_requests == requests
-        outputs = [by_prompt[row['prompt']] for row in actual_requests]
+        outputs = [by_call[row['call_id']] for row in actual_requests]
         deadline = QueryDeadline(Path(directory) / 'result-ready.json',
             query_s=worker['query_timeout_s'], cleanup_s=worker['cleanup_s'],
             stop_grace_s=worker['stop_grace_s'], ready_schema='semloom.native_daft_map.result_ready.v1',
@@ -102,12 +127,17 @@ def replay(config, frozen, output):
     assert actual['result'] == frozen['result']
     assert actual['semantic']['operator_relation'] == relations[0]
     assert [row['text'] for row in actual['semantic']['calls']] == frozen['texts']
+    assert [(row['call_id'], row['source_position']) for row in actual['semantic']['calls']] == [
+        (row['call_id'], row['source_position']) for row in calls]
     assert report['quality'] == frozen['quality']
     assert report['sink_ready_ns'] < report['model_close_receipt']['close_started_monotonic_ns']
     assert (report['sink_ready_ns'] <= report['semantic_audit_started_ns']
             <= report['semantic_audit_finished_ns'] <= report['sink_persistence_started_ns'])
     assert report['sink_ready_ns'] <= report['sink_persistence_started_ns'] < report['evaluation_started_ns']
     receipt = dict(status='passed', model_calls=0, requests=len(requests),
+        unique_call_ids=len(by_call), unique_messages=len(by_message),
+        native_reference_occurrences=len(native_reference_messages),
+        duplicate_message_replies_consistent=True,
         source_indices=[row.source_index for row in query.operation.records],
         original_accessor_relation_sink_evaluator_equal=True, full_messages_and_tokens_equal=True,
         source_identity_saved_replies_equal=True, native_null_and_filter_defaults_preserved=True,
@@ -132,7 +162,8 @@ def main():
             raise RuntimeError('CPU replay forbids model endpoints and network access')
         return connect(sock, address)
     with patch.object(socket.socket, 'connect', cpu_connect):
-        result = replay(read_json(args.config), read_json(args.reference), args.output_dir)
+        # Q10's complete saved calls, token arrays and relation exceed 8 MiB.
+        result = replay(read_json(args.config), read_json(args.reference, max_bytes=16 * 1024**2), args.output_dir)
     print(json.dumps({key: value for key, value in result.items() if key != 'SDK_fixture'}))
 
 

@@ -29,7 +29,7 @@ def configuration(path):
     required = {'schema', 'scenario', 'query', 'query_id', 'backend', 'model_name',
                 'generation', 'engine', 'resources', 'profile'}
     if (type(value) is not dict or not required <= value.keys()
-            or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident', 'ray_native'}
+            or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident', 'ray_native', 'ranking'}
             or value['schema'] != 'semloom.sembench_text_run.v1'
             or value['backend'] not in BACKENDS or type(value['profile']) is not dict):
         raise ValueError('an explicit single-operator SemBench text configuration is required')
@@ -66,6 +66,8 @@ def configuration(path):
     if value['backend'] == 'imlane':
         resources.request_capacity()
     lifecycle = value.get('lifecycle', 'isolated')
+    if value.get('ranking') == 'topk' and (value['backend'] != 'lotus-native' or lifecycle != 'resident'):
+        raise ValueError('author TopK requires the explicit native LOTUS resident owner')
     if lifecycle not in ('isolated', 'resident'):
         raise ValueError('choose isolated or explicit native LOTUS resident lifecycle')
     if lifecycle == 'resident':
@@ -81,7 +83,7 @@ def query_from_config(config, checkout, data_dir, generation):
 
     return SemBenchTextQuery(checkout, data_dir, config['scenario'], config['query'],
         execution_id=config['query_id'], model_name=config['model_name'],
-        generation=generation, scale_factor=config.get('scale_factor'))
+        generation=generation, scale_factor=config.get('scale_factor'), ranking=config.get('ranking'))
 
 
 def check(config, query, engine):
@@ -93,9 +95,9 @@ def check(config, query, engine):
     return dict(status='checked_cpu_only', inference_calls=0, query=query.describe(),
         backend=config['backend'], engine=asdict(engine), generation=asdict(query.generation),
         effective_operator_generation=(None if query.operation is None else
-                                       asdict(query.operation.stage.generation)),
+                                       asdict(query.operation.generation)),
         profile=config['profile'], native_processor=config.get('ray_native'), unsupported_backends={
-            'kalypso': 'current binding is Movie Filter only; use existing Q4 route; MMQA/Medical/Map/Extract not bound'},
+            'kalypso': 'not exposed by this CLI; use the independent authored Kalypso entry and its declared query scope'},
         execution_layout=('public Ray Data LLM processor; complete original sink before close' if 'ray_native' in config
                           else 'original LOTUS accessor / LM / batch_completion' if config['backend']=='lotus-native'
                           else 'existing native finite record-chain graph; one terminal F/M/E operator'),
@@ -114,6 +116,9 @@ def _frame_value(frame):
 
 def complete_calls(query, operator):
     """Require one confirmed successful result for each original occurrence."""
+    if query.describe().get('ranking') == 'topk' and query.operation is not None:
+        from src.baselines.text.frameworks.lotus_native_topk import complete_topk_calls
+        return complete_topk_calls(query.operation, operator)
     raw = {} if operator is None else operator
     calls = raw.get('calls', [])
     calls = calls['records'] if type(calls) is dict else calls
@@ -328,7 +333,10 @@ def main(argv=None, *, controller_entry_ns=None):
             from src.observability.native_query_timing import resident_launch_timing
             spec = config['resident']
             supervision = supervise(command,root,timeout_s=spec['timeout_s'],grace_s=spec['cleanup_s'])
-            timing = resident_launch_timing(supervision,read_json(root/'session/session.json'),controller_entry_ns)
+            session_path = root/'session/session.json'
+            # Completed per-request evidence is not bounded like launch configuration.
+            session = read_json(session_path, max_bytes=session_path.stat().st_size)
+            timing = resident_launch_timing(supervision,session,controller_entry_ns)
             write_private_json(root/'resident-timing.json',timing)
         else:
             supervise(command,root,timeout_s=None if resources.query_timeout_s is None else resources.startup_timeout_s+resources.query_timeout_s+30)
