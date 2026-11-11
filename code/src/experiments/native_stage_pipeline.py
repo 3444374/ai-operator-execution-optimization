@@ -30,6 +30,19 @@ def result_identity(results, expected):
     return content_digest([{key: row[key] for key in PARITY_FIELDS} for row in results])
 
 
+def transfer_complete(close_report):
+    stages = close_report.get('stages', {})
+    for stage in ('prefill', 'decode'):
+        native = stages.get(stage, {}).get('engine_api', {}).get('native_kv_transfer_final', {})
+        # Native sender expiry is reported on P; receive totals belong to D.
+        if (native.get('status') not in ('observed', 'no_transfer_update')
+                or any(native.get(name) != 0 for name in (
+                    'failed_transfers', 'failed_notifications', 'expired_requests'))
+                or stage == 'decode' and (native.get('status') != 'observed' or native.get('transfers', 0) <= 0)):
+            return False
+    return True
+
+
 def run(config, directory):
     engine = EngineSpec.from_dict(config['engine'])
     generation = GenerationSpec.from_dict(config['generation'])
@@ -90,6 +103,9 @@ def run(config, directory):
                 item['pipeline'] = owner.last_run_report
             report['rounds'].append(item)
             write_private_json(directory/('round-'+str(index)+'.json'), redact_json_values(item))
+            if arm == 'pipeline' and owner.last_run_report['status'] != 'passed':
+                write_private_json(directory/('failed-results-'+str(index)+'.json'), redact_json_values(results))
+                raise RuntimeError('pipeline reported a failed or uncertain run')
         report['result_sha256'] = first_digest
         report['measured_s'] = sum(row['elapsed_s'] for row in report['rounds'] if not row['warmup'])
         report['status'] = 'passed'
@@ -107,6 +123,10 @@ def run(config, directory):
                 grace_s=config['close_timeout_s'], started=True)
         if not report['cleanup']['process_exit_confirmed'] or report.get('close', {}).get('status') != 'closed':
             report['status'] = 'failed'
+        if arm == 'pipeline':
+            report['native_transfer_observed'] = transfer_complete(report.get('close', {}))
+            if not report['native_transfer_observed']:
+                report.update(status='failed', transfer_error='native transfer observation absent or failed')
         write_private_json(directory/'report.json', redact_json_values(report))
     if report['status'] != 'passed':
         raise RuntimeError('request replay cleanup was not confirmed')

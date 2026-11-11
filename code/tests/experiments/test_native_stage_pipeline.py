@@ -9,6 +9,23 @@ from src.semantic_methods.lotus.records import identity
 
 
 class ReplayEvidenceTest(unittest.TestCase):
+    def test_transfer_evidence_requires_observation_without_native_failures(self):
+        native = dict(status='observed', transfers=2, failed_transfers=0,
+                      failed_notifications=0, expired_requests=0)
+        producer = dict(native, status='no_transfer_update', transfers=0)
+        report = dict(stages={stage: dict(engine_api=dict(native_kv_transfer_final=value))
+                             for stage, value in [('prefill', producer), ('decode', native)]})
+        self.assertTrue(replay.transfer_complete(report))
+        for key, value in [('status', 'unavailable'), ('transfers', 0),
+                           ('failed_transfers', 1), ('failed_notifications', 1), ('expired_requests', 1)]:
+            changed = dict(native, **{key: value})
+            failed = dict(stages=dict(report['stages'], decode=dict(engine_api=dict(native_kv_transfer_final=changed))))
+            self.assertFalse(replay.transfer_complete(failed))
+        for key in ('failed_transfers', 'failed_notifications', 'expired_requests'):
+            report['stages']['prefill']['engine_api']['native_kv_transfer_final'] = dict(producer, **{key: 1})
+            self.assertFalse(replay.transfer_complete(report))
+        self.assertFalse(replay.transfer_complete({}))
+
     def test_resident_rounds_keep_independent_evidence_and_fail_on_changed_output(self):
         row = dict(identity('test', 'a', 0), messages_json=json.dumps([dict(role='user', content='hello')]))
         expected = replay._prepared([row])[0][0]
