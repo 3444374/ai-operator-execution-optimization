@@ -15,6 +15,7 @@
 | [runtime.py](runtime.py) | 仅拥有作者coordinator／executor；复用已有纯进程归属与清理设施，不创建records客户端 |
 | [build.py](build.py) | 隔离导出固定作者源码、记录版本／缺源恢复和便携配置，另行编译薄driver；不安装软件或改canonical前缀 |
 | [missing_sources.json](missing_sources.json) | 三件必要构建源的准确官方提交、Git blob、SHA256；没有每批源码版本门槛 |
+| [qualify_varchar.py](qualify_varchar.py)、[C++ driver](varchar_qualification.cpp)、[fixture](varchar_fixture.py) | 零模型 VARCHAR 的真实 DSO／PROCESS／THREAD 资格入口；原作者与 schema-child 工程版分开记录 |
 
 输入四VARCHAR依次为`occurrence_id/id/reviewId/reviewText`，作者转换器按位置命名`c0..c3`。
 输出为TINYINT，SQL比较`=1`；不走尚未资格的位图Arrow Boolean转换。完整cohort先进入DuckDB；
@@ -41,6 +42,12 @@ PYTHONPATH=code python code/integrations/imlane_duckdb/build.py prepare \
 数据盘、编译CPU／内存／时间与已有host租约按runtime runbook约束。
 保留C++17、实际作者Python、fmt前缀和现有SDK依赖头目录；不通过安装普通pip DuckDB替代它。
 无可核对release tag时LibraryVersion如实为unknown，不能填写论文0.10.1。
+
+`prepare --schema-child` 是显式工程变体：仅在新导出的隔离源码内，把
+`ConverArrowAarrayToVector(child_array, &schema, out)` 改为相应的 `schema.children[0]`。
+原始 header 必须匹配固定 SHA256；默认保留原作者调用，`prepare.json` 记录两种身份。
+该一行修补不处理 NULL、slice offset 或长字符串所有权，也不代表新库已编译或 SQL 已通过。
+不得把现有工程修补 checkout 的 HEAD 标成原作者提交。
 
 ```sh
 PYTHONPATH=code python code/integrations/imlane_duckdb/build.py driver \
@@ -151,6 +158,42 @@ IPC减少TCP／HTTP协议、每行HTTP请求和HTTPX依赖，但仍有进程切�
 执行前范围见[原生基线校准](../../../experiments/plans/原生基线校准.md)。
 
 当前124项相关CPU通过，含真实Unix socket四客户端barrier／129行及截止边界；真实作者＋软件IPC闭环按校准计划单列，不将软件结果当模型资格。
+
+## VARCHAR 独立 CPU 资格
+
+这组入口只使用固定字符串，绝不启动模型。Linux 上分别保存原作者与 schema-child 工程版的
+隔离 configure／build 日志，再用已有作者 Python／Arrow 16.1 ABI 编译同一 qualification driver：
+
+```sh
+PYTHONPATH=code python -m integrations.imlane_duckdb.qualify_varchar build \
+  --author-root "$IMLANE_AUTHOR_ROOT" --method-python "$IMLANE_METHOD_PYTHON" \
+  --duckdb-source "$DUCKDB_SOURCE" --duckdb-build "$DUCKDB_BUILD" \
+  --variant schema-child-engineering --output "$NEW_PRIVATE_BUILD"
+
+PYTHONPATH=code python -m integrations.imlane_duckdb.qualify_varchar run \
+  --build-record "$NEW_PRIVATE_BUILD/build.json" --mode converter --case ownership \
+  --output "$NEW_PRIVATE_RUN"
+
+PYTHONPATH=code python -m integrations.imlane_duckdb.qualify_varchar run \
+  --build-record "$NEW_PRIVATE_BUILD/build.json" --mode sql --case strings --kind process \
+  --author-root "$IMLANE_AUTHOR_ROOT" --method-python "$IMLANE_METHOD_PYTHON" \
+  --output "$NEW_PRIVATE_SQL_RUN"
+```
+
+原版使用 `--variant original-author`，来源与二进制不可混用。每种变体分别执行
+`strings/empty/null/offset/ownership` 五个 case；SQL 再分别执行 `process/thread`，每次新建
+输出目录与 coordinator namespace。现有外层 host lease、资源监督与总期限覆盖整个 worker，
+确认7086空闲；本入口仅限一项构建120秒、一项driver60秒，作者启动和关闭沿用既有 owner，
+不能把driver期限误当整个worker的期限。父监督应留足启动／回收时间并检查最终进程与SHM。
+Mac 直接拒绝 native 运行，不安装或伪造 Linux 依赖。
+
+converter 只有声明，driver 不编译其实现；构建记录必须证明 `nm` 中该符号为 `U`，运行时
+核实 `dladdr` 的真实 DSO 路径及 SHA256。源码variant声明本身仍不代替隔离库构建日志。
+NULL 是真正 Arrow validity，offset 使用非零 slice；长串先检查 DuckDB 是否借用 Arrow
+buffer。若确认借用，释放后不解引用悬垂指针，所有权 case 失败；只有不借用时才验证释放后值。
+SQL 保存实际完整关系；完整关系复制后、校验／文件输出／native析构前取结果时钟，进程退出及
+作者 namespace 清理另记。失败、崩溃或超时不能由回执或正确的中间值改判为通过。
+本入口新增的是可执行资格程序；Linux native 编译、各项 SQL 与退出仍须真实运行后才填写结果。
 
 ## 外层运行资源与回执
 

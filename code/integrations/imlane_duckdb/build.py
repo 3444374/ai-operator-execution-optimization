@@ -25,6 +25,24 @@ from src.infrastructure.redact import redact_text
 AUTHOR = '072f8257db80569e42c9f5727d839587df529652'
 FMT_ORIGINAL = 'set(IMLANE_FMT_PATH "/home/IMLane_main/third_party/fmt/dist")'
 FMT_PORTABLE = 'set(IMLANE_FMT_PATH "" CACHE PATH "IMLane fmt prefix")'
+CONVERTER_HEADER = Path('src/include/prediction/datachunk_converter.hpp')
+SCHEMA_ROOT_CALL = 'ConverArrowAarrayToVector(tbl->chunks[0].children[0], &schema, out)'
+SCHEMA_CHILD_CALL = 'ConverArrowAarrayToVector(tbl->chunks[0].children[0], schema.children[0], out)'
+ORIGINAL_CONVERTER_SHA256 = '3baaa780a905e7a1c26c4b83aeaa6d48bc6a990d38aceb9e81ae4935aab30666'
+SCHEMA_CHILD_SHA256 = 'b361ce33e9ff89e44def48c039a9da2c614dc08b032e3f2eb6d1ec6ea6aafa54'
+
+
+def prepare_converter(copied_source, *, schema_child):
+    """Apply the explicit engineering variant only to a fresh pinned export."""
+    header = copied_source / CONVERTER_HEADER
+    original = header.read_bytes()
+    if hashlib.sha256(original).hexdigest() != ORIGINAL_CONVERTER_SHA256:
+        raise ValueError('converter differs from the pinned original author bytes')
+    if schema_child:
+        header.write_bytes(original.replace(SCHEMA_ROOT_CALL.encode(), SCHEMA_CHILD_CALL.encode()))
+    return dict(variant='schema-child-engineering' if schema_child else 'original-author',
+                path=str(CONVERTER_HEADER), original_sha256=ORIGINAL_CONVERTER_SHA256,
+                prepared=file_identity(header), native_DSO_qualified=False)
 
 
 def _capture(command):
@@ -136,6 +154,7 @@ def prepare(args):
         raise ValueError('pinned DuckDB fmt declaration was not found exactly once')
     modified = original.replace(FMT_ORIGINAL, FMT_PORTABLE)
     cmake.write_text(modified)
+    converter = prepare_converter(copied_source, schema_child=args.schema_child)
     restoration = restore_missing_sources(copied_source, args.upstream_source)
     version_flags, versions = version_options(source)
     configure, compile_library = configure_commands(
@@ -143,7 +162,8 @@ def prepare(args):
     report = dict(
         schema='semloom.imlane-duckdb-prepare.v1', author=author, version=versions,
         source_archive=file_identity(archive), source_subtree='database/duckdb',
-        author_prediction_sources_modified=False, missing_source_restoration=restoration,
+        author_prediction_sources_modified=args.schema_child, converter=converter,
+        missing_source_restoration=restoration,
         portability_patch=dict(path='CMakeLists.txt', old=FMT_ORIGINAL, new=FMT_PORTABLE,
             original_sha256=hashlib.sha256(original.encode()).hexdigest(),
             modified_sha256=hashlib.sha256(modified.encode()).hexdigest()),
@@ -156,7 +176,7 @@ def prepare(args):
     return 0
 
 
-def driver_command(source, prefix, duckdb_source, duckdb_build, output, compiler):
+def driver_command(source, prefix, duckdb_source, duckdb_build, output, compiler, *, driver_source=None):
     includes = [duckdb_source / 'src/include', prefix / 'include', source / 'include',
         source / 'third_party/nanoarrow/dist/include', source / 'third_party/msgpack/include',
         source / 'third_party/concurrentqueue/include', source / 'third_party/libuv/include',
@@ -164,7 +184,7 @@ def driver_command(source, prefix, duckdb_source, duckdb_build, output, compiler
         source / 'third_party/fmt/dist/include', source / 'third_party/boost/dist/include']
     libraries = [duckdb_build / 'src', prefix / 'lib', source / 'third_party/nanoarrow/dist/lib',
                  source / 'third_party/fmt/dist/lib', source / 'third_party/boost/dist/lib']
-    return [compiler, '-std=c++17', '-O2', str(OWNED / 'q3.cpp'), '-o', str(output),
+    return [compiler, '-std=c++17', '-O2', str(driver_source or OWNED / 'q3.cpp'), '-o', str(output),
             *['-I' + str(path) for path in includes], *['-L' + str(path) for path in libraries],
             '-Wl,-rpath,' + ':'.join(map(str, libraries)),
             '-lduckdb', '-ldbendrt_c', '-lfmt', '-lboost_system', '-pthread']
@@ -230,6 +250,8 @@ def main(argv=None):
     preparation.add_argument('--upstream-source', type=Path, required=True,
                              help='local cache of the three exact files in missing_sources.json')
     preparation.add_argument('--jobs', type=_positive, required=True)
+    preparation.add_argument('--schema-child', action='store_true',
+        help='explicit engineering variant: pair the output column with its Arrow child schema')
     compilation = commands.add_parser('driver')
     compilation.add_argument('--root', type=Path, required=True)
     compilation.add_argument('--duckdb-source', type=Path, required=True)
