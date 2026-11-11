@@ -40,7 +40,8 @@ def _deadline(value):
 
 def _configuration(config):
     required = {'model_python', 'model', 'served_model_name', 'dtype', 'engine_options'}
-    if type(config) is not dict or set(config) != required:
+    if (type(config) is not dict or required - config.keys()
+            or config.keys() - (required | {'request_budget'})):
         raise ValueError('model_service requires exactly: ' + ', '.join(sorted(required)))
     if config['dtype'] != 'bfloat16':
         raise ValueError('model service requires dtype bfloat16')
@@ -188,6 +189,8 @@ class ModelService:
             if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700:
                 raise ValueError('IPC socket directory must be owned and mode 0700')
             child = {key: self.config[key] for key in ('model', 'served_model_name', 'dtype', 'engine_options')}
+            if 'request_budget' in self.config:
+                child['request_budget'] = deepcopy(self.config['request_budget'])
             child.update(socket_path=str(self.socket_path), ready_path=str(self.ready_path),
                          shutdown_path=str(self.shutdown_path))
             write_private_json(self.config_path, child)

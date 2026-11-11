@@ -132,6 +132,8 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
   DBEnd函数alias、Arrow16.1及PROCESS／THREAD软件CPU链路和外层清理，2000→120软件COUNT14；后续[模型provider／服务owner／worker](../../integrations/imlane_duckdb/README.md#本地ipc模型接线)已接，准确e420真实作者＋软件HTTP正常／错误CPU闭环完成，GPU仍待验；
   当前本地IPC项目适配共享一个AsyncLLM，作者执行保持，124项CPU通过；完整作者＋软件IPC及真实模型仍单列待验。原Q7模型客户端未公开，不称论文客户端复现；
   固定来源中的SCHEDULE Filter为空实现，不能靠注册该kind声称完成接入。现有records桥不取代该路径。
+  [MMQA Q1 工程版](../../integrations/imlane_duckdb/README.md#mmqa-q1-工程版接线)单独绑定已验
+  varchar-owned DSO，保留原 JSON Extract／完整 sink；25 条 CPU 保存答复回放不授予原作者或新 GPU 资格。
 
 原公开Movie2000输入的Q3为120个模型输入、金标14正面／106负面；本地用金标固定回复通过原评价器，
 只证明数据、结果形状和评价接线，不是模型质量结果。首批两个新API各一次冷查询共240个逻辑请求；

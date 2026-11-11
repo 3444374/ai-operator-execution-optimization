@@ -148,12 +148,14 @@ def persist_relation_observation(directory, report, result, *, primary=None):
             if name == 'author.json':
                 payload = report
             else:
+                import pandas as pd
                 frames = result if isinstance(result, dict) else {'result': result}
                 payload = dict(status=report['status'],
                     full_sink_observed_monotonic_ns=report['full_sink_observed_monotonic_ns'],
                     result_ready_monotonic_ns=report.get('result_ready_monotonic_ns'),
                     native_alive_after_sink=report['native_alive_after_sink'],
-                    frames={label: frame.to_dict(orient='tight') for label, frame in frames.items()})
+                    frames={label: (frame.to_frame() if isinstance(frame, pd.Series) else frame).to_dict(orient='tight')
+                            for label, frame in frames.items()})
             write_private_json(Path(directory) / name, payload)
         except BaseException as error:
             report['status'] = 'failed'

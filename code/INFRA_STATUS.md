@@ -70,8 +70,11 @@ schema-child 和 varchar-owned 工程变体。连同[完整原关系交接](src/
 原接线的 29 项不同 CPU 检查及 14 份保存 sink 关系回放通过。作者原版 Linux 零模型 15 例实际为
 4 过、11 失败：NULL、offset、长字符串借用和 PROCESS 的根 schema 错配已复现；THREAD 字符串
 SQL 实际返回 0 行，不能仅归因于字符串内容。新 varchar-owned 候选处理 child schema、有效位、
-offset 及字符串复制；原头文件语法检查、真实 Arrow C Data 与显式存储替身的 4 项检查通过，
-真实 DuckDB DSO 和 PROCESS／THREAD SQL 仍待资格，不能预先称 THREAD 行数问题已解决。
+offset 及字符串复制；`0f562cf0` 已完成真实 Linux DSO／converter／PROCESS／THREAD 15/15 零模型
+检查，该工程变体的 THREAD strings／null／offset 各 3 行、empty 0 行、ownership 1 行均正确，
+不改记作者原版的失败。新增[MMQA Q1 接线](integrations/imlane_duckdb/README.md#mmqa-q1-工程版接线)
+复用该 DSO、原 JSON prompt/parser、完整关系 sink 和既有 owner；25 条保存答复的完整消息/token、
+关系／评价、25/26 物理预算及双时钟 CPU 检查通过。新薄 driver 的 Linux 链接及 Q1 真实模型仍待验。
 schema-child 仅保留独立候选身份，尚无该变体的目标资格。原版 TINYINT Filter／DOUBLE Map 的已有
 真实结果不受影响；不能用工程变体或 Python fixture 宣称原版 Extract 已支持。新交接要求实际 DuckDB/result
 等待完整 sink ACK 后退出；目标原生生命周期尚待验证。联合 150 行的六题批次只有一个批次时钟，

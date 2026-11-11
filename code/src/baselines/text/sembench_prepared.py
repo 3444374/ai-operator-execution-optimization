@@ -33,8 +33,8 @@ def prepare(query, tokenizer=None):
     return method, prepared, requests
 
 
-def finish(query, method, prepared, predictions, *, on_result_ready=None):
-    """Run original semantics, expose the full sink, then build audit artifacts."""
+def finish_relation(query, method, prepared, predictions):
+    """Run the original parser and full query without post-result audit work."""
     from lotus.sem_ops.postprocessors import extract_postprocess, map_postprocess
     from src.semantic_methods.lotus.filter_answers import parse_filter_answers
 
@@ -69,16 +69,28 @@ def finish(query, method, prepared, predictions, *, on_result_ready=None):
         return dict(frame=operation.result_frame(output_records), parsed_outputs=parsed.outputs)
 
     result, operator = query.execute(original_operator)
-    if on_result_ready is not None:
-        on_result_ready(result)
+    return result, dict(texts=texts, parsed_outputs=None if parsed is None else parsed.outputs,
+                        operator=operator)
+
+
+def audit_relation(prepared, relation):
+    """Describe a completed relation after its caller records the memory sink."""
     # Message digests and relation serialization are audit work, not part of
     # the original parser/query. Keep failures visible to the caller.
     calls = [dict(row, text=text, status='succeeded',
                   messages_sha256=content_digest(json.loads(row['messages_json'])))
-             for row, text in zip(prepared, texts, strict=True)]
-    return result, dict(calls=calls,
-        parsed_outputs=None if parsed is None else parsed.outputs,
-        operator_relation=None if operator is None else result_value(operator['frame']))
+             for row, text in zip(prepared, relation['texts'], strict=True)]
+    operator = relation['operator']
+    return dict(calls=calls, parsed_outputs=relation['parsed_outputs'],
+                operator_relation=None if operator is None else result_value(operator['frame']))
+
+
+def finish(query, method, prepared, predictions, *, on_result_ready=None):
+    """Run original semantics, expose the full sink, then build audit artifacts."""
+    result, relation = finish_relation(query, method, prepared, predictions)
+    if on_result_ready is not None:
+        on_result_ready(result)
+    return result, audit_relation(prepared, relation)
 
 
 def result_value(result):

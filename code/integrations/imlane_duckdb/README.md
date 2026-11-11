@@ -17,6 +17,8 @@
 | [missing_sources.json](missing_sources.json) | 三件必要构建源的准确官方提交、Git blob、SHA256；没有每批源码版本门槛 |
 | [qualify_varchar.py](qualify_varchar.py)、[C++ driver](varchar_qualification.cpp)、[fixture](varchar_fixture.py) | 零模型 VARCHAR 的真实 DSO／PROCESS／THREAD 资格入口；原作者与 schema-child 工程版分开记录 |
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
+| [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
+| [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | MMQA Q1 原题准备／完整 sink，复用既有作者、模型 owner 与监督器；25 次物理预算 |
 
 输入四VARCHAR依次为`occurrence_id/id/reviewId/reviewText`，作者转换器按位置命名`c0..c3`。
 输出为TINYINT，SQL比较`=1`；不走尚未资格的位图Arrow Boolean转换。完整cohort先进入DuckDB；
@@ -258,6 +260,66 @@ ACK用独立新私有路径，已存在ACK不能作为新完成。正常 sink �
 若 sink 已完成而 driver 提前退出，保留 `full_sink_observed_monotonic_ns` 和完整关系，
 标记 `native_alive_after_sink=false`，不接纳 `result_ready_monotonic_ns` 或成功资格。
 本地 C++ publisher检查与保存关系回放不代表真实 DuckDB／Linux 进程生命周期已完成资格。
+
+## MMQA Q1 工程版接线
+
+`0f562cf05eca1ad48d2db2fedeb0313f05356806` 的 `varchar-owned-engineering` 已在 Linux
+通过 15 项真实 DSO／converter／PROCESS／THREAD 零模型检查；DSO SHA256 为
+`5a172f77e9c46fae28f96251d20a022fda472749c1e858b2b2c25262eafa5fdd`。
+作者 `072f8257` 的 4 过／11 失败记录不变，旧 schema-child 未构建。以下 Q1 是该工程变体的
+新任务绑定，不继承其他系统或旧版本的模型成绩；不为不支持的图像等任务增加替代算法。
+
+固定原 SemBench `c814e380` Q1：25 条 text occurrence 全部进入原 Extract formatter，
+原 JSON 生成约束经 `GenerationSpec.kwargs()` 转为 vLLM `StructuredOutputsParams(json_object=True)`；
+其余 generation 原样传入，`n=1`。作者 DuckDB 拥有预测图、batch 和 THREAD／PROCESS 调度；
+薄 Arrow kernel 仅一次调用既有 IPC provider，VARCHAR 原样承载 JSON 文本，不作数字编码或预解析。
+完整 native 投影按 call_id 还原，原 LOTUS parser／index updates／Title–title left join／
+`Role == 'Bob Whitewood'`／director Series 和原 evaluator 保持。无模型答复去重或提前筛选。
+
+使用[配置模板](../../configs/sembench_imlane_mmqa_q1.example.json)，真实路径和机器容量在仓外绑定。
+`engine_options={}` 表示使用该原生服务的默认配置；实际容量／缓存从 owner ready 回执读取，
+不能把模板当作目标环境已一致。既有 Linux DSO 不重建，仅编译新薄 driver 并做实际动态链接探针：
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B code/integrations/imlane_duckdb/build.py sembench-driver \
+  --root "$IMLANE_AUTHOR_ROOT" --duckdb-source "$OWNED_DUCKDB_SOURCE" \
+  --duckdb-build "$OWNED_DUCKDB_BUILD" --duckdb-sha256 "$VERIFIED_DSO_SHA256" \
+  --output "$FRESH_DRIVER"
+
+PYTHONPATH=code "$DRIVER_PYTHON" -B -m src.experiments.native_imlane_sembench check \
+  --config "$Q1_CONFIG" --output "$FRESH_CHECK"
+```
+
+模型运行仅由既有唯一服务器协调者持有 host lease／资源监督后执行：
+
+```sh
+PYTHONPATH=code "$DRIVER_PYTHON" -B -m src.experiments.native_imlane_sembench run \
+  --config "$Q1_CONFIG" --output "$FRESH_RUN" --build-record "$FRESH_DRIVER.build.json" \
+  --author-root "$IMLANE_AUTHOR_ROOT" --method-python "$IMLANE_METHOD_PYTHON" \
+  --kind thread --execute-model
+```
+
+本批仅一冷轮，最多 25 次原生 `generate`，额外预热／自动重试为 0。永久 SQLite 单元先整体
+保留 25，再由模型 worker 在每次实际 `generate` 前消费；第 26 次拒绝，失败／未知不退款。
+发生项和响应按完整消息身份、批内位置及 native call_id 核对，不按异步到达次序配答案。
+25 个冻结 prompt 全部不同；其他输入若破坏该相关性前提会显式拒绝。
+
+两套真实时钟分别保留：`ready_source_to_sink_seconds`（兼容字段 `source_to_sink_seconds`）
+从模型 ready 后的新鲜 CSV／prompt/token 准备开始，包含必需输入／关系传递、原 parser 和完整内存
+sink；`cold_worker_entry_to_sink_seconds` 还包含 worker 预检和模型启动。外层 `timing.json` 再从
+既有 supervisor 的 Popen 前 `started_monotonic` 计算含启动的冷总区间。严格 host controller
+入口未知；不可将 runner 启动边界当作包含 host 预检／取租约。比较时选择双方相同的实际起点，
+不只选择较短值，也不从旧时长减估启动。回执审计、评价、结果持久化和最后关闭都在 sink 后；
+第一必要 native 输入／结果 IPC 仍在查询内，并非零 I/O。
+
+完整查询与启动共用 1200 秒上限，sink／失败后关闭最多 120 秒；既有监督器的 8 秒 grace 包含
+在其 1320 秒总范围内，不额外相加。driver 的 ACK 等待最多 120 秒，外层仍可按原期限终止。
+Q1 结果先保存为原 Series，持久化时转成单列关系，不改变内存查询语义。
+
+本机真实 Unix IPC／Arrow 的 25 条保存答复回放验证消息、完整 token、每源原文、完整 Extract 关系、
+原 sink／evaluator 和 25/26 预算；模型与作者 SQL 是软件替身。当前尚待 Linux 新 driver 编译／
+动态链接、新任务 SQL／实际 vLLM JSON 参数及首次有界模型验证。Mac 缺原作者 Boost 头，
+不通过安装普通 DuckDB 或重建已验 DSO 绕过。旧参考 F1 不记作本次 IMLane 模型质量。
 
 ## 外层运行资源与回执
 
