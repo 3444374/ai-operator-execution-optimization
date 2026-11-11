@@ -13,12 +13,13 @@ from unittest.mock import patch
 from integrations.imlane_duckdb import model_service, model_provider
 from src.experiments import native_imlane_filters as binding
 from src.infrastructure.private_artifacts import file_identity, new_private_directory, read_json, write_private_json
-from tests.baselines.text.replay_imlane_movie_filters import reference
+from tests.baselines.text.replay_imlane_movie_filters import reference, bridge_q3_reference
 
 
 def prepare_fixture(config, original_run):
     query, method, prepared, requests, tokens, rows = binding.prepare_query(config)
-    frozen = reference(original_run, config['query_id'])
+    frozen = (bridge_q3_reference(original_run, config) if config['query_id'] == '3'
+              else reference(original_run, config['query_id']))
     assert [r['messages'] for r in requests] == frozen['messages']
     assert [(r['title'],r['text']) for r in rows] == frozen['labels_and_texts']
     return dict(rows=[dict(r,token_ids=t,generated_text=text)
@@ -29,14 +30,15 @@ def prepare_fixture(config, original_run):
 def run(args):
     if sys.platform != 'linux':
         raise RuntimeError('native Filter DSO/SQL gate requires Linux; local parser tests are not SQL qualification')
-    config = read_json(args.config)
-    if config['schema'] != binding.MOVIE_SCHEMA or config['query_id'] != '2':
-        raise ValueError('first native gate is independently full Movie Q2, 120 occurrences')
+    config, _generation = binding.configuration(read_json(args.config))
+    if config['schema'] != binding.MOVIE_SCHEMA:
+        raise ValueError('this gate requires one explicitly bound original Movie Filter query')
+    expected = config['max_model_calls']
     # Fail stale native driver before any owner or software service allocation.
     binding.verified_build(args.build_record)
     root = args.output.resolve(); new_private_directory(root)
     config['model_service'] = dict(model_python=sys.executable,model=config['tokenizer'],
-        served_model_name='imlane-zero-model-q2',dtype='bfloat16',engine_options={})
+        served_model_name='imlane-zero-model-movie',dtype='bfloat16',engine_options={})
     fixture = prepare_fixture(config,args.original_run)
     fixture_path = root/'fixture.json';write_private_json(fixture_path,fixture)
     args.output = root/'worker'
@@ -78,10 +80,10 @@ def run(args):
     software = read_json(args.output/'model-service/software-service-final.json')
     if args.case == 'complete':
         if failure is not None: raise failure
-        assert worker['status']=='completed' and software['software_generate']==120
-        assert worker['budget']['consumed_requests']==120
+        assert worker['status']=='completed' and software['software_generate']==expected
+        assert worker['budget']['consumed_requests']==expected
         assert worker['native_alive_after_sink'] and worker['sink_release']['outcome']=='complete'
-        assert len(software['calls'])==len({c['occurrence_id'] for c in software['calls']})==120
+        assert len(software['calls'])==len({c['occurrence_id'] for c in software['calls']})==expected
     else:
         native = read_json(args.output/'query.json')
         assert failure is not None and worker['status']=='failed'
@@ -90,7 +92,8 @@ def run(args):
         assert software['software_generate']==worker['budget']['consumed_requests']==0
         assert not list((args.output/'model-calls').glob('*.started.json'))
     assert software['completed'] and not software['active_requests'] and not software['socket_exists']
-    result=dict(status='passed',case=args.case,real_models=0,software_generate=software['software_generate'],
+    result=dict(status='passed',case=args.case,query_id=config['query_id'],expected_occurrences=expected,
+        original_reply_reference=fixture['original_reference'],real_models=0,software_generate=software['software_generate'],
         native_DSO_SQL_executed=True,original_UDF_and_Arrow=True,real_Unix_IPC=True,
         full_original_sink_ACK_verified=args.case=='complete',source_identity=config['input_sha256'],
         build_record=file_identity(args.build_record),external_host_resource_verification_required=True)
