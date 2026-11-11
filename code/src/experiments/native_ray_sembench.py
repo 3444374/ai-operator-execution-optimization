@@ -44,7 +44,7 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
         if query.files != checked_query.files:
             raise ValueError('native Ray fresh source differs from checked input identity')
         method, prepared, requests = prepare(query)
-        report.update(query=query.describe(), model_calls=len(requests), prepare_finished_ns=time.monotonic_ns())
+        report.update(query=query.describe(), logical_requests=len(requests), prepare_finished_ns=time.monotonic_ns())
         spec = config['ray_native']
         value = config['budget']
         ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
