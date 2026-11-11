@@ -2,6 +2,33 @@
 
 本目录源自2026-10-25 r3适配。维护版将客户端接入中性生命周期与公共计时，并将新运行绑定改为作者CLI默认解析；旧运行的固定容量配置和成绩保留历史身份。本目录没有注册新的默认后端，也不包含作者服务、模型或数据。作者源码固定为`05024f027f932c0e398852e38302be30b9015481`，原生引擎属于vLLM0.13.0rc4分支。
 
+## 内存结果边界
+
+`NativeQueryDriver.query()` 在原生 HTTP 响应解析、发生项索引／模型／返回数量校验，以及原
+`MovieTask.result_frame()` 的完整投影或聚合完成后，立即记录
+`backend_report.memory_sink_timing.memory_sink_ready_ns`，随后发布 `memory_sink_ready` 事件。
+统一查询时间从外层 `query_start_ns` 到这个客户端单调时钟；不从旧 `answer_ready_s` 扣除估计开销。
+作者 HTTP handler 会等待完整 `processor.execute()` 后才返回所有存活 context，客户端只恢复
+原生 `idx` 对应的发生项，不改变 Filter parser、调用预算、HTTP 模型路径、pin 或 KV 策略。
+
+`semloom.kalypso_memory_sink.v1` 的 `phases` 分别记录 source／必需输入、HTTP＋JSON 解析、
+原关系生成、trace 审计、结果编码、评价和审计持久化的起止时间、秒数及状态。
+`native-input.csv` 是作者服务实际消费的执行输入，仍在 source 内写入；request／occurrences、
+response body／HTTP clock、决策和质量文件在 sink 之后保存。独立写入失败会继续保存其余证据，
+同时令查询失败；原始查询异常不会被后续写入异常替换。
+
+trace 完整发生项、request ID 和 model UID 核对在 sink 后执行，审计失败保留已观测的 sink，
+但最终查询仍失败，不能据此产生合格成绩。旧 `result_ready` 仍位于审计和编码完成之后；历史
+时长不改写。`HTTP-clock.json` 新版 `semloom.kalypso_http_clock.v2` 只计响应读取／关闭，明确
+排除 JSON 解析和文件持久化。
+
+现有私有 Map／MMQA 查询重载 `query()` 并继承 `post()`，后者默认仍同步保存 HTTP 证据。
+这些入口未迁移时不能使用本次内存 sink 资格；只在迁移的 query 内开启延迟持久化。退役该兼容
+行为的条件是所有实际调用者都采用显式内存 sink，并在新私有副本完成回归，不能修改冻结包。
+此目录的 Filter 绑定不是 Kalypso 已完成题目的全集；既有 Movie Map 和 MMQA 私有运行另外保留
+其原生入口与历史结果。本次[受控时钟测试](../../../../../tests/baselines/text/test_kalypso_memory_sink.py)
+仅验证本地顺序、输出和失败证据，不授予新的作者环境或 GPU 资格。
+
 `adapter.py`只负责输入、完整发生项核验、源序恢复和观测接入；作者服务继续拥有Filter执行、生成设置、批处理和调度。原生parser以结果不含`false`判通过，与LOTUS不同。`native_server.py`保留实际worker模型元数据及物理设备旁录；客户端关闭不代表服务退出。`cpu_native.py`需要已有作者环境和模型tokenizer；本次没有安装或启动它们。
 
 attached比较流程与CLI维护在`src/experiments/kalypso_query_lifecycle.py`，查询脚本`run_kalypso_sembench_query.py`直接调用该模块。`adapter.py`保留作者服务客户端，不导入实验编排。旧`adapter.run_attached`与原模块CLI可从Git提交`5b25197dafc03d6ae7fa48e7c0f7460122e85e51`的完整树恢复。
