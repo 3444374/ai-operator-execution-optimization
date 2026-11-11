@@ -2717,8 +2717,8 @@
     },
     {
       "public_file": "second-review-20261111.json.gz",
-      "public_bytes": 25342,
-      "public_sha256": "863c240f2124c56b954c68f81bd8595ec49addc60e0b897d5cb650f6d7743538",
+      "public_bytes": 26231,
+      "public_sha256": "8a7b35ae96ab332d2af0c86cfc0458d3b99c45b4ad9eeda375abe037efd59d6f",
       "sources": [
         {
           "artifact": "capture-after.log",
@@ -2854,6 +2854,11 @@
           "artifact": "standards/verify_pipeline_retry_identity.py",
           "bytes": 3209,
           "sha256": "7dba25469cf559a29ce6fe044c39afcd574a93f43c975c99a95afaebfd39977c"
+        },
+        {
+          "artifact": "capture-simplification-final.log",
+          "bytes": 1524,
+          "sha256": "9a7d290f22a3b108b1bc4c8c9da3e28ad441cbec6fc94f41d291eb523c43b0f6"
         }
       ],
       "source_run_id": "semloom-final-code-review-20261111"

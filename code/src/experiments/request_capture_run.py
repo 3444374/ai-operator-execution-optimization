@@ -53,15 +53,14 @@ def run_capture(config, ledger, *, process_type=AsyncEngineProcess):
         for event in owner.poll(max_events=limits.result_slots):
             received_events += 1
             confirmed_events += int(event.engine_terminal_confirmed)
-            expected = event.request_id in pending
-            pending.discard(event.request_id)
+            pending.remove(event.request_id)
             if event.result is not None:
                 calls.append(event.result)
-            if (not expected or not event.engine_terminal_confirmed or event.result is None
+            if (not event.engine_terminal_confirmed or event.result is None
                     or event.result['status'] != 'succeeded'):
                 failed.append(dict(request_id=event.request_id, identity=event.identity,
                     engine_terminal_confirmed=event.engine_terminal_confirmed,
-                    error_type=event.error_type if expected else 'UnexpectedTerminalReceipt'))
+                    error_type=event.error_type))
         if failed:
             report.setdefault('terminal_failures', []).extend(failed)
         return failed
