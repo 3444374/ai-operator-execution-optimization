@@ -78,6 +78,9 @@ class ImagePreparationAhead:
     def close(self):
         if self.closed:
             return
+        # Cancel the whole queued frontier before waiting for any running item.
+        for future in self.pending.values():
+            future.cancel()
         for key in tuple(self.pending):
             self.discard(key)
         self.executor.shutdown(wait=True)
