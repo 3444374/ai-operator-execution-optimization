@@ -284,6 +284,21 @@ class OriginalRelationSinkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'occurrence coverage'):
             relation.finish_movie_scores(native, query, sources)
 
+    def test_original_movie_q9_keeps_full_duplicate_projection_without_grouping(self):
+        pd.DataFrame(dict(reviewId=['duplicate', 'duplicate', 'third'],
+            id=['ant_man_and_the_wasp_quantumania'] * 3,
+            reviewText=['first', 'second', 'third'])).to_csv(self.root / 'Reviews.csv', index=False)
+        query = self.query('movie', '9')
+        sources = [dict(occurrence_id='r' + str(i), id=row['id'], reviewId=row['reviewId'], source_position=i)
+                   for i, row in query.operation.frame.iterrows()]
+        native = dict(return_type='DOUBLE', full_projection_materialized=True, source_rows=3,
+            mapped_occurrences=[dict(source, score=score) for source, score in zip(sources, [1., 5., 2.], strict=True)])
+        native['mapped_occurrences'].reverse()
+        frame = relation.finish_movie_scores(native, query, sources)
+        self.assertEqual(frame['reviewId'].tolist(), ['duplicate', 'duplicate', 'third'])
+        self.assertEqual(frame['reviewScore'].tolist(), [1., 5., 2.])
+        self.assertEqual(len(frame), 3)
+
     def test_joint_original_mmqa_title_sinks_use_native_membership_and_source_order(self):
         bindings, accepted = {}, []
         for group, code in enumerate(('3b', '3c')):

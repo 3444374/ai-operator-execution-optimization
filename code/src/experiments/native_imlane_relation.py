@@ -221,11 +221,11 @@ def finish_mmqa_filters(native, bindings):
 
 
 def finish_movie_scores(native, query, source_rows):
-    """Apply the original Movie Q10 grouped sink to actual native DOUBLE scores."""
-    if (query.scenario != 'movie' or query.query != '10'
+    """Apply original Movie Q9 projection or Q10 grouped sink to native DOUBLE scores."""
+    if (query.scenario != 'movie' or query.query not in ('9', '10')
             or query.operation.stage.kind != 'map' or native['return_type'] != 'DOUBLE'
             or native['full_projection_materialized'] is not True):
-        raise ValueError('this sink requires a complete native Movie Q10 DOUBLE Map projection')
+        raise ValueError('this sink requires a complete native Movie Q9/Q10 DOUBLE Map projection')
     values = {row['occurrence_id']: row for row in native['mapped_occurrences']}
     if (len(values) != len(native['mapped_occurrences']) or len(values) != len(source_rows)
             or native['source_rows'] != len(source_rows)

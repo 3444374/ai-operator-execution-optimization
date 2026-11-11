@@ -228,7 +228,7 @@ header 应用补丁，用作者 DuckDB headers 做 C++ 语法检查，再将同�
 `run_relation_query` 复用现有 `DuckDBScope`、owner、`QueryWindow` 与外层资源监督。
 它在作者 scope 内读取原子发布的 `query.json`，从 native relation 执行原 sink、记完整结果时钟，
 然后发布 ACK、等待 driver 实际退出，最后做回执审计与作者关闭。`finish_mmqa_filters` 绑定
-MMQA Q3a–g 的原 title sink 和 Q6a–c 的原 Airlines sink，`finish_movie_scores` 只绑定 Movie Q10 原分组 sink；它们分别消费
+MMQA Q3a–g 的原 title sink 和 Q6a–c 的原 Airlines sink，`finish_movie_scores` 绑定 Movie Q9 原完整评分投影和 Movie Q10 原分组 sink；它们分别消费
 `accepted_occurrences` 与 `mapped_occurrences.score`，不从模型回执重建结果。
 Filter 成员由 native 决定，原输入 occurrence 顺序决定恢复顺序；不按 native 返回顺序、title
 排序或去重。服务 `check()` 只检查存活与期限，逐请求 terminal／receipt 遍历放到 `audit()`。
