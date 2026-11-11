@@ -67,14 +67,28 @@ export LITELLM_LOCAL_MODEL_COST_MAP=True
 
 `Q7_SOURCE` must equal the frozen `source`. [runner.py](runner.py) reads the bound
 file and constructs [StageSupervisor](host_adapter.py) from `host_adapter`.
-Each native stage uses `native_python`, then must establish worker exit, physical
-idle, resource acceptance, owned-process exit and private-socket cleanup before
-the next stage or sink. The adapter uses the pinned host/socket helpers and the
+Each native stage uses `native_python`. The first must establish worker exit,
+physical idle, resource acceptance, owned-process exit and private-socket cleanup
+before the second starts. The final stage publishes its complete predictions
+atomically and holds its public Ray runtime until the original query returns its
+complete City result. The driver records that memory-sink timestamp and sends an
+explicit release; only then does the final worker call `ray.shutdown()` and the
+same supervisor finish physical cleanup. The adapter uses the pinned host/socket helpers and the
 maintained [inactive semaphore cleanup](../../../observability/process_resources/inactive_semaphores.py).
 The host/resource checks reject foreign or unknown ownership before unlinking.
 Private `TMPDIR`, `VLLM_RPC_BASE_PATH` and `RAY_TMPDIR` are per stage and restored
 afterward. The outer lease stays held across both stages. A stage timeout is
 separate from the mandatory outer query deadline.
+
+The final prediction/release exchange is bounded by the existing stage timeout;
+waiting for the driver does not restart the supervisor's timeout. The driver runs
+that existing supervisor in one thread, retaining its process ownership and
+cleanup rules. Parser failure releases the final worker with an abort. Native,
+audit, close or host-cleanup failure fails the query and preserves available raw
+predictions and `QUERY-failure.json`; a sink already observed is retained, not
+published as a successful run. Stale input, prediction or release files are
+rejected before dispatch. The public runtime hold does not change Ray Data's
+internal actor lifetime or establish that its model engine remains resident.
 
 ## Evidence and timing
 
@@ -84,9 +98,13 @@ missing, duplicate, error or unconfirmed request. Request IDs are local to an
 owner; correlate PID/request ID and ledger attempt. `QUERY.json` completion alone
 does not establish final physical resource acceptance.
 
-The fresh-source-to-sink interval includes source work, both startups, IPC/native
-work, public Ray closes and inter-stage project cleanup. Sink is the complete
-original City result, before evaluation and report persistence. Supervised Popen,
+The fresh-source-to-sink interval includes source work, both startups, required
+input/prediction transport, native work, the first public Ray close and necessary
+inter-stage cleanup. Its endpoint is the original complete in-memory City
+result, before the final public Ray close, final host cleanup, message-summary
+audit, evaluation, result serialization and report persistence. This is not a
+zero-I/O execution profile: the existing native workers consume input files and
+return predictions through files. Supervised Popen,
 runner entry, native constructor return, request events and physical exit have
 separate clocks. Full controller entry and first engine admission remain unknown
 in this runner; request spans are not pure GPU time. The common definitions are
@@ -99,6 +117,8 @@ Qualification scope:
   identity checks. Its two native stages each left a 32-byte semaphore and four
   inactive sockets requiring project-owned cleanup. This is a qualification run,
   not a single-owner warm or formal performance result.
+  Its historical query clock included both stage closes and host cleanup; the
+  new memory-sink interval cannot be reconstructed from that old clock.
 - The maintained cleanup migration at `4e8f0a0354fcfef4857e4c2000107de322372eb1`
   passed target Linux imports, mocked cases and a real self-created POSIX
   semaphore close/unlink. Its first fixture was correctly rejected because the
@@ -111,6 +131,11 @@ Qualification scope:
   and `ray-q7-cleanup-main-target-cpu-20261110-r2/HANDOFF.json` (SHA256
   `3cb5b387ba24c8529e7898877a03b332a9c6229358b172d5553b308b35f19d93`).
   Original success/failure outputs retain their source and execution identities.
+- The final-stage release change has CPU order/failure checks and a real local
+  CPU-child handoff through the unchanged supervisor. Ray, GPU and physical-host
+  receipt fields in these fixtures are not target-runtime qualifications. The
+  changed final-owner/cleanup ordering still needs a bounded target qualification;
+  the earlier 128 model results do not establish it.
 
 ## Zero-model checks
 
@@ -130,3 +155,18 @@ answers. Processor checks native message/token/pixel identity and the shared
 128/129 boundary. Hook checks export/install in an actual Ray CPU worker without
 engine construction or CUDA initialization. Outputs and native SDK provenance
 are qualification evidence, not model results. Host cleanup is checked separately.
+
+For the handoff and failure checks, run from the maintained checkout with the
+existing driver environment. This starts only a local CPU child; process-tree
+inspection permission is required by the unchanged supervisor.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code LITELLM_LOCAL_MODEL_COST_MAP=True \
+  HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
+  "$DRIVER_PYTHON" -B -m unittest tests.test_ray_animals_q7 tests.test_ray_animals_q7_sink -v
+```
+
+The tests use software Ray/host receipts and cover the original binding callback,
+final ACK, required first-stage cleanup, aborted parsing, post-sink audit/close
+failures, unconfirmed exits, empty results, stale handoffs and timeout. They do
+not load a model or replace the target image/token and physical cleanup gates.

@@ -1,13 +1,36 @@
 """Thin supervised one-cold-Q7 entrypoint; no lease or scheduling replacement."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import gzip
 import json
 import os
 from pathlib import Path
-import subprocess
-import sys
 import time
+
+from src.infrastructure.private_artifacts import publish_private_json, write_private_json
+from src.infrastructure.redact import redact_text
+
+
+FINAL_RELEASE = 'final-stage-release.json'
+
+
+def wait_for_final_release(root, timeout_s):
+    """Hold the materialized native owner until the original complete sink exists."""
+    deadline = time.monotonic() + timeout_s
+    path = root / FINAL_RELEASE
+    while not path.exists():
+        if time.monotonic() >= deadline:
+            raise TimeoutError('Q7 final owner did not receive a result handoff within its stage budget')
+        time.sleep(.01)
+    value = json.loads(path.read_text())
+    if value.get('action') != 'complete' or type(value.get('sink_ready_monotonic_ns')) is not int:
+        raise RuntimeError('Q7 original query aborted before its final owner was released')
+    observed = time.monotonic_ns()
+    if not 0 <= value['sink_ready_monotonic_ns'] <= observed:
+        raise ValueError('Q7 sink clock follows native release acceptance')
+    publish_private_json(root / 'final-stage-handoff.json', dict(**value,
+        release_observed_monotonic_ns=observed, worker_pid=os.getpid()))
 
 
 def event(root, kind, **fields):
@@ -57,7 +80,10 @@ def native_stage(root, stage, bound):
     expected = {'official-ray-0.22': '0.22.0', 'unified-candidate-0.25.1': '0.25.1'}
     if versions['ray'] != '2.56.1' or versions['vllm'] != expected[config['runtime_profile']]:
         raise ValueError('Native runtime does not match selected profile')
+    if (root / f'predictions-{stage}.json').exists() or (stage == 1 and (root / FINAL_RELEASE).exists()):
+        raise ValueError('Q7 native stage refuses stale prediction or release evidence')
     event(root, 'native_worker_entered', stage=stage, versions=versions)
+    failure = None
     try:
         ray.init(address='local', num_cpus=bound['num_cpus'], num_gpus=bound['num_gpus'],
                  object_store_memory=bound['object_store_memory'], include_dashboard=False,
@@ -68,11 +94,28 @@ def native_stage(root, stage, bound):
             event(root, 'native_pipeline_entered', stage=stage)
             predictions = execute(rows, bound['model'])
         event(root, 'native_pipeline_returned', stage=stage)
-        (root / f'predictions-{stage}.json').write_text(json.dumps(predictions))
+        publish_private_json(root / f'predictions-{stage}.json', predictions)
+        if stage == 1:
+            wait_for_final_release(root, bound['host_adapter']['stage_timeout_s'])
+    except BaseException as error:
+        failure = error
+        raise
     finally:
-        event(root, 'public_ray_close_started', stage=stage)
-        ray.shutdown()
-        event(root, 'public_ray_close_finished', stage=stage, disconnected=not ray.is_initialized())
+        close_started = time.monotonic_ns()
+        try:
+            try:
+                event(root, 'public_ray_close_started', stage=stage)
+            finally:
+                ray.shutdown()
+            close_finished = time.monotonic_ns()
+            event(root, 'public_ray_close_finished', stage=stage, disconnected=not ray.is_initialized())
+            publish_private_json(root / f'native-close-{stage}.json', dict(
+                started_monotonic_ns=close_started, finished_monotonic_ns=close_finished,
+                disconnected=not ray.is_initialized()))
+        except BaseException as closing:
+            if failure is None:
+                raise
+            failure.add_note('native close also failed: ' + redact_text(str(closing)))
 
 
 def run_query(root, bound, supervise_stage=None):
@@ -80,36 +123,132 @@ def run_query(root, bound, supervise_stage=None):
         raise RuntimeError('Per-stage host supervision and physical-exit capability required; direct launch disabled')
     from .binding import run
     from src.baselines.image.sembench_animals import AnimalsDataset
+    stale = [name for name in (FINAL_RELEASE, 'QUERY.json', 'QUERY-failure.json',
+        'input-0.json.gz', 'input-1.json.gz', 'predictions-0.json', 'predictions-1.json',
+        'final-stage-handoff.json', 'native-close-0.json', 'native-close-1.json') if (root / name).exists()]
+    if stale:
+        raise ValueError('Q7 requires fresh query paths; existing evidence: ' + ', '.join(stale))
+    query_entered = event(root, 'fresh_source_query_entered')
     manifest = Path(bound['manifest'])
     dataset = AnimalsDataset(Path(bound['checkout']), manifest, bound['manifest_digest'])
-    stage = 0
+    stage, final_future, pool, frame, failure = 0, None, None, None, None
+    report = dict(status='failed', result=None, quality=None, passes=[],
+        timing=dict(query_entered_monotonic_ns=query_entered, sink_ready_monotonic_ns=None,
+            source_to_sink_seconds=None), controller_entry_monotonic_ns=None,
+        first_engine_accept_monotonic_ns=None, stage_lifecycle=[],
+        lifecycle='two sequential native workers; final owner released after complete original City sink',
+        source_to_sink_scope='fresh source, both startups, required transport and first-stage cleanup; excludes final teardown, audit, evaluation and persistence',
+        request_span_is_GPU_time=False, warmup=0, retries=0, logical_occurrences=128)
+
+    def confirm(receipt, current):
+        required = ('worker_exit_zero', 'physical_idle', 'resource_passed', 'owned_processes_exited', 'private_sockets_clear')
+        if not isinstance(receipt, dict) or any(receipt.get(key) is not True for key in required):
+            event(root, 'stage_exit_unconfirmed', stage=current)
+            raise RuntimeError('Native stage physical exit unconfirmed; retain outputs and stop Q7')
+        write_private_json(root / f'lifecycle-{current}.json', receipt)
+        report['stage_lifecycle'].append(dict(stage=current, receipt=receipt))
+        event(root, 'stage_physical_exit_confirmed', stage=current)
+
     def execute(rows):
-        nonlocal stage
+        nonlocal stage, final_future, pool
         current = stage
         stage += 1
         with gzip.open(root / f'input-{current}.json.gz', 'wt') as stream:
             json.dump(rows, stream)
         event(root, 'stage_worker_launch', stage=current)
-        receipt = supervise_stage([bound['native_python'], '-m', __package__ + '.runner', str(root),
-                                   '--native-stage', str(current)], current, root)
-        # Only the existing host supervisor can establish descendant/GPU/SHM exit.
-        required = ('worker_exit_zero', 'physical_idle', 'resource_passed', 'owned_processes_exited', 'private_sockets_clear')
-        if not isinstance(receipt, dict) or any(receipt.get(key) is not True for key in required):
-            event(root, 'stage_exit_unconfirmed', stage=current)
-            raise RuntimeError('Native stage physical exit unconfirmed; retain outputs and stop Q7')
-        (root / f'lifecycle-{current}.json').write_text(json.dumps(receipt, indent=2))
-        event(root, 'stage_physical_exit_confirmed', stage=current)
+        command = [bound['native_python'], '-m', __package__ + '.runner', str(root),
+                   '--native-stage', str(current)]
+        if current == 0:
+            # The second model must not start until the first lifecycle is clean.
+            confirm(supervise_stage(command, current, root), current)
+        elif current == 1:
+            deadline = time.monotonic() + bound['host_adapter']['stage_timeout_s']
+            pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='q7-final-supervisor')
+            final_future = pool.submit(supervise_stage, command, current, root)
+            prediction = root / 'predictions-1.json'
+            while not prediction.exists():
+                if final_future.done():
+                    final_future.result()  # Preserve the original supervisor failure.
+                    raise RuntimeError('Final native stage exited before publishing its predictions')
+                if time.monotonic() >= deadline:
+                    raise TimeoutError('Q7 final predictions exceeded the existing stage budget')
+                time.sleep(.01)
+            if final_future.done():
+                final_future.result()
+                raise RuntimeError('Final native owner exited before the complete City sink')
+        else:
+            raise ValueError('Q7 cannot dispatch more than its two declared stages')
         return json.loads((root / f'predictions-{current}.json').read_text())
-    query_entered = event(root, 'fresh_source_query_entered')
-    result, quality, passes, timing = run(dataset, execute)
-    report = dict(status='completed', result=result.to_dict(orient='split'), quality=quality,
-                  passes=passes, timing=dict(query_entered_monotonic_ns=query_entered, **timing),
-                  controller_entry_monotonic_ns=None, first_engine_accept_monotonic_ns=None,
-                  lifecycle='two sequential native workers; each owns a fresh Ray runtime/processor; no shared-engine claim',
-                  request_span_is_GPU_time=False, warmup=0, retries=0, logical_occurrences=128)
-    event(root, 'report_persistence_started')
-    (root / 'QUERY.json').write_text(json.dumps(report, indent=2))
-    event(root, 'report_persistence_finished')
+
+    def accept(result, sink_ready):
+        nonlocal frame, final_future
+        frame = result
+        report['timing'].update(sink_ready_monotonic_ns=sink_ready,
+            source_to_sink_seconds=(sink_ready-query_entered)/1e9)
+        if final_future is None or final_future.done():
+            if final_future is not None:
+                final_future.result()
+            raise RuntimeError('Q7 final owner is not held at the complete City sink')
+        event(root, 'full_memory_sink_ready', sink_ready_monotonic_ns=sink_ready)
+        publish_private_json(root / FINAL_RELEASE, dict(action='complete', sink_ready_monotonic_ns=sink_ready))
+        future = final_future
+        final_future = None
+        receipt = future.result()
+        confirm(receipt, 1)
+        handoff = json.loads((root / 'final-stage-handoff.json').read_text())
+        close = json.loads((root / 'native-close-1.json').read_text())
+        if (handoff['sink_ready_monotonic_ns'] != sink_ready or
+                not sink_ready <= handoff['release_observed_monotonic_ns'] <= close['started_monotonic_ns']):
+            raise ValueError('Final native release/close does not follow the original City sink')
+        report['timing'].update(final_release_observed_monotonic_ns=handoff['release_observed_monotonic_ns'],
+            final_close_started_monotonic_ns=close['started_monotonic_ns'],
+            final_close_finished_monotonic_ns=close['finished_monotonic_ns'])
+
+    try:
+        result, quality, passes, timing = run(dataset, execute, on_result_ready=accept)
+        if report['timing']['sink_ready_monotonic_ns'] is None:
+            raise RuntimeError('Original Q7 query omitted its complete memory-sink callback')
+        report.update(status='completed', quality=quality, passes=passes)
+        report['timing'].update(timing)
+    except BaseException as error:
+        failure = error
+    finally:
+        if final_future is not None:
+            try:
+                if not (root / FINAL_RELEASE).exists():
+                    publish_private_json(root / FINAL_RELEASE, dict(action='abort'))
+                confirm(final_future.result(), 1)
+            except BaseException as closing:
+                if failure is None:
+                    failure = closing
+                else:
+                    failure.add_note('final supervision also failed: ' + redact_text(str(closing)))
+        if pool is not None:
+            pool.shutdown(wait=True)
+    try:
+        if frame is not None:
+            report['timing']['serialization_started_monotonic_ns'] = time.monotonic_ns()
+            report['result'] = frame.to_dict(orient='split')
+            report['timing']['serialization_finished_monotonic_ns'] = time.monotonic_ns()
+    except BaseException as serializing:
+        if failure is None:
+            failure = serializing
+        else:
+            failure.add_note('result encoding also failed: ' + redact_text(str(serializing)))
+    if failure is not None:
+        report.update(status='failed', failure=dict(type=type(failure).__name__, message=redact_text(str(failure))))
+        failure.query_report = report
+    try:
+        event(root, 'report_persistence_started')
+        write_private_json(root / ('QUERY.json' if failure is None else 'QUERY-failure.json'), report)
+        event(root, 'report_persistence_finished')
+    except BaseException as recording:
+        if failure is None:
+            recording.query_report = dict(report, status='failed')
+            raise
+        failure.add_note('query recording also failed: ' + redact_text(str(recording)))
+    if failure is not None:
+        raise failure
     return report
 
 

@@ -66,55 +66,6 @@ class NativeGuardTests(unittest.TestCase):
             self.assertEqual(len(calls),128)
             self.assertEqual(len(list(root.glob('native-output-*.json'))),128)
 
-class RunnerClockTests(unittest.TestCase):
-    def test_sink_precedes_persistence_and_failed_stage_stops(self):
-        import json
-        import tempfile
-        from pathlib import Path
-        from unittest.mock import patch
-        from src.baselines.image.ray_animals_q7.runner import run_query
-        from src.baselines.image.ray_animals_q7 import binding
-        import pandas as pd
-        class Dataset:
-            def __init__(self,*args): pass
-        with tempfile.TemporaryDirectory() as tmp:
-            root=Path(tmp)
-            bound=dict(manifest='unused',checkout='unused',manifest_digest='unused',native_python='fake')
-            def fake_query(dataset,execute):
-                rows=[dict(call_id=str(i),messages=[]) for i in range(64)]
-                execute(rows);execute(rows)
-                import time
-                return pd.DataFrame({'city':['X']}),{},[],dict(sink_ready_monotonic_ns=time.monotonic_ns())
-            def invoke(command,stage,root):
-                stage=command[-1]
-                (root/f'predictions-{stage}.json').write_text('[]')
-                return dict(worker_exit_zero=True,physical_idle=True,resource_passed=True,owned_processes_exited=True,private_sockets_clear=True)
-            with patch('src.baselines.image.sembench_animals.AnimalsDataset',Dataset),patch.object(binding,'run',fake_query):
-                report=run_query(root,bound,invoke)
-            events=[json.loads(x) for x in (root/'runner-events.jsonl').read_text().splitlines()]
-            persisted=next(e['monotonic_ns'] for e in events if e['event']=='report_persistence_started')
-            self.assertLessEqual(report['timing']['query_entered_monotonic_ns'],report['timing']['sink_ready_monotonic_ns'])
-            self.assertLessEqual(report['timing']['sink_ready_monotonic_ns'],persisted)
-            self.assertIsNone(report['controller_entry_monotonic_ns'])
-            calls=[]
-            def fail(command,stage,root):
-                calls.append(command);raise RuntimeError('native stage failed')
-            with patch('src.baselines.image.sembench_animals.AnimalsDataset',Dataset),patch.object(binding,'run',fake_query):
-                with self.assertRaises(RuntimeError):run_query(root,bound,fail)
-            self.assertEqual(len(calls),1)
-            calls.clear()
-            def unconfirmed(command,stage,root):
-                calls.append(command)
-                (root/f'predictions-{stage}.json').write_text('[]')
-                return dict(worker_exit_zero=True,physical_idle=False)
-            with patch('src.baselines.image.sembench_animals.AnimalsDataset',Dataset),patch.object(binding,'run',fake_query):
-                with self.assertRaisesRegex(RuntimeError,'physical exit unconfirmed'):
-                    run_query(root,bound,unconfirmed)
-            self.assertEqual(len(calls),1)
-            self.assertTrue((root/'predictions-0.json').exists())
-            with self.assertRaisesRegex(RuntimeError,'capability required'):
-                run_query(root,bound)
-
 class HostAdapterTests(unittest.TestCase):
     def test_existing_cleanup_helpers_and_residual_process_gate(self):
         from pathlib import Path

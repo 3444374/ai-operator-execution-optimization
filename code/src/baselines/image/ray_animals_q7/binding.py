@@ -1,6 +1,5 @@
 """Q7 thin binding: original LOTUS query owns both filters and ordinary sink.
 
-No launcher is provided until full CPU image/token qualification is complete.
 The caller supplies the qualified native Ray executor and global 128-call guard.
 """
 from copy import deepcopy
@@ -29,6 +28,7 @@ class TwoPassBinding:
     def __init__(self, execute):
         self.execute = execute
         self.passes = []
+        self.messages = []
 
     def __call__(self, messages):
         stage = len(self.passes)
@@ -37,8 +37,8 @@ class TwoPassBinding:
         rows = [dict(call_id=f'q7-pass-{stage}-row-{i}', messages=deepcopy(message))
                 for i, message in enumerate(messages)]
         # Spend before dispatch: a failed stage must not be retried on this object.
-        self.passes.append(dict(stage=stage, message_sha256=[message_digest(m) for m in messages],
-                                status='dispatched'))
+        self.passes.append(dict(stage=stage, status='dispatched'))
+        self.messages.append([row['messages'] for row in rows])
         result = reconcile(rows, self.execute(rows))
         self.passes[-1]['status'] = 'complete'
         return result
@@ -46,9 +46,11 @@ class TwoPassBinding:
     def require_complete(self):
         if len(self.passes) != 2 or any(p['status'] != 'complete' for p in self.passes):
             raise ValueError('Q7 incomplete; do not publish a partial sink')
+        for outcome, messages in zip(self.passes, self.messages, strict=True):
+            outcome['message_sha256'] = [message_digest(message) for message in messages]
 
 
-def run(dataset, execute):
+def run(dataset, execute, *, on_result_ready=None):
     """Native execution must already enforce the process-wide public-generate cap.
 
     Original runner calls the original parser and full City intersection itself.
@@ -69,9 +71,14 @@ def run(dataset, execute):
                   frequency_penalty=0, presence_penalty=0, max_ctx_len=32768)
     with lotus.settings.context(lm=lm, enable_cache=False):
         result = run_original_query(dataset.checkout, dataset.frame, 7)
+        sink_ready = time.monotonic_ns()
+        if on_result_ready is not None:
+            on_result_ready(result, sink_ready)
+    audit_started = time.monotonic_ns()
     binding.require_complete()
-    sink_ready = time.monotonic_ns()
+    audit_finished = time.monotonic_ns()
     evaluation_started = time.monotonic_ns()
     quality = evaluate_original(dataset.checkout, result, dataset.frame(references=True), 7)
     return result, quality, binding.passes, dict(sink_ready_monotonic_ns=sink_ready,
+        binding_audit_started_monotonic_ns=audit_started, binding_audit_finished_monotonic_ns=audit_finished,
         evaluation_started_monotonic_ns=evaluation_started, evaluation_finished_monotonic_ns=time.monotonic_ns())
