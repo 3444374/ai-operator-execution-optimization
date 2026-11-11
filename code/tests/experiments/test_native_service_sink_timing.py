@@ -135,9 +135,13 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
             with self.subTest(kind=kind):
                 fixture = ServiceFixture(kind)
                 report = fixture.run()
-                expected = 5 if kind == "aggregate" else 10
-                self.assertEqual(report["source_to_sink_seconds"], expected)
-                self.assertEqual(report["query_seconds"], expected + 7 + 13 + (7 if kind == "aggregate" else 0))
+                self.assertEqual(report["source_to_sink_seconds"], 10)
+                legacy_source = 5 if kind == "aggregate" else 10
+                self.assertEqual(report["query_seconds"], legacy_source + 7 + 13 + (7 if kind == "aggregate" else 0))
+                lm_started = next(at for name, at in fixture.events if name == "LM setup")
+                self.assertLessEqual(report["source_started_ns"] / 1e9, lm_started)
+                if kind == "aggregate":
+                    self.assertEqual(report["driver_initialization_seconds"], 5)
                 sink = report["sink_ready_ns"] / 1e9
                 for name, at in fixture.events:
                     if name in {"observer teardown", "identity audit", "snapshot", "serialization", "evaluation", "flush"}:
@@ -170,7 +174,7 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
                     self.assertIs(failure.query_result, fixture.result)
                     report = failure.query_report
                     self.assertEqual(report["status"], "failed")
-                    self.assertEqual(report["source_to_sink_seconds"], 5 if kind == "aggregate" else 10)
+                    self.assertEqual(report["source_to_sink_seconds"], 10)
                     self.assertEqual(fixture.serialization_calls, 1)
                     if phase != "serialization":
                         self.assertEqual(report["result"]["data"], fixture.rows)
@@ -198,7 +202,7 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
         with self.assertRaises(ValueError) as caught:
             fixture.run()
         self.assertIs(caught.exception, failure)
-        self.assertEqual(failure.query_report["source_to_sink_seconds"], 5)
+        self.assertEqual(failure.query_report["source_to_sink_seconds"], 10)
         self.assertEqual(failure.query_report["result"]["data"], fixture.rows)
         self.assertNotIn("quality", failure.query_report)
 

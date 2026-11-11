@@ -86,8 +86,9 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         warmup_calls=0, retries=0, performance_claim=False,
         query_timing_scope="legacy source/query interval including post-result stage and response accounting",
         source_started_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
-        source_to_sink_timing_scope="source identity/decode and CSV reads, native PNG formatting, complete original operators and memory sink; "
-            "post-result audit, serialization, evaluation and audit flush excluded",
+        source_to_sink_timing_scope="local LM/client preparation, source identity/decode and CSV reads, native PNG formatting, "
+            "complete original operators and memory sink; external service startup, post-result audit, "
+            "serialization, evaluation and audit flush excluded",
         evaluation_in_query_seconds=False)
     started = time.monotonic()
     report["source_started_ns"] = time.monotonic_ns()

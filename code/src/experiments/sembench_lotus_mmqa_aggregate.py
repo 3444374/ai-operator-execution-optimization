@@ -188,10 +188,12 @@ def run_query(config, checkout, directory, *, budget, data_dir):
         warmup_calls=0, retries=0, performance_claim=False, evaluation_in_query_seconds=False,
         query_timing_scope="legacy source/query interval including post-result input identity and response accounting",
         source_started_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
-        source_to_sink_timing_scope="source identity/read, native leaf preflight and complete unchanged Q5 hierarchy/projection in memory; "
-            "post-result audit, serialization, evaluation and audit flush excluded",
+        source_to_sink_timing_scope="local LM/client/tokenizer preparation, source identity/read, native leaf preflight and "
+            "complete unchanged Q5 hierarchy/projection in memory; external service startup, post-result audit, "
+            "serialization, evaluation and audit flush excluded",
         complete_cli_timing="supervisor.elapsed_s includes imports, tokenizer/LM setup, preflight, evaluation and audit flush")
     started = time.monotonic()
+    report["source_started_ns"] = time.monotonic_ns()
     writer = audit = lm = result = failure = None
 
     def preserve_failure(error, phase):
@@ -212,7 +214,6 @@ def run_query(config, checkout, directory, *, budget, data_dir):
         lm = _make_lm(config)
         report["driver_initialization_seconds"] = time.monotonic() - started
         query_started = time.monotonic()
-        report["source_started_ns"] = time.monotonic_ns()
         checked = report["preflight"] = check(config, checkout, data_dir=data_dir, _lm=lm)
         if budget.remaining < checked["work"]["minimum_model_calls"]:
             raise ValueError("the already-reserved request unit cannot cover Q5's native minimum request count")
