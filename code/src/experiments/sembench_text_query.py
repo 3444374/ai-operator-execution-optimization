@@ -114,13 +114,16 @@ def complete_calls(query, operator):
 
 def run_query(config, query, engine, resources, directory, *, budget=None, context=None,
               execute_operator=None):
-    """One original query; source scan and complete native close stay in its clock."""
+    """Legacy isolated clock; it is not the separate source-to-sink metric."""
     report = dict(schema='semloom.sembench_text_result.v1', status='failed',
         query=query.describe(), backend=config['backend'], production_core_used=False,
         lifecycle='cold isolated query', result_cache_enabled=False,
         warmup_calls=0, retries=0, performance_claim=False,
         query_timing_scope='CSV scan and identity check, original selection, native graph/model startup, '
-            'complete operator interpretation and close, original relational sink',
+            'complete operator interpretation, adapter audit and close, original relational sink',
+        source_to_sink_seconds=None,
+        source_to_sink_unavailable_reason='isolated operator API returns after adapter audit and close; '
+            'no independent pre-close full-sink boundary was observed',
         evaluation_in_query_seconds=False, physical_gpu_exit_confirmed=None,
         physical_gpu_exit_scope='independent existing outer host supervisor')
     started = time.monotonic()

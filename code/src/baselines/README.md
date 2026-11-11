@@ -223,6 +223,16 @@ Map／Extract 的真实类型另由 stage 和有限阶段 ID 映射记录，不�
 Ray／Daft／IMLane 使用原来已有的有限记录图和单个阶段；它们与旧普通 Filter 图是分别命名的执行布局。
 原 Q1/Q2/Q3 及 Q4 的普通 records、session、矩阵入口继续保留。
 
+**旧 isolated 计时不能直接进入统一 source→内存 sink 比较。**
+[旧单算子入口](../experiments/sembench_text_query.py)的 `query_seconds` 等待完整 operator 返回，
+其中 Ray／Daft 记录流在 EOF 内关闭，IMLane 作者阶段也使用 `close_on_eof=True`；
+审计文件回收、模型／作者清理及 Ray runtime 断开可能已在原关系汇总之前完成。
+此字段保留原始含义；新的 `source_to_sink_seconds` 明确留空并附未观测原因，不以改名、减去
+关闭用时或历史结果回填制造统一口径。这包括旧 Movie Q10，不能与已有独立 sink 边界的
+[Daft 原生 AI](#daft-native-prepared-sembench)及[LOTUS resident](#lotus-native-resident-sembench)时间混用。
+需要补测的原生路径须在完整原关系交付时观察独立终点，并将事后审计、评价、持久化和关闭另计；
+不修改原作者算法或调度来补非空结果。现有成功、失败、质量及 cleanup 证据保持不变。
+
 下表是现成 Movie2000、原 MMQA generator 的 sf25／seed42 单次完整执行预计调用量，
 不含暖机、重试或重复。Movie 金标 `Movies.csv` 为116行、105个唯一电影 ID，覆盖评论中的全部105部电影；
 仍由原 ranking evaluator 处理 ID 与有效分值，不修改原金标或自行去重。
