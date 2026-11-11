@@ -482,3 +482,35 @@ Q1 结果先保存为原 Series，持久化时转成单列关系，不改变内�
 已保留；修复按启动时/dev/shm物理可用空间设置观察边界，保留用量／残留统计，
 不设逐模型页配额，不改原生引擎／作者算法。初始与终态ledger使用不同新文件，
 失败的回执保存不能跳过身份校验的lease释放。此修复未重跑模型。
+
+## Movie Q9：原版 DOUBLE Map 的唯一运行入口
+
+维护入口为 `PYTHONPATH=code python -m src.experiments.native_imlane_movie_scores
+--config PRIVATE_CONFIG --output FRESH_PRIVATE_OUTPUT`（在同一行执行）。
+外层继续负责主机 lease、资源 preflight、进程监督及永久预算的创建/独占 claim；入口不另建调度器。
+仅单次 cold256、warmup0、retry0。输入256个occurrence/128个reviewId，保留重复和原顺序；不排序、不做Q10平均。
+
+- [q9.cpp](q9.cpp)：原SQL DOUBLE投影，在完整关系sink完成的ACK前持有结果。
+- [q9_udf.py](q9_udf.py)：原数字解析及Q9专属Arrow/消息边界，调用既有provider。
+- [sembench_movie_q9.py](../../src/baselines/text/sembench_movie_q9.py)：原题source/消息与计时后的receipt审计。
+- [native_imlane_movie_scores.py](../../src/experiments/native_imlane_movie_scores.py)：唯一正式CLI，调用已有完整sink、owner和永久预算。
+
+配置沿用模型配置、sampling_params、data_dir、sembench_checkout、model_name、author_root、method_python、
+request_timeout_s、query_seconds、cleanup_seconds、run_id、provider_mode，另外显式提供
+input_identity（私有原输入与消息SHA清单路径）、build_record（薄driver构建记录）、request_budget。
+request_budget为既有已claim描述符：path、budget_id、limit=256、unit_id。非新鲜单位拒绝，模型owner每次generate前永久扣费。
+机器路径、原数据/token参考及结果不进入源码。运行时要求原DSO
+`52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf`。
+
+薄driver构建用 `build.py movie-scores-driver --root AUTHOR_ROOT --duckdb-source DUCKDB_SOURCE
+--duckdb-build DUCKDB_BUILD --output FRESH_DRIVER`（同一行）；只链接既有原DSO，不重新构建作者库。
+原source开始到完整内存sink、service-start到sink、model-ready到sink分别直接观测；ACK后driver退出、审计和关闭仍须成功。
+这些观测不由历史耗时相减推算。
+
+本机复核入口为[Arrow/IPC回放](../../tests/baselines/text/replay_imlane_movie_scores.py)和
+[消息/token回放](../../tests/baselines/text/replay_imlane_movie_score_tokens.py)，通过环境变量SEMLOOM_Q9_FIXTURE指定私有冻结参考。
+UnixIPC回放使用软件engine；token回放使用本地原tokenizer，不声称模型性能。
+私有v4是已执行历史证据，不再作为新包的生产worker来源；未来包必须调用此维护CLI。
+迁移后的本机测试不替代Linux完整CLI/DSO资格，旧v4实测也不自动成为新CLI的目标实测。
+
+Q9构建记录绑定当前q9.cpp、q9_udf.py、relation_handoff.hpp以及实际binary/DSO字节；入口拒绝旧源码构建和被修改的产物。

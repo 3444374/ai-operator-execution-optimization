@@ -203,7 +203,7 @@ def driver_command(source, prefix, duckdb_source, duckdb_build, output, compiler
             '-lduckdb', '-ldbendrt_c', '-lfmt', '-lboost_system', '-pthread']
 
 
-def driver(args, *, sembench=False, native_filter=False):
+def driver(args, *, sembench=False, native_filter=False, movie_scores=False):
     bound = sembench or native_filter
     if bound and sys.platform != 'linux':
         raise RuntimeError('prepared native IMLane driver linkage requires Linux')
@@ -221,7 +221,10 @@ def driver(args, *, sembench=False, native_filter=False):
         raise ValueError('driver build refuses to overwrite a prior result')
     library = duckdb_build / 'src/libduckdb.so'
     library_identity = file_identity(library)
-    driver_source = OWNED / ('mmqa_filter.cpp' if native_filter else 'sembench.cpp' if sembench else 'q3.cpp')
+    driver_source = OWNED / ('q9.cpp' if movie_scores else 'mmqa_filter.cpp' if native_filter else 'sembench.cpp' if sembench else 'q3.cpp')
+    if movie_scores:
+        if library_identity['sha256'] != '52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf':
+            raise ValueError('Q9 requires the original qualified DOUBLE DSO')
     if bound:
         if (not re.fullmatch('[0-9a-f]{64}', args.duckdb_sha256)
                 or library_identity['sha256'] != args.duckdb_sha256):
@@ -242,6 +245,11 @@ def driver(args, *, sembench=False, native_filter=False):
         duckdb_cmake=file_identity(duckdb_source / 'CMakeLists.txt'),
         cmake_cache=file_identity(duckdb_build / 'CMakeCache.txt'),
         real_model_requests=0, returncode=None, binary=None)
+    if movie_scores:
+        record.update(schema='semloom.imlane.movie_scores_build.v1', status='failed',
+            binary_path=str(output), duckdb_library_path=str(library),
+            kernel=file_identity(OWNED / 'q9_udf.py'),
+            relation_handoff=file_identity(OWNED / 'relation_handoff.hpp'))
     if bound:
         kernel = OWNED / ('mmqa_filter_udf.py' if native_filter else 'sembench_udf.py')
         record.update(schema='semloom.imlane.filter_driver_build.v1' if native_filter else 'semloom.imlane.prepared_driver_build.v1', status='failed',
@@ -255,6 +263,8 @@ def driver(args, *, sembench=False, native_filter=False):
             compiler_output=redact_text(result.stdout + result.stderr))
         if result.returncode == 0:
             record['binary'] = file_identity(output)
+            if movie_scores:
+                record['status'] = 'built'
             if bound:
                 probe_path = output.with_suffix('.link.json')
                 probe = subprocess.run([str(output), '--probe-dso', str(probe_path)],
@@ -307,7 +317,7 @@ def main(argv=None):
         help='explicit engineering variant: pair the output column with its Arrow child schema')
     converter_variant.add_argument('--varchar-owned', action='store_true',
         help='separate engineering variant: child schema and VARCHAR NULL/offset/owned string storage')
-    for action in ('driver', 'sembench-driver', 'filter-driver'):
+    for action in ('driver', 'sembench-driver', 'filter-driver', 'movie-scores-driver'):
         compilation = commands.add_parser(action)
         compilation.add_argument('--root', type=Path, required=True)
         compilation.add_argument('--duckdb-source', type=Path, required=True)
@@ -315,12 +325,12 @@ def main(argv=None):
         compilation.add_argument('--output', type=Path, required=True)
         compilation.add_argument('--compiler', default='g++')
         compilation.add_argument('--timeout-seconds', type=_positive, default=120)
-        if action != 'driver':
+        if action in ('sembench-driver', 'filter-driver'):
             compilation.add_argument('--duckdb-sha256', required=True,
                 help='digest of the existing qualified variant-specific DuckDB DSO; never rebuild it')
     args = parser.parse_args(argv)
     return prepare(args) if args.action == 'prepare' else driver(args,
-        sembench=args.action == 'sembench-driver', native_filter=args.action == 'filter-driver')
+        sembench=args.action == 'sembench-driver', native_filter=args.action == 'filter-driver', movie_scores=args.action == 'movie-scores-driver')
 
 
 if __name__ == '__main__':

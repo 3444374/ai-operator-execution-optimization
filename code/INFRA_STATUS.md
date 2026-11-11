@@ -217,3 +217,10 @@ records resident 的顺序复用不能直接解释为共享 owner 上完整查�
 | 旧关闭故障与负结果 | 原 1596 第二项关闭失败及模型 unknown 等仍按主报告保存；后来检查通过不解释旧故障原因 |
 
 没有运行回执的能力保留为 pending。正式模型比较使用对应计划、实际环境和准确版本，不能从本页推断已运行。
+
+### Movie Q9 原DOUBLE Map维护入口
+
+[唯一CLI](src/experiments/native_imlane_movie_scores.py)已收口原Q9薄driver/UDF、source/audit与完整内存sink接线；
+单cold256永久预算，原DSO不变。机器资源控制器与冻结数据仍在仓库外。
+当前迁移的资格范围及复现配置见[集成说明](integrations/imlane_duckdb/README.md)。
+本机软件IPC/原256消息-token/关系回放与目标模型运行分开记录；迁移入口尚未作新的Linux完整运行。
