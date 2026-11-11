@@ -364,7 +364,7 @@ cold/warm 2400 条回放作为回归。这些 CPU 回放不授予 Linux DSO/SQL�
 [编译执行测试](../../tests/baselines/text/test_imlane_filter_arguments.py) 直接从生产 cpp
 取同一参数函数进行 C++ 编译／实际进程执行，覆盖25/120/1200/2000、非枚举7、非法／缺失／
 重复／非ASCII／溢出参数，并验证旧 driver 在模型实例创建前拒绝。不是全文 driver/SQL 测试。
-Mac 不支持该 Linux 原作者 DSO 链接；后续 Q2 目标门已通过，Q1/Q3/Q4 未目标验证。
+Mac 不支持该 Linux 原作者 DSO 链接；后续 Q1–Q4 已分别完成目标原生 SQL 门。
 [Linux零模型门](../../tests/baselines/text/qualify_imlane_movie_filter.py)
 保留真正 driver／Arrow／SQL／完整原 sink／ACK，只在既有 ModelService.spawn 注入
 [软件服务](../../tests/baselines/text/imlane_filter_software_service.py)，禁止模型导入。
@@ -387,8 +387,33 @@ DSO，源码／kernel 摘要和实际加载身份核对通过，未重建作者 
 运行标识为 `imlane-movie-q2-5c69-1111-r1`；245件原件按该标识从运行交接获取，归档 SHA256 为
 `73ba1236ae4325dd90092004247f2c46ad7922ce9a6da78bb8f62de6f600c4b4`。
 `9507` 的零 generate 失败与后续私有 CPU guard 失败分别保留，不改成通过，也不并入成功轮。
-Q1/Q3/Q4 仅有 CPU 准备及保存答复回放，尚无此新增绑定的目标 SQL／模型资格；本轮不支持
-warm、重复稳定性或跨系统性能排名。后续仅文档同步不改变上述实测源码身份。
+这份 Q2 记录保持独立，Q1/Q3/Q4 的后续运行另列如下。本轮不支持 warm、重复稳定性
+或跨系统性能排名；后续测试入口与文档同步不改变上述实测生产源码身份。
+
+### Q1/Q3/Q4 的独立目标补充
+
+三题均使用上列 `5c69f037` 生产源码和既有原版 `52bf5763` DSO；各自先完成完整原生 SQL
+软件答复门，再独立启动新模型执行一次冷轮。Q1 为2000个发生项，Q3/Q4 各120个，实际请求
+全部成功，完整原消息与运行时 token 数组逐发生项匹配；不按重复消息去重，不提前截取 sink。
+各题均先形成完整原内存 sink，再 ACK／审计／持久化／关闭；进程、socket、SHM、GPU空闲
+和租约释放通过。每题 warm-up=0、整轮重试=0，未据此认证 warm 或重复稳定性。
+
+原评价保留实际结果：Q1 的 head5 precision／recall／F1 均为1；Q3 COUNT=7、MAPE=50%；
+Q4 ratio=`0.058333333333333334`、MAPE=`50.00000021287373%`。后两题执行与接线完成，
+质量偏差仍在，不能记作全题质量通过，也不改变原 parser／算法来修饰结果。
+Q3 的旧 `168bc` project resident bridge 只供软件 CPU 答复引用；本次真实模型结果独立归属，
+不冒充旧作者默认运行，也不把新模型实测记为 bridge 回放。
+
+沿用[同一零模型门](../../tests/baselines/text/qualify_imlane_movie_filter.py)，由原配置取得
+题号与完整数量，不再只允许 Q2／硬编码120。Q3/Q4 实际目标测试脚本为 `53a9671`，Q1 为
+`5aafdd5`；后者仅让两份新完成且归本次测试拥有的 worker／software-service 回执按各自
+文件大小读取；Q1 目标已使用该脚本完成。其他输入限制、生产代码与全局读取上限未改，
+未增加 fixture 缓存、另一套入口或重新运行模型。
+
+三题运行标识分别为 `imlane-movie-q1-5c69-1111-r1`、`imlane-movie-q3-5c69-1111-r1`、
+`imlane-movie-q4-5c69-1111-r1`。359件原件按标识从运行交接获取，归档 SHA256 为
+`f1dfadf3fac4e7e69803ace879225a550bb42bae5295560b62a69ce6899f6757`。
+先前失败、私有 CPU guard 修正与各次运行保持原身份，不覆盖或合并成一份成功成绩。
 
 ## MMQA Q1 工程版接线
 

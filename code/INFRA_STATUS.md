@@ -110,7 +110,7 @@ batch position 与本地 occurrence ID 关联 43 个重复消息组，不改变�
 只选 Q2。76 项局部 CPU 测试与 2600 条 Movie 保存回复回放通过；Q3 的 120 条来源是旧
 `168bc` project resident bridge，不是作者默认。共享 Medical 2400 条保存回复回归通过。
 各题保留原 source、prompt/parser、head/count/ratio/evaluator 和独立 cold／ready 实际时钟；
-上述 CPU 回放不授予目标资格；`5c69f037` 的 Q2 后续目标验证通过，Q1/Q3/Q4 仍未目标验证。
+上述 CPU 回放不授予目标资格；`5c69f037` 的 Q1–Q4 后续均已独立完成目标 SQL 与真实冷轮。
 
 Movie Filter 的 `9507` 目标 Q2 尝试在旧 native CLI 的25/1200白名单处失败，generate=0、
 无 sink，资源已清理。现修复为必填正 int64 与实际 count／DISTINCT 一致，无枚举或默认25；
@@ -118,8 +118,10 @@ Movie Filter 的 `9507` 目标 Q2 尝试在旧 native CLI 的25/1200白名单处
 实际 C++ 编译执行和旧driver前置拒绝检查通过；新增软件服务的真实子进程／Unix IPC 120条
 完整 token／逐发生项答复本机通过，最终80项 CPU 测试通过。`5c69f037` 的 Q2 已完成原版 DSO
 新薄 driver 的 Linux 全120行／缺行／重复ID三门，以及真实冷120次、完整原 sink、逐发生项
-运行时 token 和资源清理。来源、旧失败与未测边界见上述模块说明，
-不把 Q2 的结果扩展到 Q1/Q3/Q4 或其他配置的性能。
+运行时 token 和资源清理。后续 Q1 全2000条、Q3/Q4 各120条也分别完成原生 SQL、真实冷轮
+及完整 token／发生项核对；Q3/Q4 的原评价误差保留，不写成全题质量通过。单一测试入口现按
+原配置绑定逐题数量，仅两份已完成测试回执按自身大小读取；生产与全局读限未改。
+来源、旧失败、质量结果与单冷轮边界见上述模块说明，不扩展为稳定性能排名。
 
 [Ray Animals Q7](src/baselines/image/ray_animals_q7/README.md)现保留第一 stage 的完整关闭，最终原 City
 关系就绪后才 ACK 并关闭最后 runtime。原 19 项 CPU、真实本地子进程交接及 128 条旧答复身份／原 parser
