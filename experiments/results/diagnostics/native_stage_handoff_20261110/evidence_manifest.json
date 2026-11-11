@@ -4963,5 +4963,17 @@
         "public_sha256": "b6a316e34bb3f821ec65ec892b9853ea6657bbb5583ae029ba5d5e7ae9577fea"
       }
     ]
+  },
+  "second_review_20261111": {
+    "public_file": "pipeline-followup-checks.json.gz",
+    "public_bytes": 1080,
+    "public_sha256": "1ed35d879d7600052d1434c0bb60fa2b573ca13c869214dc569ed3546f61c477",
+    "source_run_id": "semloom-final-code-review-20261111",
+    "source": {
+      "artifact": "integrated-final-02.log",
+      "bytes": 1768,
+      "sha256": "48f1b27d344c8290dfd6f51c931d67332d5cec8936659837f6cb1b42fce18c53"
+    },
+    "independent_review_evidence": "../semloom_execution_candidates_20261110/second-review-20261111.json.gz"
   }
 }

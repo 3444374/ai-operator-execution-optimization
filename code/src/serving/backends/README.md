@@ -65,6 +65,10 @@ Native vLLM owns physical continuous batching. A shared progress event wakes the
 coordinator; there is no fixed polling sleep. Results restore input order and keep
 both physical receipts. Failure stops admission, drains retained receipts and closes
 both owners. This object accepts one call at a time and supports resident reuse.
+`batch_size` is a member ceiling. If an encoded batch cannot fit the input-byte
+allowance, the coordinator shortens its prefix before any member is accepted;
+single requests remain complete and an oversized single item still fails.
+This is frame packing, not model retry; other encoding errors are not retried.
 Command-queue capacity release also wakes the coordinator, so a held request cannot
 hide newly available submission space. The caller deadline is checked before and
 after environment validation; process creation and the native READY wait honor
@@ -72,6 +76,9 @@ that deadline. Environment metadata probes retain their existing finite limits.
 If the API close is unknown, a dead IPC parent still triggers the existing registered
 process-group cleanup; its observed exit does not turn the unknown API result into
 success. Final process reports retain both the direct-child and group scopes.
+Registered-process cleanup uses the same absolute close deadline, with no extra
+fixed wait after it. Unknown results keep their observed process identities for
+a later close; physical process exit does not confirm the model API outcome.
 
 The [resident worker](../../experiments/native_stage_pipeline.py) compares against
 native `LLM.chat` on the complete request set, retains first outputs and every timed

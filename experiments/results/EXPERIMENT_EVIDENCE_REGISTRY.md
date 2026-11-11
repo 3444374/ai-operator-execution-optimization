@@ -7,6 +7,8 @@
 2026-11-11 的[异步流水比较](diagnostics/native_stage_handoff_20261110/README.md#async-pipeline-20261111)
 以 `ea1644a4d` 补齐跨请求推进、批提交、共同容量及原生传输统计；记录独立审查修复、校准和交错常驻重复。
 单卡、eager 的 Q8请求回放与合成长输出均慢于原生整批共置，完整输出一致；这不是完整查询或多GPU结论。
+后续[第二轮边界审查](diagnostics/native_stage_handoff_20261110/README.md#second-review-boundaries)
+仅补CPU反例和修复：按字节封批、后备清理共用期限及重试身份；原单卡数据保持原源码身份。
 
 ## 2026-11-11：优化 PR 第二轮代码与目标核查
 

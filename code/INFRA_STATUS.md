@@ -37,6 +37,8 @@ encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 已完成单卡原生批／KV统计及同资源配置的常驻请求回放：Q8与合成长输出均慢于原生共置，
 具体来源与全部重复见[异步流水比较](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#async-pipeline-20261111)。
 启动期限、命令槽唤醒与未知关闭的进程组回收已有独立CPU反例验证；GPU失败注入和完整查询接入仍未验证。
+后续[边界复核](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#second-review-boundaries)
+补齐按实际输入字节缩批、共用关闭deadline及重试身份保留；不扩大旧实机资格。
 
 ## 当前能力与待处理项
 
