@@ -64,7 +64,8 @@ class _ChainTransport:
                 from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
 
                 worker_type = owner._batch_type or FusedChainBatch
-                options = owner._worker_phase_options() if owner.relation_barriers else {}
+                options = (owner._worker_phase_options() if owner.relation_barriers else
+                           {'close_on_source_complete': owner._active.close_on_eof})
                 if owner.prepared_batching is not None:
                     options['prepared_batching'] = asdict(owner.prepared_batching)
                 self.worker = worker_type(

@@ -86,6 +86,66 @@ class CoreQueryTimingTests(unittest.TestCase):
         self.assertEqual(report['operator']['backend_close']['status'], 'closed')
         self.assertEqual(report['model_calls'], 3)
 
+    def observed_native_worker_owner(self, *, close_failure=False):
+        parent, _ = fixtures.cpu_owner(['zero', 'one', 'two'])
+        test = self
+        class Engine(parent._batch_type._engine_type):
+            def close(self, timeout=None):
+                test.events.append('close')
+                test.clock += 7
+                if close_failure:
+                    raise RuntimeError('native engine close failed')
+                return super().close(timeout=timeout)
+        class Batch(parent._batch_type):
+            _engine_type = Engine
+        class Owner(parent):
+            _batch_type = Batch
+        return Owner
+
+    def test_complete_sink_precedes_native_fused_worker_engine_close(self):
+        # The real shared worker also closes on the last source row by default.
+        # Observing only Core.close misses this earlier model shutdown.
+        clock = SimpleNamespace(monotonic=lambda: self.clock,
+                                monotonic_ns=lambda: self.clock * 1_000_000_000)
+        fixture = self.fixture
+        with patch.object(adapter, 'SemLoomRecordChainCore', self.observed_native_worker_owner()), \
+                patch.object(entry, 'time', clock), \
+                patch.object(type(fixture.engine), 'validate_driver_environment', return_value={}):
+            report = entry.run_query({'backend': 'semloom-core', 'profile': {'execution': 'fused'}},
+                self.query(), fixture.engine, fixture.resources, fixture.root)
+        self.assertEqual(self.events, ['source', 'relation', 'close', 'quality'])
+        self.assertEqual(report['memory_sink_timing']['seconds'], 5)
+        self.assertEqual(report['query_seconds'], 12)
+
+    def test_deferred_native_engine_close_failure_keeps_sink_and_fails_query(self):
+        clock = SimpleNamespace(monotonic=lambda: self.clock,
+                                monotonic_ns=lambda: self.clock * 1_000_000_000)
+        fixture = self.fixture
+        with patch.object(adapter, 'SemLoomRecordChainCore',
+                          self.observed_native_worker_owner(close_failure=True)), \
+                patch.object(entry, 'time', clock), \
+                patch.object(type(fixture.engine), 'validate_driver_environment', return_value={}):
+            with self.assertRaises(RuntimeError) as caught:
+                entry.run_query({'backend': 'semloom-core', 'profile': {'execution': 'fused'}},
+                    self.query(), fixture.engine, fixture.resources, fixture.root)
+        report = caught.exception.query_report
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(report['memory_sink_timing']['seconds'], 5)
+        self.assertEqual(report['operator']['backend_close']['status'], 'unknown')
+        self.assertEqual(self.events[:2], ['source', 'relation'])
+        self.assertIn('close', self.events)
+        self.assertNotIn('quality', self.events)
+
+    def test_default_fused_scope_retains_native_close_on_last_source(self):
+        fixture = self.fixture
+        with patch.object(adapter, 'SemLoomRecordChainCore', self.observed_native_worker_owner()), \
+                patch.object(type(fixture.engine), 'validate_driver_environment', return_value={}):
+            with adapter.query_scope(self.operation, engine=fixture.engine, resources=fixture.resources,
+                    query_id='default-close', profile={'execution': 'fused'},
+                    control_dir=fixture.root, close_on_eof=True) as report:
+                self.assertIn('close', self.events)
+                self.assertEqual(report['status'], 'completed')
+
     def test_cleanup_failure_preserves_sink_without_success(self):
         self.close_error = True
         with self.assertRaisesRegex(RuntimeError, 'close failed') as caught:

@@ -117,3 +117,29 @@ operator 调用仍 EOF 关闭。源与 session 收尾、Core 与 transport 清�
 `1cbb` 同样复现，新旧各有通过和失败。该测试未进入此次 EOF 分支。原始日志全部保留，
 本补充不声称解决超短期限取消／关闭问题，也不据此取得该路径的失败恢复资格。
 独立只读审查未发现新增阻断；目标真实 Ray/GPU 完整查询仍待执行。
+
+
+### 首次目标验证与 fused 关闭接点修正
+
+`c7e78a73ac2e81209e3b684a528113f2baea55b1` 在固定 RTX 4090、Qwen2.5-7B-Instruct、
+vLLM 0.25.1 上完成原 Q9 Map 全部256发生项的两次独立冷查询，fused 与 record-local 各256调用。
+目标零模型门核验1020源码文件、11项计时测试、原消息及完整 tokenizer 数组。全部512实际请求的
+完整输入 token 与原方法一致，均终态成功；两路径输出仅253/256一致，位置69、177、238不同。
+无预热、重试或输入去重。不是原生 baseline 或稳定性能比较。
+
+| 首次目标路径 | 观测完整 sink 秒 | 旧关闭包含时钟秒 | Spearman | Kendall |
+|---|---:|---:|---:|---:|
+| fused | 73.534884014 | 73.705151117 | 0.675370889 | 0.590104802 |
+| record-local | 62.604972856 | 67.162185942 | 0.689541343 | 0.602602967 |
+
+这两个首次 sink 时钟**尚不能作为同一最终关闭边界比较**。真实回执终审核出 shared fused worker
+默认 `close_on_source_complete=True`，在最后一批返回前已关闭模型；因此 fused sink 包含该内部关闭，
+不能由历史时间扣去 `close_seconds` 修造对齐值。record-local 关闭在已观测 sink 后。
+独立 stage 的物理退出与资源检查都通过；外层复制 Ray 已退出 socket 时归档失败，失败保留。
+随后只恢复1278个普通文件并验证 SHA-256，socket 与 symlink 单独记元数据，未重跑模型。
+
+修正只把 Core 已有 `close_on_eof` 选择透传到非 relation fused worker 的现有关闭开关。
+默认 True、原生 baseline、relation-barrier 已有 False 和失败时立即关闭均保持。
+新增测试运行真实 shared worker 生命周期，仅模型 Engine 为 CPU 替身；修正前准确复现提前关闭。
+修正后的27项定向检查全部通过，含底层关闭失败仍保留已观测 sink 并使整查询失败。
+只计划为修正 fused 补一次独立单冷256目标资格，不重复已通过的 record-local，也不转授旧 fused 时钟。
