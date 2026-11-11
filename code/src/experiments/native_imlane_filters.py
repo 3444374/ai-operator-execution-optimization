@@ -1,7 +1,7 @@
-"""One original MMQA Q3/Q6 Filter and complete memory sink on author IMLane.
+"""One original MMQA Q3/Q6 or Medical Q4 Filter and full sink on author IMLane.
 
 The native TINYINT SQL, owner, request budget, result ACK and supervisor retain
-their existing implementations. One invocation selects one 25-occurrence query;
+their existing implementations. One invocation selects one complete query;
 old joint-batch measurements are not converted into per-query timings.
 """
 
@@ -27,7 +27,7 @@ from src.experiments.native_imlane_model_query import supervised_run, _positive
 from src.experiments.native_imlane_relation import run_relation_query, finish_mmqa_filters, persist_relation_observation
 from src.experiments.native_imlane_sembench import _ResultWindow, audit_ipc
 from src.infrastructure.private_artifacts import (
-    content_digest, file_identity, json_metric, new_private_directory, open_private_text,
+    file_identity, json_metric, new_private_directory, open_private_text,
     read_json, write_private_json,
 )
 from src.infrastructure.redact import redact_text
@@ -35,6 +35,7 @@ from src.serving.backends.vllm_protocol import GenerationSpec
 from src.semantic_methods.lotus.record_method import LotusRecordMethod
 
 SCHEMA = 'semloom.imlane.mmqa_filter.v1'
+MEDICAL_SCHEMA = 'semloom.imlane.medical_filter.v1'
 QUERIES = ('3a', '3b', '3c', '3d', '3e', '3f', '3g', '6a', '6b', '6c')
 DSO_SHA256 = '52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf'
 CODE = Path(__file__).resolve().parents[2]
@@ -44,15 +45,21 @@ def configuration(value):
     fields = {'schema', 'query_id', 'execution_id', 'sembench_checkout', 'data_dir', 'input_sha256',
               'model_name', 'tokenizer', 'generation', 'prompt_columns', 'model_service', 'max_model_calls',
               'query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'}
-    if (type(value) is not dict or set(value) != fields or value['schema'] != SCHEMA
-            or value['query_id'] not in QUERIES or value['max_model_calls'] != 25):
-        raise ValueError('select one original MMQA Q3/Q6 query with a 25-call limit')
+    medical = type(value) is dict and value.get('schema') == MEDICAL_SCHEMA
+    if medical:
+        fields.add('scale_factor')
+    if (type(value) is not dict or set(value) != fields
+            or value['schema'] not in (SCHEMA, MEDICAL_SCHEMA)
+            or value['query_id'] not in (('4',) if medical else QUERIES)
+            or value['max_model_calls'] != (1200 if medical else 25)
+            or medical and value['scale_factor'] != 11112):
+        raise ValueError('select MMQA Q3/Q6 with 25 calls or Medical Q4 with 1200 calls and patient scale 11112')
     generation = GenerationSpec.from_dict(value['generation'])
     if generation.response_format is not None or generation.max_tokens != 8192:
         raise ValueError('native Filter requires the original unstructured 8192-token generation')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'):
         _positive(value[name])
-    AttemptBudget(value['execution_id'], 25)
+    AttemptBudget(value['execution_id'], value['max_model_calls'])
     return dict(value), generation
 
 
@@ -60,10 +67,12 @@ def prepare_query(config):
     import lotus
     from transformers import AutoTokenizer
     config, generation = configuration(config)
-    query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], 'mmqa', config['query_id'],
-        execution_id=config['execution_id'], model_name=config['model_name'], generation=generation)
+    medical = config['schema'] == MEDICAL_SCHEMA
+    query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], 'medical' if medical else 'mmqa',
+        config['query_id'], execution_id=config['execution_id'], model_name=config['model_name'],
+        generation=generation, **(dict(scale_factor=config['scale_factor']) if medical else {}))
     if {name: item['sha256'] for name, item in query.files.items()} != config['input_sha256']:
-        raise ValueError('original MMQA source files changed')
+        raise ValueError('original source files changed')
     stage = query.operation.stage
     columns = config['prompt_columns']
     if (type(columns) is not list or len(set(columns)) != len(columns)
@@ -77,14 +86,13 @@ def prepare_query(config):
         method = LotusRecordMethod(stage)
         prepared = method.prepare_rows(query.operation.records, query_id=query.query_id)
     requests = [dict(call_id=row['call_id'], messages=json.loads(row['messages_json'])) for row in prepared]
-    if stage.kind != 'filter' or len(prepared) != 25:
-        raise ValueError('single-query Filter binds all 25 original occurrences')
-    if len({content_digest(row['messages']) for row in requests}) != len(requests):
-        raise ValueError('these frozen Filter inputs require distinct messages for IPC audit')
+    if stage.kind != 'filter' or len(prepared) != config['max_model_calls']:
+        raise ValueError('single-query Filter binds every original occurrence')
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     tokens = [tokenizer.apply_chat_template(row['messages'], tokenize=True, add_generation_prompt=True)
               for row in requests]
-    label, text = ('Airlines', 'Destinations') if query.query.startswith('6') else ('title', 'text')
+    label, text = ('patient_id', 'symptoms') if medical else (
+        ('Airlines', 'Destinations') if query.query.startswith('6') else ('title', 'text'))
     rows = []
     for record, request in zip(query.operation.records, requests, strict=True):
         source = query.operation.frame.iloc[record.source_position]
@@ -95,10 +103,10 @@ def prepare_query(config):
 
 def check(config):
     query, _method, prepared, requests, tokens, rows = prepare_query(config)
-    return dict(schema=SCHEMA, status='passed_zero_model_source_check', variant='original-author',
+    return dict(schema=config['schema'], status='passed_zero_model_source_check', variant='original-author',
         source=query.describe(), effective_prompt_columns=list(_method.columns),
         prepared=prepared, requests=requests, token_ids=tokens, rows=rows,
-        maximum_model_calls=25, retries=0, extra_warmup=0, models=0,
+        maximum_model_calls=config['max_model_calls'], retries=0, extra_warmup=0, models=0,
         target_native_driver_SQL_model_qualified=False)
 
 
@@ -127,14 +135,13 @@ class FilterRelation:
 
     def audit(self, native, result, directory, sampling):
         from pandas.testing import assert_frame_equal
-        expected = {content_digest(row['messages']): row['call_id'] for row in self.requests}
         predictions = []
         for path in Path(directory).glob('*.terminal.json'):
             batch = read_json(path, max_bytes=path.stat().st_size)
             for call in batch['calls']:
-                predictions.append(dict(call_id=expected[content_digest(call['requested_payload']['messages'])],
+                predictions.append(dict(call_id=call['occurrence_id'],
                     generated_text=call['response']['generated_text']))
-        ipc = audit_ipc(directory, self.requests, self.tokens, predictions, sampling)
+        ipc = audit_ipc(directory, self.requests, self.tokens, predictions, sampling, by_occurrence=True)
         reconstructed, relation = finish_relation(self.query, self.method, self.prepared, predictions)
         positives = {row['occurrence_id'] for row, positive in
                      zip(self.rows, relation['parsed_outputs'], strict=True) if positive}
@@ -157,7 +164,7 @@ def run_worker(args, config, *, service_factory=ModelService):
     args.stop_grace_seconds = config['stop_grace_s']
     args.duckdb_library = Path(build['duckdb_library_path']).resolve()
     previous = {n: signal.signal(n, args.stop_budget.signal) for n in (signal.SIGTERM, signal.SIGINT)}
-    report = dict(schema=SCHEMA, status='failed', variant='original-author', query_id=config['query_id'],
+    report = dict(schema=config['schema'], status='failed', variant='original-author', query_id=config['query_id'],
         worker_entry_monotonic_ns=entered, retries=0, extra_warmup=0,
         outer_host_lease_required=True, physical_gpu_exit_confirmed=None,
         build_record=file_identity(Path(args.build_record)))
@@ -165,12 +172,13 @@ def run_worker(args, config, *, service_factory=ModelService):
     try:
         for name in ('model-calls', 'model-service'):
             (args.output / name).mkdir(mode=0o700)
-        budget = AttemptBudget(config['execution_id'], 25)
+        limit = config['max_model_calls']
+        budget = AttemptBudget(config['execution_id'], limit)
         ledger = CellBudgetLedger.create(args.output / 'physical-budget.sqlite', budget,
             deadline_utc=time.time() + config['query_timeout_s'])
-        ledger.reserve_unit('query', 25)
+        ledger.reserve_unit('query', limit)
         unit = ledger.claim_shared_unit('query')
-        descriptor = dict(path=str(ledger.path), budget_id=budget.budget_id, limit=25, unit_id='query')
+        descriptor = dict(path=str(ledger.path), budget_id=budget.budget_id, limit=limit, unit_id='query')
         service = service_factory(dict(config['model_service'], request_budget=descriptor),
             args.output / 'model-service', environment=dict(os.environ), deadline=window.query_deadline,
             cleanup_deadline=window.begin_cleanup, stop_budget=args.stop_budget, stop_grace_s=config['stop_grace_s'])
@@ -200,7 +208,8 @@ def run_worker(args, config, *, service_factory=ModelService):
             args.startup_timeout_s = window.query_deadline - time.monotonic()
             command = [build['binary_path'], '--input', str(args.output / 'input.csv'),
                 '--module', build['kernel_path'], '--function', 'infer_mmqa', '--kind', args.kind,
-                '--output', str(args.output / 'query.json'), '--sink-release', str(args.output / 'sink-release.ack')]
+                '--output', str(args.output / 'query.json'), '--sink-release', str(args.output / 'sink-release.ack'),
+                '--expected-rows', str(limit)]
             if args.threads is not None: command += ['--threads', str(args.threads)]
             def audit(native, value):
                 if Path(native['converter_resolved_DSO']).resolve() != args.duckdb_library:
@@ -297,7 +306,7 @@ def main(argv=None):
             ready_source_to_sink_seconds=terminal['ready_source_to_sink_seconds'],
             model_startup_seconds=terminal['model_startup_seconds'], strict_host_controller_entry_seconds=None,
             cold_boundary='existing supervise started_monotonic before log/Popen; excludes host preflight and lease',
-            query_boundary='one fresh original 25-occurrence source after actual ready through full memory sink'))
+            query_boundary='one fresh complete original source after actual ready through full memory sink'))
     return 0
 
 

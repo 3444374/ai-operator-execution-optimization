@@ -62,12 +62,14 @@ std::string literal(const std::string &text) {
 
 std::map<std::string, std::string> arguments(int argc, char **argv) {
     const std::string usage = "mmqa-filter --input CSV --module PY --function NAME "
-                              "--kind process|thread --output JSON [--threads N] [--sink-release PATH]";
+                              "--kind process|thread --output JSON [--threads N] --sink-release PATH "
+                              "[--expected-rows 25|1200]";
     std::map<std::string, std::string> result;
     for (int index = 1; index < argc; index += 2) {
         const std::string key = argv[index];
         if (index + 1 == argc || (key != "--input" && key != "--module" &&
-            key != "--function" && key != "--kind" && key != "--output" && key != "--threads" && key != "--sink-release") ||
+            key != "--function" && key != "--kind" && key != "--output" && key != "--threads" &&
+            key != "--sink-release" && key != "--expected-rows") ||
             !result.emplace(key, argv[index + 1]).second) {
             throw std::invalid_argument(usage);
         }
@@ -82,6 +84,10 @@ std::map<std::string, std::string> arguments(int argc, char **argv) {
         const auto &value = result.at("--threads");
         if (value.empty() || value.find_first_not_of("0123456789") != std::string::npos ||
             std::stoull(value) == 0) throw std::invalid_argument("threads must be a positive integer");
+    }
+    if (!result.count("--expected-rows")) result["--expected-rows"] = "25";
+    if (result.at("--expected-rows") != "25" && result.at("--expected-rows") != "1200") {
+        throw std::invalid_argument("expected rows must bind MMQA 25 or Medical Q4 1200 occurrences");
     }
     return result;
 }
@@ -167,8 +173,8 @@ void execute(const std::map<std::string, std::string> &args, Json &report, int d
     const auto source_rows = counts->GetValue<int64_t>(0, 0);
     report["source_rows"] = source_rows;
     report["eligible_rows"] = source_rows;
-    if (source_rows != 25 || counts->GetValue<int64_t>(1, 0) != source_rows) {
-        throw std::runtime_error("native MMQA Filter requires exactly 25 unique original occurrences");
+    if (source_rows != std::stoll(args.at("--expected-rows")) || counts->GetValue<int64_t>(1, 0) != source_rows) {
+        throw std::runtime_error("native Filter requires every declared original occurrence exactly once");
     }
     report["ordinary_count_seconds"] = seconds_since(counts_start);
 

@@ -1,4 +1,4 @@
-"""Original MMQA Filter parser inside the author's native Arrow prediction.
+"""Original SemBench Filter parser inside the author's native Arrow prediction.
 
 SQL retains the original label/text and an occurrence ID. Prepared messages are
 bound to that occurrence; native batching may reorder batches without changing
@@ -47,7 +47,7 @@ def infer_mmqa(table):
         if (label, text) != (row['title'], row['text']):
             raise ValueError('native Filter source differs from its prepared occurrence')
         messages.append(row['messages'])
-    replies = model_provider.infer_batch(messages)
+    replies = model_provider.infer_batch(messages, occurrence_ids=inputs['c0'])
     if (type(replies) is not list or len(replies) != table.num_rows
             or any(type(text) is not str for text in replies)):
         raise ValueError('native model changed Filter cardinality or output type')

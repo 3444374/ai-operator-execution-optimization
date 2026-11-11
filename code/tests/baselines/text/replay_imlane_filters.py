@@ -45,13 +45,13 @@ def reference(originals, query_id):
         source_positions=[position for position, _ in rows])
 
 
-def timed_relation(bound, accepted, directory, expected, sampling, receipt_dir):
+def timed_relation(bound, accepted, directory, expected, sampling, receipt_dir, *, fail_after_audit=False):
     directory.mkdir(mode=0o700)
     clock, events = [100_000_000_000], []
     scope = SimpleNamespace(env={}, children=[], track_root=Mock(), check=Mock())
     process = SimpleNamespace(returncode=None)
     release = directory / 'sink-release.ack'
-    native = dict(status='query_returned', return_type='TINYINT', source_rows=25, eligible_rows=25,
+    native = dict(status='query_returned', return_type='TINYINT', source_rows=len(bound.rows), eligible_rows=len(bound.rows),
         variant='original-author', expected_DSO_sha256=binding.DSO_SHA256,
         full_filter_materialized_before_title_sink=True, accepted_occurrences=accepted,
         result_clock='CLOCK_MONOTONIC', result_ready_monotonic_ns=101_000_000_000,
@@ -76,7 +76,7 @@ def timed_relation(bound, accepted, directory, expected, sampling, receipt_dir):
         assert json_metric(frame.to_dict(orient='split')) == expected
         events.append('full-original-memory-sink'); clock[0] = 103_000_000_000
         return frame
-    original_digest, original_value = binding.content_digest, sembench_prepared.result_value
+    original_digest, original_value = sembench_prepared.content_digest, sembench_prepared.result_value
     observed = dict(digests=0, serialization=0)
     def digest(value):
         assert release.exists(); observed['digests'] += 1; clock[0] += 7_000_000_000
@@ -86,9 +86,12 @@ def timed_relation(bound, accepted, directory, expected, sampling, receipt_dir):
         return original_value(value)
     def audit(value, frame):
         events.append('post-sink-audit')
-        with patch.object(binding, 'content_digest', side_effect=digest), \
+        with patch.object(sembench_prepared, 'content_digest', side_effect=digest), \
                 patch.object(sembench_prepared, 'result_value', side_effect=serialize):
-            return bound.audit(value, frame, receipt_dir, sampling)
+            audited = bound.audit(value, frame, receipt_dir, sampling)
+        if fail_after_audit:
+            raise ValueError('injected post-sink audit failure')
+        return audited
     report = {}
     window = SimpleNamespace(check=Mock(), accept_ready=Mock(), begin_cleanup=Mock(return_value=10000.))
     with patch.object(relation, 'DuckDBScope', return_value=Scope()), \

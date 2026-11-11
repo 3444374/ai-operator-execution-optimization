@@ -19,7 +19,7 @@
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 | [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
 | [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | MMQA Q1 原题准备／完整 sink，复用既有作者、模型 owner 与监督器；25 次物理预算 |
-| [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 显式单题 MMQA Q3a–g／Q6a–c；原版 TINYINT Filter、每题 25 次上限、完整 title／Airlines sink 后 ACK |
+| [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 显式单题 MMQA Q3a–g／Q6a–c（25 次）或 Medical Q4（1200 次）；原版 TINYINT Filter、完整原查询 sink 后 ACK |
 
 输入四VARCHAR依次为`occurrence_id/id/reviewId/reviewText`，作者转换器按位置命名`c0..c3`。
 输出为TINYINT，SQL比较`=1`；不走尚未资格的位图Arrow Boolean转换。完整cohort先进入DuckDB；
@@ -294,6 +294,34 @@ ACK用独立新私有路径，已存在ACK不能作为新完成。正常 sink �
 若 sink 已完成而 driver 提前退出，保留 `full_sink_observed_monotonic_ns` 和完整关系，
 标记 `native_alive_after_sink=false`，不接纳 `result_ready_monotonic_ns` 或成功资格。
 本地 C++ publisher检查与保存关系回放不代表真实 DuckDB／Linux 进程生命周期已完成资格。
+
+## Medical Q4 原版 Filter 接线
+
+同一 [单题入口](../../src/experiments/native_imlane_filters.py) 以
+[Medical 配置](../../configs/sembench_imlane_medical_filter.example.json) 显式选择 Q4，
+固定患者 source scale 11112、原 join 后 1200 个发生项和 1200 次物理调用上限。
+原 SemBench c814 的 patients INNER JOIN symptoms、Filter、age.mean() 和单行
+average_acne_age 结果均保留；空集合、重复行、NULL age 和原 pandas join 语义不变。
+仍使用原作者 TINYINT DSO `52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf`，
+不借用 Q1 的 VARCHAR 工程变体，不改作者算法、parser、调度或批大小。
+
+1200 个发生项含 1153 条唯一消息、43 个重复组、47 个额外重复发生项。
+共享 provider 的可选 occurrence_ids 只记录到本地回执，与原有 batch position 绑定，
+不进入模型消息或 request。原始回复按 occurrence 对应，不去重、不按到达顺序匹配，
+不把最后一个重复回复覆盖到其他行。解析继续 true-before-false/default-true。
+薄 driver 的 `--expected-rows 1200` 只声明这道题的完整输入，旧 MMQA 默认仍为 25。
+
+计时沿用真实双起点：ready 后 fresh source/prompt/token 准备和必要传输到完整内存
+join/filter/mean sink；另保留含模型启动的 cold worker／supervisor 起点。完整 sink 先于
+ACK、回执审计、评价、持久化和最后 owner close，后置失败仍使运行失败并保留 sink 观察。
+第 1201 次请求在 generate 前拒绝，失败／未知不退款，不额外预热或自动重试。
+
+[CPU 回放](../../tests/baselines/text/replay_imlane_medical_filter.py) 使用历史 cold/warm 各
+1200 条原保存答复、全部原消息和本地真实 tokenizer 的完整 token 数组，逐发生项保留重复回复。
+真实 Arrow／Unix IPC、完整关系／原 sink／evaluator、乱序批次、1200/1201 预算、完整输入下
+后置审计失败与 ACK 时钟已验证。历史 GPU 回执没有完整 token 数组，因此不授予其逐 token
+一致资格。模型和作者 SQL 是软件 fixture，这不是新模型质量或性能；新薄 driver 的 Linux
+实际链接、DSO SQL 和 GPU／物理清理仍待目标验证。旧 cold/warm 时长不得通过减估关闭来修复。
 
 ## MMQA Q1 工程版接线
 

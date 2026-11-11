@@ -47,6 +47,7 @@ class FilterBindingTests(unittest.TestCase):
                 result = kernel.infer_mmqa(table)
                 self.assertEqual(result.column(0).to_pylist(), [1, 0, 1])
                 self.assertEqual(infer.call_args.args[0], [rows[i]['messages'] for i in (2, 0, 1)])
+                self.assertEqual(infer.call_args.kwargs, dict(occurrence_ids=['2', '0', '1']))
                 self.assertEqual(result.schema.field(0).type, pa.int8())
                 self.assertEqual(kernel.infer_mmqa(table.slice(0, 0)).num_rows, 0)
                 self.assertEqual(infer.call_count, 1)
@@ -62,6 +63,15 @@ class FilterBindingTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'original failure'):
                 kernel.infer_mmqa(pa.table({'c0':['a'],'c1':['a'],'c2':['b']}))
             self.assertEqual(infer.call_count, 1)
+
+    def test_medical_q4_declares_exact_patient_scale_and_occurrence_budget(self):
+        value = config()
+        value.update(schema=entry.MEDICAL_SCHEMA, query_id='4', scale_factor=11112, max_model_calls=1200)
+        self.assertEqual(entry.configuration(value)[0], value)
+        for changes in (dict(query_id='1'), dict(scale_factor=1200), dict(max_model_calls=25),
+                        dict(scale_factor=None), dict(schema=entry.SCHEMA)):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                entry.configuration(dict(value, **changes))
 
 
 class FilterDriverTests(PreparedDriverBuildTests):
@@ -80,7 +90,7 @@ class FilterDriverTests(PreparedDriverBuildTests):
 
 
 class FilterWorkerTests(unittest.TestCase):
-    def exercise(self, *, audit_failure=False, close_failure=False, persistence_failure=False):
+    def exercise(self, *, audit_failure=False, close_failure=False, persistence_failure=False, medical=False):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); clock, events = [100_000_000_000], []
             args = SimpleNamespace(output=root/'worker', build_record=root/'build.json', kind='thread', threads=None, executor_count=None)
@@ -124,12 +134,26 @@ class FilterWorkerTests(unittest.TestCase):
                     patch.object(entry,'persist_relation_observation',side_effect=persist), \
                     patch.object(entry,'time',SimpleNamespace(monotonic_ns=lambda:clock[0],monotonic=time.monotonic,time=time.time)):
                 error=None
-                try: report=entry.run_worker(args,config(),service_factory=Service)
+                try:
+                    value = config()
+                    if medical:
+                        value.update(schema=entry.MEDICAL_SCHEMA, query_id='4', scale_factor=11112, max_model_calls=1200)
+                    report=entry.run_worker(args,value,service_factory=Service)
                 except (RuntimeError,ValueError,OSError) as caught:
                     error=caught;report=json.loads((args.output/'worker.json').read_text())
             if not persistence_failure:
                 self.assertTrue((args.output/'full-sink-observed.json').exists())
             return report,error,events
+
+    def test_medical_success_and_failure_keep_distinct_actual_clock_events(self):
+        for failure in ({}, dict(audit_failure=True), dict(close_failure=True), dict(persistence_failure=True)):
+            with self.subTest(failure=failure):
+                report, error, events = self.exercise(medical=True, **failure)
+                self.assertEqual(report['status'], 'failed' if failure else 'completed')
+                self.assertEqual(error is not None, bool(failure))
+                self.assertEqual(report['ready_source_to_sink_seconds'], 5)
+                self.assertEqual(report['cold_worker_entry_to_sink_seconds'], 95)
+                self.assertEqual(events, ['start','ready','source','sink','audit','close'])
 
     def test_ready_source_and_startup_inclusive_cold_remain_distinct(self):
         report,error,events=self.exercise()
