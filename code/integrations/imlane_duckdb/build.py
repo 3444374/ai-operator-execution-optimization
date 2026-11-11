@@ -30,17 +30,28 @@ SCHEMA_ROOT_CALL = 'ConverArrowAarrayToVector(tbl->chunks[0].children[0], &schem
 SCHEMA_CHILD_CALL = 'ConverArrowAarrayToVector(tbl->chunks[0].children[0], schema.children[0], out)'
 ORIGINAL_CONVERTER_SHA256 = '3baaa780a905e7a1c26c4b83aeaa6d48bc6a990d38aceb9e81ae4935aab30666'
 SCHEMA_CHILD_SHA256 = 'b361ce33e9ff89e44def48c039a9da2c614dc08b032e3f2eb6d1ec6ea6aafa54'
+VARCHAR_OWNED_SHA256 = 'c7a57bbba6193df41bea880bfa69f255a3720126ad60fb16db1b3cfa19d22048'
 
 
-def prepare_converter(copied_source, *, schema_child):
+def prepare_converter(copied_source, *, schema_child=False, varchar_owned=False):
     """Apply the explicit engineering variant only to a fresh pinned export."""
+    if schema_child and varchar_owned:
+        raise ValueError('choose one explicit converter variant')
     header = copied_source / CONVERTER_HEADER
     original = header.read_bytes()
     if hashlib.sha256(original).hexdigest() != ORIGINAL_CONVERTER_SHA256:
         raise ValueError('converter differs from the pinned original author bytes')
-    if schema_child:
+    variant = 'original-author'
+    if varchar_owned:
+        subprocess.run(['git', '-C', str(copied_source), 'apply',
+                        str(OWNED / 'patches/varchar_owned.patch')], check=True)
+        if file_identity(header)['sha256'] != VARCHAR_OWNED_SHA256:
+            raise ValueError('VARCHAR-owned patch produced unexpected header bytes')
+        variant = 'varchar-owned-engineering'
+    elif schema_child:
         header.write_bytes(original.replace(SCHEMA_ROOT_CALL.encode(), SCHEMA_CHILD_CALL.encode()))
-    return dict(variant='schema-child-engineering' if schema_child else 'original-author',
+        variant = 'schema-child-engineering'
+    return dict(variant=variant,
                 path=str(CONVERTER_HEADER), original_sha256=ORIGINAL_CONVERTER_SHA256,
                 prepared=file_identity(header), native_DSO_qualified=False)
 
@@ -154,7 +165,7 @@ def prepare(args):
         raise ValueError('pinned DuckDB fmt declaration was not found exactly once')
     modified = original.replace(FMT_ORIGINAL, FMT_PORTABLE)
     cmake.write_text(modified)
-    converter = prepare_converter(copied_source, schema_child=args.schema_child)
+    converter = prepare_converter(copied_source, schema_child=args.schema_child, varchar_owned=args.varchar_owned)
     restoration = restore_missing_sources(copied_source, args.upstream_source)
     version_flags, versions = version_options(source)
     configure, compile_library = configure_commands(
@@ -162,7 +173,7 @@ def prepare(args):
     report = dict(
         schema='semloom.imlane-duckdb-prepare.v1', author=author, version=versions,
         source_archive=file_identity(archive), source_subtree='database/duckdb',
-        author_prediction_sources_modified=args.schema_child, converter=converter,
+        author_prediction_sources_modified=args.schema_child or args.varchar_owned, converter=converter,
         missing_source_restoration=restoration,
         portability_patch=dict(path='CMakeLists.txt', old=FMT_ORIGINAL, new=FMT_PORTABLE,
             original_sha256=hashlib.sha256(original.encode()).hexdigest(),
@@ -250,8 +261,11 @@ def main(argv=None):
     preparation.add_argument('--upstream-source', type=Path, required=True,
                              help='local cache of the three exact files in missing_sources.json')
     preparation.add_argument('--jobs', type=_positive, required=True)
-    preparation.add_argument('--schema-child', action='store_true',
+    converter_variant = preparation.add_mutually_exclusive_group()
+    converter_variant.add_argument('--schema-child', action='store_true',
         help='explicit engineering variant: pair the output column with its Arrow child schema')
+    converter_variant.add_argument('--varchar-owned', action='store_true',
+        help='separate engineering variant: child schema and VARCHAR NULL/offset/owned string storage')
     compilation = commands.add_parser('driver')
     compilation.add_argument('--root', type=Path, required=True)
     compilation.add_argument('--duckdb-source', type=Path, required=True)

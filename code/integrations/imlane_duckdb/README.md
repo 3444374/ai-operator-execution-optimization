@@ -196,6 +196,26 @@ SQL 保存实际完整关系；完整关系复制后、校验／文件输出／n
 作者 namespace 清理另记。失败、崩溃或超时不能由回执或正确的中间值改判为通过。
 本入口新增的是可执行资格程序；Linux native 编译、各项 SQL 与退出仍须真实运行后才填写结果。
 
+`prepare --varchar-owned` 是独立的 `varchar-owned-engineering` 工程变体，与
+`--schema-child` 互斥。它在原作者新导出副本上应用
+[精确补丁](patches/varchar_owned.patch)：配对 child schema，在 VARCHAR 支路导入
+Arrow validity、使用 element offset，并通过 DuckDB `StringVector::AddStringOrBlob`
+复制到输出 vector 的 string heap；固定宽度支路字节不变。它保留原来的 u/U/z/Z/vu
+接受分支，不改变作者调度或查询算法。旧 `schema-child-engineering` 仍只有一行参数修正。
+
+新变体使用既有 `qualify_varchar build --variant varchar-owned-engineering` 及同一组
+converter／PROCESS／THREAD case；须另建 library、probe 和结果目录，不能复用另一个变体
+的 DSO。源码 hash、编译日志、实际解析到的 DSO 和真实 SQL 结果分别保存，工程版通过不能
+写入原作者资格。未通过、尚未执行或语义不支持的项继续留空。
+
+本地回归入口是 `test_imlane_varchar_owned.py`，需设置
+`SEMLOOM_IMLANE_AUTHOR_CHECKOUT` 为包含固定作者 commit 的已有仓库。它从真实原始
+header 应用补丁，用作者 DuckDB headers 做 C++ 语法检查，再将同一 converter body 与
+明确标注的 storage test double 编译，消费真实 PyArrow C Data。核心 UTF8 用例覆盖 NULL、
+跨 bitmap 字节的 slice offset、释放 Arrow 后的 8192 字节长串、非 NULL 空字符串的
+0 字节 value buffer，以及输出 validity 重用。此检查不加载原作者 DSO，不代替 Linux SQL
+或字符串 heap 的真实运行资格；其他格式的本地值契约尚未扩测。
+
 ## 完整关系 sink 与原生结果交接
 
 已有标量 COUNT 的 C++ 就绪点无需调整。Filter／DOUBLE Map 的原关系后处理需要在作者关闭前完成；

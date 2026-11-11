@@ -23,7 +23,8 @@ from src.infrastructure.redact import redact_text
 
 CASES = ('strings', 'empty', 'null', 'offset', 'ownership')
 VARIANTS = {'original-author': build.ORIGINAL_CONVERTER_SHA256,
-            'schema-child-engineering': build.SCHEMA_CHILD_SHA256}
+            'schema-child-engineering': build.SCHEMA_CHILD_SHA256,
+            'varchar-owned-engineering': build.VARCHAR_OWNED_SHA256}
 
 
 def require_linux():
