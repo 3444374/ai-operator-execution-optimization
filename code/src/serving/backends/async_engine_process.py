@@ -76,7 +76,8 @@ class AsyncEngineProcess:
     This component never retries, chooses batch membership or selects routing/scheduling policy.
     """
 
-    def __init__(self, engine, generation, *, limits, startup_timeout_s=120):
+    def __init__(self, engine, generation, *, limits, startup_timeout_s=120,
+                 worker_env=None, worker_log=None, result_signal=None):
         self.spec = common.EngineSpec.from_dict(asdict(engine))
         self.generation = common.GenerationSpec.from_dict(asdict(generation))
         self.limits = limits
@@ -90,6 +91,7 @@ class AsyncEngineProcess:
         self._slots = {}
         self._data_commands, self._controls, self._ready = deque(), deque(), deque()
         self._condition = threading.Condition()
+        self._result_signal = result_signal
         self._stop, self._io_done = threading.Event(), threading.Event()
         self._closing = self._close_sent = self._drain_requested = False
         self._close_deadline = None
@@ -102,6 +104,7 @@ class AsyncEngineProcess:
         self._retired_unknown = set()
         self._query_id = None
         self.process = None
+        self.process_created = None
         self._owned_process = None
         self._thread = None
         self._data = self._control = self._results = None
@@ -119,11 +122,20 @@ class AsyncEngineProcess:
                     generation=asdict(self.generation), limits=asdict(self.limits)),
                     min(self.limits.control_frame_bytes, _OPEN_FRAME_BYTES))
                 self._controls.append(opening)
-                self.process = subprocess.Popen(self._command(self.spec, [s.fileno() for s in children]),
-                    pass_fds=tuple(s.fileno() for s in children), start_new_session=True,
-                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                    env=dict(os.environ, PYTHONPATH=str(_CODE_ROOT), HF_HUB_OFFLINE="1",
-                             TRANSFORMERS_OFFLINE="1"), bufsize=0)
+                environment = dict(os.environ, PYTHONPATH=str(_CODE_ROOT), HF_HUB_OFFLINE="1",
+                                   TRANSFORMERS_OFFLINE="1")
+                environment.update(worker_env or {})
+                log = None if worker_log is None else open(worker_log, 'xb')
+                try:
+                    self.process = subprocess.Popen(self._command(self.spec, [s.fileno() for s in children]),
+                        pass_fds=tuple(s.fileno() for s in children), start_new_session=True,
+                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL if log is None else log,
+                        stderr=subprocess.DEVNULL if log is None else log, env=environment, bufsize=0)
+                    import psutil
+                    self.process_created = psutil.Process(self.process.pid).create_time()
+                finally:
+                    if log is not None:
+                        log.close()
                 self._owned_process = self.process
                 self._thread = threading.Thread(target=self._io, name="semloom-async-engine-ipc", daemon=True)
                 self._thread.start()
@@ -202,7 +214,7 @@ class AsyncEngineProcess:
         _frame(dict(op="terminal", request_id="x" * 64, confirmed=False,
                     result=_compact_result(example)), self.limits.item_result_bytes)
 
-    def submit(self, row, *, generation=None, deadline_monotonic):
+    def submit(self, row, *, generation=None, deadline_monotonic, kv_transfer_params=None):
         if deadline_monotonic is not None:
             common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
         effective = self.generation if generation is None else generation
@@ -214,6 +226,9 @@ class AsyncEngineProcess:
             raise ValueError("max_tokens exceeds max_model_len")
         identities, _ = common._prepared([row])
         identity = identities[0]
+        if kv_transfer_params is not None and (
+                self.spec.kv_transfer_config is None or not isinstance(kv_transfer_params, dict)):
+            raise ValueError('KV transfer requires a connector and an object descriptor')
         snapshot = {name: row[name] for name in (*common.IDENTITY_FIELDS, "messages_json")}
         self._check_receipt_capacity(identity)
         with self._condition:
@@ -237,7 +252,9 @@ class AsyncEngineProcess:
                 return SubmitResult("backpressure", reason="request, result or IPC capacity exhausted")
             request_id = self._owner_uid + ":" + str(self._sequence)
             data = _frame(dict(op="submit", request_id=request_id, row=snapshot,
-                generation=asdict(effective), deadline=deadline_monotonic), self.limits.item_input_bytes)
+                generation=asdict(effective), deadline=deadline_monotonic,
+                **({'kv_transfer_params': kv_transfer_params} if kv_transfer_params is not None else {})),
+                self.limits.item_input_bytes)
             size = len(data) - 4
             if used["input_bytes"] + size > self.limits.input_bytes:
                 return SubmitResult("backpressure", reason="input byte capacity exhausted")
@@ -248,7 +265,7 @@ class AsyncEngineProcess:
             self._condition.notify_all()
             return SubmitResult("queued", request_id)
 
-    def submit_batch(self, rows, *, generation, deadline_monotonic):
+    def submit_batch(self, rows, *, generation, deadline_monotonic, kv_transfer_params=None):
         """One bounded data frame, atomic local acceptance, independent terminals."""
         if deadline_monotonic is not None:
             common._number(deadline_monotonic, "request deadline", low=0, inclusive_low=False)
@@ -259,6 +276,11 @@ class AsyncEngineProcess:
         if effective.max_tokens > model_context_limit(self.spec, self.ready_report):
             raise ValueError("max_tokens exceeds max_model_len")
         identities, _ = common._prepared(list(rows))
+        if kv_transfer_params is not None and (
+                self.spec.kv_transfer_config is None or not isinstance(kv_transfer_params, list)
+                or len(kv_transfer_params) != len(rows)
+                or any(not isinstance(item, dict) for item in kv_transfer_params)):
+            raise ValueError('KV transfer requires a connector and one object descriptor per row')
         for identity in identities:
             self._check_receipt_capacity(identity)
         if len({r['query_id'] for r in identities}) != 1:
@@ -281,6 +303,9 @@ class AsyncEngineProcess:
                 return BatchSubmitResult("backpressure", reason="request, result or command capacity exhausted")
             keys = tuple(self._owner_uid + ':' + str(self._sequence+i) for i in range(count))
             items = [dict(request_id=key, row=row) for key, row in zip(keys, snapshots)]
+            if kv_transfer_params is not None:
+                for item, params in zip(items, kv_transfer_params, strict=True):
+                    item['kv_transfer_params'] = params
             generation_values = asdict(effective)
             for item in items:
                 _frame(dict(op='submit', **item, generation=generation_values, deadline=deadline_monotonic),
@@ -365,6 +390,8 @@ class AsyncEngineProcess:
                 slot.terminal = dict(confirmed=False, result=None, error_type=reason)
                 self._ready.append(key)
         self._condition.notify_all()
+        if self._result_signal is not None:
+            self._result_signal.set()
 
     def _receive(self, value, *, results, encoded_bytes=0):
         with self._condition:
@@ -397,6 +424,8 @@ class AsyncEngineProcess:
                 else:
                     self._broken = self._broken or "ModelOutcomeUnknown"
                 self._ready.append(key)
+                if self._result_signal is not None:
+                    self._result_signal.set()
             elif op == "ready":
                 if self.ready_report is not None:
                     raise ValueError("duplicate model ready")

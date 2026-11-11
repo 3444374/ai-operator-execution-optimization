@@ -49,9 +49,25 @@ The caller owns GPU allocation, memory fractions and the total deadline. CPU
 staging is also explicit via `kv_buffer_device="cpu"`. `cancel()` requests both
 processes to stop; `close()` reports each process separately and does not claim
 GPU exit. An unconsumed P handoff remains native-owned until its send expiry or
-process shutdown. Only complete logical requests are serialized in this first
-version; overlap, dynamic routing, live decode migration, vision-encoder splitting
-and query-adapter integration remain pending. Colocated execution remains available.
+process shutdown. The serial implementation remains a functional control.
+Dynamic routing, live decode migration, vision-encoder splitting and query-adapter
+integration remain pending. Colocated execution remains available.
+
+`pipelined_prefill_decode.PipelinedPrefillDecodeProcess` adds cross-request
+concurrency over two `AsyncEngineProcess` owners. Pass explicit `limits`,
+`batch_size` and `prefill_window`. One logical capacity covers P, waiting handoffs
+and D; each P terminal can advance immediately, independent of its IPC batch peers.
+Native vLLM owns physical continuous batching. A shared result event wakes the
+coordinator; there is no fixed polling sleep. Results restore input order and keep
+both physical receipts. Failure stops admission, drains retained receipts and closes
+both owners. This object accepts one call at a time and supports resident reuse.
+
+The [resident worker](../../experiments/native_stage_pipeline.py) compares against
+native `LLM.chat` on the complete request set, retains first outputs and every timed
+repeat, and separates warmup and startup. Its caller supplies matched total resources
+and the same external safeguards as the functional worker. The async native logger
+captures NIXL updates even in iterations without output; absent or unsupported
+metrics remain explicit. CPU IPC checks establish pipeline behavior, not GPU benefit.
 
 The [worker](../../experiments/native_stage_handoff.py) compares exact prompt IDs,
 output IDs, text and finish reasons. Its caller supplies preflight, host lease,

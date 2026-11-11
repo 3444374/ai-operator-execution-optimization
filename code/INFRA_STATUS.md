@@ -28,6 +28,9 @@ encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 
 [后端](src/serving/backends/README.md#native-text-prefilldecode-handoff)提供显式启用的双进程 prefill/decode 与 NIXL KV 交接。单卡双进程的四条完整请求通过输出与原生接收检查；具体证据见[主报告](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md)；跨卡性能、运行中 decode 迁移、视觉编码器分离及完整查询接入尚未验证。
 
+可选异步 owner 已补跨请求推进、批提交和共同在途上限，CPU 子进程验证覆盖慢批成员、取消与失败回执。
+同资源共置实机比较待按上述计划执行，不从 CPU 并发检查推断性能。
+
 ## 当前能力与待处理项
 
 | 部分 | 当前实现 | 未完成或未验证 |

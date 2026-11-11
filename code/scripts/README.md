@@ -9,6 +9,7 @@
 | 任务 | 入口 | 范围 |
 |---|---|---|
 | 文本阶段与 KV 交接检查 | [native_stage_handoff.py](../src/experiments/native_stage_handoff.py) | 原生共置／分离输出一致性；调用方提供 preflight、主机租约、持久次数记录及进程监督，[计划](../../experiments/plans/数据组织.md#native-stage-handoff) |
+| 跨请求阶段流水对照 | [native_stage_pipeline.py](../src/experiments/native_stage_pipeline.py) | 显式 `--config`／`--output` 的常驻请求回放；原生整批共置与有界异步 P/D，外层资源、额度和监督同上 |
 | 布局、图片准备与原生阶段候选 | [布局](profiling/profile_request_layouts.py)、[传输](profiling/run_media_transport_study.py)、[消费](profiling/run_media_consumer_study.py)、[提前准备](profiling/run_preparation_ahead_study.py)、[encoder](profiling/probe_encoder_retention.py)、[阶段分析](profiling/analyze_native_stage_work.py) | [运行范围与来源](../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)；参数由各 CLI 的 `--help` 和显式配置提供 |
 | 原生 GPU 批决策分析 | [analyze_native_gpu_decisions.py](profiling/analyze_native_gpu_decisions.py) | 离线核对成员、前缀／cascade、graph／padding 和采集完整性；[说明](profiling/record_observation/README.md#native-gpu-decisions) |
 | 表示寿命与供给等待 | [表示](profiling/analyze_representation_lifetimes.py)、[供给](profiling/analyze_supply_waits.py) | 读取实际事件、保留缺项；[范围](profiling/record_observation/README.md#mechanism-prototypes) |

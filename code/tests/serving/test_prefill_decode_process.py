@@ -38,7 +38,7 @@ class IPCFixtureEngine:
 class CPUStageProcess(stages.ChainEngineProcess):
     @staticmethod
     def _command(engine, fd):
-        return [sys.executable, '-B', '-m', __name__, '--cpu-serve', str(fd)]
+        return [sys.executable, '-B', str(Path(__file__)), '--cpu-serve', str(fd)]
 
 
 class FixtureProcess:

@@ -25,4 +25,5 @@ def _compact_result(value):
     # Only potentially large output representations are omitted on overflow.
     return dict(value, text=None, prompt_token_ids_json="null", output_token_ids_json="null",
                 logprobs_json="null", status="unknown" if value["status"] == "unknown" else "failed",
-                error_type="ResultCapacityExceeded", result_fields_omitted=True)
+                error_type="ResultCapacityExceeded", result_fields_omitted=True,
+                **({'kv_transfer_params': None} if 'kv_transfer_params' in value else {}))
