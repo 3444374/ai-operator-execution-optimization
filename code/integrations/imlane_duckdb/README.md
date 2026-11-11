@@ -263,8 +263,8 @@ Popen 前起点计时。它们不包含更早的宿主导入／预检／取租�
 
 本次 CPU 保存答复回放覆盖 Q3b–g、Q6a–c 共 225 条，真实 Arrow／Unix IPC、原消息和完整 CPU
 token、原关系／sink／评价、预算第 26 次拒绝及 ACK 时序。author SQL、模型与引擎为明确软件
-fixture，不能据此授予新原生 SQL 或 GPU 时长。Linux 新薄 driver 链接原 DSO、实际逐题 SQL 和
-物理清理仍待目标验证。旧联合包保留为历史原件，其总时长不能拆为逐题值；正式替代验证后
+fixture，不能据此授予新原生 SQL 或 GPU 时长。协调器已报告 `d176cbb2` 九道独立25次的
+目标执行；Q3e 外层 guard 失败保留，逐题范围见[隔离组合报告](../../../experiments/results/diagnostics/baseline_validated_integration_20261111/README.md)。旧联合包保留为历史原件，其总时长不能拆为逐题值；正式替代验证后
 迁移旧私有启动引用，唯一原始成功／失败证据不删除。Q1 的 VARCHAR 工程变体保持独立。
 
 Python scope 尚在不代表 C++ runtime 尚在。适配的 driver 必须在完整关系发布之前创建
@@ -320,8 +320,8 @@ ACK、回执审计、评价、持久化和最后 owner close，后置失败仍�
 1200 条原保存答复、全部原消息和本地真实 tokenizer 的完整 token 数组，逐发生项保留重复回复。
 真实 Arrow／Unix IPC、完整关系／原 sink／evaluator、乱序批次、1200/1201 预算、完整输入下
 后置审计失败与 ACK 时钟已验证。历史 GPU 回执没有完整 token 数组，因此不授予其逐 token
-一致资格。模型和作者 SQL 是软件 fixture，这不是新模型质量或性能；新薄 driver 的 Linux
-实际链接、DSO SQL 和 GPU／物理清理仍待目标验证。旧 cold/warm 时长不得通过减估关闭来修复。
+一致资格。模型和作者 SQL 是软件 fixture，这不是新模型质量或性能。协调器另报告
+`6a31cc38` 冷轮1200次及完整 sink 通过，按[隔离组合报告](../../../experiments/results/diagnostics/baseline_validated_integration_20261111/README.md)与本地组合 CPU 分列。旧 cold/warm 时长不得通过减估关闭来修复。
 
 ## MMQA Q1 工程版接线
 
@@ -379,8 +379,8 @@ sink；`cold_worker_entry_to_sink_seconds` 还包含 worker 预检和模型启�
 Q1 结果先保存为原 Series，持久化时转成单列关系，不改变内存查询语义。
 
 本机真实 Unix IPC／Arrow 的 25 条保存答复回放验证消息、完整 token、每源原文、完整 Extract 关系、
-原 sink／evaluator 和 25/26 预算；模型与作者 SQL 是软件替身。当前尚待 Linux 新 driver 编译／
-动态链接、新任务 SQL／实际 vLLM JSON 参数及首次有界模型验证。Mac 缺原作者 Boost 头，
+原 sink／evaluator 和 25/26 预算；模型与作者 SQL 是软件替身。协调器另报告 `73ee255e` 的
+目标25次及完整 sink 完成，准确来源见[隔离组合报告](../../../experiments/results/diagnostics/baseline_validated_integration_20261111/README.md)，不继承到本组合树。Mac 缺原作者 Boost 头，
 不通过安装普通 DuckDB 或重建已验 DSO 绕过。旧参考 F1 不记作本次 IMLane 模型质量。
 
 ## 外层运行资源与回执

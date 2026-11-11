@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[原生 baseline 隔离组合](baseline_validated_integration_20261111/README.md)：
+精确合并、限定 CPU 回归、保存答复/软件 IPC 及测试隔离修复；组件目标成绩保持原提交，尚未合 main。
+
 [LOTUS Movie 共享 exact Join 接线](lotus_movie_join_native_20261111/README.md)：
 Q5/Q6/Q7 原序前 8 条、每题 64 对的原 SDK/IPC 软件检查；原生算法与后置完整 sink 保留，未运行模型。
 

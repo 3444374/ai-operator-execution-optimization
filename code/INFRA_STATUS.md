@@ -5,6 +5,9 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及所属报告。
 CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释，不把旧版本通过数累加为当前整树结果。
 
+[隔离组合报告](../experiments/results/diagnostics/baseline_validated_integration_20261111/README.md)记录 `2e2616a5` 与 `6a31cc38` 的独立组合、限定 CPU 回归及仍缺资产的检查；
+候选尚未合入 main。最新组件目标状态来自协调器报告，按原提交分列，不转授组合树模型资格。
+
 Ray 完整文本查询新增[显式原生 processor 接点](src/baselines/README.md#ray-native-prepared-sembench)：
 完整预测物化后、关闭前执行原 parser/关系并记录内存 sink；旧 `query_seconds` 不追认为统一口径。
 `ac4440328` 已完成 Q10 full2000、Q8 120、Q9 Map256 的原生模型、实际 token、原 sink 和物理清理审计；
@@ -66,7 +69,7 @@ Animals manifest／SQL，目标环境验证仍待完成。
 归档响应的完整结果／评价回放相等。Q8/Q9 Map、Q3a/Q6a–c、Medical Q1/Q4 的迁移又通过 16 轮保存
 响应回放与 18 个失败边界检查。原 Map 最坏 2N、Filter N 的实际请求额度保持。作者 `05024f0` 的
 Linux 原环境已通过零模型 native import／request object 门检，CUDA 未初始化；此前失败来自门检
-导入次序，按既有服务入口修正后通过，不是作者依赖缺失。新运行绑定及真实 sink／清理仍待验证，
+导入次序，按既有服务入口修正后通过，不是作者依赖缺失。各题目标 sink／清理按上述隔离组合报告和准确原件分别核对，
 该门检也不授予作者原版结构化 Extract 资格。Q9 本批独立全输入 hash 未知，原 occurrence／必要 CSV／结果相等，
 不能以其他输入身份补齐该未知项。这些 CPU 结果不是新 GPU 或性能资格。
 
@@ -74,8 +77,9 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 已进入原 query/server/CPU CLI，保留完整 256 发生项、原评分／排序／评价和作者 length→8192
 重试，物理上界为每题 512；不是 TopK。新增本地完整保存输出／token／时钟回放通过，但不继承
 旧模型成绩。204faa 的目标 CPU 预检暴露作者环境无 pandas 的边界错误，修正版把原查询准备
-放回 driver Python，作者 CPU CLI 仅消费摘要绑定的完整输入；不安装或混用环境。新目标两步
-CPU／owner 与 GPU 运行仍待资格检查。当前输入完整 SHA 独立绑定，
+放回 driver Python，作者 CPU CLI 仅消费摘要绑定的完整输入；不安装或混用环境。协调器已报告 `2e2616a5` 的 Q9 目标冷暖及逐条审计通过，
+同源 Q1–Q4 冷暖共4720次也由协调器报告完成，但 Filter runtime 完整token数组未采集。
+这些结果不转记当前组合源码，逐题来源见上述报告。当前输入完整 SHA 独立绑定，
 不补写旧 Q9 缺少 full-source hash 的历史未知项。
 
 [IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257`、可选
@@ -87,10 +91,10 @@ offset 及字符串复制；`0f562cf0` 已完成真实 Linux DSO／converter／P
 检查，该工程变体的 THREAD strings／null／offset 各 3 行、empty 0 行、ownership 1 行均正确，
 不改记作者原版的失败。新增[MMQA Q1 接线](integrations/imlane_duckdb/README.md#mmqa-q1-工程版接线)
 复用该 DSO、原 JSON prompt/parser、完整关系 sink 和既有 owner；25 条保存答复的完整消息/token、
-关系／评价、25/26 物理预算及双时钟 CPU 检查通过。新薄 driver 的 Linux 链接及 Q1 真实模型仍待验。
+关系／评价、25/26 物理预算及双时钟 CPU 检查通过。协调器已报告 `73ee255e` 的 Q1 目标25次及完整 sink 完成，结果仍绑定原提交。
 schema-child 仅保留独立候选身份，尚无该变体的目标资格。原版 TINYINT Filter／DOUBLE Map 的已有
 真实结果不受影响；不能用工程变体或 Python fixture 宣称原版 Extract 已支持。新交接要求实际 DuckDB/result
-等待完整 sink ACK 后退出；目标原生生命周期尚待验证。联合 150 行的六题批次只有一个批次时钟，
+等待完整 sink ACK 后退出；逐题目标状态见上述报告，Q3e 外层 guard 失败保留。联合 150 行的六题批次只有一个批次时钟，
 不能拆成六个独立查询时长。
 
 
@@ -98,8 +102,8 @@ schema-child 仅保留独立候选身份，尚无该变体的目标资格。原�
 TINYINT 单题入口，1200 个发生项进入完整原 join/filter/mean 内存 sink 后才 ACK；回执通过
 batch position 与本地 occurrence ID 关联 43 个重复消息组，不改变模型请求。历史 cold/warm
 2400 条保存答复的真实 Arrow／Unix IPC、原完整消息、CPU token 数组、关系／评价与物理预算
-回放通过，后置失败不隐藏，cold 与 ready 起点独立保留。77 项受影响 CPU 测试通过；Linux
-新 driver 链接、实际 SQL 和新模型运行仍待验证，不改记历史质量／时长。
+回放通过，后置失败不隐藏，cold 与 ready 起点独立保留。77 项受影响 CPU 测试通过；协调器另报告 `6a31cc38` 的冷轮1200次及完整 sink
+通过，来源与当前组合 CPU 分列，不改记历史质量／时长。
 
 [Ray Animals Q7](src/baselines/image/ray_animals_q7/README.md)现保留第一 stage 的完整关闭，最终原 City
 关系就绪后才 ACK 并关闭最后 runtime。原 19 项 CPU、真实本地子进程交接及 128 条旧答复身份／原 parser

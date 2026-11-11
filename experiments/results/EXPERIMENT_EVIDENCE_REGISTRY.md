@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+## 2026-11-11：原生 baseline 隔离组合的 CPU 验证
+
+[报告](diagnostics/baseline_validated_integration_20261111/README.md)记录 `2e2616a5` 与 `6a31cc38` 的组合，
+34 模块限定回归、五组零模型回放及两类测试夹具修复。缺资产跳过、首轮失败与最终结果分列；
+协调器报告的目标结果保留原提交身份，不授予组合树模型/性能资格，main 与既有脏文档不变。
+
 ## 2026-11-11：LOTUS Movie exact Join 的有限接线
 
 [报告](diagnostics/lotus_movie_join_native_20261111/README.md)记录 Q5/Q6/Q7 共用原生 Join 分支和每题 8×8 软件 IPC 回放。

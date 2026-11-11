@@ -468,7 +468,8 @@ Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一
 当前 Q7 保留第一 stage 的物理退出及清理，在最后 stage 预测原子发布后执行原 City 交集；
 完整内存 sink 就绪后 ACK，再完成最后 runtime 的公开关闭和宿主清理。第一 stage 的释放仍属于
 该双 worker profile 的必要流程。19 项 CPU 及 128 条保存答复身份／parser 回放通过，完整原 City／
-evaluator 和目标 Ray／GPU 新终点仍待验证；不从公共 runtime 存活推断内部模型 actor 驻留。
+evaluator 和目标 Ray／GPU 新终点后来已由 `909f842c` 完成独立资格；后续失败诊断/退出码
+改动与本组合树仍只按各自 CPU 证据解释，不从公共 runtime 存活推断内部模型 actor 驻留。
 旧结果包含最后关闭，不能减去估计清理时间回填新口径。
 
 Ray／Daft 的 CLIP 图仍是独立嵌入路径；Q7 的资格不扩大为其他 VLM Join／Extract 支持。

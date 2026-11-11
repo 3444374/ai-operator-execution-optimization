@@ -160,7 +160,9 @@ CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHO
 
 目标原生 CPU 命令仍是 `check_kalypso_native_cpu.py --config "$NEW_CONFIG" --output "$NEW_CPU_EVIDENCE"`；
 服务只由既有 owner 通过 `owner_cli_bindings` 返回的 maintained CLI 启动。新 Linux owner/source/
-native CPU 与实际 GPU／完整 sink／物理清理资格仍待验证，不复用归档 LAUNCH、期限或模型成绩。
+协调器已报告 `2e2616a5` Q9 冷暖512次、0重试及完整 token/sink 审计通过；
+另报告同源 Movie Q1–Q4 冷暖共4720次新 sink 通过；Filter runtime 完整token数组未采集。
+来源与组合 CPU 的区别见[隔离组合报告](../../../../../../experiments/results/diagnostics/baseline_validated_integration_20261111/README.md)，不复用旧 LAUNCH、期限或模型成绩。
 
 
 ### Q9 CPU 预检的双 Python 边界
