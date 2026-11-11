@@ -7,6 +7,7 @@ import hashlib
 import importlib.metadata
 import multiprocessing as mp
 import os
+from concurrent.futures import ThreadPoolExecutor
 from multiprocessing.connection import wait
 from multiprocessing.reduction import ForkingPickler
 from pathlib import Path
@@ -24,7 +25,10 @@ def _worker(connection):
     connection.send(dict(ready=True))
     try:
         while True:
-            packet = connection.recv_bytes()
+            try:
+                packet = connection.recv_bytes()
+            except EOFError:
+                return
             if not packet:
                 return
             index, value = ForkingPickler.loads(packet)
@@ -40,13 +44,28 @@ def _worker(connection):
         connection.close()
 
 
-def _run_arm(paths, references, *, kind, materialization, workers, timeout_s):
+def _run_arm(paths, references, *, kind, materialization, workers, timeout_s, cleanup_timeout_s=1.0):
     import psutil
     context, hosts, children = mp.get_context('spawn'), [], []
     created = time.perf_counter_ns()
     deadline = time.monotonic() + timeout_s
     parent_process = psutil.Process()
     events = []
+    sender = ThreadPoolExecutor(max_workers=1, thread_name_prefix='image-transport-send')
+    pending_send, primary = None, None
+    completed = False
+
+    def send_bytes(host, packet):
+        nonlocal pending_send
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError('image transport arm exceeded its operation time')
+        pending_send = sender.submit(host.send_bytes, packet)
+        try:
+            pending_send.result(timeout=remaining)
+        except TimeoutError as error:
+            raise TimeoutError('image transport arm exceeded its operation time') from error
+
     try:
         for _ in range(workers):
             host, worker = context.Pipe()
@@ -88,7 +107,7 @@ def _run_arm(paths, references, *, kind, materialization, workers, timeout_s):
                 host = ready.pop(0)
                 events[index]['worker_slot'] = hosts.index(host)
                 begin = time.perf_counter_ns()
-                host.send_bytes(packet)
+                send_bytes(host, packet)
                 events[index]['send_ns'] = time.perf_counter_ns() - begin
                 pending[host] = index
                 parent_rss_samples.append(parent_process.memory_info().rss)
@@ -107,22 +126,45 @@ def _run_arm(paths, references, *, kind, materialization, workers, timeout_s):
                     events[index].update(response, completed_at_ns=time.perf_counter_ns() - started)
                     ready.append(host)
         elapsed = time.perf_counter_ns() - started
+        completed = True
         return dict(representation=kind, materialization=materialization, workers=workers,
                     pipeline_wall_ns=elapsed, startup_ns=started-created, events=events,
                     parent_max_sampled_rss_bytes=max(parent_rss_samples),
                     actual_frame_bytes=sum(e['sent_bytes'] for e in events), matched_pixels=True)
+    except BaseException as error:
+        primary = error
+        raise
     finally:
-        for host, process in zip(hosts, children):
-            if process.is_alive():
-                try:
-                    host.send_bytes(b'')
-                except (BrokenPipeError, EOFError, OSError):
-                    pass
+        # EOF stops idle workers without another potentially blocked pipe write.
+        # Reaping owns a separate bounded allowance after the operation deadline.
+        cleanup_deadline = time.monotonic() + cleanup_timeout_s
+        cleanup_errors = []
+        for host in hosts:
             host.close()
         for process in children:
-            process.join(max(0, deadline-time.monotonic()))
+            if not completed and process.is_alive():
+                process.kill()
+            process.join(max(0, cleanup_deadline-time.monotonic()))
             if process.is_alive():
-                process.terminate(); process.join()
+                process.kill()
+                process.join(max(0, cleanup_deadline-time.monotonic()))
+            if process.is_alive():
+                cleanup_errors.append('image worker exit unconfirmed')
+        if pending_send is not None:
+            try:
+                pending_send.result(timeout=max(0, cleanup_deadline-time.monotonic()))
+            except TimeoutError:
+                cleanup_errors.append('image sender exit unconfirmed')
+            except Exception:
+                pass  # A terminated receiver makes an outstanding write fail.
+        send_settled = pending_send is None or pending_send.done()
+        sender.shutdown(wait=send_settled, cancel_futures=True)
+        if cleanup_errors:
+            detail = '; '.join(cleanup_errors)
+            if primary is not None:
+                primary.add_note(detail)
+            else:
+                raise RuntimeError(detail)
 
 
 def run_study(config, output):
