@@ -119,10 +119,14 @@ class Q1Relation:
         return audit_relation(self.prepared, self.relation)
 
 
-def audit_ipc(directory, requests, tokens, predictions, sampling):
-    expected = {content_digest(row['messages']): (row['call_id'], ids)
+def audit_ipc(directory, requests, tokens, predictions, sampling, *, by_occurrence=False):
+    expected = {(row['call_id'] if by_occurrence else content_digest(row['messages'])):
+                (row['call_id'], ids, row['messages'])
                 for row, ids in zip(requests, tokens, strict=True)}
     outputs = {row['call_id']: row['generated_text'] for row in predictions}
+    if (len(expected) != len(requests) or len(outputs) != len(predictions)
+            or set(outputs) != {row['call_id'] for row in requests}):
+        raise ValueError('IPC audit requires every unique source occurrence and its original output')
     seen, attempts, request_ids, calls = set(), set(), set(), []
     starts = {p.stem.removesuffix('.started') for p in Path(directory).glob('*.started.json')}
     ends = list(Path(directory).glob('*.terminal.json'))
@@ -133,23 +137,27 @@ def audit_ipc(directory, requests, tokens, predictions, sampling):
         if (batch['status'] != 'succeeded' or batch['client_closed'] is not True
                 or batch['request']['sampling_params'] != sampling):
             raise ValueError('model IPC failed or changed original generation parameters')
-        for call in batch['calls']:
-            digest = content_digest(call['requested_payload']['messages'])
-            if digest not in expected or digest in seen:
-                raise ValueError('duplicate or foreign Q1 model occurrence')
-            call_id, ids = expected[digest]
+        for position, call in enumerate(batch['calls']):
+            key = call.get('occurrence_id') if by_occurrence else content_digest(call['requested_payload']['messages'])
+            if key not in expected or key in seen:
+                raise ValueError('duplicate or foreign model occurrence')
+            call_id, ids, messages = expected[key]
             response = call['response']
+            if by_occurrence and (call['position'] != position or response['position'] != position
+                    or call['requested_payload']['messages'] != messages
+                    or batch['request']['messages_batch'][position] != messages):
+                raise ValueError('native batch position or original occurrence messages changed')
             if (call['status'] != 'succeeded' or call['attempted'] is not True
                     or response['generated_text'] != outputs[call_id]
                     or response['rendered_prompt_token_ids'] != ids
                     or response['requested_max_tokens'] != 8192
                     or response['resolved_max_tokens'] != 8192
                     or response['budget_attempt'] in attempts or response['request_id'] in request_ids):
-                raise ValueError('native Q1 text, tokens or charged request identity changed')
-            seen.add(digest); attempts.add(response['budget_attempt']); request_ids.add(response['request_id'])
+                raise ValueError('native text, tokens or charged request identity changed')
+            seen.add(key); attempts.add(response['budget_attempt']); request_ids.add(response['request_id'])
             calls.append(dict(call_id=call_id, response=response))
     if seen != set(expected) or attempts != set(range(1, len(expected) + 1)):
-        raise ValueError('Q1 requires exactly 25 identified charged native terminal results')
+        raise ValueError('every source occurrence requires one identified charged native terminal result')
     return dict(calls=calls, native_generate_terminal_count=len(calls), retries=0,
                 first_engine_accept=None, kernel_count=None)
 

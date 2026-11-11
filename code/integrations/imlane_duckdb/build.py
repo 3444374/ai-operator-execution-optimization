@@ -203,8 +203,9 @@ def driver_command(source, prefix, duckdb_source, duckdb_build, output, compiler
             '-lduckdb', '-ldbendrt_c', '-lfmt', '-lboost_system', '-pthread']
 
 
-def driver(args, *, sembench=False):
-    if sembench and sys.platform != 'linux':
+def driver(args, *, sembench=False, native_filter=False):
+    bound = sembench or native_filter
+    if bound and sys.platform != 'linux':
         raise RuntimeError('prepared native IMLane driver linkage requires Linux')
     source, prefix, author = _author(args.root)
     duckdb_source, duckdb_build, output = (
@@ -220,18 +221,19 @@ def driver(args, *, sembench=False):
         raise ValueError('driver build refuses to overwrite a prior result')
     library = duckdb_build / 'src/libduckdb.so'
     library_identity = file_identity(library)
-    driver_source = OWNED / ('sembench.cpp' if sembench else 'q3.cpp')
-    if sembench:
+    driver_source = OWNED / ('mmqa_filter.cpp' if native_filter else 'sembench.cpp' if sembench else 'q3.cpp')
+    if bound:
         if (not re.fullmatch('[0-9a-f]{64}', args.duckdb_sha256)
                 or library_identity['sha256'] != args.duckdb_sha256):
             raise ValueError('prepared driver requires the declared already-qualified DuckDB DSO')
         source_header = file_identity(duckdb_source / CONVERTER_HEADER)
-        if source_header['sha256'] != VARCHAR_OWNED_SHA256:
-            raise ValueError('prepared driver requires the explicit varchar-owned engineering source')
+        expected_header = ORIGINAL_CONVERTER_SHA256 if native_filter else VARCHAR_OWNED_SHA256
+        if source_header['sha256'] != expected_header:
+            raise ValueError('driver converter differs from its declared author variant')
     output.parent.mkdir(parents=True, exist_ok=True)
     command = driver_command(source, prefix, duckdb_source, duckdb_build, output, args.compiler,
                              driver_source=driver_source)
-    if sembench:
+    if bound:
         command.extend(['-ldl', '-DSEMLOOM_EXPECTED_DUCKDB_DSO=' + json.dumps(str(library)),
                         '-DSEMLOOM_EXPECTED_DUCKDB_SHA256=' + json.dumps(args.duckdb_sha256)])
     record = dict(schema='semloom.imlane-duckdb-driver-build.v1', author=author,
@@ -240,11 +242,12 @@ def driver(args, *, sembench=False):
         duckdb_cmake=file_identity(duckdb_source / 'CMakeLists.txt'),
         cmake_cache=file_identity(duckdb_build / 'CMakeCache.txt'),
         real_model_requests=0, returncode=None, binary=None)
-    if sembench:
-        record.update(schema='semloom.imlane.prepared_driver_build.v1', status='failed',
-            variant='varchar-owned-engineering', source_header=source_header,
+    if bound:
+        kernel = OWNED / ('mmqa_filter_udf.py' if native_filter else 'sembench_udf.py')
+        record.update(schema='semloom.imlane.filter_driver_build.v1' if native_filter else 'semloom.imlane.prepared_driver_build.v1', status='failed',
+            variant='original-author' if native_filter else 'varchar-owned-engineering', source_header=source_header,
             binary_path=str(output), duckdb_library_path=str(library),
-            kernel_path=str(OWNED / 'sembench_udf.py'), kernel=file_identity(OWNED / 'sembench_udf.py'),
+            kernel_path=str(kernel), kernel=file_identity(kernel),
             DSO_rebuilt=False)
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=args.timeout_seconds)
@@ -252,7 +255,7 @@ def driver(args, *, sembench=False):
             compiler_output=redact_text(result.stdout + result.stderr))
         if result.returncode == 0:
             record['binary'] = file_identity(output)
-            if sembench:
+            if bound:
                 probe_path = output.with_suffix('.link.json')
                 probe = subprocess.run([str(output), '--probe-dso', str(probe_path)],
                     capture_output=True, text=True, timeout=15,
@@ -304,7 +307,7 @@ def main(argv=None):
         help='explicit engineering variant: pair the output column with its Arrow child schema')
     converter_variant.add_argument('--varchar-owned', action='store_true',
         help='separate engineering variant: child schema and VARCHAR NULL/offset/owned string storage')
-    for action in ('driver', 'sembench-driver'):
+    for action in ('driver', 'sembench-driver', 'filter-driver'):
         compilation = commands.add_parser(action)
         compilation.add_argument('--root', type=Path, required=True)
         compilation.add_argument('--duckdb-source', type=Path, required=True)
@@ -312,11 +315,12 @@ def main(argv=None):
         compilation.add_argument('--output', type=Path, required=True)
         compilation.add_argument('--compiler', default='g++')
         compilation.add_argument('--timeout-seconds', type=_positive, default=120)
-        if action == 'sembench-driver':
+        if action != 'driver':
             compilation.add_argument('--duckdb-sha256', required=True,
-                help='digest of the existing qualified varchar-owned DuckDB DSO; never rebuild it')
+                help='digest of the existing qualified variant-specific DuckDB DSO; never rebuild it')
     args = parser.parse_args(argv)
-    return prepare(args) if args.action == 'prepare' else driver(args, sembench=args.action == 'sembench-driver')
+    return prepare(args) if args.action == 'prepare' else driver(args,
+        sembench=args.action == 'sembench-driver', native_filter=args.action == 'filter-driver')
 
 
 if __name__ == '__main__':

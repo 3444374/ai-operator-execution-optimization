@@ -93,6 +93,14 @@ schema-child 仅保留独立候选身份，尚无该变体的目标资格。原�
 等待完整 sink ACK 后退出；目标原生生命周期尚待验证。联合 150 行的六题批次只有一个批次时钟，
 不能拆成六个独立查询时长。
 
+
+[IMLane Medical Q4](integrations/imlane_duckdb/README.md#medical-q4-原版-filter-接线) 复用原版
+TINYINT 单题入口，1200 个发生项进入完整原 join/filter/mean 内存 sink 后才 ACK；回执通过
+batch position 与本地 occurrence ID 关联 43 个重复消息组，不改变模型请求。历史 cold/warm
+2400 条保存答复的真实 Arrow／Unix IPC、原完整消息、CPU token 数组、关系／评价与物理预算
+回放通过，后置失败不隐藏，cold 与 ready 起点独立保留。77 项受影响 CPU 测试通过；Linux
+新 driver 链接、实际 SQL 和新模型运行仍待验证，不改记历史质量／时长。
+
 [Ray Animals Q7](src/baselines/image/ray_animals_q7/README.md)现保留第一 stage 的完整关闭，最终原 City
 关系就绪后才 ACK 并关闭最后 runtime。原 19 项 CPU、真实本地子进程交接及 128 条旧答复身份／原 parser
 回放通过；`909f842c4` 又通过目标 64 张原图／128 条保存答复的完整 City／evaluator 回放，并在独立

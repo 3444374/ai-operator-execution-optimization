@@ -122,10 +122,30 @@ class IMLaneModelProviderTests(unittest.TestCase):
         self.assertEqual(final['request_sha256'], content_digest(request))
         self.assertEqual(final['response_sha256'], content_digest(final['response']))
         for i, call in enumerate(final['calls']):
+            self.assertNotIn('occurrence_id', call)
             self.assertEqual(call['requested_payload'], dict(self.config['sampling_params'],
                 model=self.config['model'], messages=original[i]))
             self.assertEqual(call['messages_sha256'], content_digest(original[i]))
             self.assertEqual(call['response'], final['response']['calls'][i])
+
+    def test_optional_occurrences_stay_in_receipts_not_original_model_request(self):
+        messages = [self.messages[0], self.messages[0]]
+        self.assertEqual(provider.infer_batch(messages, occurrence_ids=['later', 'first']), self.texts)
+        request, = self.socket.requests
+        self.assertEqual(request['messages_batch'], messages)
+        self.assertEqual(set(request), {'schema', 'batch_id', 'model', 'sampling_params',
+                                       'messages_batch', 'deadline_monotonic'})
+        for phase in ('started', 'terminal'):
+            receipt, = self.saved(phase)
+            self.assertEqual([(row['position'], row['occurrence_id']) for row in receipt['calls']],
+                             [(0, 'later'), (1, 'first')])
+
+    def test_invalid_occurrence_bindings_fail_before_ipc(self):
+        for ids in ([], ['only'], ['same', 'same'], [None, 'valid'], ['valid', ''], ('a', 'b')):
+            with self.subTest(ids=ids), self.assertRaises(ValueError):
+                provider.infer_batch(self.messages, occurrence_ids=ids)
+        self.factory.assert_not_called()
+        self.assertEqual(self.saved('started'), [])
 
     def test_explicit_sampling_options_are_forwarded_without_short_output_defaults(self):
         self.config['sampling_params'].update(seed=42, min_tokens=0, top_k=-1)
