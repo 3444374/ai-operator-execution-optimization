@@ -156,6 +156,20 @@ class BaselineContractTests(unittest.TestCase):
         self.assertAlmostEqual(summary["tokens_per_s"], 20.0)
         self.assertTrue(summary["exactly_once"])
 
+        for latencies, quantiles in (
+            ((), (0.0, 0.0, 0.0)),
+            ((2.0,), (2.0, 2.0, 2.0)),
+            ((4.0, 0.0, 2.0), (2.0, 3.8, 3.96)),
+        ):
+            with self.subTest(latencies=latencies):
+                summary = summarize_results(
+                    (sample_request(i) for i in range(len(latencies))),
+                    (sample_result(i, submitted_at_s=0.0, completed_at_s=value)
+                     for i, value in enumerate(latencies)),
+                )
+                for name, expected in zip(("p50", "p95", "p99"), quantiles):
+                    self.assertAlmostEqual(summary[f"latency_{name}_s"], expected)
+
 
 if __name__ == "__main__":
     unittest.main()
