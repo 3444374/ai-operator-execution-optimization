@@ -320,7 +320,8 @@ cold1200/hardcap1200、warmup0、retry0；1200条实际完整消息/token逐条�
 `fdc5f863bc386c6ed28defbcac85b8440e83f9d20c435c3d95c1286f76b899d3`；仓库外
 `imlane-medical-q1-binding-20261111/target-results-r1/LOCAL-AUDIT.json` 汇总逐条核验，
 原件内 `run-r1/cpu-host-r2/FINAL.json`、`run-r1/gpu-host/FINAL.json` 保留原源码和退出资格。
-上述成绩仅归70a原冻结源；当前组合未作目标执行，Q9维护CLI的Linux完整门仍pending。
+上述成绩仅归70a原冻结源；当前组合未作目标执行。Q9维护CLI的独立零模型门状态见下节，
+它也不代表当前组合或新GPU成绩。
 本机未链接Linux DSO，不由CPU预演或旧v4目标结果转授资格。实际冷起点与ready后完整sink
 事件各自计时，禁止估减旧时长。
 
@@ -543,3 +544,7 @@ UnixIPC回放使用软件engine；token回放使用本地原tokenizer，不声�
 迁移后的本机测试不替代Linux完整CLI/DSO资格，旧v4实测也不自动成为新CLI的目标实测。
 
 Q9构建记录绑定当前q9.cpp、q9_udf.py、relation_handoff.hpp以及实际binary/DSO字节；入口拒绝旧源码构建和被修改的产物。
+
+协调器报告维护源码 `4c08b57b9a2e54768c8c475226c870f5a0a950e0` 的Linux零模型门已通过：
+完整SQL256经正式CLI执行，实际加载原52bf DSO，三个stage退出与资源检查通过，SHM不变且lease释放。
+此处仅记录协调器报告，原件本机回收核验尚待完成；不改写旧v4历史，也不授予当前组合或GPU资格。
