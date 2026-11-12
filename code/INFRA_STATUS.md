@@ -28,7 +28,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 
 | 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
 |---|---|---|---|---|---|
-| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；Cars/E-Commerce Filter 有软件检查，真实数据/SQL待验；原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
+| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；VARCHAR工程变体的原题单Map／Extract已接，软件差分／新SQL与模型待验；原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接；8667样本真实SQL／模型已验，完整输入另验，非作者 Join 算法复现 | 原 CP＋Filter 已接；4f12样本作者模型已验，其他来源／输入另验 |
 | 文本完整排名；Movie Q9 TopK profile | 原 quick TopK显式resident已接；cb754的完整256真实模型已验，原parser回退保留；其他来源另验 | 未接线 | 未接线 | LOTUS quick over VARCHAR工程变体已接，原题／Arrow／provider软件检查；Linux SQL／renderer／模型待验，非作者TopK算法 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
@@ -67,6 +67,10 @@ Linux单项1／1通过，旧失败保留；没有修改DSO、C++ driver、消息
 [TopK新接点](integrations/imlane_duckdb/README.md#lotus-quick-topk-与-varchar-prediction)
 复用同一模型owner／VARCHAR prediction，每批原生SQL关闭计入完整查询；原quick算法、原评分及
 失败留证由软件检查覆盖，Linux SQL／renderer和模型待验，不是作者TopK算法复现。
+VARCHAR工程变体的单Map／Extract已使用同一原题任务接口，替代Q1专属关系类；旧Q1配置仅格式兼容。
+实际N与原JSON约束由任务决定，输入／参考token检查前置；原查询真实源读取与完整sink仍在查询内。
+四场景五个原题的临时输入／原SDK完整关系差分及受影响12项软件检查通过、0模型；
+不转授新任务／新时钟的Linux SQL或模型资格，不把该单算子路径说成混合图已接通。
 其他已就绪项继续排队；不为每个格子另写执行器，不只积累软件通过数。
 已核对的普通文本题主要是单个语义调用；E-Commerce Q12 的后续 Extract 明确包含图像，
 已由完整原生 LOTUS 服务入口运行，不能当纯文本或假定其他后端已能执行它。

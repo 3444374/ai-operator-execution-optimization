@@ -59,7 +59,7 @@ def timed_relation(query, method, prepared, predictions, directory, reference, r
         full_projection_materialized=True, source_rows=len(prepared), mapped_occurrences=predictions,
         result_clock='CLOCK_MONOTONIC', result_ready_monotonic_ns=101_000_000_000,
         sink_handoff=dict(protocol=relation.ACK_PROTOCOL, release_path=str(release)))
-    bound = binding.Q1Relation(query, method, prepared)
+    bound = binding.PreparedRelation(query, method, prepared, execute_query=query.bind_execution())
     audit_clock_calls = dict(message_digest=0, relation_serialization=0)
     original_digest, original_value = sembench_prepared.content_digest, sembench_prepared.result_value
 

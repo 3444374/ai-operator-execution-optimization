@@ -119,6 +119,63 @@ class OriginalSemBenchTextTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'original prompt columns'):
                 entry.prepare_query(dict(value, prompt_columns=['Reviewtext']))
 
+    def test_imlane_varchar_reuses_original_map_extract_tasks_and_full_relations(self):
+        from src.experiments import native_imlane_sembench as entry
+        from transformers import AutoTokenizer
+
+        self._write_ecomm_inputs()
+        tokenizer = Mock()
+        tokenizer.apply_chat_template.return_value = [1, 2]
+        for scenario, key, answer in (('movie', '8', '5'), ('mmqa', '1', '{"director":"Original Director"}'),
+                ('mmqa', '4', '{"genres":"comedy"}'), ('medical', '10', '{"text_diagnosis":"ALLERGY"}'),
+                ('ecomm', '3', '{"category":"Topwear"}')):
+            with self.subTest(scenario=scenario, query=key):
+                original = self._query(scenario, key)
+                count = len(original.operation.records)
+                value = json.loads((entry.CODE / 'configs/sembench_imlane_mmqa_q1.example.json').read_text())
+                value.update(schema=entry.TEXT_SCHEMA, task=dict(scenario=scenario, query=key),
+                    query_id=original.query_id, sembench_checkout=CHECKOUT, data_dir=str(self.data),
+                    generation=asdict(self.generation), max_model_calls=count,
+                    input_sha256={name: row['sha256'] for name, row in original.files.items()})
+                with patch.object(AutoTokenizer, 'from_pretrained', return_value=tokenizer):
+                    query, method, prepared, requests, tokens = entry.prepare_query(value)
+                self.assertEqual(len(prepared), count)
+                self.assertEqual(tokens, [[1, 2]] * count)
+                answers = [answer] * count
+                expected, batches = self._reference(original, answers)
+                self.assertEqual([row['messages'] for row in requests],
+                                 [messages for messages_batch, _ in batches for messages in messages_batch])
+                self.assertEqual(query.operation.generation.response_format,
+                    {'type': 'json_object'} if query.operation.stage.kind == 'extract' else None)
+                bound = entry.PreparedRelation(query, method, prepared, execute_query=query.bind_execution())
+                predictions = [dict(call_id=row['call_id'], generated_text=text)
+                    for row, text in zip(prepared, answers, strict=True)]
+                # The source is genuinely reread by the bound original query; extra
+                # identity checks must stay outside the observed full-sink interval.
+                with patch.object(query, 'verify_source', side_effect=AssertionError('identity check inside sink')):
+                    actual = bound.sink(dict(return_type='VARCHAR', full_projection_materialized=True,
+                        source_rows=count, variant=entry.VARIANT, mapped_occurrences=list(reversed(predictions))))
+                self._assert_result_equal(actual, expected)
+                query.verify_source()
+                self.assertEqual(len(bound.audit()['calls']), count)
+
+    def test_imlane_varchar_rejects_wrong_task_kind_or_incomplete_frozen_allowance(self):
+        from src.experiments import native_imlane_sembench as entry
+        from transformers import AutoTokenizer
+
+        query = self._query('movie', '8')
+        value = json.loads((entry.CODE / 'configs/sembench_imlane_mmqa_q1.example.json').read_text())
+        value.update(schema=entry.TEXT_SCHEMA, task=dict(scenario='movie', query='8'),
+            query_id=query.query_id, sembench_checkout=CHECKOUT, data_dir=str(self.data),
+            generation=asdict(self.generation), max_model_calls=len(query.operation.records) - 1,
+            input_sha256={name: row['sha256'] for name, row in query.files.items()})
+        with patch.object(AutoTokenizer, 'from_pretrained') as tokenizer:
+            with self.assertRaisesRegex(ValueError, 'every original Map/Extract occurrence'):
+                entry.prepare_query(value)
+            with self.assertRaisesRegex(ValueError, 'use the existing Filter/Join/TopK'):
+                entry.prepare_query(dict(value, task=dict(scenario='movie', query='3')))
+            tokenizer.assert_not_called()
+
     def _assert_aliases_restored(self):
         for name in self.aliases:
             self.assertIs(sys.modules.get(name, self.absent), self.original_aliases[name])

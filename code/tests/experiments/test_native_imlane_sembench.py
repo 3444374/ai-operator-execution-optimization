@@ -15,7 +15,7 @@ from src.experiments import native_imlane_sembench as entry
 
 
 class WorkerBoundaryTests(unittest.TestCase):
-    def run_fixture(self, *, query_failure=False, close_failure=False, write_failure=False):
+    def run_fixture(self, *, query_failure=False, close_failure=False, write_failure=False, native_extract_format=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -28,6 +28,9 @@ class WorkerBoundaryTests(unittest.TestCase):
                 presence_penalty=0, frequency_penalty=0, repetition_penalty=1,
                 response_format={'type': 'json_object'}), model_service={}, max_model_calls=25,
             query_timeout_s=1200, cleanup_s=120, stop_grace_s=8, request_timeout_s=1200)
+        if native_extract_format:
+            config.update(schema=entry.TEXT_SCHEMA, task=dict(scenario='mmqa', query='1'))
+            config['generation'].pop('response_format')
         build = dict(binary_path='/unused/driver', kernel_path='/unused/kernel',
                      duckdb_library_path='/unused/libduckdb.so')
         events, clock = [], [100_000_000_000]
@@ -57,15 +60,25 @@ class WorkerBoundaryTests(unittest.TestCase):
                 if close_failure: raise RuntimeError('original close failure')
                 self.report['status'] = 'closed'
         def prepare(config):
+            self.assertEqual(events, [])
+            return (SimpleNamespace(describe=lambda: {'fixture_rows': 1, 'expected_model_calls': 25},
+                        operation=SimpleNamespace(generation=entry.GenerationSpec.from_dict(
+                            dict(config['generation'], response_format={'type': 'json_object'}))),
+                        bind_execution=lambda: None, verify_source=lambda: None), None,
+                    [{'call_id': 'source-0', 'messages_json': '[{"role":"user","content":"original"}]'}],
+                    [{'call_id': 'source-0', 'messages': [{'role': 'user', 'content': 'original'}]}], [[1, 2]])
+        def fresh_prepare(query):
             self.assertEqual(events, ['model-start', 'model-ready'])
             events.append('fresh-source')
             clock[0] += 2_000_000_000
-            return (SimpleNamespace(describe=lambda: {'fixture_rows': 1}), None,
+            return (None,
                     [{'call_id': 'source-0', 'messages_json': '[{"role":"user","content":"original"}]'}],
-                    [{'call_id': 'source-0', 'messages': [{'role': 'user', 'content': 'original'}]}], [[1, 2]])
+                    [{'call_id': 'source-0', 'messages': [{'role': 'user', 'content': 'original'}]}])
         def query(_args, report, **kwargs):
             self.assertEqual(kwargs['query_started_ns'], 190_000_000_000)
             self.assertEqual(clock[0], 192_000_000_000)
+            provider = json.loads((_args.output / 'model-provider.json').read_text())
+            self.assertEqual(provider['sampling_params']['structured_outputs'], {'json_object': True})
             with (_args.output / 'input.csv').open() as stream:
                 self.assertEqual(list(csv.DictReader(stream))[0]['call_id'], 'source-0')
             events.append('native-query-sink')
@@ -86,6 +99,7 @@ class WorkerBoundaryTests(unittest.TestCase):
             real_write(path, value)
         with patch.object(entry, 'verified_build', return_value=build), \
                 patch.object(entry, 'prepare_query', side_effect=prepare), \
+                patch.object(entry, 'prepare', side_effect=fresh_prepare), \
                 patch.object(entry, 'run_relation_query', side_effect=query), \
                 patch.object(entry, 'time', SimpleNamespace(monotonic_ns=lambda: clock[0],
                     monotonic=time.monotonic, time=time.time)), \
@@ -108,6 +122,11 @@ class WorkerBoundaryTests(unittest.TestCase):
         saved = json.loads((output / 'full-sink-observed.json').read_text())
         self.assertEqual(saved['frames']['result']['columns'], ['director'])
         self.assertEqual(saved['frames']['result']['data'], [['original director']])
+
+    def test_original_extract_owns_json_format_even_when_common_config_is_plain(self):
+        report, error, _, _ = self.run_fixture(native_extract_format=True)
+        self.assertIsNone(error)
+        self.assertEqual(report['generation']['response_format'], {'type': 'json_object'})
 
     def test_post_sink_failure_preserves_result_and_primary_error(self):
         report, error, _events, output = self.run_fixture(query_failure=True, write_failure=True)

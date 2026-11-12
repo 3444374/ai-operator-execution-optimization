@@ -306,6 +306,22 @@ SQL／kernel／provider／RPC生产字节保持417来源，原失败保留，不
 原Q1生命周期、原quick及prepared UDF／构建的21项既有检查通过；按测试ID去重，本批27项通过、0模型。
 该新增接点的Linux作者SQL、实际renderer与真实模型仍待验；旧Q1或LOTUS完整256成绩不转授。
 
+## 原题 Map／Extract 复用 VARCHAR 接点与计时
+
+[同一任务入口](../../../../code/integrations/imlane_duckdb/README.md#原题-mapextract-与-varchar-prediction)
+不再由Q1专属关系类承担执行。原任务决定Map／Extract、输入发生项及JSON约束；既有owner／SQL／
+ACK／parser／完整查询与评分复用。当前Q1模板及离线helper迁移，删除旧`Q1Relation`；
+旧schema仅保留其原配置承诺，进入同一实现。Filter／Join／TopK保持原接点，未扩成混合图框架。
+
+额外文件身份与参考token准备移到计时前，绑定原查询时预检、在sink后复核；
+真实源重读、原提示、必要CSV／投影、parser及完整原关系仍实测，不估算扣除。
+原Extract拥有JSON参数，不依赖配置猜测。旧Q1各冻结模型成绩继续用其原时钟身份。
+
+12项软件检查通过、0模型：临时输入分别运行Movie Q8、MMQA Q1／Q4、Medical Q10、E-Commerce Q3，
+与原SDK的完整结果及消息相同；保留重复业务ID、非连续索引与原JSON额外字段行为。
+错误预算／Filter误用在模型前拒绝；原Q1 owner／失败／时钟及TopK回归通过。
+新Map／Extract任务及新计时的Linux作者SQL／实际模型仍未验证，不继承旧Q1或其他后端资格。
+
 <a id="lotus-native-join-projection"></a>
 ## LOTUS 多列 Join 的原生选列限制
 

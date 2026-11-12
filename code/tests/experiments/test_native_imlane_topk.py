@@ -53,11 +53,10 @@ class NativePredictionTopKTests(unittest.TestCase):
         pd.DataFrame(dict(reviewId=['duplicate'] * count,
             id=['ant_man_and_the_wasp_quantumania'] * count, reviewText=['same review'] * count,
             originalScore=[str(i + 1) + '/5' for i in range(count)])).to_csv(self.root / 'Reviews.csv', index=False)
-        value = json.loads((entry.CODE / 'configs/sembench_imlane_mmqa_q1.example.json').read_text())
+        value = json.loads((entry.CODE / 'configs/sembench_imlane_topk.example.json').read_text())
         value.update(schema=entry.TOPK_SCHEMA, query_id='software-topk', sembench_checkout=CHECKOUT,
             data_dir=str(self.root), input_sha256={'Reviews.csv': file_identity(self.root / 'Reviews.csv')['sha256']},
             task=dict(scenario='movie', query='9'), max_model_calls=max(1, count * (count - 1) // 2))
-        value['generation'].pop('response_format')
         return value
 
     def run_fixture(self, count=5, *, audit_failure=False, sql_failure=False, close_failure=False):

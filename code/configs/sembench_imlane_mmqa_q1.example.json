@@ -1,5 +1,5 @@
 {
-  "schema": "semloom.imlane.mmqa_q1.v1",
+  "schema": "semloom.imlane.prepared_text.v1",
   "query_id": "imlane-owned-mmqa-q1-cold",
   "sembench_checkout": "/path/to/verified-SemBench-c814e380",
   "data_dir": "/path/to/mmqa-q1-input",
@@ -17,8 +17,7 @@
     "stop": [],
     "presence_penalty": 0,
     "frequency_penalty": 0,
-    "repetition_penalty": 1,
-    "response_format": {"type": "json_object"}
+    "repetition_penalty": 1
   },
   "model_service": {
     "model_python": "/path/to/existing-model-venv/bin/python",
@@ -31,5 +30,9 @@
   "query_timeout_s": 1200,
   "cleanup_s": 120,
   "stop_grace_s": 8,
-  "request_timeout_s": 1200
+  "request_timeout_s": 1200,
+  "task": {
+    "scenario": "mmqa",
+    "query": "1"
+  }
 }

@@ -18,7 +18,7 @@
 | [qualify_varchar.py](qualify_varchar.py)、[C++ driver](varchar_qualification.cpp)、[fixture](varchar_fixture.py) | 零模型 VARCHAR 的真实 DSO／PROCESS／THREAD 资格入口；原作者与 schema-child 工程版分开记录 |
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 | [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
-| [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | VARCHAR 查询的模型 owner、预算、完整 sink 与监督；保留 MMQA Q1 配置 |
+| [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | 单 Map／Extract 与 TopK 的模型 owner、预算、完整 sink 与监督；旧 Q1 配置仅作格式兼容 |
 | [native_imlane_topk.py](../../src/experiments/native_imlane_topk.py) | 原 LOTUS quick 比较批次交既有 VARCHAR prediction；完整原排名／评分不变 |
 | [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 复用 SemBench 捕获的单 Filter；源规模与预算从本次输入冻结，原版 TINYINT、完整原查询 sink 后 ACK |
 
@@ -482,6 +482,25 @@ Q3 的旧 `168bc` project resident bridge 只供软件 CPU 答复引用；本次
 `f1dfadf3fac4e7e69803ace879225a550bb42bae5295560b62a69ce6899f6757`。
 先前失败、私有 CPU guard 修正与各次运行保持原身份，不覆盖或合并成一份成功成绩。
 
+## 原题 Map／Extract 与 VARCHAR prediction
+
+`native_imlane_sembench`的`semloom.imlane.prepared_text.v1`配置用`task.scenario/query`及可选
+`scale_factor`选择已接入的原题。现有[Q1模板](../../configs/sembench_imlane_mmqa_q1.example.json)
+已迁到此格式；换任务同时冻结对应输入SHA和实际N个发生项的预算，不固定题号、25行或模型输出长度。
+本接点仅接受单个原Map／Extract；Filter、Join和TopK继续使用各自现有接点，混合图仍未由此支持。
+旧`semloom.imlane.mmqa_q1.v1`只保留其已承诺的Q1／25项配置校验，归一到同一实现，没有第二套执行器。
+
+复用`SemBenchTextQuery`、prepared formatter、原parser／完整关系和评分；Extract的JSON约束由
+原任务产生，即使公共generation未写response_format，也会传入实际原生structured_outputs。
+模型owner、VARCHAR SQL和ACK复用；额外输入身份／参考token／上下文预检在起点前，
+实际提示准备、必要CSV传递、原查询源重读、解析和完整内存sink在计时内，sink后再核身份／回执和评分。
+`Q1Relation`已被`PreparedRelation`替代，现用离线回放调用同步迁移，不保留旧类名兼容壳。
+这仍是已限定的VARCHAR工程变体，不把原版字符串输出阻塞或旧失败改成成功。
+
+Movie Q8、MMQA Q1／Q4、Medical Q10及E-Commerce Q3的临时数据与原查询／原SDK完整结果差分通过；
+重复ID、非连续原索引及乱序答复保留。12项受影响软件检查通过、0模型；额外身份检查不在sink内、
+原JSON约束确实到provider等边界已覆盖。新任务／新计时仍须Linux SQL及模型单独验收。
+
 ## LOTUS quick TopK 与 VARCHAR prediction
 
 [TopK配置](../../configs/sembench_imlane_topk.example.json)复用上面的`native_imlane_sembench`
@@ -548,7 +567,7 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B -m src.experiments.native_imlane_sembench ru
 该历史运行的25个prompt全部不同；当前provider本地回执已有occurrence ID，重复消息也按原batch位置关联。
 
 两套真实时钟分别保留：`ready_source_to_sink_seconds`（兼容字段 `source_to_sink_seconds`）
-从模型 ready 后的新鲜 CSV／prompt/token 准备开始，包含必需输入／关系传递、原 parser 和完整内存
+当前路径从模型ready后必要CSV／prompt准备开始，参考token／身份检查已前置；包含原题真实源重读、必需关系传递、原parser和完整内存
 sink；`cold_worker_entry_to_sink_seconds` 还包含 worker 预检和模型启动。外层 `timing.json` 再从
 既有 supervisor 的 Popen 前 `started_monotonic` 计算含启动的冷总区间。严格 host controller
 入口未知；不可将 runner 启动边界当作包含 host 预检／取租约。比较时选择双方相同的实际起点，

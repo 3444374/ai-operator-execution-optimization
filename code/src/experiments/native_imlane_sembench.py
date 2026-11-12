@@ -34,6 +34,7 @@ from src.infrastructure.redact import redact_text
 from src.serving.backends.vllm_protocol import GenerationSpec
 
 SCHEMA = 'semloom.imlane.mmqa_q1.v1'
+TEXT_SCHEMA = 'semloom.imlane.prepared_text.v1'
 TOPK_SCHEMA = 'semloom.imlane.lotus_topk.v1'
 VARIANT = 'varchar-owned-engineering'
 DSO_SHA256 = '5a172f77e9c46fae28f96251d20a022fda472749c1e858b2b2c25262eafa5fdd'
@@ -44,15 +45,15 @@ def configuration(value):
     fields = {'schema', 'query_id', 'sembench_checkout', 'data_dir', 'input_sha256', 'model_name',
               'tokenizer', 'generation', 'model_service', 'max_model_calls', 'query_timeout_s',
               'cleanup_s', 'stop_grace_s', 'request_timeout_s'}
-    topk = isinstance(value, dict) and value.get('schema') == TOPK_SCHEMA
-    if (type(value) is not dict or set(value) != fields | ({'task'} if topk else set())
-            or value['schema'] not in (SCHEMA, TOPK_SCHEMA)):
+    task_profile = isinstance(value, dict) and value.get('schema') in (TEXT_SCHEMA, TOPK_SCHEMA)
+    if (type(value) is not dict or set(value) != fields | ({'task'} if task_profile else set())
+            or value['schema'] not in (SCHEMA, TEXT_SCHEMA, TOPK_SCHEMA)):
         raise ValueError('explicit native IMLane query configuration required')
-    if topk and (type(value['task']) is not dict or not {'scenario', 'query'} <= value['task'].keys()
+    if task_profile and (type(value['task']) is not dict or not {'scenario', 'query'} <= value['task'].keys()
             or value['task'].keys() - {'scenario', 'query', 'scale_factor'}):
-        raise ValueError('TopK requires an original scenario/query task')
+        raise ValueError('declare an original scenario/query task')
     generation = GenerationSpec.from_dict(value['generation'])
-    if not topk and (generation.response_format != {'type': 'json_object'} or generation.max_tokens != 8192
+    if value['schema'] == SCHEMA and (generation.response_format != {'type': 'json_object'} or generation.max_tokens != 8192
             or value['max_model_calls'] != 25):
         raise ValueError('Q1 requires original JSON Extract, max_tokens 8192 and a 25-call cap')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'):
@@ -64,13 +65,17 @@ def configuration(value):
 def prepare_query(config):
     from transformers import AutoTokenizer
     config, generation = configuration(config)
-    query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], 'mmqa', '1',
-        execution_id=config['query_id'], model_name=config['model_name'], generation=generation)
+    task = config.get('task', dict(scenario='mmqa', query='1'))
+    query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], task['scenario'], task['query'],
+        execution_id=config['query_id'], model_name=config['model_name'], generation=generation,
+        scale_factor=task.get('scale_factor'))
     if {name: value['sha256'] for name, value in query.files.items()} != config['input_sha256']:
-        raise ValueError('Q1 input files differ from their frozen identities')
+        raise ValueError('original input files differ from their frozen identities')
+    if query.operation is not None and query.operation.describe()['kind'] not in ('map', 'extract'):
+        raise ValueError('prepared VARCHAR binds ordinary text Map/Extract; use the existing Filter/Join/TopK profiles')
     method, prepared, requests = prepare(query)
-    if len(prepared) != 25 or query.operation.stage.kind != 'extract':
-        raise ValueError('Q1 binds all 25 source occurrences to the original Extract')
+    if config['max_model_calls'] != max(1, len(prepared)):
+        raise ValueError('declare every original Map/Extract occurrence in the finite query allowance')
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True,
                                                trust_remote_code=False)
     token_ids = [tokenizer.apply_chat_template(row['messages'], tokenize=True,
@@ -88,10 +93,10 @@ def check(config):
             maximum_model_calls=query.describe()['expected_model_calls'], model_calls=0,
             native_DSO_SQL_model_binding_qualified=False)
     query, method, prepared, requests, tokens = prepare_query(config)
-    return dict(schema=SCHEMA, status='passed_zero_model_source_check', variant=VARIANT,
-        source=query.describe(), generation=asdict(query.operation.generation),
+    return dict(schema=config['schema'], status='passed_zero_model_source_check', variant=VARIANT,
+        source=query.describe(), generation=asdict(query.generation if query.operation is None else query.operation.generation),
         prepared=prepared, requests=requests, token_ids=tokens,
-        maximum_model_calls=25, extra_warmup=0, retries=0, model_calls=0,
+        maximum_model_calls=len(requests), extra_warmup=0, retries=0, model_calls=0,
         native_DSO_SQL_model_binding_qualified=False)
 
 
@@ -121,9 +126,10 @@ def prediction_command(args, build):
     return command
 
 
-class Q1Relation:
-    def __init__(self, query, method, prepared):
+class PreparedRelation:
+    def __init__(self, query, method, prepared, *, execute_query):
         self.query, self.method, self.prepared = query, method, prepared
+        self.execute_query = execute_query
         self.relation = None
         self.predictions = None
 
@@ -134,7 +140,8 @@ class Q1Relation:
         predictions = native['mapped_occurrences']
         if any(type(row['generated_text']) is not str for row in predictions):
             raise ValueError('raw model text must survive the native VARCHAR result unchanged')
-        result, self.relation = finish_relation(self.query, self.method, self.prepared, predictions)
+        result, self.relation = finish_relation(self.query, self.method, self.prepared, predictions,
+                                               execute_query=self.execute_query)
         self.predictions = predictions
         return result
 
@@ -207,6 +214,10 @@ def run_worker(args, config, *, service_factory=ModelService):
         from .native_imlane_topk import prepare_query as prepare_topk, run_query as run_topk
         query = prepare_topk(config, generation)
         tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
+    else:
+        query, method, prepared, requests, tokens = prepare_query(config)
+        # Extract's JSON format belongs to the original operator, not a config guess.
+        generation = query.generation if query.operation is None else query.operation.generation
     build = verified_build(args.build_record)
     args.output = Path(args.output).resolve()
     new_private_directory(args.output)
@@ -216,7 +227,8 @@ def run_worker(args, config, *, service_factory=ModelService):
         strict_controller_entry_ns=None, strict_controller_entry_reason='host preflight and lease are external',
         build_record=file_identity(Path(args.build_record)), extra_warmup=0, retries=0,
         cache='LOTUS result cache off; native engine cache settings and readiness are separate',
-        outer_host_lease_required=True, physical_gpu_exit_confirmed=None)
+        outer_host_lease_required=True, physical_gpu_exit_confirmed=None, generation=asdict(generation),
+        cost=None, cost_available=False)
     args.scopes = []
     args.stop_budget = owner.StopBudget(threading.Event())
     args.stop_grace_seconds = config['stop_grace_s']
@@ -233,13 +245,13 @@ def run_worker(args, config, *, service_factory=ModelService):
         ledger.reserve_unit('query', allowance)
         unit = ledger.claim_shared_unit('query')
         descriptor = dict(path=str(ledger.path), budget_id=budget.budget_id, limit=allowance, unit_id='query')
-        needs_model = not topk or bool(query.describe()['expected_model_calls'])
+        sampling = generation.kwargs()
+        needs_model = bool(query.describe()['expected_model_calls'])
         if needs_model:
             service = service_factory(dict(config['model_service'], request_budget=descriptor),
                 args.output / 'model-service', environment=dict(os.environ), deadline=window.query_deadline,
                 cleanup_deadline=window.begin_cleanup, stop_budget=args.stop_budget,
                 stop_grace_s=config['stop_grace_s'])
-            sampling = generation.kwargs()
             provider = model_provider.configuration(dict(schema=model_provider.CONFIG_SCHEMA,
                 provider_mode='model', socket_path=str(service.socket_path), model=service.served_model_name,
                 sampling_params=sampling, request_timeout_s=config['request_timeout_s'],
@@ -267,29 +279,32 @@ def run_worker(args, config, *, service_factory=ModelService):
                         raise ValueError('native driver used a different DSO')
                     semantic = relation.audit()
                     ipc = audit_ipc(args.output / 'model-calls', requests, tokens, relation.predictions, sampling)
+                    query.verify_source()
                     return dict(semantic=semantic, ipc=ipc, quality=json_metric(query.evaluate(value)))
+                execute_query = query.bind_execution()
+                if service is not None and max(map(len, tokens), default=0) + generation.max_tokens > service.ready_info['max_model_len']:
+                    raise ValueError('original full prompt plus output exceeds actual model context')
+                report['source'] = query.describe()
                 # The common primary clock starts with a fresh source after model
                 # readiness. Keep startup and worker-entry totals in separate fields.
                 started = time.monotonic_ns()
                 report['query_started_monotonic_ns'] = started
-                query, method, prepared, requests, tokens = prepare_query(config)
-                report['source'] = query.describe()
+                method, prepared, requests = prepare(query)
                 with open_private_text(args.output / 'input.csv') as stream:
                     writer = csv.writer(stream); writer.writerow(('call_id', 'messages_json'))
                     writer.writerows((row['call_id'], row['messages_json']) for row in prepared)
-                relation = Q1Relation(query, method, prepared)
-                if max(map(len, tokens)) + 8192 > service.ready_info['max_model_len']:
-                    raise ValueError('original full prompt plus output exceeds actual model context')
+                relation = PreparedRelation(query, method, prepared, execute_query=execute_query)
                 args.startup_timeout_s = window.query_deadline - time.monotonic()
                 try:
                     result, audited = run_relation_query(args, report, kernel=Path(build['kernel_path']),
                         command=prediction_command(args, build), window=window, query_started_ns=started,
-                        sink=relation.sink, audit=audit, check=service.check)
+                        sink=relation.sink, audit=audit, check=(lambda: None) if service is None else service.check)
                     report.update(quality=audited['quality'], ipc=audited['ipc'])
                     write_private_json(args.output / 'semantic-audit.json', audited['semantic'])
                 finally:
-                    service.begin_cleanup(window.begin_cleanup())
-        report.update(status='completed', service_close=(dict(status='closed', scope='no comparisons')
+                    if service is not None:
+                        service.begin_cleanup(window.begin_cleanup())
+        report.update(status='completed', service_close=(dict(status='closed', scope='no model requests')
             if service is None else service.report), result=result_value(result))
     except BaseException as error:
         primary = error
