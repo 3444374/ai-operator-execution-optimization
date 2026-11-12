@@ -51,6 +51,44 @@ class OriginalMMQAImageTests(unittest.TestCase):
         before = {name: sys.modules.get(name) for name in aliases}
         self.addCleanup(lambda: self.assertEqual({name: sys.modules.get(name) for name in aliases}, before))
 
+    def test_reference_extract_preparation_uses_original_formatter_and_preserves_all_occurrences(self):
+        from lotus.sem_ops.sem_join import SemJoinDataframe
+        from .prepare_mmqa_extract_stage import prepare
+
+        original = SemJoinDataframe.__call__
+        output = self.data / 'component-preparation'
+        report = prepare(CHECKOUT, self.data, output)
+        self.assertIs(SemJoinDataframe.__call__, original)
+        self.assertEqual(report['software_Join_responses'], 10)
+        self.assertEqual(report['proposed_Extract_model_calls'], 5)
+        self.assertEqual(report['reference_pairs'], [[i, GOLD_IMAGE] for i in (0, 5, 6, 9, 10)])
+        captured = report['original_Extract']
+        self.assertEqual(captured['generation']['max_completion_tokens'], 8192)
+        self.assertEqual(captured['generation']['response_format'], {'type': 'json_object'})
+        self.assertEqual(len(captured['messages']), 5)
+        self.assertEqual(len({json.dumps(m, sort_keys=True) for m in captured['messages']}), 1)
+        self.assertTrue(all('The color of the logo in the image' in json.dumps(m)
+                            for m in captured['messages']))
+        self.assertEqual(report['model_calls'], 0)
+        self.assertFalse(report['completed_query'])
+        self.assertFalse(report['full_query_model_qualified'])
+        self.assertIsNone(report['query_quality'])
+        self.assertEqual((output / 'extract-stage.json').stat().st_mode & 0o777, 0o600)
+
+    def test_reference_extract_preparation_rejects_missing_reference_pairs_and_restores_sdk(self):
+        import pandas as pd
+        from lotus.sem_ops.sem_join import SemJoinDataframe
+        from .prepare_mmqa_extract_stage import prepare
+
+        original = SemJoinDataframe.__call__
+        pd.DataFrame(dict(ID=[99], Track=['not a reference pair'])).to_csv(
+            self.data / 'ap_warrior.csv', index=False)
+        output = self.data / 'must-not-exist'
+        with self.assertRaisesRegex(ValueError, 'no official positive reference pairs'):
+            prepare(CHECKOUT, self.data, output)
+        self.assertIs(SemJoinDataframe.__call__, original)
+        self.assertFalse(output.exists())
+
     def _run(self, query, *, none_match=False, extract_text='{"color":"blue"}'):
         import lotus
         from lotus.models import LM

@@ -210,6 +210,23 @@ HTTP完成顺序相反时的原结果／ID关联，以及并发LM调用、缺失
 替换真实答复来制造非空。质量负结果及第二阶段缺口分别保留，后续新代表输入须独立计划／冻结；
 不为补齐覆盖而重复这325次请求。
 
+只读追查原`MESSAGES-PRIVATE.json`及`native-http.jsonl`后确认该输入为13行表×25图。
+官方金标使用的`117d500aaa630023c4038b8268b309c0.png`在原图序第4项，实际发送的PNG可视确认是
+清晰的Santa Anita Park标志，原文件摘要为`67e82252780057e1f0d1e2fff8b0a4600dab7ef634573b51b772c08eda93755d`。
+该图与Santa Anita Park文本的相同输入组共有5次实际请求：4个答复明确以False收尾，另1个在推理中
+给出false，原parser均判False；部分答复读出了正确场所名仍否定匹配。
+这排除了该金标图缺失这一解释，不能因此修改原parser／提示，也不能把5个重复请求的措辞强行分配给ID。
+其余图像／模型能力不由这一项观察推广，额外模型请求0。
+
+[参考Extract阶段准备](../../../../code/tests/baselines/image/prepare_mmqa_extract_stage.py)随后
+复用同一原查询与SDK，用官方正例作**显式软件Join夹具**，在原Extract完成消息格式化后停止；
+不生成Extract答复，不返回完整查询、不计算质量，也不改写旧运行。私有artifact固定实际输入、
+官方参考摘要、全部重复发生项、原消息与JSON生成参数，供后续独立组件诊断绑定。
+临时输入的10个Join软件答复保留5个正例，捕获5个相同图像Extract请求；缺正例时在模型／网络前拒绝，
+SDK方法在正常／失败路径均恢复。14项不同软件检查通过、0模型；首轮一项测试误断言SDK的token字段
+为`max_tokens`，实际原SDK使用`max_completion_tokens`，修正断言后新增两项通过，失败日志保留。
+这项准备工具尚未完成真实Extract调用；将来组件通过也不授予原Join→Extract整体模型资格。
+
 <a id="lotus-native-join-projection"></a>
 ## LOTUS 多列 Join 的原生选列限制
 

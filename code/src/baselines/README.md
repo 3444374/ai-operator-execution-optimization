@@ -628,6 +628,11 @@ IMLane／Kalypso 当前视觉绑定未建立，不由此推断整个上游系统
 
 CPU 视觉夹具使用真实 ImageArray、原 PNG 格式化、原 Filter／Join／Extract 解析与关系结果。
 MMQA 同一图片的多个匹配行仍逐个 Extract，JSON response_format 保留原值。
+非空第二阶段的独立准备工具为
+[`tests.baselines.image.prepare_mmqa_extract_stage`](../../tests/baselines/image/prepare_mmqa_extract_stage.py)，
+参数为`--sembench-checkout`、`--data-dir`和`--output-dir`。它只用官方正例作为明确软件Join夹具，
+让原查询／SDK生成Extract消息即停止，0模型；不返回完整查询或评分，不替换真实Join结果。
+消息仅写私有artifact，缺少正例时拒绝。后续独立Extract模型诊断不授予Q2b端到端资格。
 Q2b 无匹配时，原零行 Extract 返回后保留声明的 `color` 列，最终结果仍为零行，额外 POST 为0；
 非空 Extract 返回 `{}` 缺列时仍抛出原 KeyError。正常及异常结束均恢复原 Join／Extract accessor。
 `d061df8c` 实测失败的保存记录为325个 Join 成功响应、Extract 输入0行／POST 0次；
