@@ -178,9 +178,7 @@ class GpuResourceSampler:
         with path.open("w", encoding="utf-8", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
             writer.writeheader()
-            for sample in self.samples:
-                row = {**sample, "experiment_id": experiment_id, "phase": phase}
-                writer.writerow({k: row.get(k, "") for k in fields})
+            writer.writerows(self.samples)
 
     def summary(self) -> dict[str, float]:
         """Mean util/power per GPU index (gpu0/gpu1), matching the aggregator."""

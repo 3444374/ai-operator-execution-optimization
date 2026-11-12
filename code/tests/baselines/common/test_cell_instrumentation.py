@@ -8,7 +8,6 @@ verified without a server.
 from __future__ import annotations
 
 import csv
-import importlib.util
 import sys
 import tempfile
 import unittest
@@ -20,14 +19,10 @@ CODE_ROOT = next(
 if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
-_CI_PATH = CODE_ROOT / "src" / "baselines" / "common" / "cell_instrumentation.py"
-_spec = importlib.util.spec_from_file_location("cell_instrumentation", _CI_PATH)
-ci = importlib.util.module_from_spec(_spec)
-sys.modules["cell_instrumentation"] = ci
-_spec.loader.exec_module(ci)
+from src.baselines.common import cell_instrumentation as ci
 
 
-def _histogram_metrics(p50_bucket_low: float, counts: dict[str, int], sum_total: float, count: int) -> dict:
+def _histogram_metrics(counts: dict[str, int], sum_total: float, count: int) -> dict:
     """Build a parsed-/metrics-style dict with a TTFT histogram + counters."""
     metrics: dict[str, float] = {}
     for le, cumulative in counts.items():
@@ -44,10 +39,10 @@ class EndpointLatencyDeltaTests(unittest.TestCase):
         # before: 30 reqs, after: 60 reqs -> delta of 30 reqs with the bucket shape.
         before_counts = {"0.05": 10, "0.1": 20, "+Inf": 30}
         after_counts = {"0.05": 20, "0.1": 50, "+Inf": 60}
-        before = {0: _histogram_metrics(0, before_counts, 2.0, 30),
-                  1: _histogram_metrics(0, before_counts, 2.0, 30)}
-        after = {0: _histogram_metrics(0, after_counts, 5.0, 60),
-                 1: _histogram_metrics(0, after_counts, 5.0, 60)}
+        before = {0: _histogram_metrics(before_counts, 2.0, 30),
+                  1: _histogram_metrics(before_counts, 2.0, 30)}
+        after = {0: _histogram_metrics(after_counts, 5.0, 60),
+                 1: _histogram_metrics(after_counts, 5.0, 60)}
         deltas = ci.endpoint_latency_deltas(before, after)
         self.assertEqual(set(deltas), {0, 1})
         for ep in (0, 1):
@@ -106,6 +101,24 @@ class GpuResourceSamplerTests(unittest.TestCase):
         self.assertIn("gpu1_util_mean", summary)
         self.assertGreater(summary["gpu1_util_mean"], summary["gpu0_util_mean"])  # gpu1 was +10
 
+    def test_csv_preserves_columns_blanks_and_ignores_extra_sample_fields(self) -> None:
+        sampler = ci.GpuResourceSampler()
+        sampler.samples = [{
+            "sample_index": 0, "sample_epoch_s": 1.5, "gpu_index": 1,
+            "gpu_name": "GPU, quoted", "gpu_utilization_pct": 42.0,
+            "gpu_memory_used_mib": None, "unexpected": "ignored",
+        }]
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "gpu.csv"
+            sampler.write_csv(path, experiment_id="run", phase="warmup")
+            with path.open(encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+        self.assertEqual(rows, [{
+            "sample_index": "0", "sample_epoch_s": "1.5", "gpu_index": "1",
+            "gpu_name": "GPU, quoted", "gpu_utilization_pct": "42.0",
+            "gpu_memory_used_mib": "", "gpu_memory_total_mib": "", "gpu_power_w": "",
+        }])
+
     def test_empty_nvidia_smi_yields_no_samples(self) -> None:
         sampler = ci.GpuResourceSampler(
             interval_s=0.001, snapshotter=lambda: [], sleep=lambda _: None,
@@ -131,7 +144,7 @@ class InstrumentedCellTests(unittest.TestCase):
             counts = before_counts if stage == "before" else after_counts
             sum_v = 0.0 if stage == "before" else 3.0
             count_v = 0 if stage == "before" else 30
-            return _histogram_metrics(0, counts, sum_v, count_v)
+            return _histogram_metrics(counts, sum_v, count_v)
 
         with tempfile.TemporaryDirectory() as td:
             gpu_csv = Path(td) / "cell" / "gpu_resource.csv"
