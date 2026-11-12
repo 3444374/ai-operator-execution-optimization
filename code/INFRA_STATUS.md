@@ -25,7 +25,11 @@ IMLane Filter 不再用历史输入行数作为配置白名单；完整原 occur
 生成配置不是 GPU 运行授权；本地原源码／SDK／tokenizer 检查不转授 Linux SQL 或模型资格。
 prepared Q1/Filter 的薄 driver 构建身份补齐源文件及编入的 ACK header，旧记录保留历史资格，
 当前重用需重链薄 driver 补齐身份。详见[边界说明](integrations/imlane_duckdb/README.md#filter-源规模与构建身份)。
-这不改变原生算法、采样、源列顺序、时钟、DSO 或运行额度；新目标 native SQL 验证仍待执行。
+这不改变原生算法、采样、源列顺序、时钟、DSO 或运行额度。`a5353fc25` 已完成目标零模型
+Q1 SQL 25、Filter Q3a 25／Movie Q2 120 的完整 sink、ACK 和退出，以及新旧构建记录门检；
+新 freeze 对同 seed 原 formatter、旧冻结配置对历史参考的全消息／token／源位置分别相等。
+两份既有 DSO 未重编，未运行新模型。source 检查后的外层未知 Python 拒绝及未归因租约消失
+仍保留；后续只续未运行的两项比较并清洁退出，详见同一边界说明，不将该失败抹平。
 
 | 部分 | 当前实现 | 未完成或未验证 |
 |---|---|---|

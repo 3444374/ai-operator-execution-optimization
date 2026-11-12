@@ -596,6 +596,20 @@ CPU 边界回归见 `tests.experiments.test_imlane_build_binding`、
 `tests.experiments.test_native_imlane_filters` 和原源码 suite 的
 `test_imlane_filter_budget_binds_actual_original_source_not_fixed_sizes`。
 
-本轮限定 CPU 回归 33 项通过、0 跳过，包括原 SemBench c814 的 11 行 Movie Q1 源码与
+首批 `c4d3776` 限定 CPU 回归 33 项通过、0 跳过，包括原 SemBench c814 的 11 行 Movie Q1 源码与
 LOTUS formatter/预算一致性。tokenizer 为软件替身，build/DSO 为不执行的身份 fixture；
 真实 CLI 参数解析和构建身份检查执行。未运行 native Linux SQL、模型或 GPU，不授予目标资格。
+
+后续 `a5353fc25` 的本机 43 项 CPU 检查通过。目标零模型验收已于 2026-11-12 完成：
+Q1 原生软件 SQL 25、Filter Q3a 25／Movie Q2 120 均保留完整原 sink、ACK、回执和退出；
+新薄 driver 记录通过、旧记录被拒。Q1 使用既有 `5a172f77` VARCHAR-owned DSO，Filter
+使用原版 `52bf5763`，均未重编。新 freeze 的 25 条完整消息／token／源位置对同 seed 原
+formatter 相等；旧冻结配置另对历史参考相等，不以旧答案证明不同列序的新提示。
+
+最终状态为 `passed_with_preserved_source_boundary_failure`：三个 source worker 均 exit 0，
+但旧 check 后 host post-idle 拒绝未知 Python；原失败及后续未归因的租约消失保留。
+fresh 边界仅续两项尚未执行的比较并清洁退出，没有重跑已完成 SQL，也未将未知进程标作无害。
+这批有 317 项经 SHA 校验的原件；`imlane-a535-zero-1112-r1/FINAL-AUDIT.json` 的 SHA256 为
+`9c28aa8f0946b43bffbf6cbec3deab6079613d7ae8f34f5f3264a75310991df9`，原件归档 SHA256 为
+`4ec13baafdd68922b6ede3f49d76ec8e521be97cf9faaa6602a8e5b4c438d6ca`。该资格仅属于这份源码的
+目标 SQL／绑定迁移，模型调用为 0，不转授后续通用化候选或全部 SemBench 题目。
