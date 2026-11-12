@@ -279,7 +279,32 @@ DSO及C++ driver源码未改，旧构建记录不能手改摘要冒充重新绑�
 没有继续重复。该用例等待软件generate drain后立即读stderr，但原连接还会等待work／disconnect任务及
 writer关闭，最后才打印诊断；drain不是连接处理完成屏障。测试现观察原`connection`返回再核原诊断，
 保留abort／drain／日志／复用全部断言，不改生产关闭代码、不加固定sleep。
-本机受影响IPC模块21项通过、0模型；新测试边界的Linux检查仍待回执，原失败保留，不能说417457整批通过。
+本机受影响IPC模块21项通过、0模型。冻结3d9fb8fe的Linux单项随后1／1通过、0.021秒、0模型；
+SQL／kernel／provider／RPC生产字节保持417来源，原失败保留，不能说417457整批通过。
+
+417的当前kernel重新绑定及真实VARCHAR SQL／IPC／ACK也已通过：相同消息的两条不同call_id保留
+不同软件答复，DSO不重建；common14单独通过，均0模型。两轮资源／租约清理通过。
+独立核验归档及417的1327、3d9的1198个payload全部字节／SHA256；按运行标识从服务器协调者取原件：
+
+| 运行标识 | 归档字节数 | SHA256 |
+|---|---:|---|
+| baseline-417457-imlane-occurrence-cpu-20261113-r1 | 3434623 | `f32898b4f1877526ba63a5fbee76abc4c2ebd14e306a7c9e18415c709e2ecd1e` |
+| baseline-3d9fb8-imlane-disconnect-cpu-20261113-r1 | 3224191 | `6f19527046531c530c10adad95de308bc2af937d96c9c25b158e51a4d0dca8d6` |
+
+## LOTUS quick over IMLane VARCHAR prediction
+
+[新接点](../../../../code/integrations/imlane_duckdb/README.md#lotus-quick-topk-与-varchar-prediction)
+复用原查询／quick／消息／parser／排名／评分，将每批LM消息交既有作者SQL VARCHAR prediction。
+一个模型服务贯穿查询，每批SQL scope启动／关闭计入完整查询；不称作者TopK算法或数据库常驻。
+原LM执行usage计数未使用，实际usage来自完整IPC审计，价格未知不填零。
+
+新增6项软件检查使用临时Reviews输入及原题：重复内容／业务ID、SQL乱序输出、原parser回退和
+0／1／5行按原发生项保留；真实Arrow与provider回执执行，SQL进程／模型是夹具。
+受控时钟确认每批SQL关闭包含在sink内，token／RNG答复回放和评价在sink后。
+审计／关闭失败保留完整结果；prediction批次失败不冒充完整前端结果。
+首轮4项失败源于夹具漏了SQL投影的call_id，按真实C++投影补齐后6项通过，失败输出保留。
+原Q1生命周期、原quick及prepared UDF／构建的21项既有检查通过；按测试ID去重，本批27项通过、0模型。
+该新增接点的Linux作者SQL、实际renderer与真实模型仍待验；旧Q1或LOTUS完整256成绩不转授。
 
 <a id="lotus-native-join-projection"></a>
 ## LOTUS 多列 Join 的原生选列限制

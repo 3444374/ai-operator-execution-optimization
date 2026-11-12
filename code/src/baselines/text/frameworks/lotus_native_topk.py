@@ -14,7 +14,7 @@ from src.semantic_methods.lotus.records import identity
 from .lotus_native_stage import _observe_messages
 
 
-def make_lm(operation, concurrency):
+def make_lm(operation, concurrency, *, lm_type=None):
     from lotus.models import LM
 
     generation = operation.generation
@@ -23,7 +23,7 @@ def make_lm(operation, concurrency):
         presence_penalty=generation.presence_penalty, frequency_penalty=generation.frequency_penalty)
     if generation.seed is not None:
         options['seed'] = generation.seed
-    return LM(operation.model_name, max_batch_size=concurrency, **options)
+    return (LM if lm_type is None else lm_type)(operation.model_name, max_batch_size=concurrency, **options)
 
 
 @contextmanager

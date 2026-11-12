@@ -21,7 +21,10 @@ Q1冷时钟含模型启动。8667的MMQA Q2b真实325次只走空Join／空Extra
 非空Extract的原SDK消息准备使用明确官方参考Join软件夹具，捕获即停止，0模型／无查询质量，不能替代端到端资格。
 IMLane prepared VARCHAR补齐provider本地回执的occurrence ID，RPC仍按原batch ID／位置关联，未新增请求字段；
 移除消息互异限制与旧摘要关联，
-82项不同软件检查通过，当前kernel原生SQL绑定待验，不继承旧模型资格。
+82项不同软件检查通过；417的当前kernel真实VARCHAR SQL／IPC／ACK及common14随后通过、0模型。
+417的断连诊断单项失败保留，3d9fb8仅修正测试完成屏障后Linux单项通过，不改旧轮总状态。
+同一prediction接点新增原LOTUS quick完整查询软件验证；每批原生SQL生命周期计入完整时钟，
+Linux SQL／renderer与模型资格仍待验，不能称作者TopK算法或继承旧模型资格。
 独立原件再确认cb754的LOTUS quick完整256：3355次真实比较及1296次原parser回退分别保留；
 原相关性、ready-first时钟与原生算法身份不混排。0755的15项Linux检查和真实输入5条Extract消息捕获
 均为CPU准备，不授予非空第二阶段模型资格。

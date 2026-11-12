@@ -1,4 +1,4 @@
-"""MMQA Q1 on the separately qualified IMLane VARCHAR engineering variant.
+"""Original SemBench queries on the qualified IMLane VARCHAR engineering variant.
 
 Reuse the existing author/model owners, relation ACK and outer supervisor.
 The author owns prediction batches; original LOTUS/SemBench owns all semantics.
@@ -6,6 +6,7 @@ This entry does not qualify the unmodified author or implement image support.
 """
 
 import argparse
+from contextlib import nullcontext
 import csv
 from dataclasses import asdict
 import json
@@ -33,6 +34,7 @@ from src.infrastructure.redact import redact_text
 from src.serving.backends.vllm_protocol import GenerationSpec
 
 SCHEMA = 'semloom.imlane.mmqa_q1.v1'
+TOPK_SCHEMA = 'semloom.imlane.lotus_topk.v1'
 VARIANT = 'varchar-owned-engineering'
 DSO_SHA256 = '5a172f77e9c46fae28f96251d20a022fda472749c1e858b2b2c25262eafa5fdd'
 CODE = Path(__file__).resolve().parents[2]
@@ -42,10 +44,15 @@ def configuration(value):
     fields = {'schema', 'query_id', 'sembench_checkout', 'data_dir', 'input_sha256', 'model_name',
               'tokenizer', 'generation', 'model_service', 'max_model_calls', 'query_timeout_s',
               'cleanup_s', 'stop_grace_s', 'request_timeout_s'}
-    if type(value) is not dict or set(value) != fields or value['schema'] != SCHEMA:
-        raise ValueError('explicit native IMLane MMQA Q1 configuration required')
+    topk = isinstance(value, dict) and value.get('schema') == TOPK_SCHEMA
+    if (type(value) is not dict or set(value) != fields | ({'task'} if topk else set())
+            or value['schema'] not in (SCHEMA, TOPK_SCHEMA)):
+        raise ValueError('explicit native IMLane query configuration required')
+    if topk and (type(value['task']) is not dict or not {'scenario', 'query'} <= value['task'].keys()
+            or value['task'].keys() - {'scenario', 'query', 'scale_factor'}):
+        raise ValueError('TopK requires an original scenario/query task')
     generation = GenerationSpec.from_dict(value['generation'])
-    if (generation.response_format != {'type': 'json_object'} or generation.max_tokens != 8192
+    if not topk and (generation.response_format != {'type': 'json_object'} or generation.max_tokens != 8192
             or value['max_model_calls'] != 25):
         raise ValueError('Q1 requires original JSON Extract, max_tokens 8192 and a 25-call cap')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'):
@@ -72,6 +79,14 @@ def prepare_query(config):
 
 
 def check(config):
+    config, generation = configuration(config)
+    if config['schema'] == TOPK_SCHEMA:
+        from .native_imlane_topk import prepare_query as prepare_topk
+        query = prepare_topk(config, generation)
+        return dict(schema=TOPK_SCHEMA, status='passed_zero_model_source_check', variant=VARIANT,
+            source=query.describe(), generation=asdict(generation),
+            maximum_model_calls=query.describe()['expected_model_calls'], model_calls=0,
+            native_DSO_SQL_model_binding_qualified=False)
     query, method, prepared, requests, tokens = prepare_query(config)
     return dict(schema=SCHEMA, status='passed_zero_model_source_check', variant=VARIANT,
         source=query.describe(), generation=asdict(query.operation.generation),
@@ -95,6 +110,15 @@ def verified_build(path):
     if file_identity(CODE / 'integrations/imlane_duckdb/sembench_udf.py') != record['kernel']:
         raise ValueError('driver build must bind the current prepared kernel')
     return record
+
+
+def prediction_command(args, build):
+    command = [build['binary_path'], '--input', str(args.output / 'input.csv'),
+        '--module', build['kernel_path'], '--function', 'infer_prepared', '--kind', args.kind,
+        '--output', str(args.output / 'query.json'), '--sink-release', str(args.output / 'sink-release.ack')]
+    if args.threads is not None:
+        command += ['--threads', str(args.threads)]
+    return command
 
 
 class Q1Relation:
@@ -176,12 +200,19 @@ class _ResultWindow(QueryWindow):
 def run_worker(args, config, *, service_factory=ModelService):
     worker_entered = time.monotonic_ns()
     config, generation = configuration(config)
+    topk = config['schema'] == TOPK_SCHEMA
+    query = tokenizer = None
+    if topk:
+        from transformers import AutoTokenizer
+        from .native_imlane_topk import prepare_query as prepare_topk, run_query as run_topk
+        query = prepare_topk(config, generation)
+        tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     build = verified_build(args.build_record)
     args.output = Path(args.output).resolve()
     new_private_directory(args.output)
     window = _ResultWindow(args.output, config['query_timeout_s'], config['cleanup_s'],
         config['stop_grace_s'], cleanup_path=args.output / 'cleanup-start.json')
-    report = dict(schema=SCHEMA, variant=VARIANT, status='failed', worker_entry_monotonic_ns=worker_entered,
+    report = dict(schema=config['schema'], variant=VARIANT, status='failed', worker_entry_monotonic_ns=worker_entered,
         strict_controller_entry_ns=None, strict_controller_entry_reason='host preflight and lease are external',
         build_record=file_identity(Path(args.build_record)), extra_warmup=0, retries=0,
         cache='LOTUS result cache off; native engine cache settings and readiness are separate',
@@ -195,61 +226,71 @@ def run_worker(args, config, *, service_factory=ModelService):
     try:
         for name in ('model-calls', 'model-service'):
             (args.output / name).mkdir(mode=0o700)
-        budget = AttemptBudget(config['query_id'], 25)
+        allowance = config['max_model_calls']
+        budget = AttemptBudget(config['query_id'], allowance)
         ledger = CellBudgetLedger.create(args.output / 'physical-budget.sqlite', budget,
             deadline_utc=time.time() + config['query_timeout_s'])
-        ledger.reserve_unit('query', 25)
+        ledger.reserve_unit('query', allowance)
         unit = ledger.claim_shared_unit('query')
-        descriptor = dict(path=str(ledger.path), budget_id=budget.budget_id, limit=25, unit_id='query')
-        service = service_factory(dict(config['model_service'], request_budget=descriptor),
-            args.output / 'model-service', environment=dict(os.environ), deadline=window.query_deadline,
-            cleanup_deadline=window.begin_cleanup, stop_budget=args.stop_budget,
-            stop_grace_s=config['stop_grace_s'])
-        sampling = generation.kwargs()
-        provider = model_provider.configuration(dict(schema=model_provider.CONFIG_SCHEMA,
-            provider_mode='model', socket_path=str(service.socket_path), model=service.served_model_name,
-            sampling_params=sampling, request_timeout_s=config['request_timeout_s'],
-            deadline_monotonic=window.query_deadline, receipt_dir=str(args.output / 'model-calls')))
-        write_private_json(args.output / 'model-provider.json', provider)
-        args.workload_environment = {model_provider.CONFIG_ENV: str(args.output / 'model-provider.json')}
-        def audit(native, value):
-            if Path(native['converter_resolved_DSO']).resolve() != args.duckdb_library:
-                raise ValueError('native driver used a different DSO')
-            semantic = relation.audit()
-            ipc = audit_ipc(args.output / 'model-calls', requests, tokens, relation.predictions, sampling)
-            return dict(semantic=semantic, ipc=ipc, quality=json_metric(query.evaluate(value)))
-        with service:
-            report['model_ready_observed_ns'] = time.monotonic_ns()
-            report['model_owner'] = service.ready_info
-            report['model_startup_seconds'] = (
-                report['model_ready_observed_ns'] / 1e9 - service.report['started_monotonic'])
-            # The common primary clock starts with a fresh source after model
-            # readiness. Keep startup and worker-entry totals in separate fields.
-            started = time.monotonic_ns()
-            report['query_started_monotonic_ns'] = started
-            query, method, prepared, requests, tokens = prepare_query(config)
-            report['source'] = query.describe()
-            with open_private_text(args.output / 'input.csv') as stream:
-                writer = csv.writer(stream); writer.writerow(('call_id', 'messages_json'))
-                writer.writerows((row['call_id'], row['messages_json']) for row in prepared)
-            relation = Q1Relation(query, method, prepared)
-            if max(map(len, tokens)) + 8192 > service.ready_info['max_model_len']:
-                raise ValueError('original full prompt plus output exceeds actual model context')
-            args.startup_timeout_s = window.query_deadline - time.monotonic()
-            command = [build['binary_path'], '--input', str(args.output / 'input.csv'),
-                '--module', build['kernel_path'], '--function', 'infer_prepared', '--kind', args.kind,
-                '--output', str(args.output / 'query.json'), '--sink-release', str(args.output / 'sink-release.ack')]
-            if args.threads is not None:
-                command += ['--threads', str(args.threads)]
-            try:
-                result, audited = run_relation_query(args, report, kernel=Path(build['kernel_path']),
-                    command=command, window=window, query_started_ns=started,
-                    sink=relation.sink, audit=audit, check=service.check)
-                report.update(quality=audited['quality'], ipc=audited['ipc'])
-                write_private_json(args.output / 'semantic-audit.json', audited['semantic'])
-            finally:
-                service.begin_cleanup(window.begin_cleanup())
-        report.update(status='completed', service_close=service.report, result=result_value(result))
+        descriptor = dict(path=str(ledger.path), budget_id=budget.budget_id, limit=allowance, unit_id='query')
+        needs_model = not topk or bool(query.describe()['expected_model_calls'])
+        if needs_model:
+            service = service_factory(dict(config['model_service'], request_budget=descriptor),
+                args.output / 'model-service', environment=dict(os.environ), deadline=window.query_deadline,
+                cleanup_deadline=window.begin_cleanup, stop_budget=args.stop_budget,
+                stop_grace_s=config['stop_grace_s'])
+            sampling = generation.kwargs()
+            provider = model_provider.configuration(dict(schema=model_provider.CONFIG_SCHEMA,
+                provider_mode='model', socket_path=str(service.socket_path), model=service.served_model_name,
+                sampling_params=sampling, request_timeout_s=config['request_timeout_s'],
+                deadline_monotonic=window.query_deadline, receipt_dir=str(args.output / 'model-calls')))
+            write_private_json(args.output / 'model-provider.json', provider)
+            args.workload_environment = {model_provider.CONFIG_ENV: str(args.output / 'model-provider.json')}
+        with service if service is not None else nullcontext():
+            if service is not None:
+                report['model_ready_observed_ns'] = time.monotonic_ns()
+                report['model_owner'] = service.ready_info
+                report['model_startup_seconds'] = (
+                    report['model_ready_observed_ns'] / 1e9 - service.report['started_monotonic'])
+            else:
+                report['model_owner'] = dict(allocated=False)
+                report['model_startup_seconds'] = None
+            if topk:
+                try:
+                    result = run_topk(query, config, args, build, service, window, report, unit, tokenizer)
+                finally:
+                    if service is not None:
+                        service.begin_cleanup(window.begin_cleanup())
+            else:
+                def audit(native, value):
+                    if Path(native['converter_resolved_DSO']).resolve() != args.duckdb_library:
+                        raise ValueError('native driver used a different DSO')
+                    semantic = relation.audit()
+                    ipc = audit_ipc(args.output / 'model-calls', requests, tokens, relation.predictions, sampling)
+                    return dict(semantic=semantic, ipc=ipc, quality=json_metric(query.evaluate(value)))
+                # The common primary clock starts with a fresh source after model
+                # readiness. Keep startup and worker-entry totals in separate fields.
+                started = time.monotonic_ns()
+                report['query_started_monotonic_ns'] = started
+                query, method, prepared, requests, tokens = prepare_query(config)
+                report['source'] = query.describe()
+                with open_private_text(args.output / 'input.csv') as stream:
+                    writer = csv.writer(stream); writer.writerow(('call_id', 'messages_json'))
+                    writer.writerows((row['call_id'], row['messages_json']) for row in prepared)
+                relation = Q1Relation(query, method, prepared)
+                if max(map(len, tokens)) + 8192 > service.ready_info['max_model_len']:
+                    raise ValueError('original full prompt plus output exceeds actual model context')
+                args.startup_timeout_s = window.query_deadline - time.monotonic()
+                try:
+                    result, audited = run_relation_query(args, report, kernel=Path(build['kernel_path']),
+                        command=prediction_command(args, build), window=window, query_started_ns=started,
+                        sink=relation.sink, audit=audit, check=service.check)
+                    report.update(quality=audited['quality'], ipc=audited['ipc'])
+                    write_private_json(args.output / 'semantic-audit.json', audited['semantic'])
+                finally:
+                    service.begin_cleanup(window.begin_cleanup())
+        report.update(status='completed', service_close=(dict(status='closed', scope='no comparisons')
+            if service is None else service.report), result=result_value(result))
     except BaseException as error:
         primary = error
         result = getattr(error, 'query_result', result)
@@ -280,7 +321,8 @@ def run_worker(args, config, *, service_factory=ModelService):
             'CSV/source, original prompt preparation, '
             'required native transport/projection, original parser and complete memory sink; '
             'cold_worker_entry_to_sink_seconds also includes worker preflight and model startup; '
-            'neither clock includes post-sink audit, evaluation, persistence or final close. '
+            'neither clock includes post-sink audit, evaluation, persistence or final model close; '
+            'TopK includes each required prediction SQL scope close before the next original comparison. '
             'Worker entry excludes host preflight/lease and Python import/CLI before run_worker.')
         report['deadline'] = window.report()
         try:

@@ -18,7 +18,8 @@
 | [qualify_varchar.py](qualify_varchar.py)、[C++ driver](varchar_qualification.cpp)、[fixture](varchar_fixture.py) | 零模型 VARCHAR 的真实 DSO／PROCESS／THREAD 资格入口；原作者与 schema-child 工程版分开记录 |
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 | [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
-| [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | MMQA Q1 原题准备／完整 sink，复用既有作者、模型 owner 与监督器；25 次物理预算 |
+| [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | VARCHAR 查询的模型 owner、预算、完整 sink 与监督；保留 MMQA Q1 配置 |
+| [native_imlane_topk.py](../../src/experiments/native_imlane_topk.py) | 原 LOTUS quick 比较批次交既有 VARCHAR prediction；完整原排名／评分不变 |
 | [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 复用 SemBench 捕获的单 Filter；源规模与预算从本次输入冻结，原版 TINYINT、完整原查询 sink 后 ACK |
 
 prepared VARCHAR的`call_id`现交给provider本地回执，RPC仍用原batch ID／位置关联，不增加请求字段；
@@ -481,6 +482,28 @@ Q3 的旧 `168bc` project resident bridge 只供软件 CPU 答复引用；本次
 `f1dfadf3fac4e7e69803ace879225a550bb42bae5295560b62a69ce6899f6757`。
 先前失败、私有 CPU guard 修正与各次运行保持原身份，不覆盖或合并成一份成功成绩。
 
+## LOTUS quick TopK 与 VARCHAR prediction
+
+[TopK配置](../../configs/sembench_imlane_topk.example.json)复用上面的`native_imlane_sembench`
+`check`／`run` CLI、构建身份和外层监督。`task`选择原SemBench查询；当前原题绑定支持Movie Q9，
+其他算子形态明确拒绝。模板完整源选出256行，比较预算为32640；实际配置从原查询N取N(N−1)/2，
+0／1行保留正数账本但消费0，不启动模型或SQL。
+
+原LOTUS1.2.4拥有quick的pivot、比较消息、parser、完整排名、rank-to-score及原评价；
+其每批LM消息进入既有`infer_prepared`，由作者IMLane拥有prediction批处理及CPython执行。
+这是LOTUS quick over IMLane VARCHAR工程变体，不是作者TopK算法或未修改作者DSO。
+一个外部模型服务贯穿查询，每批新建并关闭原生SQL／作者scope；该必要开销计入完整查询，
+不称数据库常驻。模型ready之后、额外身份预检之外，从真实源重读到完整内存sink计时；
+完整sink才发布result-ready，之后做token／发生项核对、原RNG与答复回放、评价及持久化。
+
+LM子类仅返回native prediction原文，不使用LOTUS的LM执行／缓存／usage计数；原比较token估计保留。
+实际API usage取已核验IPC回执，价格未知留空。原消息含文本列表，原样交模型；token参考仅在sink后
+按固定vLLM文本规范核对。相同消息仍是独立比较，SQL返回按call_id关联。
+每批SQL失败不是完整查询结果；sink后审计或最终模型关闭失败保留已观测结果并报告失败。
+
+新增6项软件检查覆盖原查询／排名／Arrow／provider回执、乱序返回、重复内容、0／1／5行和失败边界；
+SQL与模型是明确夹具。Linux作者SQL、实际renderer及真实模型尚待该新接点验证，不能借用LOTUS或旧Q1资格。
+
 ## MMQA Q1 工程版接线
 
 `0f562cf05eca1ad48d2db2fedeb0313f05356806` 的 `varchar-owned-engineering` 已在 Linux
@@ -522,7 +545,7 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B -m src.experiments.native_imlane_sembench ru
 本批仅一冷轮，最多 25 次原生 `generate`，额外预热／自动重试为 0。永久 SQLite 单元先整体
 保留 25，再由模型 worker 在每次实际 `generate` 前消费；第 26 次拒绝，失败／未知不退款。
 发生项和响应按完整消息身份、批内位置及 native call_id 核对，不按异步到达次序配答案。
-25 个冻结 prompt 全部不同；其他输入若破坏该相关性前提会显式拒绝。
+该历史运行的25个prompt全部不同；当前provider本地回执已有occurrence ID，重复消息也按原batch位置关联。
 
 两套真实时钟分别保留：`ready_source_to_sink_seconds`（兼容字段 `source_to_sink_seconds`）
 从模型 ready 后的新鲜 CSV／prompt/token 准备开始，包含必需输入／关系传递、原 parser 和完整内存
