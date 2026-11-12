@@ -2,6 +2,7 @@
 
 [原生文本阶段交接](native_stage_handoff_20261110/README.md)：双模型进程、跨请求流水、原生 NIXL与同卡共置比较，区分软件边界检查和实机证据。
 [修复版服务器补验](native_stage_handoff_20261110/README.md#server-revalidation-20261111)：新增改动覆盖、故障收尾限制、同资源重复及严格token诊断。
+[KV成本归因](native_stage_handoff_20261110/README.md#cost-diagnosis-20261112)：单实例异步控制、CUDA复制／同步区间和分片配置探针，保留观察与归因边界。
 
 
 [提示布局、图片表示与执行候选](semloom_execution_candidates_20261110/README.md)：真实文本准备、真实照片 CPU 操作、构造消费轨迹和原生接点；分项记录适用范围与待验证内容。

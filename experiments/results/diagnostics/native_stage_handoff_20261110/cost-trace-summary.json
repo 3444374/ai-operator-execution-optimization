@@ -1,0 +1,3826 @@
+{
+  "schema": "semloom.stage_cost_trace_summary.v1",
+  "unit": "seconds; intervals overlap, do not add",
+  "rounds": [
+    {
+      "run_id": "segment-trace01-q8-pipeline",
+      "round": 1,
+      "wall_s": 0.586623793,
+      "kernel_union_s": 0.112823866,
+      "memcpy_union_s": 0.020134791,
+      "gpu_union_s": 0.129348278,
+      "memcpy_api_union_s": 0.106239029,
+      "copy_and_sync_api_union_s": 0.132767116,
+      "copy_api_count": 20160,
+      "stream_sync_count": 20160,
+      "kv_fragment_activity_span_s": 0.296778729,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 15
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 28,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 32,
+          "count": 3368
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 44,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 76,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 112,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 128,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 144,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 148,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 156,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 184,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 248,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 252,
+          "count": 4
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 288,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 300,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 316,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 352,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 400,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 436,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 500,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 516,
+          "count": 20
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 548,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 872,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1044,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1120,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1448,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1820,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1976,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 3768,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 3856,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 5168,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12968,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 15504,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16960,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 21900,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 29672,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 32,
+          "count": 3363
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 36,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 64,
+          "count": 3
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 72,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 76,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 128,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 144,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 152,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 156,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 184,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 252,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 256,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 288,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 300,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 312,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 316,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 368,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 400,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 504,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 576,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 600,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 632,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 800,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 84
+        }
+      ]
+    },
+    {
+      "run_id": "segment-trace01-q8-pipeline",
+      "round": 2,
+      "wall_s": 0.557821178,
+      "kernel_union_s": 0.117631545,
+      "memcpy_union_s": 0.021106101,
+      "gpu_union_s": 0.133510123,
+      "memcpy_api_union_s": 0.113183693,
+      "copy_and_sync_api_union_s": 0.167057137,
+      "copy_api_count": 20160,
+      "stream_sync_count": 20160,
+      "kv_fragment_activity_span_s": 0.338839203,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 17
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16,
+          "count": 5
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 24,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 32,
+          "count": 3362
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 40,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 48,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 52,
+          "count": 6
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 56,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 112,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 132,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 144,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 176,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 192,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 208,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 212,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 216,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 232,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 248,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 304,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 364,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 412,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 424,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 444,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 500,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 512,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 516,
+          "count": 23
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 548,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 884,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1380,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1672,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1704,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1844,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1956,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 4636,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 5548,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 6256,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 6680,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 13364,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 20628,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 25036,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 25592,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 7
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 7
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 32,
+          "count": 3360
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 40,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 48,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 52,
+          "count": 4
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 56,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 80,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 96,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 104,
+          "count": 4
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 112,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 176,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 192,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 208,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 212,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 216,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 232,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 248,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 352,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 384,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 416,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 424,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 432,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 464,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 496,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 848,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 112
+        }
+      ]
+    },
+    {
+      "run_id": "segment-trace01-q8-pipeline",
+      "round": 3,
+      "wall_s": 0.570486865,
+      "kernel_union_s": 0.119383335,
+      "memcpy_union_s": 0.020345349,
+      "gpu_union_s": 0.135263843,
+      "memcpy_api_union_s": 0.110373366,
+      "copy_and_sync_api_union_s": 0.159627192,
+      "copy_api_count": 20160,
+      "stream_sync_count": 20160,
+      "kv_fragment_activity_span_s": 0.346158464,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 18
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12,
+          "count": 4
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 20,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 24,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 28,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 32,
+          "count": 3362
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 48,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 52,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 56,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 88,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 104,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 108,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 116,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 128,
+          "count": 4
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 144,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 168,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 176,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 184,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 188,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 192,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 196,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 216,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 228,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 256,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 388,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 416,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 440,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 500,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 512,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 516,
+          "count": 23
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 548,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 664,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1028,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1120,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1284,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1328,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1420,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1792,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1856,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2408,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2788,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 5640,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 6292,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 10088,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 15504,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16892,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 20044,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 26884,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 8
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 8
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 24,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 32,
+          "count": 3360
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 48,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 56,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 88,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 104,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 112,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 116,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 128,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 168,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 176,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 184,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 188,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 192,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 196,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 208,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 216,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 228,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 232,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 256,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 336,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 368,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 376,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 384,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 392,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 432,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 448,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 456,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 512,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 140
+        }
+      ]
+    },
+    {
+      "run_id": "trace01-copy-pipeline",
+      "round": 1,
+      "wall_s": 2.979201056,
+      "kernel_union_s": 0.787375342,
+      "memcpy_union_s": 0.012040342,
+      "gpu_union_s": 0.798340736,
+      "memcpy_api_union_s": 0.061893405,
+      "copy_and_sync_api_union_s": 0.063467768,
+      "copy_api_count": 10752,
+      "stream_sync_count": 10752,
+      "kv_fragment_activity_span_s": 0.198058938,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 56
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8,
+          "count": 32
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12,
+          "count": 20
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16,
+          "count": 11
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 20,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 24,
+          "count": 7
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 28,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 32,
+          "count": 1792
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 44,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 64,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 68,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 76,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 92,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 136,
+          "count": 8
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 164,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 180,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 192,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 204,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 212,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 240,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 252,
+          "count": 7
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 256,
+          "count": 119
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 260,
+          "count": 139
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 276,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 340,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 476,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1040,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2812,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 3144,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 3240,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 4284,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 4308,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 5400,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 7476,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8176,
+          "count": 3584
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 42752,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 66320,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 5
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 5
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 16,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 32,
+          "count": 1793
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 44,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 64,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 76,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 88,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 92,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 128,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 152,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 164,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 180,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 184,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 192,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 212,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 240,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 252,
+          "count": 5
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 256,
+          "count": 119
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 328,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 360,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 384,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 424,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 480,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 504,
+          "count": 5
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 512,
+          "count": 119
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8176,
+          "count": 3584
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 112
+        }
+      ]
+    },
+    {
+      "run_id": "trace01-copy-pipeline",
+      "round": 2,
+      "wall_s": 2.535470147,
+      "kernel_union_s": 0.777460973,
+      "memcpy_union_s": 0.011498563,
+      "gpu_union_s": 0.788734063,
+      "memcpy_api_union_s": 0.061989674,
+      "copy_and_sync_api_union_s": 0.064477456,
+      "copy_api_count": 10752,
+      "stream_sync_count": 10752,
+      "kv_fragment_activity_span_s": 0.179529772,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 26
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8,
+          "count": 56
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12,
+          "count": 8
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 32,
+          "count": 1794
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 44,
+          "count": 8
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 68,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 80,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 84,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 116,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 136,
+          "count": 8
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 140,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 172,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 252,
+          "count": 8
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 256,
+          "count": 121
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 260,
+          "count": 137
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 544,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1040,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1360,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2380,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 4284,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8176,
+          "count": 3584
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8496,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 21420,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36404,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 66320,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 32,
+          "count": 1792
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 84,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 116,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 140,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 168,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 172,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 232,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 252,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 256,
+          "count": 121
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 280,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 344,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 504,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 512,
+          "count": 121
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8176,
+          "count": 3584
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 140
+        }
+      ]
+    },
+    {
+      "run_id": "trace01-copy-pipeline",
+      "round": 3,
+      "wall_s": 2.935265843,
+      "kernel_union_s": 0.782205559,
+      "memcpy_union_s": 0.011512882,
+      "gpu_union_s": 0.79379639,
+      "memcpy_api_union_s": 0.064983025,
+      "copy_and_sync_api_union_s": 0.0678904,
+      "copy_api_count": 10752,
+      "stream_sync_count": 10752,
+      "kv_fragment_activity_span_s": 0.187048412,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 21
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8,
+          "count": 48
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12,
+          "count": 8
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16,
+          "count": 8
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 24,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 32,
+          "count": 1801
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 44,
+          "count": 8
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 68,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 104,
+          "count": 11
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 120,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 136,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 152,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 248,
+          "count": 8
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 252,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 256,
+          "count": 120
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 260,
+          "count": 138
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 408,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1040,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1044,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1768,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2040,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2084,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 4216,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 6348,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8176,
+          "count": 3584
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 27040,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 31888,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 65276,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 7
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 16,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 32,
+          "count": 1793
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 64,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 104,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 152,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 208,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 248,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 252,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 256,
+          "count": 120
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 304,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 448,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 496,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 504,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 512,
+          "count": 120
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8176,
+          "count": 3584
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 28
+        }
+      ]
+    },
+    {
+      "run_id": "trace01-q8-colocated",
+      "round": 1,
+      "wall_s": 0.201025165,
+      "kernel_union_s": 0.062542379,
+      "memcpy_union_s": 3.6128e-05,
+      "gpu_union_s": 0.062714314,
+      "memcpy_api_union_s": 0.0006135,
+      "copy_and_sync_api_union_s": 0.0,
+      "copy_api_count": 0,
+      "stream_sync_count": 0,
+      "kv_fragment_activity_span_s": null,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 4
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 20,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 108,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 112,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 116,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 120,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 140,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 180,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 256,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 340,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 364,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 456,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 516,
+          "count": 9
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 548,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 856,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 884,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 892,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 996,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2396,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12732,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 13260,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 13380,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 14508,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 20,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 40,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 116,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 140,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 232,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 256,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 280,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 340,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 364,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 448,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 456,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 512,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 680,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 728,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 912,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "run_id": "trace01-q8-colocated",
+      "round": 2,
+      "wall_s": 0.193882617,
+      "kernel_union_s": 0.062780482,
+      "memcpy_union_s": 6.08e-05,
+      "gpu_union_s": 0.06297677,
+      "memcpy_api_union_s": 0.000840024,
+      "copy_and_sync_api_union_s": 0.0,
+      "copy_api_count": 0,
+      "stream_sync_count": 0,
+      "kv_fragment_activity_span_s": null,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 7
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 48,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 108,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 112,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 120,
+          "count": 4
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 124,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 128,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 232,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 248,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 352,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 368,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 460,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 472,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 516,
+          "count": 9
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 548,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 848,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 924,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 952,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1036,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12744,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 13888,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 14140,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 15044,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 112,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 128,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 232,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 248,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 256,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 352,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 368,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 464,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 472,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 496,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 704,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 736,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 944,
+          "count": 1
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 28
+        }
+      ]
+    },
+    {
+      "run_id": "trace01-q8-colocated",
+      "round": 3,
+      "wall_s": 0.209805353,
+      "kernel_union_s": 0.062636751,
+      "memcpy_union_s": 3.5936e-05,
+      "gpu_union_s": 0.062762703,
+      "memcpy_api_union_s": 0.00057525,
+      "copy_and_sync_api_union_s": 0.0,
+      "copy_api_count": 0,
+      "stream_sync_count": 0,
+      "kv_fragment_activity_span_s": null,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 4
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 40,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 100,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 104,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 108,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 112,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 116,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 152,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 212,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 268,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 328,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 352,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 376,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 436,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 516,
+          "count": 9
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 548,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 792,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 856,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 888,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 920,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 4816,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 11876,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12652,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 13452,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 13480,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 40,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 80,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 104,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 152,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 208,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 212,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 268,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 304,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 328,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 376,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 424,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 436,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 536,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 656,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 752,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 872,
+          "count": 1
+        }
+      ]
+    },
+    {
+      "run_id": "trace01-q8-pipeline",
+      "round": 1,
+      "wall_s": 0.614552676,
+      "kernel_union_s": 0.112341427,
+      "memcpy_union_s": 0.020677261,
+      "gpu_union_s": 0.129610285,
+      "memcpy_api_union_s": 0.110055345,
+      "copy_and_sync_api_union_s": 0.166081321,
+      "copy_api_count": 20160,
+      "stream_sync_count": 20160,
+      "kv_fragment_activity_span_s": 0.324034118,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 16
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 16,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 20,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 24,
+          "count": 5
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 28,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 32,
+          "count": 3361
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 56,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 68,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 76,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 96,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 100,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 124,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 180,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 188,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 196,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 200,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 252,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 276,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 360,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 376,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 400,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 440,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 452,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 500,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 516,
+          "count": 20
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 548,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 788,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 792,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1060,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1412,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1476,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1884,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1976,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2708,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2852,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 6700,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 11456,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 11728,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 21216,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 22336,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 29672,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 7
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 8
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 16,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 20,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 24,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 32,
+          "count": 3360
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 40,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 48,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 76,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 96,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 100,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 152,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 188,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 192,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 196,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 200,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 252,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 276,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 360,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 376,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 392,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 400,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 504,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 552,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 720,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 752,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 800,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 140
+        }
+      ]
+    },
+    {
+      "run_id": "trace01-q8-pipeline",
+      "round": 2,
+      "wall_s": 0.557979422,
+      "kernel_union_s": 0.11230396,
+      "memcpy_union_s": 0.019397119,
+      "gpu_union_s": 0.129940507,
+      "memcpy_api_union_s": 0.115771978,
+      "copy_and_sync_api_union_s": 0.170851862,
+      "copy_api_count": 20160,
+      "stream_sync_count": 20160,
+      "kv_fragment_activity_span_s": 0.337431763,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 19
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 20,
+          "count": 4
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 28,
+          "count": 4
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 32,
+          "count": 3363
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 44,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 88,
+          "count": 4
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 96,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 104,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 128,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 136,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 160,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 208,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 212,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 336,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 340,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 348,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 436,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 440,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 444,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 472,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 500,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 516,
+          "count": 21
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 548,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 696,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 752,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 828,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1056,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1324,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1636,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1640,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2444,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 3416,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 5144,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 10500,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 11400,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12196,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 15504,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 24528,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 24720,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 8
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 8
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 12,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 20,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 24,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 32,
+          "count": 3361
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 40,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 44,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 64,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 88,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 96,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 128,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 136,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 176,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 192,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 208,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 256,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 272,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 340,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 348,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 416,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 444,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 472,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 680,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 696,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 888,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 944,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 140
+        }
+      ]
+    },
+    {
+      "run_id": "trace01-q8-pipeline",
+      "round": 3,
+      "wall_s": 0.549814983,
+      "kernel_union_s": 0.106567562,
+      "memcpy_union_s": 0.019440934,
+      "gpu_union_s": 0.123116665,
+      "memcpy_api_union_s": 0.109288085,
+      "copy_and_sync_api_union_s": 0.154157475,
+      "copy_api_count": 20160,
+      "stream_sync_count": 20160,
+      "kv_fragment_activity_span_s": 0.295704047,
+      "copy_shapes": [
+        {
+          "copy_kind": 1,
+          "bytes": 4,
+          "count": 13
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 12,
+          "count": 6
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 24,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 32,
+          "count": 3361
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 36,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 40,
+          "count": 5
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 88,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 100,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 112,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 148,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 152,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 168,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 172,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 200,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 252,
+          "count": 3
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 296,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 304,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 316,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 320,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 324,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 364,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 500,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 516,
+          "count": 19
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 548,
+          "count": 2
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 796,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1188,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1200,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1328,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1360,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1548,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 1976,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 2764,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 4512,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 4700,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 11900,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 17768,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 17784,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 20044,
+          "count": 1
+        },
+        {
+          "copy_kind": 1,
+          "bytes": 29672,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 4,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8,
+          "count": 6
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 12,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 24,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 32,
+          "count": 3360
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 40,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 80,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 112,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 148,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 152,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 168,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 172,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 224,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 252,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 296,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 304,
+          "count": 2
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 316,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 324,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 336,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 344,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 364,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 504,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 608,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 632,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 648,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 728,
+          "count": 1
+        },
+        {
+          "copy_kind": 2,
+          "bytes": 8176,
+          "count": 6720
+        },
+        {
+          "copy_kind": 8,
+          "bytes": 3072,
+          "count": 112
+        }
+      ]
+    }
+  ]
+}
