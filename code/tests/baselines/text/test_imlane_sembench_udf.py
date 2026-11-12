@@ -28,6 +28,7 @@ class PreparedVarcharTests(unittest.TestCase):
             output = udf.infer_prepared(table)
         self.assertEqual(provider.call_count, 1)
         self.assertEqual(provider.call_args.args[0], [json.loads(row['c1']) for row in before])
+        self.assertEqual(provider.call_args.kwargs, {'occurrence_ids': ['occ-0', 'occ-1']})
         self.assertEqual(output.schema, udf.OUTPUT)
         self.assertEqual(output['generated_text'].to_pylist(), texts)
         self.assertEqual(output['generated_text'].num_chunks, 1)

@@ -201,7 +201,7 @@ class FilterRelation:
             for call in batch['calls']:
                 predictions.append(dict(call_id=call['occurrence_id'],
                     generated_text=call['response']['generated_text']))
-        ipc = audit_ipc(directory, self.requests, self.tokens, predictions, sampling, by_occurrence=True)
+        ipc = audit_ipc(directory, self.requests, self.tokens, predictions, sampling)
         reconstructed, relation = finish_relation(self.query, self.method, self.prepared, predictions)
         decisions = relation['parsed_outputs']
         if self.query.operation.describe()['kind'] == 'join':

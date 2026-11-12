@@ -26,7 +26,7 @@ from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.native_imlane_model_query import QueryWindow, READY_SCHEMA, supervised_run, _positive
 from src.experiments.native_imlane_relation import run_relation_query, persist_relation_observation
 from src.infrastructure.private_artifacts import (
-    content_digest, file_identity, json_metric, new_private_directory, open_private_text,
+    file_identity, json_metric, new_private_directory, open_private_text,
     publish_private_json, read_json, write_private_json,
 )
 from src.infrastructure.redact import redact_text
@@ -64,10 +64,6 @@ def prepare_query(config):
     method, prepared, requests = prepare(query)
     if len(prepared) != 25 or query.operation.stage.kind != 'extract':
         raise ValueError('Q1 binds all 25 source occurrences to the original Extract')
-    # This particular frozen Q1 has distinct messages. It permits post-run IPC
-    # correlation without using asynchronous arrival order or changing the wire.
-    if len({content_digest(row['messages']) for row in requests}) != len(requests):
-        raise ValueError('Q1 IPC correlation requires these 25 distinct frozen messages')
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True,
                                                trust_remote_code=False)
     token_ids = [tokenizer.apply_chat_template(row['messages'], tokenize=True,
@@ -122,8 +118,9 @@ class Q1Relation:
         return audit_relation(self.prepared, self.relation)
 
 
-def audit_ipc(directory, requests, tokens, predictions, sampling, *, by_occurrence=False):
-    expected = {(row['call_id'] if by_occurrence else content_digest(row['messages'])):
+def audit_ipc(directory, requests, tokens, predictions, sampling):
+    """Correlate native batch positions and occurrence IDs, including equal messages."""
+    expected = {row['call_id']:
                 (row['call_id'], ids, row['messages'])
                 for row, ids in zip(requests, tokens, strict=True)}
     outputs = {row['call_id']: row['generated_text'] for row in predictions}
@@ -141,12 +138,12 @@ def audit_ipc(directory, requests, tokens, predictions, sampling, *, by_occurren
                 or batch['request']['sampling_params'] != sampling):
             raise ValueError('model IPC failed or changed original generation parameters')
         for position, call in enumerate(batch['calls']):
-            key = call.get('occurrence_id') if by_occurrence else content_digest(call['requested_payload']['messages'])
+            key = call.get('occurrence_id')
             if key not in expected or key in seen:
                 raise ValueError('duplicate or foreign model occurrence')
             call_id, ids, messages = expected[key]
             response = call['response']
-            if by_occurrence and (call['position'] != position or response['position'] != position
+            if (call['position'] != position or response['position'] != position
                     or call['requested_payload']['messages'] != messages
                     or batch['request']['messages_batch'][position] != messages):
                 raise ValueError('native batch position or original occurrence messages changed')

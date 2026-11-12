@@ -64,6 +64,32 @@ completion3025、total358032。输出token数组、金额和纯GPU工作／kerne
 原作者默认引擎、5-token比较、prefix cache开启／结果缓存关闭，物理清理与租约释放通过。
 这是一轮该完整Movie输入的功能资格，不能作为跨系统排名或其他组合题的资格。
 
+## LOTUS quick 的完整 Movie 排名
+
+固定`cb75415be49b0bdbd333bde1114115c9fd06aa44`、code tree
+`cb15d8ec32e3ca3734ed6e316aaff61811aec7ea`的
+`baseline-cb754-lotus-topk-full256-20261113-r1`使用上述原完整CSV与原Q9的256个发生项。
+LOTUS1.2.4、原quick／K=N／pivot／parser／rank-to-score及评价保持，输出上限8192，无额外预热／重试。
+先通过12项软件检查、32640最坏比较软件IPC与65280个有向比较的实际vLLM0.25.1 renderer门；
+完整消息／token／context32768核对，最长prompt326tokens，模型0、CUDA未初始化。
+CPU资格峰值RSS6118539264字节、新增证据盘1511399424字节；这是全部有向pair资格展开的开销，
+不是生产TopK内存成绩。CPU与真实预算分离，没有重置旧TopK8额度。
+
+随后一次真实查询完成3355次native generate API开始／唯一成功终态，unknown／retry／额外预热0。
+永久预留上界32640，未用额度不退款；完整实际消息、输入／输出token数组、原RNG及保存答复重放、
+256行完整排名／原sink／原评价通过，物理资源与租约清理通过。
+原Spearman=0.6630149296210235、Kendall=0.5156059574917722。
+原始答复中Neither1283次、None13次共1296次走**原parser默认True／Document 1回退**；
+不重采样、不改parser，不把回退答复当规范二选一输出。
+
+模型就绪后新鲜source→完整内存sink为42.366610336秒，启动31.005879033356905秒另计；
+outer controller→sink113.2394963秒。它是ready-first，非独立warm重复或机器冷态。
+实际原生配置为BF16、context32768、max_num_seqs128、max_num_batched_tokens2048、
+gpu_memory_utilization0.92、LM并发64，测量中未调参；这些是本次冻结值，不称vLLM默认。
+原生prefix cache开启、结果缓存关闭，全部实际重复值及原生回退保留。
+API逻辑prompt769185、completion10762、total779947；金额、first engine accept、纯GPU／kernel时间未知。
+单轮只授予该来源／完整输入功能资格，不与Kalypso不同算法作性能排名。
+
 <a id="imlane-boolean-join-sql"></a>
 ## LOTUS exact Join over IMLane prediction 的真实 SQL
 
@@ -227,6 +253,27 @@ SDK方法在正常／失败路径均恢复。14项不同软件检查通过、0�
 为`max_tokens`，实际原SDK使用`max_completion_tokens`，修正断言后新增两项通过，失败日志保留。
 这项准备工具尚未完成真实Extract调用；将来组件通过也不授予原Join→Extract整体模型资格。
 
+冻结`0755df1c99cc23867d514dbf47e512d6de98e52a`、code tree
+`b48e6843016ad7f077972bc8a6d4c390f1d4b509`的
+`baseline-0755-mmqa-extract-preparation-cpu-20261113-r1`随后完成Linux原题14项及c982新增部分匹配1项，
+共15／15、0skip／0模型。原真实sf25与旧Q2b输入身份相同，原SDK实际消费325个显式Join软件答复，
+捕获5个重复图像Extract消息；未完成查询、质量为空、未绑定真实模型／服务配置，未创建GPU预算。
+原件及全部payload核验，资源／租约清理通过；仍不能记为真实非空Extract已通过。
+
+## IMLane prepared 请求的 occurrence 交接
+
+原VARCHAR prepared kernel已有call_id列，却没有把ID交给模型provider；Q1入口因而要求所有消息内容互异。
+现用既有`occurrence_ids`协议透传原ID，消息／生成／原生SQL／调度保持，取消这一内容限制。
+共享IPC审计只按occurrence、原batch位置、消息、token及实际答复核对，Filter／Join调用同步迁移；
+删除旧消息摘要关联路径、`by_occurrence`开关及无用导入，不保留两套当前关联机制。
+旧8667离线audit脚本属于其原件与固定源码，不修改历史脚本；新衍生审计使用现有无开关签名。
+
+82项不同受影响软件检查通过、0模型。已有重复消息不同答复／乱序、缺失／重复／外来ID、位置、
+消息、token、参数及关闭失败用例继续使用，prepared UDF另确认原call_id确实交给provider。
+首轮IPC模块遇到沙箱AF_UNIX bind权限错误，仅在允许本地Unix socket后重跑该模块21项通过，
+生产代码未为此改变，失败日志保留。真实作者SQL／当前kernel绑定及模型资格仍待验；
+DSO及C++ driver源码未改，旧构建记录不能手改摘要冒充重新绑定，不重复既有25次模型。
+
 <a id="lotus-native-join-projection"></a>
 ## LOTUS 多列 Join 的原生选列限制
 
@@ -293,6 +340,8 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 60c875 Ray Q1 GPU64 | 82065595 | 216 | `c752bb34fede696daee37b1e661d8c3ba063dea7b0e02d1dce4ea0914ccd56b9` |
 | 40c477 Linux CPU | 3391607 | 1209 | `f009e8dd5d1cceba72ad7e97faf50765edf544730623795ea6b9c89ff63f94f9` |
 | 8667 MMQA Q2b GPU | 59392914 | 94 | `7d733719a54b8de5eb560c3b9096d4247a82cbfb73d8ca38537ac3d0a9cd4840` |
+| cb754 LOTUS full256 CPU＋GPU | 105729722 | 1269 | `8f7fb25b14800c0076c0cfcd3a3b22a50357bdd4149ef8d73ade435e0e3c8bd5` |
+| 0755 Extract阶段准备CPU | 3295145 | 1205 | `8b89d4b52fed0f5a7ba934ce5838c7f065a6338bf6d6b509dfe96479ea84b715` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

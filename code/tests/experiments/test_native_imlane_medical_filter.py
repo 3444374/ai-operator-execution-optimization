@@ -33,7 +33,7 @@ class OccurrenceAuditTests(unittest.TestCase):
 
     def audit(self, receipt):
         (self.root / 'one.terminal.json').write_text(json.dumps(receipt))
-        return audit_ipc(self.root, self.requests, [[1,2], [1,2]], self.predictions, self.sampling, by_occurrence=True)
+        return audit_ipc(self.root, self.requests, [[1,2], [1,2]], self.predictions, self.sampling)
 
     def test_identical_messages_with_different_answers_follow_occurrence_not_arrival(self):
         result = self.audit(self.receipt)
@@ -55,7 +55,7 @@ class OccurrenceAuditTests(unittest.TestCase):
 
     def test_missing_terminal_receipt_fails(self):
         with self.assertRaisesRegex(ValueError, 'receipt'):
-            audit_ipc(self.root, self.requests, [[1,2], [1,2]], self.predictions, self.sampling, by_occurrence=True)
+            audit_ipc(self.root, self.requests, [[1,2], [1,2]], self.predictions, self.sampling)
 
     def test_audit_uses_actual_declared_generation_and_rejects_silent_clamping(self):
         self.sampling['max_tokens'] = 32

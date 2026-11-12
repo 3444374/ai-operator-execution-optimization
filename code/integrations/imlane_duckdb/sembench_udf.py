@@ -31,7 +31,7 @@ def infer_prepared(table):
     if not call_ids:
         return pa.Table.from_arrays([pa.array([], type=pa.string())], schema=OUTPUT)
     messages = [json.loads(value) for value in table.column(1).to_pylist()]
-    texts = model_provider.infer_batch(messages)
+    texts = model_provider.infer_batch(messages, occurrence_ids=call_ids)
     if (type(texts) is not list or len(texts) != len(call_ids)
             or any(type(text) is not str for text in texts)):
         raise ValueError('native model provider changed occurrence cardinality or text type')
