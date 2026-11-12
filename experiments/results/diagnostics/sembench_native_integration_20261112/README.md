@@ -42,7 +42,27 @@ Spearman=0.60616080621109、Kendall=0.49135381491199537。
 16次实际 generate API 输入 token 数组与 CPU 参考一致；API逻辑用量为prompt3954、completion32，
 total3986。它们不是缓存未命中量或GPU kernel工作量；输出token数组、金额、纯kernel计数未知。
 原生prefix cache开启、结果缓存关闭，物理清理与租约释放通过。此资格只覆盖8行功能样本；
-full256及其他后端 TopK 仍须单独接线／验证。
+8行资格不转授full256；其独立验收如下，其他后端TopK仍需接线／验证。
+
+### 原 Movie 全量256发生项
+
+同一 `11eff9cd7` 和原作者来源，原完整2000×11 CSV的SHA-256为
+`ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf`。
+原Q9选择256×11，128个重复review ID保留。运行
+`baseline-11eff-topk-full256-cpu-20261113-r1` 先检查全部65280个有向比较，最长原prompt333tokens，
+context32768、额外输出上限5；模型调用0、CUDA未初始化。实际模型预算未在此CPU门创建。
+
+独立运行 `baseline-11eff-topk-full256-gpu-20261113-r1` 永久预留比较上界32640，
+实际1508次开始和成功终态，未知／重试／额外预热均为0。256个源位置各出现一次，
+原rank-to-score、完整sink和原评价重放通过：Spearman=0.5516305717402453、
+Kendall=0.4201608841569373。单次模型就绪后source→内存sink为31.57879594秒，
+启动40.210957441秒、额外源码预检8.610074455秒另计；controller→sink为82.264354239秒。
+这些是实测不同事件区间，不用相减制造统一时间。
+
+1508条实际消息及generate API输入token数组与CPU参考关联通过；API报告逻辑prompt355007、
+completion3025、total358032。输出token数组、金额和纯GPU工作／kernel计数仍未知。
+原作者默认引擎、5-token比较、prefix cache开启／结果缓存关闭，物理清理与租约释放通过。
+这是一轮该完整Movie输入的功能资格，不能作为跨系统排名或其他组合题的资格。
 
 <a id="imlane-boolean-join-sql"></a>
 ## LOTUS exact Join over IMLane prediction 的真实 SQL
@@ -68,7 +88,17 @@ full256及其他后端 TopK 仍须单独接线／验证。
 `52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf`，
 其原构建身份为 `author_build_mode=patched`；未重编DSO、重链接driver或重跑旧链接探针。
 逻辑 Join 仍属于 LOTUS exact，IMLane拥有 prediction与原生传输；不能称为复现原作者 Join 算法。
-真实模型质量、性能与其他输入范围仍未由这三门验证。
+真实模型质量、性能与其他输入范围不由这三道零模型门授予。
+
+随后 `baseline-8667-imlane-join-gpu64-20261113-r1` 在同一冻结来源与8×8完整源上执行一次真实模型资格。
+原生成配置为max_tokens8192、temperature0、top_p1、seed0、stop[]、零惩罚／repetition1；
+Qwen2.5-7B-Instruct BF16由独立vLLM0.25.1原生owner执行，driver LOTUS1.2.4与Arrow16.1作者ABI环境隔离。
+64次真实generate API调用和成功答复，未知／重试／预热0，完整原消息／renderer输入token逐条匹配。
+完整8×22关系、最终空sink、原评价、ACK和资源／租约清理通过，DSO未重编、driver未重链接。
+原precision=0、recall=0、F1=0，保留实际质量，不用软件参考替换真实答复。
+就绪后source→内存sink4.433729632秒，worker进入至sink67.183766429秒，模型启动53.8795217750594秒，
+host controller→sink82.733766769秒，分别保留；单样本不代表fullJoin或性能对比。
+API逻辑用量prompt14704、completion4062、total18766；输出token数组、金额、物理GPU生成／kernel计数未知。
 
 ## 旧 Ray Q3 专项图退出维护
 
@@ -104,6 +134,12 @@ Daft表达式、Rust前缀算子、LocalVLLMExecutor、submit／poll及collect�
 这证明该原生本地路径的两次collect未复用模型；不能外推所有Daft入口，也不代表多算子不可实现。
 后续接线必须保留实际模型构造／冷启动成本，不能用直接executor或自造池冒充同一原生图。
 
+`baseline-daft-native-lifecycle-20261113-r1` 随后在实际Linux Daft0.7.21验证同一图路径，
+使用已冻结的旧诊断源SHA `e95a5000e9bba043df9e999d2e8e6aeeee2c24f70a52a01ba66f3d242d2daaea`，
+上下文来源为 `431573e08`，只绑定该脚本及其标准库依赖，不授予整个HEAD资格。
+两执行器／两软件模型、4次软件generate和完整关系、事件循环／线程／资源／租约清理通过，
+真实模型、Ray runtime和GPU调用0。Mac后续诊断只增加平台和扩展库摘要，不回写Linux旧源身份。
+
 ## Ray 图像单遍查询的资格工具
 
 已有生产绑定支持Animals Q1／Q3／Q10一遍、Q7两遍，但CPU捕获和原生processor门仍固定Q7／2N，
@@ -116,6 +152,18 @@ Daft表达式、Rust前缀算子、LocalVLLMExecutor、submit／poll及collect�
 0模型、0跳过。首轮一个旧真实CPU子进程测试被沙箱sysctl进程树权限拒绝；未改生产代码，
 在允许进程检查后仅重跑该项通过，失败原件保留。真实Ray图像／token／pixel processor与单遍VLM
 仍由服务器单独验收，不能从旧Q7的两遍模型资格推定通过。
+
+## Cars 与 E-Commerce 真实资产缺口
+
+`baseline-cars-ecomm-data-checks-20261113-r1` 的Cars独立官方full_data.zip检查限定512MiB／15分钟，
+仅请求原四表元数据，不下载图音。实际连接超时、0字节、未取得HTTP响应，按约停止且未重试；
+sf64原抽样器未运行。这是本次访问阻塞，不能证明所有位置都没有资产。
+
+E-Commerce只处理此前保留的完整成员缓存，未新增网络请求、未重置原下载额度或截止时间。
+恢复清单记录4498个CRC完整成员：styles.csv、images.csv及4496个JSON，共94605481字节；
+还缺39950个JSON，不能生成官方sf64，更不生成替代数据冒充原输入。
+本会话独立核验的是检查／恢复脚本、记录和清单归档，未重新读取服务器上的全部恢复数据；
+成员CRC与恢复事实由保留的原执行记录支持。原下载和未完成尾部继续保留。
 
 ## 原件恢复与独立核验
 
@@ -130,6 +178,12 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 11eff CPU | 123286 | 102 | `9234bcc5e0185aeea54684b21ded6ac54768c7a16c0b993fcf1d056c6002fc36` |
 | 11eff GPU8 | 652933 | 220 | `d310d0585d086d823c923c7dcbb32888bc1b614f20a0084555f8ffe9a89e21de` |
 | 8667 SQL CPU | 342404 | 177 | `ac98ad437e07f71486442606720d0622134c0d833e0ff1c1304f1130b1487b73` |
+| 11eff full256 CPU | 15750581 | 60 | `161175a54e3c5c92959394ceb36e46130774c15ca1c8611ea288047cb2e73fb8` |
+| 11eff full256 GPU | 1170008 | 109 | `0756f60790a1626e8e31c0a3ebbcc6fa85abdb700b279863c6950ae7e5ab6565` |
+| 8667 model64 | 242405 | 148 | `8f0fdc209c4bf4e6b088011b8971c40af8d713403101b1e84e4b4bf49c78a237` |
+| e95 Daft Linux CPU | 27635 | 33 | `63ca0761aae0d0464c6ad0d02db07d13d7ec1f0cbd41ce38799122ada6ee2f96` |
+| Cars／E-Commerce检查 | 388677 | 63 | `61cc26fd6cec44c6a6bfb76eb4fad28fb088182c9c236ed98a0fa5c14e7e9b54` |
+| E-Commerce恢复记录 | 259761 | 22 | `e39f956c1d2641942dbbaca547258a48fea4d398800a2f7eeffd8c5cf80785e1` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

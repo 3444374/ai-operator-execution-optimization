@@ -672,6 +672,12 @@ Unix IPC、完整 sink ACK 和原审计；只有模型服务替换为测试目�
 这些证据只授予该来源的 SQL／交接资格，尚不是 IMLane 模型质量或作者 Join 算法复现；
 运行身份及恢复摘要见[接入验收报告](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-boolean-join-sql)。
 
+随后同一 `8667d526c`、原8×8输入和原生成参数已完成64次真实模型请求，0未知／重试／预热。
+逐条原消息与完整renderer输入token、实际成员关系、8×22关系、原sink／评价、ACK及物理清理通过。
+最终空表，原precision／recall／F1均为0；保留该质量，不用历史软件答复替换。
+这是LOTUS exact Join over IMLane prediction的样本资格，不是原作者Join算法或全量成绩；
+模型就绪后的完整查询与冷启动时钟分别记录在同一报告。
+
 `prompt_columns` 保存原 LOTUS 观察到的源列顺序，而非渲染 header。原 `StageSpec.bind`
 已经从原题 instruction 解析列名，准备阶段核对相同列集合，再应用显式冻结顺序；
 不按展示大小写映射、不排序、不跨进程重新推断顺序。历史 Q3a 冻结包与证据不改。

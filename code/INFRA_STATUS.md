@@ -30,7 +30,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 |---|---|---|---|---|---|
 | 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；Cars/E-Commerce Filter 有软件检查，真实数据/SQL待验；原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接，软件检查；Linux/模型待验，非作者 Join 算法复现 | 原 CP＋Filter 已接，完整原题／原作者方法与 planner 软件检查；作者环境／模型待验 |
-| 文本完整排名；Movie Q9 TopK profile | 原 quick TopK 的显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 作者 insertion／merge full TopK 已接；11eff原作者CPU及8行真实模型通过，其余规模／来源另验 |
+| 文本完整排名；Movie Q9 TopK profile | 原 quick TopK 的显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -195,7 +195,8 @@ IMLane 也通过独立 `text_join` schema 将同一原消息和完整 pair 发�
 复用既有 owner/SQL/ACK，由原 SDK 恢复 Join／原题 sink，原始答复和实际选列在 sink 后审计。
 原版 DSO/kernel/C++ 未改。冻结 `8667d526c` 已通过[真实 Linux SQL 三门](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-boolean-join-sql)：
 完整64条软件答复、8×22中间关系及 sink ACK，缺行／重复 ID 在任何 AI query／provider 请求前拒绝；
-复用既有 patched 构建的 `52bf5763` DSO，0模型，资源与租约闭合。真实模型仍待验，零候选仍是薄 driver 接线限制。
+复用既有 patched 构建的 `52bf5763` DSO，0模型，资源与租约闭合。随后同一冻结来源完成64次
+真实请求、完整8×22关系／空sink及逐条消息／token核对，原F1=0；单样本资格不外推全量，零候选仍是薄 driver 接线限制。
 已核当前 LOTUS1.2.4 accessor 实际每侧只选一个 Series；此前多列软件检查证明与原 SDK 一致，
 不证明全部声明字段进入模型。现在 `native_join_inputs` 记录真实选列／遗漏字段，保留原生行为；
 完整多列意图语义及真实目标模型仍未验证。
@@ -277,6 +278,9 @@ Kalypso 的[原生完整排名](src/baselines/text/frameworks/kalypso_native/REA
 及原作者0／1／8行CPU门（8行56个有向比较完整token），模型调用0、清理通过，原件已核。
 同一冻结来源又完成原CSV样本8行的16次真实比较（上界28），原排名／分数／评价重放、实际消息及
 generate API输入token数组关联、清理／租约均通过；质量按原结果保留，不代表全256行或其他后端。
+另以原2000×11 CSV实际选出的256发生项独立通过65280方向CPU门和1508次实际原生比较；
+重复review ID保留，完整原rank-to-score／评价、输入token关联和清理通过。
+全量资格及原生质量见[验收报告](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md)，不转授其他系统或组合树。
 实际output token数组、价格和纯GPU kernel计数仍未观测；API usage不当作GPU实际工作量。
 连同受影响 Map／Filter／Join、owner、HTTP／时钟及原题共114项不同本机检查为111通过、
 3跳过（独立Daft SDK及未设置的MMQA／Medical可选资产变量），0真实模型。
