@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+## 2026-11-12：七个优化代码 PR 的实现与方案复核
+
+[固定来源的两轴审查](diagnostics/semloom_execution_candidates_20261110/README.md#implementation-review-20261112)
+确认两轴共同的 #93 模板身份缺陷，修复及 18 项 CPU 归该 PR；规范审查另有 90 次分支 fixture 通过、2 项可选跳过，
+不跨来源累加。窄切片总体对应方案，完整查询接线、实际成本／工作反馈、动态表示及短期限资源收尾仍缺；
+已停止候选与条件性后续方向分开，未合入 main，未据此新增完整方法／GPU 收益资格。
+
+
 ## 2026-11-12：原型分支的准确服务器回执补记
 
 [准确 b1d965f 的原回执](diagnostics/semloom_mechanism_prototypes_20261110/README.md#server-qualification-20261111)
