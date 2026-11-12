@@ -149,7 +149,9 @@ Kalypso Movie Q8/Q9/Q10 现由同一个 Map 接点绑定原题，保留作者提
 length→8192 重试、原 parser 和完整关系后处理。Q10 另绑定原 Movies 评价文件；调用数从原题选择取得，
 不设固定样本量。候选 `e5ea4842f` 的既有 48 项 CPU 检查与 4000 条保存答复回放为软件证据；
 交接后的隔离组合另通过 22 项零模型回归，覆盖三题的小规模原查询／评价及 CLI 交接。
-新候选在作者环境的 SDK／planner／request-object 验收仍为 pending，不继承旧 GPU 结果；
+冻结候选 `e5ea4842f` 已由独立服务器会话通过 Linux 作者 SDK／planner／request-object 及完整 token
+检查，合计2376条，模型调用0、未初始化 CUDA；其 Map 接点文件与当前分支相同。
+当前分支随后修改了共享查询绑定，整合后的目标环境验证仍为 pending，不转授该候选或旧 GPU 结果；
 查询终点仍是完整内存关系，审计、评价、编码、持久化和关闭位于该终点之后。
 
 [IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257`、可选
