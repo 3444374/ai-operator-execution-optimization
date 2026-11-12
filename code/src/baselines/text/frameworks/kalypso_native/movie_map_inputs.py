@@ -1,12 +1,13 @@
-"""Frozen Q9 input handoff from the SemBench driver to the native CPU Python."""
+"""Frozen Movie Map input handoff from the SemBench driver to native CPU Python."""
 import csv
 import hashlib
 import json
 import subprocess
 from pathlib import Path
 
-from .native_server import AUTHOR_SOURCE_COMMIT, physical_call_caps
+from .native_server import AUTHOR_SOURCE_COMMIT, MOVIE_MAP_QUERIES, physical_call_caps
 
+# Preserve the existing protocol name; each query's task is bound in the unit.
 SCHEMA = 'semloom.kalypso_q9_cpu_inputs.v1'
 SOURCE_FILES = (
     'src/baselines/text/frameworks/kalypso_native/movie_map_inputs.py',
@@ -46,11 +47,11 @@ def source_binding(cfg):
 
 def binding(cfg, unit):
     if (len(cfg['units']) != 1 or not unit['queries'] or cfg['units'][0] != unit
-            or any(q['task'] != 'movie-q9' for q in unit['queries'])):
-        raise ValueError('Q9 CPU preparation requires one dedicated Map unit')
+            or any(q['task'] not in MOVIE_MAP_QUERIES for q in unit['queries'])):
+        raise ValueError('Movie CPU preparation requires one dedicated Map unit')
     physical_call_caps(unit)
     if cfg['source_commit'] != AUTHOR_SOURCE_COMMIT:
-        raise ValueError('Q9 CPU input handoff requires original author05024')
+        raise ValueError('Map CPU input handoff requires original author05024')
     return dict(source=source_binding(cfg), author_source_commit=cfg['source_commit'],
         model=cfg['model'], model_revision=cfg['model_revision'],
         expected_template_sha256=cfg['expected_template_sha256'],
@@ -70,12 +71,12 @@ def prepare_inputs(cfg, unit, output):
     for index, spec in enumerate(unit['queries']):
         qid = spec['query_id']
         if Path(qid).name != qid or qid in ('.', '..'):
-            raise ValueError('Q9 CPU query identity must be a filename-safe name')
-        query = make_query(local, qid)
+            raise ValueError('Map CPU query identity must be a filename-safe name')
+        query = make_query(local, qid, spec['task'])
         directory = output / ('query-' + str(index))
         rows, csv_path = prepare(local, spec, directory, query.operation)
         description = query.describe()
-        description['policy'] = 'original Q9 Map selection; no model calls in CPU preparation'
+        description['policy'] = 'original Movie Map selection; no model calls in CPU preparation'
         description['native_retry_policy'] = 'author length retry remains at most once at8192'
         source_path = directory / 'source.json'
         source_path.write_text(json.dumps(description, ensure_ascii=False, indent=2) + '\n')
@@ -87,7 +88,7 @@ def prepare_inputs(cfg, unit, output):
         preparation='original SemBench selection in driver Python; author Python consumes only frozen files')
     path = output / 'CPU-INPUTS.json'
     path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
-    return dict(status='prepared_original_Q9_CPU_inputs_no_model', manifest=str(path.resolve()),
+    return dict(status='prepared_original_Movie_Map_CPU_inputs_no_model', manifest=str(path.resolve()),
                 sha256=sha(path), queries=len(queries), logical_occurrences=sum(q['logical_occurrences'] for q in queries))
 
 
@@ -96,15 +97,15 @@ def load_inputs(cfg):
     reference = cfg['native_cpu_inputs']
     path = Path(reference['manifest']).resolve()
     if sha(path) != reference['sha256']:
-        raise ValueError('Frozen Q9 CPU input manifest changed')
+        raise ValueError('Frozen Map CPU input manifest changed')
     manifest = json.loads(path.read_text())
     if (manifest['schema'] != SCHEMA or manifest['binding'] != binding(cfg, cfg['units'][0])
             or manifest['model_calls'] != 0):
-        raise ValueError('Frozen Q9 CPU source/model/unit binding differs')
+        raise ValueError('Frozen Map CPU source/model/unit binding differs')
     queries = manifest['queries']
     expected = cfg['units'][0]['queries']
     if [q['query_id'] for q in queries] != [q['query_id'] for q in expected]:
-        raise ValueError('Frozen Q9 CPU query sequence differs')
+        raise ValueError('Frozen Map CPU query sequence differs')
     loaded = []
     for item, spec in zip(queries, expected, strict=True):
         count = spec['expected_calls']
@@ -113,16 +114,18 @@ def load_inputs(cfg):
             entry = item['files'][role]
             target = (path.parent / entry['path']).resolve()
             if not target.is_relative_to(path.parent) or sha(target) != entry['sha256']:
-                raise ValueError('Frozen Q9 CPU input file changed: ' + role)
+                raise ValueError('Frozen Map CPU input file changed: ' + role)
             paths[role] = target
         description = json.loads(paths['source'].read_text())
         table = json.loads(paths['prompt'].read_text())
-        if (description['scenario'] != 'movie' or description['query'] != 'Q9'
-                or description['ranking'] != 'map' or description['query_id'] != spec['query_id']
+        query=MOVIE_MAP_QUERIES[spec['task']]
+        if (description['scenario'] != 'movie' or description['query'] != 'Q'+query
+                or description.get('ranking') != ('map' if query=='9' else None)
+                or description['query_id'] != spec['query_id']
                 or description['sembench_commit'] != 'c814e3807e72d4cf876b852b17e77f3cc94575c2'
                 or type(description['expected_model_calls']) is not int or description['expected_model_calls'] != count
                 or description['operation']['stage']['method']['instruction'] != table['instruction']):
-            raise ValueError('Frozen Q9 CPU input is not the original Map task/instruction')
+            raise ValueError('Frozen CPU input is not the original Map task/instruction')
         rows = table['rows']
         if (table['query_id'] != spec['query_id'] or type(item['logical_occurrences']) is not int
                 or item['logical_occurrences'] != count or len(rows) != count
@@ -130,10 +133,10 @@ def load_inputs(cfg):
                 or [r['idx'] for r in rows] != list(range(count))
                 or [r['source_position'] for r in rows] != list(range(count))
                 or [r['row_id'] for r in rows] != [spec['query_id'] + '-row-' + str(i) for i in range(count)]):
-            raise ValueError('Frozen Q9 CPU occurrence identities differ')
+            raise ValueError('Frozen Map CPU occurrence identities differ')
         with paths['csv'].open(newline='') as stream:
             reader = csv.DictReader(stream)
             if reader.fieldnames != ['data'] or [r['data'] for r in reader] != [r['reviewText'] for r in rows]:
-                raise ValueError('Frozen Q9 CPU CSV differs from complete occurrence table')
+                raise ValueError('Frozen Map CPU CSV differs from complete occurrence table')
         loaded.append(dict(spec=spec, table=table, paths=paths))
     return manifest, loaded

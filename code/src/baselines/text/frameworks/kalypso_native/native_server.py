@@ -17,6 +17,7 @@ import uuid
 ROW = contextvars.ContextVar('observed_native_row',default=None)
 CALL = contextvars.ContextVar('observed_native_call',default=None)
 AUTHOR_SOURCE_COMMIT = '05024f027f932c0e398852e38302be30b9015481'
+MOVIE_MAP_QUERIES = {'movie-q8': '8', 'movie-q9': '9', 'movie-q10': '10'}
 
 
 def check_author_source(cfg):
@@ -141,11 +142,11 @@ def physical_call_caps(unit):
         if type(logical) is not int or logical<=0:
             raise ValueError('Native query needs a finite positive logical occurrence count')
         cap=query.get('max_native_calls',logical)
-        if query.get('task')=='movie-q9':
+        if query.get('task') in MOVIE_MAP_QUERIES:
             if cap!=2*logical:
-                raise ValueError('Q9 Map requires twice the logical occurrence count as its physical call cap')
+                raise ValueError('Map requires twice the logical occurrence count as its physical call cap')
         elif cap!=logical:
-            raise ValueError('Only Movie Q9 Map binds a native length retry allowance')
+            raise ValueError('Only Movie Map binds a native length retry allowance')
         if type(cap) is not int or cap<=0 or query['query_id'] in caps:
             raise ValueError('Invalid or duplicate native query budget')
         caps[query['query_id']]=cap
@@ -227,9 +228,9 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         finally:
             ROW.reset(token)
 
-    if any(q.get('task')=='movie-q9' for q in unit['queries']):
-        if any(q.get('task')!='movie-q9' for q in unit['queries']):
-            raise ValueError('Q9 Map requires its own finite owner unit')
+    if any(q.get('task') in MOVIE_MAP_QUERIES for q in unit['queries']):
+        if any(q.get('task') not in MOVIE_MAP_QUERIES for q in unit['queries']):
+            raise ValueError('Map requires its own finite owner unit')
         from vllm.kalypso.sem_ops.map import SemMap
         from vllm.kalypso.controller.map_estimator import MapRatioEstimator
         from src.baselines.text.frameworks.kalypso_native.map_observation import install, install_response_observation

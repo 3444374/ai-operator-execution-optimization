@@ -50,7 +50,7 @@ def install(cfg, unit, directory, native, map_class, estimator_class):
                 or self.instruction != value['instruction']):
             raise ValueError('Native Map context/instruction differs from its source occurrence')
         data_prompt, _ = original_prompt(self,ctx)
-        # Preserve the exact Q9 rubrics/review text inside the author's Map template.
+        # Preserve the original task instruction/review inside the author's Map template.
         formatted = self.instruction.format(reviewText=row['reviewText'])
         return data_prompt, get_prompt(formatted,ctx.input.data,op=OpName.SEM_MAP)
     async def run(self,ctx,priority=0):
@@ -82,7 +82,7 @@ def install(cfg, unit, directory, native, map_class, estimator_class):
     map_class._build_prompt = prompt
     map_class._run_single = run
     estimator_class.reset = reset
-    return dict(errors=errors,semantic_binding='SemBench Q9 exact formatted rubrics inside original author Map prompt template',
+    return dict(errors=errors,semantic_binding='SemBench exact formatted Map instruction inside original author Map prompt template',
         identical_to_LOTUS_message_template=False,original_length_estimation_and_retry_implementation=True,
         original_ratio_update_and_reset=True,original_sampling=True,physical_budget=unit['call_cap'])
 
