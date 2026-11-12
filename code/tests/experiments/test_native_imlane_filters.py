@@ -24,14 +24,11 @@ def config():
 
 
 class FilterBindingTests(unittest.TestCase):
-    def test_only_supported_single_filter_and_explicit_positive_budget_are_allowed(self):
+    def test_configuration_leaves_task_support_to_original_preparation(self):
         value = config()
-        for query in entry.QUERIES:
+        for query in ('3a', '6c', 'new-task'):
             value['query_id'] = query
             self.assertEqual(entry.configuration(value)[0]['query_id'], query)
-        for query in ('1', '4', '3b-3g', '6a-6c'):
-            value['query_id'] = query
-            with self.assertRaises(ValueError): entry.configuration(value)
         value['query_id'] = '6a'
         for budget in (7, 25, 75, 120, 1200, 2000):
             value['max_model_calls'] = budget
@@ -69,16 +66,22 @@ class FilterBindingTests(unittest.TestCase):
                 kernel.infer_mmqa(pa.table({'c0':['a'],'c1':['a'],'c2':['b']}))
             self.assertEqual(infer.call_count, 1)
 
-    def test_medical_filters_declare_exact_patient_scale_and_occurrence_budget(self):
+    def test_scale_and_generation_are_configuration_not_historical_experiment_limits(self):
         value = config()
         value.update(schema=entry.MEDICAL_SCHEMA, query_id='4', scale_factor=11112, max_model_calls=1200)
-        for query_id in ('1', '4'):
-            value['query_id'] = query_id
+        for scale in (1, 7, 1200, 11112):
+            value['scale_factor'] = scale
             self.assertEqual(entry.configuration(value)[0], value)
-        for changes in (dict(query_id='10'), dict(scale_factor=1200), dict(max_model_calls=0),
+        for changes in (dict(scale_factor=0), dict(scale_factor=True), dict(max_model_calls=0),
                         dict(scale_factor=None), dict(schema=entry.SCHEMA)):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 entry.configuration(dict(value, **changes))
+        for count in (16, 512, 8192):
+            value['generation']['max_tokens'] = count
+            self.assertEqual(entry.configuration(value)[1].max_tokens, count)
+        value['generation']['response_format'] = {'type': 'json_object'}
+        with self.assertRaisesRegex(ValueError, 'unstructured'):
+            entry.configuration(value)
 
 
 class FilterDriverTests(PreparedDriverBuildTests):
@@ -97,7 +100,8 @@ class FilterDriverTests(PreparedDriverBuildTests):
 
 
 class FilterWorkerTests(unittest.TestCase):
-    def exercise(self, *, audit_failure=False, close_failure=False, persistence_failure=False, medical=False):
+    def exercise(self, *, audit_failure=False, close_failure=False, persistence_failure=False, medical=False,
+                 max_tokens=8192, context=32768, preflight_seconds=0):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); clock, events = [100_000_000_000], []
             args = SimpleNamespace(output=root/'worker', build_record=root/'build.json', kind='thread', threads=None, executor_count=None)
@@ -107,7 +111,7 @@ class FilterWorkerTests(unittest.TestCase):
             class Service:
                 def __init__(self, *_args, **_kwargs):
                     self.socket_path=root/'fixture.sock'; self.served_model_name='fixture'
-                    self.ready_info=dict(max_model_len=32768); self.report={}; self.closed=False
+                    self.ready_info=dict(max_model_len=context); self.report={}; self.closed=False
                 def __enter__(self):
                     self.report['started_monotonic']=clock[0]/1e9; events.append('start')
                     clock[0]+=90_000_000_000; events.append('ready'); return self
@@ -123,7 +127,7 @@ class FilterWorkerTests(unittest.TestCase):
                 rows=[dict(occurrence_id='r',source_position=0,title='original airline',text='raw',messages=[])]
                 return SimpleNamespace(describe=lambda:{}), SimpleNamespace(columns=['Airlines']), [], [], [[1]], rows
             def run(_args, report, **kwargs):
-                self.assertEqual(kwargs['query_started_ns'],190_000_000_000)
+                self.assertEqual(kwargs['query_started_ns'],190_000_000_000 + preflight_seconds * 1_000_000_000)
                 clock[0]+=3_000_000_000; events.append('sink')
                 report.update(full_sink_observed_monotonic_ns=clock[0],result_ready_monotonic_ns=clock[0],
                               native_alive_after_sink=True,source_to_sink_seconds=5)
@@ -135,7 +139,10 @@ class FilterWorkerTests(unittest.TestCase):
             def persist(*args, **kwargs):
                 if persistence_failure: raise OSError('relation persistence failed')
                 return real_persist(*args, **kwargs)
+            def preflight(*_):
+                clock[0] += preflight_seconds * 1_000_000_000
             with patch.object(entry,'verified_build',return_value=native_build), \
+                    patch.object(entry,'_source_query',side_effect=preflight), \
                     patch.object(entry,'prepare_query',side_effect=prepare), \
                     patch.object(entry,'run_relation_query',side_effect=run), \
                     patch.object(entry,'persist_relation_observation',side_effect=persist), \
@@ -143,13 +150,16 @@ class FilterWorkerTests(unittest.TestCase):
                 error=None
                 try:
                     value = config()
+                    value['generation']['max_tokens'] = max_tokens
                     if medical:
                         value.update(schema=entry.MEDICAL_SCHEMA, query_id='4', scale_factor=11112, max_model_calls=1200)
                     report=entry.run_worker(args,value,service_factory=Service)
                 except (RuntimeError,ValueError,OSError) as caught:
                     error=caught;report=json.loads((args.output/'worker.json').read_text())
-            if not persistence_failure:
+            if not persistence_failure and 'sink' in events:
                 self.assertTrue((args.output/'full-sink-observed.json').exists())
+            elif 'sink' not in events:
+                self.assertFalse((args.output/'full-sink-observed.json').exists())
             return report,error,events
 
     def test_medical_success_and_failure_keep_distinct_actual_clock_events(self):
@@ -168,6 +178,57 @@ class FilterWorkerTests(unittest.TestCase):
         self.assertEqual(report['ready_source_to_sink_seconds'],5)
         self.assertEqual(report['cold_worker_entry_to_sink_seconds'],95)
         self.assertEqual(events,['start','ready','source','sink','audit','close'])
+
+    def test_source_preflight_belongs_to_cold_not_ready_query_or_startup(self):
+        report, error, _ = self.exercise(preflight_seconds=7)
+        self.assertIsNone(error)
+        self.assertEqual(report['model_startup_seconds'], 90)
+        self.assertEqual(report['ready_source_to_sink_seconds'], 5)
+        self.assertEqual(report['cold_worker_entry_to_sink_seconds'], 102)
+
+    def test_context_capacity_uses_declared_output_limit(self):
+        report, error, _ = self.exercise(max_tokens=32, context=33)
+        self.assertIsNone(error)
+        self.assertEqual(report['status'], 'completed')
+        report, error, _ = self.exercise(max_tokens=32, context=32)
+        self.assertIsInstance(error, ValueError)
+        self.assertEqual(report['status'], 'failed')
+
+    def test_unsupported_or_empty_task_never_starts_model(self):
+        operations = [None, SimpleNamespace(describe=lambda: {'kind': 'map'}),
+                      SimpleNamespace(describe=lambda: {'kind': 'join'}),
+                      SimpleNamespace(describe=lambda: {'kind': 'topk'}),
+                      SimpleNamespace(describe=lambda: {'kind': 'filter'}, records=[])]
+        for operation in operations:
+            with self.subTest(operation=operation), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                args = SimpleNamespace(output=root/'worker', build_record=root/'build.json')
+                args.build_record.write_text('{}')
+                with patch.object(entry, 'verified_build', return_value={'duckdb_library_path':'/unused/lib.so'}), \
+                        patch.object(entry, 'SemBenchTextQuery', return_value=SimpleNamespace(operation=operation)), \
+                        patch.object(entry, 'ModelService') as factory:
+                    with self.assertRaises(ValueError):
+                        entry.run_worker(args, config(), service_factory=factory)
+                    factory.assert_not_called()
+                self.assertEqual(json.loads((args.output/'worker.json').read_text())['status'], 'failed')
+
+    def test_frozen_source_or_budget_mismatch_never_starts_model(self):
+        for change in ('source', 'budget'):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                args = SimpleNamespace(output=root/'worker', build_record=root/'build.json')
+                args.build_record.write_text('{}')
+                value = config()
+                value['input_sha256'] = {'fixture.csv': 'expected'}
+                value['max_model_calls'] = 1
+                query = SimpleNamespace(files={'fixture.csv': {'sha256': 'changed' if change == 'source' else 'expected'}},
+                    operation=SimpleNamespace(describe=lambda: {'kind': 'filter'}, records=[object(), object()]))
+                with patch.object(entry, 'verified_build', return_value={'duckdb_library_path':'/unused/lib.so'}), \
+                        patch.object(entry, 'SemBenchTextQuery', return_value=query), \
+                        patch.object(entry, 'ModelService') as factory:
+                    with self.assertRaisesRegex(ValueError, 'source files changed|every original occurrence'):
+                        entry.run_worker(args, value, service_factory=factory)
+                    factory.assert_not_called()
 
     def test_post_sink_audit_failure_preserves_sink_but_not_success(self):
         report,error,_=self.exercise(audit_failure=True)

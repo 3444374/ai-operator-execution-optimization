@@ -170,11 +170,11 @@ def persist_relation_observation(directory, report, result, *, primary=None):
 
 
 def finish_mmqa_filters(native, bindings):
-    """Run original Movie Q1–Q4, MMQA or Medical Q1/Q4 sinks from native Filters.
+    """Run complete original query sinks from prepared native Filter membership.
 
     ``bindings`` maps a query label to ``(SemBenchTextQuery, source_rows)``.
     Source rows follow that query's operation.records order and explicitly carry
-    the native ``occurrence_id`` and native ``source_position``. This supports
+    the native ``occurrence_id``, ``source_position`` and transported ``title``. This supports
     both a single query and the existing six-query Q3b-g native batch.
     """
     if (native['return_type'] != 'TINYINT'
@@ -182,12 +182,8 @@ def finish_mmqa_filters(native, bindings):
         raise ValueError('the complete native TINYINT Filter relation is required')
     expected = {}
     for label, (query, sources) in bindings.items():
-        supported = (query.scenario == 'mmqa' and query.query in
-            ('3a', '3b', '3c', '3d', '3e', '3f', '3g', '6a', '6b', '6c')) or (
-            query.scenario == 'medical' and query.query in ('1', '4')) or (
-            query.scenario == 'movie' and query.query in ('1', '2', '3', '4'))
-        if not supported or query.operation.stage.kind != 'filter':
-            raise ValueError('this sink binds original Movie Q1–Q4, MMQA Q3/Q6 or Medical Q1/Q4 Filters')
+        if query.operation is None or query.operation.describe()['kind'] != 'filter':
+            raise ValueError('this sink requires an original Filter operation')
         for record, source in zip(query.operation.records, sources, strict=True):
             occurrence = source['occurrence_id']
             if occurrence in expected:
@@ -203,11 +199,8 @@ def finish_mmqa_filters(native, bindings):
             raise ValueError('duplicate or unknown native Filter result occurrence')
         seen.add(occurrence)
         label, record, source, query = expected[occurrence]
-        column = ('reviewId' if query.scenario == 'movie' else
-                  'patient_id' if query.scenario == 'medical' else
-                  'Airlines' if query.query.startswith('6') else 'title')
         if (value['source_position'] != source['source_position']
-                or value['title'] != str(query.operation.frame.iloc[record.source_position][column])):
+                or value['title'] != source['title']):
             raise ValueError('native Filter result differs from its source occurrence')
     for occurrence, (label, record, _source, _query) in expected.items():
         if occurrence in seen:

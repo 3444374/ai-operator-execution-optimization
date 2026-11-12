@@ -14,6 +14,7 @@ from integrations.imlane_duckdb import model_service, model_provider
 from src.experiments import native_imlane_filters as binding
 from src.infrastructure.private_artifacts import file_identity, new_private_directory, read_json, write_private_json
 from tests.baselines.text.replay_imlane_movie_filters import reference, bridge_q3_reference
+from tests.baselines.text.replay_imlane_medical_filter import check_source_rows
 
 
 def prepare_fixture(config, original_run):
@@ -24,12 +25,13 @@ def prepare_fixture(config, original_run):
         if original_run.name != 'cold' or original_run.parent.name != 'run':
             raise ValueError('Medical Q1 gate requires the frozen model-output/run/cold directory')
         frozen = medical_reference(original_run.parents[2], 'cold', '1')
+        frozen['source_columns'] = ['patient_id', 'symptoms']
         frozen['labels_and_texts'] = [(str(row['patient_id']), row['symptoms']) for row in frozen['rows']]
     else:
         frozen = (bridge_q3_reference(original_run, config) if config['query_id'] == '3'
                   else reference(original_run, config['query_id']))
     assert [r['messages'] for r in requests] == frozen['messages']
-    assert [(r['title'],r['text']) for r in rows] == frozen['labels_and_texts']
+    check_source_rows(query, rows, frozen)
     return dict(rows=[dict(r,token_ids=t,generated_text=text)
                 for r,t,text in zip(rows,tokens,frozen['texts'],strict=True)],
                 original_reference=frozen['evidence'], original_result=frozen['result'], original_quality=frozen['quality'],

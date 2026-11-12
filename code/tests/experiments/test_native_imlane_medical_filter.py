@@ -20,8 +20,9 @@ class OccurrenceAuditTests(unittest.TestCase):
         self.requests = [dict(call_id=i, messages=messages) for i in ('source-a', 'source-b')]
         self.predictions = [dict(call_id='source-a', generated_text='True'),
                             dict(call_id='source-b', generated_text='False')]
+        self.sampling = {'max_tokens': 8192}
         self.receipt = dict(status='succeeded', client_closed=True,
-            request=dict(sampling_params={}, messages_batch=[messages, messages]), calls=[])
+            request=dict(sampling_params=self.sampling, messages_batch=[messages, messages]), calls=[])
         for position, (name, text) in enumerate((('source-b', 'False'), ('source-a', 'True'))):
             self.receipt['calls'].append(dict(occurrence_id=name, position=position, status='succeeded',
                 attempted=True, requested_payload=dict(messages=messages), response=dict(
@@ -32,7 +33,7 @@ class OccurrenceAuditTests(unittest.TestCase):
 
     def audit(self, receipt):
         (self.root / 'one.terminal.json').write_text(json.dumps(receipt))
-        return audit_ipc(self.root, self.requests, [[1,2], [1,2]], self.predictions, {}, by_occurrence=True)
+        return audit_ipc(self.root, self.requests, [[1,2], [1,2]], self.predictions, self.sampling, by_occurrence=True)
 
     def test_identical_messages_with_different_answers_follow_occurrence_not_arrival(self):
         result = self.audit(self.receipt)
@@ -54,7 +55,16 @@ class OccurrenceAuditTests(unittest.TestCase):
 
     def test_missing_terminal_receipt_fails(self):
         with self.assertRaisesRegex(ValueError, 'receipt'):
-            audit_ipc(self.root, self.requests, [[1,2], [1,2]], self.predictions, {}, by_occurrence=True)
+            audit_ipc(self.root, self.requests, [[1,2], [1,2]], self.predictions, self.sampling, by_occurrence=True)
+
+    def test_audit_uses_actual_declared_generation_and_rejects_silent_clamping(self):
+        self.sampling['max_tokens'] = 32
+        for call in self.receipt['calls']:
+            call['response'].update(requested_max_tokens=32, resolved_max_tokens=32)
+        self.assertEqual(self.audit(self.receipt)['native_generate_terminal_count'], 2)
+        self.receipt['calls'][0]['response']['resolved_max_tokens'] = 16
+        with self.assertRaisesRegex(ValueError, 'tokens'):
+            self.audit(self.receipt)
 
 
 @unittest.skipUnless(CHECKOUT, 'set SEMLOOM_NATIVE_TEST_CHECKOUT to the pinned source')

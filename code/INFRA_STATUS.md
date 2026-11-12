@@ -22,14 +22,22 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 IMLane Filter 不再用历史输入行数作为配置白名单；完整原 occurrence 数仍须等于显式冻结预算。
 现有 `freeze-config` 零模型入口从原题准备生成同 schema 的 SHA、实际 occurrence 数和首次观察的
 原始列顺序；正式 Filter 复用共享 prepare 消费冻结顺序，不再重复 formatter 接线。
+Filter 后端按原操作形态验收，不再另列题号／字段分支或 Medical 固定 scale；上下文和回执
+使用本次实际生成上限。任务层继续拥有原题与后处理，原生 TINYINT 驱动、DSO、调度和 ACK 不变。
+运输字段改为源索引／模型输入 cells，完整 messages/token 与原关系单独核验；新增源码不继承
+历史 Linux SQL、GPU 或性能资格。零输入仍受现有正预算/driver 合同限制，明确留待支持。
 生成配置不是 GPU 运行授权；本地原源码／SDK／tokenizer 检查不转授 Linux SQL 或模型资格。
 prepared Q1/Filter 的薄 driver 构建身份补齐源文件及编入的 ACK header，旧记录保留历史资格，
 当前重用需重链薄 driver 补齐身份。详见[边界说明](integrations/imlane_duckdb/README.md#filter-源规模与构建身份)。
-这不改变原生算法、采样、源列顺序、时钟、DSO 或运行额度。`a5353fc25` 已完成目标零模型
+这不改变原生算法或配置声明的采样、源列顺序、DSO 和运行额度；实际 cold/ready-source 时钟仍分列，
+原任务形态检查在模型前、fresh source 在 ready 后。`a5353fc25` 已完成目标零模型
 Q1 SQL 25、Filter Q3a 25／Movie Q2 120 的完整 sink、ACK 和退出，以及新旧构建记录门检；
 新 freeze 对同 seed 原 formatter、旧冻结配置对历史参考的全消息／token／源位置分别相等。
 两份既有 DSO 未重编，未运行新模型。source 检查后的外层未知 Python 拒绝及未归因租约消失
 仍保留；后续只续未运行的两项比较并清洁退出，详见同一边界说明，不将该失败抹平。
+
+通用 Filter `016a83529` 已另行通过目标 Movie Q2 完整 120 项原生软件 SQL、Arrow/IPC、
+原 sink/ACK 和外层资源清理，未重编 DSO、模型调用为 0；其余任务仍按各自精确源码证据判断。
 
 | 部分 | 当前实现 | 未完成或未验证 |
 |---|---|---|
