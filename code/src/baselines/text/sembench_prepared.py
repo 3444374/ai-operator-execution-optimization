@@ -5,21 +5,33 @@ framework receives complete messages or serialized prompts and owns scheduling.
 """
 
 from copy import deepcopy
+from dataclasses import replace
 import json
 
 from src.infrastructure.private_artifacts import content_digest, json_metric
 from src.semantic_methods.lotus.record_method import LotusRecordMethod
 
 
-def prepare(query, tokenizer=None):
+def prepare(query, tokenizer=None, *, prompt_columns=None):
     import lotus
 
     if query.operation is None:
         return None, [], []
     if query.operation.describe()['kind'] == 'join':
         raise ValueError('native Join requires its original LOTUS resident accessor, not prepared F/M/E')
+    stage = query.operation.stage
+    # Reuse the first observed raw order across processes, not display headers
+    # or a fresh iteration of LOTUS placeholder sets. Default callers are unchanged.
+    if prompt_columns is not None:
+        original = (stage.method.input_columns if stage.kind == 'extract'
+                    else stage.method.resolved_input_columns)
+        if (type(prompt_columns) is not list or len(set(prompt_columns)) != len(prompt_columns)
+                or set(prompt_columns) != set(original)):
+            raise ValueError('freeze exactly the original prompt columns in their observed order')
+        field = 'input_columns' if stage.kind == 'extract' else 'resolved_input_columns'
+        stage = replace(stage, method=replace(stage.method, **{field: tuple(prompt_columns)}))
     with lotus.settings.context(enable_cache=False):
-        method = LotusRecordMethod(query.operation.stage)
+        method = LotusRecordMethod(stage)
         prepared = method.prepare_rows(query.operation.records, query_id=query.query_id)
     # Ray's public processor owns chat templating/tokenization. Daft consumes
     # serialized prompts. Both retain the same original occurrence and messages.

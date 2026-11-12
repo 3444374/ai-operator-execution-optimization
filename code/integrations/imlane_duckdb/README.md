@@ -565,8 +565,29 @@ Q9构建记录绑定当前q9.cpp、q9_udf.py、relation_handoff.hpp以及实际b
 
 `prompt_columns` 保存原 LOTUS 观察到的源列顺序，而非渲染 header。原 `StageSpec.bind`
 已经从原题 instruction 解析列名，准备阶段核对相同列集合，再应用显式冻结顺序；
-不按展示大小写映射、不排序、不跨进程重新推断顺序。当前入口仍要求先记录该原始顺序，
-未新增配置生成框架。历史 Q3a 冻结包与证据不改。
+不按展示大小写映射、不排序、不跨进程重新推断顺序。历史 Q3a 冻结包与证据不改。
+
+新输入使用现有 CLI 的 `freeze-config`，不再手抄 SHA、题号规模或列名。输入保留对应 Filter
+配置模板的运行字段，但省略 `input_sha256`、`prompt_columns`、`max_model_calls` 三项；输出为
+现有 schema 的完整 `CONFIG.json`。首次原题 `SemBenchTextQuery` / `prepare` 观察实际源 SHA、
+完整 occurrence 数和原始列顺序。首次 freeze 的启动进程 `PYTHONHASHSEED` 由实验配置固定，
+不新增生产默认，也不在已启动进程中修改 seed。正式入口经共享 `prepare(..., prompt_columns=...)` 消费它：
+
+```sh
+PYTHONHASHSEED="$EXPERIMENT_HASH_SEED" PYTHONPATH=code "$DRIVER_PYTHON" -B -m src.experiments.native_imlane_filters freeze-config \
+  --config "$SOURCE_CONFIG" --output "$NEW_CONFIG_DIR"
+PYTHONPATH=code "$DRIVER_PYTHON" -B -m src.experiments.native_imlane_filters check \
+  --config "$NEW_CONFIG_DIR/CONFIG.json" --output "$NEW_CHECK_DIR"
+```
+
+新 freeze 只绑定本次原 formatter 的观察，列顺序可能与历史冻结配置不同；公平比较必须让各
+baseline 消费同一冻结配置／消息参考，不能自动继承历史成绩。
+生成配置不启动模型，不构成 GPU 运行授权或持久次数额度 claim；正式运行仍先审核、绑定已有
+资源与预算。原配置模板继续说明正式运行字段；生成目录必须是新目录，不覆盖原配置或冻结包。
+Q1 的 25 次 frozen IPC 资格未修改。CPU 回归 `tests.experiments.test_imlane_freeze_config` 使用
+原 SemBench c814、真实 LOTUS formatter 和本地 tokenizer，核对 Q3a 的 raw `title/text` 与
+展示 `Title/Text`、非历史规模、源变更拒绝，以及两个 Python hash seed 下完整消息和 tokens 不变。
+测试需设置 `SEMLOOM_NATIVE_TEST_CHECKOUT` 和 `SEMLOOM_NATIVE_TEST_TOKENIZER`，未提供时明确跳过。
 
 prepared Q1 和 Filter 构建记录现在同时绑定当前 driver 源码、kernel 与编入的
 `relation_handoff.hpp`，在 model owner 启动前验证。旧构建缺字段时明确要求重链薄 driver；

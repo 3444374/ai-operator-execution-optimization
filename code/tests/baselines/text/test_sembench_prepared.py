@@ -32,6 +32,18 @@ class PreparedSemanticsTests(unittest.TestCase):
         method, calls, requests = prepare(query, SimpleNamespace(apply_chat_template=lambda m, **kw: str(m)))
         return query, method, calls
 
+    def test_explicit_raw_columns_reuse_default_filter_map_extract_messages(self):
+        for kind in ('filter', 'map', 'extract'):
+            with self.subTest(kind=kind):
+                query = self.query(kind)
+                method, _, original = prepare(query)
+                bound, _, requests = prepare(query, prompt_columns=list(method.columns))
+                self.assertEqual(requests, original)
+                self.assertEqual(bound.columns, method.columns)
+                for invalid in (['Text'], ['text', 'text'], []):
+                    with self.assertRaisesRegex(ValueError, 'original prompt columns'):
+                        prepare(query, prompt_columns=invalid)
+
     def test_filter_map_extract_reordered_predictions_preserve_source_rows_and_original_parser(self):
         cases = {'filter': ['True then False', 'unrecognized'],
                  'map': ['first output', 'second output'],

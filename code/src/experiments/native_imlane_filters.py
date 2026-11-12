@@ -7,7 +7,6 @@ old joint-batch measurements are not converted into per-query timings.
 
 import argparse
 import csv
-from dataclasses import replace
 import json
 import os
 from pathlib import Path
@@ -19,7 +18,7 @@ import time
 from integrations.imlane_duckdb import model_provider, mmqa_filter_udf
 from integrations.imlane_duckdb.model_service import ModelService
 from integrations.imlane_records import owner
-from src.baselines.text.sembench_prepared import finish_relation, audit_relation, result_value
+from src.baselines.text.sembench_prepared import prepare, finish_relation, audit_relation, result_value
 from src.baselines.text.sembench_text import SemBenchTextQuery
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
@@ -32,7 +31,6 @@ from src.infrastructure.private_artifacts import (
 )
 from src.infrastructure.redact import redact_text
 from src.serving.backends.vllm_protocol import GenerationSpec
-from src.semantic_methods.lotus.record_method import LotusRecordMethod
 
 SCHEMA = 'semloom.imlane.mmqa_filter.v1'
 MEDICAL_SCHEMA = 'semloom.imlane.medical_filter.v1'
@@ -42,10 +40,12 @@ DSO_SHA256 = '52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf'
 CODE = Path(__file__).resolve().parents[2]
 
 
-def configuration(value):
+def configuration(value, *, frozen=True):
     fields = {'schema', 'query_id', 'execution_id', 'sembench_checkout', 'data_dir', 'input_sha256',
               'model_name', 'tokenizer', 'generation', 'prompt_columns', 'model_service', 'max_model_calls',
               'query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'}
+    if not frozen:
+        fields -= {'input_sha256', 'prompt_columns', 'max_model_calls'}
     medical = type(value) is dict and value.get('schema') == MEDICAL_SCHEMA
     movie = type(value) is dict and value.get('schema') == MOVIE_SCHEMA
     if medical:
@@ -61,35 +61,37 @@ def configuration(value):
         raise ValueError('native Filter requires the original unstructured 8192-token generation')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'):
         _positive(value[name])
-    AttemptBudget(value['execution_id'], value['max_model_calls'])
+    if frozen:
+        AttemptBudget(value['execution_id'], value['max_model_calls'])
     return dict(value), generation
 
 
+def _source_query(config, generation):
+    scenario = {SCHEMA: 'mmqa', MEDICAL_SCHEMA: 'medical', MOVIE_SCHEMA: 'movie'}[config['schema']]
+    return SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], scenario,
+        config['query_id'], execution_id=config['execution_id'], model_name=config['model_name'],
+        generation=generation, **(dict(scale_factor=config['scale_factor']) if scenario == 'medical' else {}))
+
+
+def freeze_config(value):
+    """Observe the original input once; produce a config, not permission to run."""
+    config, generation = configuration(value, frozen=False)
+    query = _source_query(config, generation)
+    method, prepared, _requests = prepare(query)
+    config.update(input_sha256={name: item['sha256'] for name, item in query.files.items()},
+                  prompt_columns=list(method.columns), max_model_calls=len(prepared))
+    return configuration(config)[0]
+
+
 def prepare_query(config):
-    import lotus
     from transformers import AutoTokenizer
     config, generation = configuration(config)
-    medical = config['schema'] == MEDICAL_SCHEMA
-    scenario = {SCHEMA: 'mmqa', MEDICAL_SCHEMA: 'medical', MOVIE_SCHEMA: 'movie'}[config['schema']]
-    query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], scenario,
-        config['query_id'], execution_id=config['execution_id'], model_name=config['model_name'],
-        generation=generation, **(dict(scale_factor=config['scale_factor']) if medical else {}))
+    query = _source_query(config, generation)
+    scenario, medical = query.scenario, query.scenario == 'medical'
     if {name: item['sha256'] for name, item in query.files.items()} != config['input_sha256']:
         raise ValueError('original source files changed')
-    stage = query.operation.stage
-    columns = config['prompt_columns']
-    if (type(columns) is not list or len(set(columns)) != len(columns)
-            or set(columns) != set(stage.method.resolved_input_columns)):
-        raise ValueError('freeze exactly the original prompt columns in their observed order')
-    # LOTUS resolves placeholder names through a set. Freeze the observed
-    # original column order through its existing bound-method interface, so a
-    # different Python hash seed cannot silently reorder the model context.
-    stage = replace(stage, method=replace(stage.method, resolved_input_columns=tuple(columns)))
-    with lotus.settings.context(enable_cache=False):
-        method = LotusRecordMethod(stage)
-        prepared = method.prepare_rows(query.operation.records, query_id=query.query_id)
-    requests = [dict(call_id=row['call_id'], messages=json.loads(row['messages_json'])) for row in prepared]
-    if stage.kind != 'filter' or len(prepared) != config['max_model_calls']:
+    method, prepared, requests = prepare(query, prompt_columns=config['prompt_columns'])
+    if method.stage.kind != 'filter' or len(prepared) != config['max_model_calls']:
         raise ValueError('single-query Filter binds every original occurrence')
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     tokens = [tokenizer.apply_chat_template(row['messages'], tokenize=True, add_generation_prompt=True)
@@ -285,7 +287,7 @@ def run_worker(args, config, *, service_factory=ModelService):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('check', 'run'))
+    parser.add_argument('action', choices=('freeze-config', 'check', 'run'))
     parser.add_argument('--config', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     for name in ('build-record', 'author-root', 'method-python'):
@@ -296,6 +298,11 @@ def main(argv=None):
     parser.add_argument('--execute-model', action='store_true')
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    if args.action == 'freeze-config':
+        config = freeze_config(read_json(args.config))
+        new_private_directory(args.output)
+        write_private_json(args.output / 'CONFIG.json', config)
+        return 0
     config, _ = configuration(read_json(args.config))
     if args.action == 'check':
         new_private_directory(args.output); write_private_json(args.output / 'CHECK.json', check(config))

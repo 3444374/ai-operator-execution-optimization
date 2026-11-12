@@ -13,15 +13,15 @@ from tests.experiments.test_native_imlane_relation import CHECKOUT
 
 
 class MovieConfigurationTests(unittest.TestCase):
-    def test_exact_full_source_budget_and_no_other_movie_operator(self):
+    def test_positive_source_budget_and_no_other_movie_operator(self):
         value = config()
         value.update(schema=binding.MOVIE_SCHEMA, prompt_columns=['reviewText'])
         for query_id, count in [('1',2000), ('2',120), ('3',120), ('4',120)]:
             value.update(query_id=query_id, max_model_calls=count)
             self.assertEqual(binding.configuration(value)[0], value)
             for wrong in (count - 1, count + 1, 25):
-                with self.subTest(query=query_id, calls=wrong), self.assertRaises(ValueError):
-                    binding.configuration(dict(value, max_model_calls=wrong))
+                with self.subTest(query=query_id, calls=wrong):
+                    self.assertEqual(binding.configuration(dict(value, max_model_calls=wrong))[0]['max_model_calls'], wrong)
         for changes in (dict(query_id='8'), dict(query_id='9'), dict(query_id='10'),
                         dict(query_id='3a'), dict(scale_factor=2000)):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
