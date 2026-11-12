@@ -392,8 +392,23 @@ Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 �
 原 Q10 指令的 `DIMORPHIC HEMORRHOID` 与原标签复数拼写也不被适配器改写或归一化。
 `check` 读取原关系并核算实际调用数；尽量匹配模型、可公开配置的生成项和输入身份。
 各系统保留原生依赖及必要策略，不能匹配的实际参数／提示／parser 差异单列，不强改作者算法。
-补充文本入口的 Movie／MMQA／Medical 配置省略生成项时均采用原 LM 的8192 token／无 stop，显式值保留。
+补充文本入口的配置省略生成项时均采用原 LM 的8192 token／无 stop，显式值保留。
 这改变了旧补充 Movie／MMQA 的省略项解析；显式8 token／换行 stop 的旧配置和普通 Filter 类型默认不变，旧结果不改写。
+
+### E-Commerce 原文本查询
+
+[E-Commerce 绑定](text/sembench_ecomm.py)直接调用官方 Q3／Q5 的 `run(data_dir)`：Q3 对完整
+`styles_details.parquet` 做品牌 Extract，Q5 由原普通谓词筛选 Apparel 后做命名列 Map。
+嵌套描述字段按原 DEFAULT formatter 完整呈现，不摘取子字段或自行改写提示；模型消息只使用
+原题声明的 `productDisplayName` 与 `productDescriptors`，标签不进入消息。
+两题复用上述普通 Extract／Map、prepared、原生 LOTUS 和既有后端接点，没有独立执行器。
+源固定检查也覆盖 `files/ecomm/queries`；查询真实重读 Parquet，不以预检快照替代。
+
+评价直接执行原 TOML 的 gold SQL，再调用官方 EcommEvaluator 所用的 `GenericEvaluator`，
+保留 adjusted Rand index 的分组评分语义；不把它改成品牌名称精确匹配，也不向上游树写 gold 缓存。
+本地临时 Parquet 的原 SDK／记录链／prepared 差分覆盖完整消息、普通选择、原投影、乱序答复、
+空输入和文件变化；这些是零模型软件检查。真实 E-Commerce 数据、目标 SDK 和模型运行仍待验证，
+IMLane 的 VARCHAR 限制及 Kalypso 未由此 CLI 接入的边界继续适用。
 
 <a id="sembench-mmqa-aggregation"></a>
 ### MMQA Q5 原分层聚合

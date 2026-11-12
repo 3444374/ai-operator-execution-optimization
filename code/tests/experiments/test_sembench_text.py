@@ -6,6 +6,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -82,6 +83,28 @@ class TextRelationTests(unittest.TestCase):
 
 
 class TextEntryTests(unittest.TestCase):
+    def test_source_module_registers_dataclasses_and_restores_failed_imports(self):
+        from src.baselines.text import sembench_source as source
+
+        name = 'sembench_loader_fixture'
+        sentinel = object()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'src').mkdir()
+            path = root / 'src/fixture.py'
+            path.write_text('from __future__ import annotations\nfrom dataclasses import dataclass\n'
+                            '@dataclass\nclass Metric:\n    score: float = 1.0\n')
+            with patch.object(source, 'verify_checkout', return_value=root), \
+                    patch.dict(sys.modules, {'runner.generic_runner': None,
+                        'evaluator.generic_evaluator': None, name: sentinel}):
+                module = source.load_module(root, name, 'src/fixture.py')
+                self.assertIs(sys.modules[name], module)
+                self.assertEqual(module.Metric().score, 1)
+                path.write_text('raise RuntimeError("original import failed")\n')
+                with self.assertRaisesRegex(RuntimeError, 'original import failed'):
+                    source.load_module(root, name, 'src/fixture.py')
+                self.assertIs(sys.modules[name], module)
+
     def test_help_does_not_load_framework_or_model(self):
         with self.assertRaises(SystemExit) as stopped,redirect_stdout(io.StringIO()):
             entry.main(['--help'])

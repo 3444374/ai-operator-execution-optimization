@@ -47,7 +47,8 @@ def verify_checkout(checkout):
     git = ['git', '-c', 'safe.directory=' + str(root), '-C', str(root)]
     commit = subprocess.check_output(git + ['rev-parse', 'HEAD'], text=True, timeout=10).strip()
     dirty = subprocess.check_output(git + ['status', '--porcelain', '--untracked-files=no',
-        '--', 'src', 'files/movie/query', 'files/mmqa/query', 'files/medical/query'], text=True, timeout=10)
+        '--', 'src', 'files/movie/query', 'files/mmqa/query', 'files/medical/query',
+        'files/ecomm/queries'], text=True, timeout=10)
     if commit != SEMBENCH_COMMIT or dirty:
         raise ValueError('SemBench query/evaluator checkout does not match its pinned source')
     return root
@@ -66,8 +67,20 @@ def load_module(checkout, name, relative_path):
         module = importlib.util.module_from_spec(spec)
         namespace = (_runner_namespace(source) if relative_path ==
             'src/scenario/mmqa/runner/lotus_runner/lotus_runner.py' else nullcontext())
-        with namespace:
-            spec.loader.exec_module(module)
+        # Python dataclasses resolve postponed annotations through sys.modules.
+        # Register before execution, as a normal import does; a failed import
+        # must not leave its partial module in the process.
+        previous = sys.modules.get(name)
+        sys.modules[name] = module
+        try:
+            with namespace:
+                spec.loader.exec_module(module)
+        except BaseException:
+            if previous is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = previous
+            raise
         return module
     finally:
         sys.path.remove(str(source))

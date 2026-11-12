@@ -132,7 +132,9 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 原项目的查询／系统职责及与本地执行比较的区别见[接入职责](src/baselines/README.md#sembench-原项目与本地接入职责)。
 共享普通算子绑定新增 Map `suffix`、Filter／Map 的 instruction keyword 及 Extract 的
 `input_cols/output_cols` keyword，保留同一准备、parser 和关系恢复；真实 SDK 的消息与结果差分
-覆盖命名列、嵌套对象、重复 index 及碰撞字段。E-Commerce／Cars 的完整数据／评价接入仍待完成。
+覆盖命名列、嵌套对象、重复 index 及碰撞字段。E-Commerce Q3／Q5 现补齐原 Parquet 读取、原查询
+及 TOML gold SQL／官方 adjusted Rand index 评价，继续使用相同后端接点；本地临时数据的原 SDK、
+记录链与 prepared 差分已覆盖完整关系和失败边界，真实资产／目标模型未验。Cars 的数据／评价仍待接入。
 Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两者及未逐题核实的论文策略不混同。
 
 LOTUS resident、Ray／Daft prepared、LOTUS 图像和 MMQA 聚合新增

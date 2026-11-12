@@ -174,6 +174,76 @@ class OriginalSemBenchTextTests(unittest.TestCase):
             execution_id="software-" + scenario + "-" + query,
             model_name="openai/local-fixture", generation=self.generation)
 
+    def _write_ecomm_inputs(self):
+        frame = pd.DataFrame(dict(id=[11, 22, 33, 44, 55, 66],
+            productDisplayName=['same shirt', 'same shirt', 'socks', 'watch', 'saree', 'nightwear'],
+            productDescriptors=[{'description': {'value': 'Quoted "text", 汉字\nand details'}}] * 6,
+            masterCategory=[{'typeName': value} for value in
+                ['Apparel', 'Apparel', 'Apparel', 'Accessories', 'Apparel', 'Apparel']],
+            subCategory=[{'typeName': value} for value in
+                ['Topwear', 'Topwear', 'Socks', 'Watches', 'Saree', 'Loungewear and Nightwear']],
+            brandName=['Acme', 'Acme', 'Zen', 'Zen', 'Acme', 'Zen']))
+        frame.to_parquet(self.data / 'styles_details.parquet', index=False)
+        return frame
+
+    def test_ecomm_original_parquet_selection_messages_relations_and_ari(self):
+        source = self._write_ecomm_inputs()
+        for key, answers, expected_ids in (
+                ('3', [json.dumps({'category': value}) for value in source.brandName], source.id.tolist()),
+                ('5', ['Topwear', 'Topwear', 'Socks'], [11, 22, 33])):
+            with self.subTest(query=key):
+                query = self._query('ecomm', key)
+                self.assertEqual(set(query.operation.describe()['model_columns']),
+                    {'productDisplayName', 'productDescriptors'})
+                self.assertEqual(query.operation.frame.id.tolist(), expected_ids)
+                result, _, _ = self._parity(query, answers)
+                self.assertEqual(result.columns.tolist(), ['id', 'category'])
+                self.assertEqual(result.id.tolist(), expected_ids)
+                quality = query.evaluate(result)['original_metric']
+                self.assertEqual(quality['metric_type'], 'adjusted-rand-index')
+                self.assertEqual(quality['accuracy'], 1)
+                # ARI evaluates grouping, not literal brand/category names.
+                renamed = result.copy()
+                renamed['category'] = renamed.category.map({value: str(i) for i, value in
+                    enumerate(result.category.unique())})
+                self.assertEqual(query.evaluate(renamed)['original_metric'], quality)
+
+    def test_ecomm_prepared_reordered_outputs_reuse_parser_and_complete_original_sink(self):
+        from src.baselines.text.sembench_prepared import prepare, finish_relation
+
+        source = self._write_ecomm_inputs()
+        for key, answers in (('3', [json.dumps({'category': value}) for value in source.brandName]),
+                             ('5', ['Topwear', 'Topwear', 'Socks'])):
+            with self.subTest(query=key):
+                query = self._query('ecomm', key)
+                expected, batches = self._reference(query, answers)
+                method, prepared, requests = prepare(query)
+                self.assertEqual([row['messages'] for row in requests],
+                    [messages for batch, _ in batches for messages in batch])
+                predictions = list(reversed([dict(call_id=row['call_id'], generated_text=text)
+                    for row, text in zip(prepared, answers, strict=True)]))
+                result, _ = finish_relation(query, method, prepared, predictions)
+                self._assert_result_equal(result, expected)
+
+    def test_ecomm_missing_changed_and_empty_parquet_have_distinct_outcomes(self):
+        with self.assertRaises(FileNotFoundError):
+            self._query('ecomm', '3')
+        source = self._write_ecomm_inputs()
+        query = self._query('ecomm', '3')
+        source.iloc[:1].to_parquet(self.data / 'styles_details.parquet', index=False)
+        execute = Mock()
+        with self.assertRaisesRegex(ValueError, 'changed after preflight'):
+            query.execute(execute)
+        execute.assert_not_called()
+        with self.assertRaisesRegex(ValueError, 'gold input changed'):
+            query.evaluate(source[['id', 'brandName']].rename(columns={'brandName': 'category'}))
+        source.iloc[[3, 4, 5]].to_parquet(self.data / 'styles_details.parquet', index=False)
+        query = self._query('ecomm', '5')
+        self.assertEqual(query.describe()['expected_model_calls'], 0)
+        result, _, _ = self._parity(query, [])
+        self.assertEqual(result.columns.tolist(), ['id', 'category'])
+        self.assertTrue(result.empty)
+
     def _reference(self, query, answers):
         """Run the complete original query and original accessor with no provider."""
         import lotus

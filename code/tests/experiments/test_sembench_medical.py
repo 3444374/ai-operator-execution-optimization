@@ -190,7 +190,7 @@ class MedicalOriginalBindingTests(unittest.TestCase):
             entry.query_from_config(config, 'checkout', 'data', generation)
         query.assert_called_once_with('checkout', 'data', 'medical', '10',
             execution_id='medical-q10', model_name='fixture',
-            generation=GenerationSpec(max_tokens=8192, stop=()), scale_factor=25)
+            generation=GenerationSpec(max_tokens=8192, stop=()), scale_factor=25, ranking=None)
 
     def test_original_query_generation_defaults_and_explicit_overrides(self):
         config = dict(schema='semloom.sembench_text_run.v1', scenario='medical', query='10',

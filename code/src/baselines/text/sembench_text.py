@@ -223,16 +223,17 @@ class SemBenchTextQuery:
 
     def __init__(self, checkout, data_dir, scenario, query_id, *, execution_id,
                  model_name, generation, scale_factor=None, ranking=None):
-        import pandas as pd
         from .sembench_medical import FULL_SCALE_FACTOR, TEXT_QUERY_IDS as MEDICAL_QUERY_IDS, text_files
         from .sembench_mmqa import TEXT_QUERY_IDS as MMQA_QUERY_IDS
+        from .sembench_ecomm import TEXT_QUERY_IDS as ECOMM_QUERY_IDS, TEXT_FILE
 
         query = str(query_id).lower().removeprefix('q')
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
                 or (scenario == 'mmqa' and query in MMQA_QUERY_IDS)
-                or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)):
+                or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)
+                or (scenario == 'ecomm' and query in ECOMM_QUERY_IDS)):
             raise ValueError('this entry supports Movie Q1-Q10 (Q5-Q7 native Join, Q9 Map or TopK), twelve ordinary MMQA text queries '
-                             'and Medical Q1/Q4/Q10')
+                             'plus Medical Q1/Q4/Q10 and E-Commerce Q3/Q5')
         if scenario != 'medical' and scale_factor is not None:
             raise ValueError('scale_factor applies only to the Medical authored CSV filenames')
         if ranking is not None and (scenario != 'movie' or query != '9' or ranking not in ('map', 'topk')):
@@ -255,6 +256,8 @@ class SemBenchTextQuery:
             if query == '4':
                 names.append(self.patients_file)
             self.evaluation_files.add(self.labels_file)
+        elif scenario == 'ecomm':
+            names = [TEXT_FILE]
         elif query == '1':
             names = ['ben_piazza.csv', 'ben_piazza_text_data.csv']
         elif query.startswith('3') or query == '4':
@@ -265,7 +268,7 @@ class SemBenchTextQuery:
         for name in names:
             path = self.data_dir / name
             before = file_identity(path)
-            self.frames[name] = pd.read_csv(path)
+            self.frames[name] = self._read_file(path)
             if file_identity(path) != before:
                 raise ValueError('SemBench input changed while its snapshot was read')
             self.files[name] = dict(before, rows=len(self.frames[name]),
@@ -282,6 +285,12 @@ class SemBenchTextQuery:
                 self._original()
             except _Captured:
                 pass
+
+    @staticmethod
+    def _read_file(path):
+        import pandas as pd
+
+        return pd.read_parquet(path) if path.suffix == '.parquet' else pd.read_csv(path)
 
     def _load(self, name, **kwargs):
         if name not in self.frames or kwargs not in ({}, {'sep': ',', 'quotechar': '"'}):
@@ -302,6 +311,9 @@ class SemBenchTextQuery:
             from .sembench_medical import run_original_query
             return run_original_query(self.checkout, self.query, self._load,
                 data_dir=self.data_dir, scale_factor=self.scale_factor)
+        if self.scenario == 'ecomm':
+            from .sembench_ecomm import run_original_query
+            return run_original_query(self.checkout, self.query, self._load, data_dir=self.data_dir)
         from .sembench_mmqa import run_original_query
         return run_original_query(self.checkout, self.query, self._load)
 
@@ -318,14 +330,14 @@ class SemBenchTextQuery:
                    'result cache disabled; no warmup or retry',
             label_scope=('original Medical patient labels used only for evaluation'
                          if self.scenario == 'medical' else
+                         'original Parquet retained; only authored text columns enter model messages'
+                         if self.scenario == 'ecomm' else
                          'original evaluation only; Movie labels excluded from execution input'),
             original_selection_and_postprocessing=True)
 
     def execute(self, execute_operator):
         """Run the original query once around the selected native operator owner."""
-        import pandas as pd
-
-        # Preflight reads do not replace the query's real CSV scan. Gold-only
+        # Preflight reads do not replace the query's real file scan. Gold-only
         # label relations stay outside execution, as in the original benchmark.
         for name, identity in self.files.items():
             if name in self.evaluation_files:
@@ -334,7 +346,7 @@ class SemBenchTextQuery:
             expected_identity = dict(sha256=identity['sha256'], bytes=identity['bytes'])
             if file_identity(path) != expected_identity:
                 raise ValueError('SemBench input changed after preflight')
-            self.frames[name] = pd.read_csv(path)
+            self.frames[name] = self._read_file(path)
             if file_identity(path) != expected_identity:
                 raise ValueError('SemBench input changed during query scan')
         used = False
@@ -376,5 +388,9 @@ class SemBenchTextQuery:
             return evaluate_original(self.checkout, self.query, result,
                 self.frames[self.labels_file], self.frames[self.symptoms_file],
                 scale_factor=self.scale_factor)
+        if self.scenario == 'ecomm':
+            from .sembench_ecomm import evaluate_original, TEXT_FILE
+            return evaluate_original(self.checkout, self.query, result, data_dir=self.data_dir,
+                                     source_identity=self.files[TEXT_FILE])
         from .sembench_mmqa import evaluate_original
         return evaluate_original(self.checkout, self.query, result)
