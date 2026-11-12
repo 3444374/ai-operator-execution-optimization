@@ -45,7 +45,7 @@ def replay(config_path, checkout, data_dir, tokenizer_path, reference, output):
     with recorded_processor(by_id) as sdk:
         report = run_worker(config, query, engine, resources, output)
     assert [row['messages'] for row in sdk.requests] == messages
-    assert all(row['sampling_params'] == query.operation.stage.generation.kwargs() for row in sdk.requests)
+    assert all(row['sampling_params'] == query.operation.generation.kwargs() for row in sdk.requests)
     assert report['result'] == reference['result']
     assert report['quality'] == reference['quality']
     semantic = report['semantic']

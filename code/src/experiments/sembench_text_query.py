@@ -86,11 +86,12 @@ def query_from_config(config, checkout, data_dir, generation):
 
 def check(config, query, engine):
     kind = None if query.operation is None else query.operation.describe()['kind']
-    if kind in ('join', 'topk'):
+    native_ray_join = kind == 'join' and config['backend'] == 'ray-data' and 'ray_native' in config
+    if kind in ('join', 'topk') and not native_ray_join:
         if config['backend'] != 'lotus-native' or config.get('lifecycle', 'isolated') != 'resident':
             raise ValueError('native ' + {'join': 'Join', 'topk': 'TopK'}[kind]
                              + ' requires the explicit native LOTUS resident owner')
-    elif kind not in (None, 'filter', 'map', 'extract'):
+    elif kind not in (None, 'filter', 'map', 'extract') and not native_ray_join:
         raise ValueError('unsupported semantic operator for this text entry: ' + kind)
     expected = query.describe()['expected_model_calls']
     if engine.max_model_calls is None or engine.max_model_calls < expected:

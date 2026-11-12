@@ -10,7 +10,6 @@ from lotus.types import LMOutput
 import pandas as pd
 
 from src.baselines.text.sembench_text import SemBenchTextQuery, _operation
-from src.baselines.text.sembench_prepared import prepare
 from src.baselines.text.frameworks.lotus_native_join import audit, execute_native_join, finish_accounting, make_lm
 from src.serving.backends.vllm_protocol import GenerationSpec
 from src.infrastructure.private_artifacts import content_digest
@@ -150,10 +149,6 @@ class NativeJoinTests(unittest.TestCase):
         right.loc[8, 'reviewText'] = 'changed after preflight'
         with self.assertRaisesRegex(ValueError, 'changed after preflight'):
             query.execute(lambda *args: self.fail('native operator ran with changed right input'))
-
-    def test_join_cannot_enter_prepared_fme_backends(self):
-        with self.assertRaisesRegex(ValueError, 'Filter/Map/Extract, not join'):
-            prepare(SimpleNamespace(operation=operation(self.frame)))
 
     def test_captured_join_requires_explicit_lotus_resident_for_each_backend(self):
         from src.experiments import sembench_text_query as entry

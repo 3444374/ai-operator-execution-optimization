@@ -1,4 +1,4 @@
-"""One cold native Daft SemBench F/M/E query through the existing supervisor.
+"""One cold native Daft SemBench F/M/E or exact Join through the existing supervisor.
 
 Driver and model dependencies stay isolated. Raw native readiness wakes the
 original parser/query sink before the supervisor waits for model/process close.
@@ -97,7 +97,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
         if requests:
             packet = directory / 'prepared-prompts.json'
             write_private_json(packet, dict(schema='semloom.native_daft_prompts.v1', requests=requests))
-            native_sampling = query.operation.stage.generation.kwargs()
+            native_sampling = query.operation.generation.kwargs()
             worker = {key: config[key] for key in ('model', 'engine_kwargs', 'provider_options',
                                                    'cleanup_s', 'stop_grace_s')}
             worker.update(schema='semloom.native_daft_map.v1', sampling_params=native_sampling,

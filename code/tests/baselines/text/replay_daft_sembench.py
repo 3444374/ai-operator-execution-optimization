@@ -63,6 +63,7 @@ def replay(config, frozen, output):
         config['query'], execution_id=config['query_id'], model_name=config['model_name'],
         generation=GenerationSpec.from_dict(sampling), scale_factor=config.get('scale_factor'))
     method, calls, requests = prepare(query, tokenizer)
+    lm = method if query.operation.describe()['kind'] == 'join' else method.lm
     messages = [json.loads(row['messages_json']) for row in calls]
     by_call, by_message = saved_reply_bindings(calls, frozen)
     tokens = [tokenizer.encode(row['prompt'], add_special_tokens=False) for row in requests]
@@ -72,16 +73,16 @@ def replay(config, frozen, output):
 
     def saved_native(data, options, *args):
         native_reference_messages.extend(content_digest(message) for message, _ in data)
-        return [ModelResponse(model=method.lm.model, choices=[dict(index=0, finish_reason='stop',
+        return [ModelResponse(model=lm.model, choices=[dict(index=0, finish_reason='stop',
             message=dict(role='assistant', content=by_message[content_digest(message)]))],
             usage=dict(prompt_tokens=0, completion_tokens=0, total_tokens=0)) for message, _ in data]
-    method.lm._process_uncached_messages = saved_native
+    lm._process_uncached_messages = saved_native
     relations = []
     def accessor(operation, invoke):
         relation = invoke()
         relations.append(result_value(relation))
         return dict(frame=relation)
-    with lotus.settings.context(lm=method.lm, enable_cache=False):
+    with lotus.settings.context(lm=lm, enable_cache=False):
         original, _ = query.execute(accessor)
     assert Counter(native_reference_messages) == Counter(content_digest(message) for message in messages)
     assert result_value(original) == frozen['result']

@@ -29,7 +29,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 | 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
 |---|---|---|---|---|---|
 | 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 具名 Filter、Movie 数字 Map 已接；Cars 原版 SQL 未接，VARCHAR 返回阻塞字符串输出 | Movie Filter/Map 已接；MMQA/Medical 有具名私有 Filter；原版结构化输出未透传，E-Commerce/Cars 未接线 |
-| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 未接线 | 未接线 | 未接线 | 未接线 |
+| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 未接线 | 未接线 |
 | 原 quick TopK；Movie Q9 TopK profile | 显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -163,8 +163,9 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 不补写旧 Q9 缺少 full-source hash 的历史未知项。
 
 文本预检按原查询实际产生的算子检查后端能力，不再按 Movie Q5/Q6/Q7 题号判断 Join。
-普通 Filter／Map／Extract 与显式 LOTUS resident 的 Join／TopK 范围不变；prepared 请求入口
-对 Join／TopK 等不支持算子在读取 stage 前明确拒绝。该改动不等于多算子查询已经接通，
+普通 Filter／Map／Extract、显式 LOTUS resident 的 Join／TopK、Ray 原生 processor 和独立 Daft 原生
+exact Join 按各入口分列；prepared 请求入口对 TopK／Aggregate 等不支持算子在读取 stage 前明确拒绝。
+这不等于任意多算子查询已经接通，
 原项目的查询／系统职责及与本地执行比较的区别见[接入职责](src/baselines/README.md#sembench-原项目与本地接入职责)。
 共享普通算子绑定新增 Map `suffix`、Filter／Map 的 instruction keyword 及 Extract 的
 `input_cols/output_cols` keyword，保留同一准备、parser 和关系恢复；真实 SDK 的消息与结果差分
@@ -182,6 +183,9 @@ Cars Q3／Q8 也复用原生视觉服务，保留完整图像发生项及最后 
 已核当前 LOTUS1.2.4 accessor 实际每侧只选一个 Series；此前多列软件检查证明与原 SDK 一致，
 不证明全部声明字段进入模型。现在 `native_join_inputs` 记录真实选列／遗漏字段，保留原生行为；
 完整多列意图语义及真实目标模型仍未验证。
+上游1.1.3也有每侧一个Series及同类选列限制；不能把版本回退当成修复。Ray／Daft exact Join 复用
+同一原 SDK 消息／parser／关系和原题，保留该限制；原消息准备及 sink 重建的适配成本实际计时，
+后置消息核对／选列披露不进 sink。调用预算从真实 L×R 取得，未开放 TopK 或混合算子图。
 Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两者及未逐题核实的论文策略不混同。
 四个文本场景现于任务准备阶段绑定官方函数，实际查询仍重新扫描数据；源码 Git 校验和模块加载
 不再每次嵌入执行区间。原题、原参数及已有独立调用入口保持，原 SDK／prepared／resident 软件回归通过；

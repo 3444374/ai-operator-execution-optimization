@@ -87,7 +87,7 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
             report['semantic'] = semantic
 
         native = execute(requests, model=engine.model_path,
-            sampling_params={} if query.operation is None else query.operation.stage.generation.kwargs(),
+            sampling_params={} if query.operation is None else query.operation.generation.kwargs(),
             engine_kwargs=engine_kwargs, processor_options=spec['processor_options'],
             runtime_options=config['profile'], engine_runtime_env=runtime_env, on_result_ready=accept)
         report['query_seconds'] = (time.monotonic_ns() - started) / 1e9

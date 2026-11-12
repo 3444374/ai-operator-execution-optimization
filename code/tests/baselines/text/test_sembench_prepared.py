@@ -71,9 +71,9 @@ class PreparedSemanticsTests(unittest.TestCase):
                     generation=GenerationSpec(), query_id='invalid-arguments')
 
     def test_non_row_operator_is_rejected_before_stage_or_model_access(self):
-        for kind in ('join', 'topk', 'aggregate'):
+        for kind in ('topk', 'aggregate'):
             query = SimpleNamespace(operation=SimpleNamespace(describe=lambda: dict(kind=kind)))
-            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, 'Filter/Map/Extract, not ' + kind):
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, 'Filter/Map/Extract/Join, not ' + kind):
                 prepare(query)
 
     def query(self, kind):

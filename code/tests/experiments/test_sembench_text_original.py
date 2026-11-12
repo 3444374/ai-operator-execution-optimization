@@ -352,6 +352,174 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         self.assertEqual(quality['metric_type'], 'f1-score')
         self.assertEqual(quality['accuracy'], 1)
 
+    def _join_reference(self, query, answers):
+        import lotus
+        from lotus.types import LMOutput
+        from src.baselines.text.frameworks.lotus_native_join import make_lm
+
+        batches=[]
+        lm=make_lm(query.operation,2)
+        def respond(current,messages,**kwargs):
+            self.assertIs(current,lm)
+            batches.append(deepcopy(messages))
+            return LMOutput(outputs=answers)
+        with lotus.settings.context(lm=lm,enable_cache=False),patch.object(type(lm),'__call__',respond):
+            result=query._original()
+        return result,batches[0]
+
+    def test_prepared_joins_reuse_native_messages_parser_and_complete_original_queries(self):
+        from src.baselines.text.sembench_prepared import prepare,finish
+
+        self._write_ecomm_inputs()
+        for scenario,key in [('movie','5'),('movie','6'),('movie','7'),('ecomm','7')]:
+            query=self._query(scenario,key)
+            answers=['False' if i % 3 == 1 else 'True' for i in range(len(query.operation.records))]
+            expected,messages=self._join_reference(query,answers)
+            method,prepared,requests=prepare(query)
+            predictions=[dict(call_id=row['call_id'],generated_text=text)
+                         for row,text in zip(prepared,answers,strict=True)]
+            actual,semantic=finish(query,method,prepared,predictions[::-1],execute_query=query.bind_execution())
+            with self.subTest(scenario=scenario,query=key):
+                self._assert_result_equal(actual,expected)
+                self.assertEqual([row['messages'] for row in requests],messages)
+                self.assertEqual(len({row['call_id'] for row in prepared}),len(answers))
+                self.assertEqual(len(semantic['calls']),len(answers))
+                self.assertEqual(semantic['native_join_inputs'][0]['all_declared_columns_selected'],scenario=='movie')
+
+    def test_prepared_join_native_ray_processor_keeps_pair_occurrences(self):
+        from src.baselines.text.sembench_prepared import prepare,finish
+        from src.baselines.text.frameworks.ray_data_sembench_native import execute_prepared
+        from tests.baselines.text.ray_native_fixtures import recorded_processor
+        from src.experiments.attempt_ledger import AttemptBudget
+        from src.experiments.cell_budget import CellBudgetLedger
+
+        query=self._query('movie','5')
+        answers=['False' if i%2 else 'True' for i in range(len(query.operation.records))]
+        expected,messages=self._join_reference(query,answers)
+        method,prepared,requests=prepare(query)
+        replies={row['call_id']:text for row,text in zip(prepared,answers,strict=True)}
+        ready=[]
+        budget=dict(path=str(self.data/'ray-budget.sqlite'),id='CPU-join',limit=len(answers),
+                    unit_id='query',output=str(self.data))
+        ledger=CellBudgetLedger.create(Path(budget['path']),AttemptBudget(budget['id'],budget['limit']),deadline_utc=None)
+        ledger.reserve_unit('query',budget['limit'])
+        ledger.claim_shared_unit('query')
+        with recorded_processor(replies) as cpu:
+            report=execute_prepared(requests,model='CPU-only',sampling_params=query.operation.generation.kwargs(),
+                engine_kwargs={},processor_options={},runtime_options={},
+                engine_runtime_env=dict(env_vars=dict(SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(budget))),
+                on_result_ready=lambda raw:ready.append(finish(query,method,prepared,raw['predictions'])[0]))
+        self._assert_result_equal(ready[0],expected)
+        self.assertEqual(len(report['predictions']),len(answers))
+
+    @unittest.skipUnless(importlib.util.find_spec('daft'), 'Daft native SDK belongs to its separate engine environment')
+    def test_prepared_join_native_daft_executor_keeps_pair_occurrences(self):
+        from src.baselines.text.sembench_prepared import prepare,finish
+        from src.baselines.text.frameworks.daft_sembench_native import execute_prepared_map
+        from tests.baselines.text.native_sdk_fixtures import recorded_map_provider
+
+        query=self._query('movie','5')
+        answers=['False' if i%2 else 'True' for i in range(len(query.operation.records))]
+        expected,messages=self._join_reference(query,answers)
+        tokenizer=SimpleNamespace(apply_chat_template=lambda messages,**kwargs:json.dumps(messages))
+        method,prepared,requests=prepare(query,tokenizer)
+        ready=[]
+        with recorded_map_provider(requests,answers) as cpu:
+            report=execute_prepared_map(requests,model='CPU-only',sampling_params={'n':1},
+                on_result_ready=lambda raw:ready.append(finish(query,method,prepared,raw['predictions'])[0]),
+                before_generate=lambda *args:None)
+        self._assert_result_equal(ready[0],expected)
+        self.assertEqual([json.loads(row['prompt']) for row in requests],messages)
+
+    def test_prepared_join_daft_driver_binds_native_packet_and_complete_sink(self):
+        from src.baselines.text.sembench_prepared import result_value
+        from src.experiments import native_daft_sembench as driver
+        from src.experiments.attempt_ledger import AttemptBudget
+        from src.experiments.shared_request_budget import SharedClaimedUnit
+        from src.infrastructure.private_artifacts import read_json,publish_private_json
+
+        query=self._query('movie','5')
+        count=len(query.operation.records)
+        answers=['False' if i%2 else 'True' for i in range(count)]
+        expected,messages=self._join_reference(query,answers)
+        config=dict(schema='semloom.native_daft_sembench.v1',sembench_checkout=str(query.checkout),
+            data_dir=str(self.data),scenario='movie',query='5',query_id=query.query_id,
+            model_name=query.model_name,model='CPU-only',sampling_params=query.generation.kwargs(),
+            engine_kwargs={},provider_options={},query_timeout_s=60,cleanup_s=5,stop_grace_s=1,
+            max_model_calls=count)
+        def supervised(path,directory,**options):
+            worker=read_json(path)
+            requests=read_json(worker['requests_path'])['requests']
+            self.assertEqual([json.loads(row['prompt']) for row in requests],messages)
+            self.assertEqual(worker['sampling_params'],query.operation.generation.kwargs())
+            value=worker['request_budget']
+            unit=SharedClaimedUnit(Path(value['path']),AttemptBudget(value['budget_id'],value['limit']),value['unit_id'])
+            for row in requests:unit.reserve(hashlib.sha256(row['call_id'].encode()).hexdigest())
+            raw=dict(result_ready_monotonic_ns=time.monotonic_ns(),result=dict(predictions=[
+                dict(call_id=row['call_id'],generated_text=text) for row,text in zip(requests,answers,strict=True)][::-1]))
+            directory.mkdir()
+            options['on_result_ready'](raw)
+            publish_private_json(directory/'worker.json',dict(status='completed',native_api={},
+                model_close_receipt=dict(status='closed')))
+            return dict(status='CPU fixture')
+        tokenizer=SimpleNamespace(apply_chat_template=lambda messages,**kwargs:json.dumps(messages))
+        report=driver.run_query(config,self.data/'driver-result',model_python='CPU-only',
+                                tokenizer=tokenizer,supervise=supervised)
+        self.assertEqual(report['status'],'completed')
+        self.assertEqual(report['result'],result_value(expected))
+        self.assertEqual(report['logical_requests'],count)
+
+
+    def test_prepared_join_empty_invalid_ids_and_native_hooks_are_preserved(self):
+        import lotus
+        from src.baselines.text.sembench_prepared import prepare,finish
+
+        path=self.data/'Reviews.csv'
+        original_csv=path.read_bytes()
+        pd.DataFrame(columns=['reviewId','id','reviewText']).to_csv(path,index=False)
+        query=self._query('movie','5')
+        original=lotus.models.LM.__call__
+        method,prepared,requests=prepare(query)
+        self.assertIs(lotus.models.LM.__call__,original)
+        actual,semantic=finish(query,method,prepared,[])
+        self.assertTrue(actual.empty)
+        self.assertEqual(requests,[])
+        self.assertEqual(semantic['calls'],[])
+        path.write_bytes(original_csv)
+        query=self._query('movie','5')
+        method,prepared,requests=prepare(query)
+        predictions=[dict(call_id=row['call_id'],generated_text='True') for row in prepared]
+        for invalid in (predictions[:-1],predictions+[predictions[0]],
+                        [dict(row,call_id='unknown') for row in predictions]):
+            with self.assertRaisesRegex(ValueError,'every unique original occurrence'):
+                finish(query,method,prepared,invalid)
+        self.assertIs(lotus.models.LM.__call__,original)
+
+    def test_prepared_rectangular_join_keeps_different_answers_for_identical_pair_messages(self):
+        from src.baselines.text.sembench_text import _operation
+        from src.baselines.text.sembench_prepared import prepare,finish
+
+        left=pd.DataFrame(dict(text=['same','same'],item=['L','L']),index=[10,20])
+        right=pd.DataFrame(dict(text=['same']*3,item=['R']*3),index=[7,8,9])
+        instruction='Compare {text:left} and {text:right}'
+        operation=_operation('join',left,(right,instruction),{},model_name='openai/CPU-only',
+                             generation=self.generation,query_id='rectangular')
+        query=SimpleNamespace(operation=operation,query_id='rectangular',
+            _original=lambda:left.sem_join(right,instruction))
+        def execute(handler):
+            report=handler(operation,query._original)
+            return report['frame'],report
+        query.execute=execute
+        answers=['True','False','ambiguous','False','True','False']
+        expected,messages=self._join_reference(query,answers)
+        method,prepared,requests=prepare(query)
+        actual,_=finish(query,method,prepared,[dict(call_id=row['call_id'],generated_text=text)
+            for row,text in zip(prepared,answers,strict=True)][::-1])
+        pd.testing.assert_frame_equal(actual,expected)
+        self.assertEqual(len(prepared),6)
+        self.assertEqual(len({row['call_id'] for row in prepared}),6)
+        self.assertEqual(len({json.dumps(row['messages']) for row in requests}),1)
+
     def test_ecomm_text_filter_uses_the_same_task_and_original_score(self):
         from src.baselines.text.sembench_prepared import prepare,finish
 

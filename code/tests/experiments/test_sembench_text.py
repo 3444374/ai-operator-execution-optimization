@@ -132,6 +132,16 @@ class TextEntryTests(unittest.TestCase):
         config, _, _, _ = entry.configuration(template)
         self.assertIn('ray_native', config)
 
+    def test_exact_join_checks_native_ray_processor_without_borrowing_old_record_graph_support(self):
+        from src.serving.backends.vllm_protocol import EngineSpec
+        engine=EngineSpec(model_path='/tmp/model',model_python='/tmp/python',driver_python='/tmp/python',max_model_calls=6)
+        query=SimpleNamespace(generation=GenerationSpec(),operation=SimpleNamespace(
+            describe=lambda:dict(kind='join'),generation=GenerationSpec()),
+            describe=lambda:dict(expected_model_calls=6))
+        config=dict(backend='ray-data',profile={},ray_native={})
+        self.assertEqual(entry.check(config,query,engine)['inference_calls'],0)
+        with self.assertRaises(ValueError):entry.check(dict(backend='ray-data',profile={}),query,engine)
+
     def test_backend_support_uses_actual_operator_independently_of_query_number(self):
         from src.serving.backends.vllm_protocol import EngineSpec
         engine = EngineSpec(model_path='/tmp/model', model_python='/tmp/python',

@@ -138,8 +138,9 @@ Cars 文本同样使用该共享 `check/run`，设置 `scenario=cars`、`query=1
 `ecomm` 的 Q3／Q5／Q7 直接使用所给目录的原 `styles_details.parquet`，不运行下载或抽样准备；
 固定 SemBench checkout 还须包含 `files/ecomm/queries`。同一 `check/fixture/run` 与后端配置继续复用，
 调用数来自原查询的实际选择，不按文件行数猜测 Q5 的执行规模。
-Q7 要求显式 LOTUS resident：按原价格谓词选择后核算完整 N×N Join，而不是逐行 N 次；
-其多列文本 Join、原 ID 拼接和 F1 评价不经过 prepared F/M/E。
+Q7 的原价格谓词、完整 N×N Join、ID 拼接和 F1 继续保留，不是逐行 N 次。
+可选择显式 LOTUS resident，或下述原生 Ray processor／独立 Daft prepared Join；
+旧有限记录图仍不接 Join，不能借用普通 F/M/E 资格。
 引擎与生成参数继续用现有 `EngineSpec/GenerationSpec`；五项 vLLM 可选参数未指定时交原生引擎解析。
 Extract 的 `json_object` 来自原算子，`check.effective_operator_generation` 记录其有效设置。
 

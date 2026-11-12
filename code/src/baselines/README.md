@@ -193,6 +193,7 @@ close 可能与 driver 后处理重叠。严格 host controller 入口仍未知�
 Ray Data LLM processor 拥有图、chat template、tokenization、batching、模型 actor 和调度；
 [准备及完成接口](text/sembench_prepared.py)复用原 LOTUS 消息/parser 与固定 SemBench 原查询。
 不调用 SemLoom Core、原自写记录链或 HTTP 替代模型。
+该接口也支持单个 exact Join；TopK、Aggregate 和混合多算子不从此路径取得支持。
 
 [查询编排](../experiments/native_ray_sembench.py)重新读取已核输入，按 occurrence `call_id` 接收完整预测。
 `materialize().take_all()` 后，在 `ray.shutdown()` 前执行原 parser 和完整关系查询；
@@ -453,7 +454,10 @@ Join 的 positional／keyword 参数共用普通绑定，任务可声明多列�
 当前 LOTUS1.2.4 accessor 每侧只选一个 Series，新增 `native_join_inputs` 记录实际选列、dtype、
 发生项数及遗漏引用，不向原生 prompt 补字段。已有多列差分通过仅证明与该 SDK 的行为一致。
 此入口仍显式选择 exact，
-官方 runner 的 approximate 不被声称为已复现；Ray／Daft prepared 仍明确不接 Join。
+官方 runner 的 approximate 不被声称为已复现；Ray／Daft 原生 prepared Join 见下述共享接点。
+上游 [v1.1.3](https://github.com/lotus-data/lotus/blob/v1.1.3/lotus/sem_ops/sem_join.py) 和
+[v1.2.4](https://github.com/lotus-data/lotus/blob/v1.2.4/lotus/sem_ops/sem_join.py) 都保留每侧一个
+Series 的接口与覆盖式选列；回退论文版本不等于补齐多字段，不向原版静默注入字段或改写提示。
 
 评价直接执行原 TOML 的 gold SQL，再调用官方 EcommEvaluator 所用的 `GenericEvaluator`，
 Q3／Q5 保留 adjusted Rand index 的分组评分语义，Q1／Q7 保留原 F1；不把分组评分改成品牌名称
@@ -601,6 +605,23 @@ LM/LiteLLM batching、Boolean parser 和关系构造；现有 owner/预算/监�
 pair 按左右 source position 关联，原 SDK 有序返回绑定相同消息的不同 occurrence，不能去重。
 完整原查询返回后才转移逐对 receipt 报告，再做原 Join/最终 sink 重放、评价与持久化。
 
+#### Ray／Daft 复用原 exact Join
+
+[共享 Join 准备与完成](text/sembench_prepared_join.py)从原 `sem_join` 捕获完整消息后停止，
+不产生假中间关系或模型答复；每个左右发生项对保留自己的 `call_id`。Ray 原生 processor
+消费这些消息，Daft 原生 AI 消费同一消息的原 tokenizer chat template，仍由各系统拥有 batching／调度。
+完整预测按 ID 恢复原顺序后，由原 SDK Boolean parser、Join 关系构造和原查询后处理完成 sink；
+自身排除、对称项、重复值及后置 LIMIT 均不预裁剪。该路径适用于 Movie Q5/Q6/Q7 和 E-Commerce Q7，
+没有逐题执行器；多列实际输入限制及 `native_join_inputs` 披露与原生 LOTUS 一致。
+
+Ray 通过已有 `ray_native` 配置选择此能力，旧有限记录图的 Join 仍未接；Daft 使用独立的
+`semloom.native_daft_sembench.v1` 入口，普通 `backend=daft` 记录图不借用其资格。
+完整预算仍为 L×R，失败／缺失／重复答复不能补默认值或重新请求。source→sink 包含原消息准备、
+原生后端执行、原 SDK 在 sink 中重建消息／解析／关系的适配成本；消息相等检查和实际选列报告在 sink 后完成。
+这一 prepared profile 不等于 LM 原生执行路径，也不扣除适配成本来制造相同时间。
+软件检查覆盖真实 SDK 原题／消息／结果差分、Ray 软件 processor、Daft driver 跨进程 packet 和原 sink；
+Daft SDK／executor 必须在其独立环境另验，真实模型与宿主物理清理仍待对应版本验证。
+
 共享准备层不再把自 Join 或 `reviewText` 写成后端能力限制：普通 exact inner Join
 按原指令绑定各自左右表及显式字段，完整预算为 L×R，并在执行前核对右表未变；
 quick TopK 使用原指令引用列，保持原 K=N、pivot 和比较算法。
@@ -655,8 +676,9 @@ LOTUS／Palimpzest 的逐题方法或脚本定义查询，ThalamusDB／BigQuery 
 本轮未逐项核实，不据此推断所有论文题或官方默认都走 exact。
 原远程 Gemini 的并发与输出长度是来源事实，不是本地模型的推荐容量；本地仍需显式绑定实际参数，
 校准和请求上限按具体机器、模型、服务及 workload 核对。
-文本入口现按捕获到的算子检查能力：普通 Filter／Map／Extract 使用既有接点，Join／TopK
-要求显式 LOTUS resident；prepared 请求入口拒绝其他算子，不在缺少 stage 时以属性异常退出。
+文本入口现按捕获到的算子检查能力：普通 Filter／Map／Extract 使用既有接点，Join 使用显式
+LOTUS resident 或 Ray 原生 processor，TopK 仍要求 LOTUS resident；独立 Daft 原生入口也接 exact Join。
+prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常退出。
 此项只移除题号决定后端能力的限制，不开放新的场景、聚合或多算子完整查询；这些仍需接入与验证。
 同一普通算子的 positional／keyword 参数由一个共享绑定处理，Map 的命名输出列按原 `suffix`
 写入；普通 Extract 保留声明字段及原 JSON 解析，quotes/raw 等未支持的选项仍明确拒绝。
