@@ -304,7 +304,37 @@ SQL／kernel／provider／RPC生产字节保持417来源，原失败保留，不
 审计／关闭失败保留完整结果；prediction批次失败不冒充完整前端结果。
 首轮4项失败源于夹具漏了SQL投影的call_id，按真实C++投影补齐后6项通过，失败输出保留。
 原Q1生命周期、原quick及prepared UDF／构建的21项既有检查通过；按测试ID去重，本批27项通过、0模型。
-该新增接点的Linux作者SQL、实际renderer与真实模型仍待验；旧Q1或LOTUS完整256成绩不转授。
+随后冻结11f745f720c8605a21e87e5b549d5b02134b93f4（code tree
+5597983c41776a78a6c89c83707216c36e7c851d）通过9项Linux检查、0skip。
+原Movie Q9前8个发生项的完整11列派生输入，经实际vLLM0.25.1 renderer核对56个有向完整消息／token及
+8192输出context门，未初始化CUDA；7批真实作者VARCHAR SQL／IPC分别为7／6／5／4／3／2／1条，
+共28个软件答复。一个软件ModelService贯穿查询，每批SQL启动／关闭计入完整sink；
+原RNG、消息、发生项、采样、排名、关系和评价回放一致，ACK／作者关闭及宿主资源清理通过。
+复用417的DSO／薄driver，无重建／重链；0模型、无GPU预算，软件usage不能当真实模型成本。
+仅为8行接线资格，真实模型与该后端完整256待验；旧Q1或LOTUS完整256成绩不转授。
+
+## MMQA Q2b 参考 Extract 组件的真实验证
+
+输入继续使用0755捕获的5条原SDK消息：官方正例Join仅为明确软件夹具，不重跑旧325次真实Join。
+首轮CPU门的私有harness误把三字段金标整行与二元(ID,image)比较，0请求、未进入renderer，失败完整保留。
+单行修正只投影金标前两列；新轮只补失败门及未执行renderer，不重跑已通过的11f SQL／IPC。
+5条原消息、JSON参数及输入身份与0755一致，实际VLM renderer的完整展开token／context门通过、CUDA未初始化。
+
+后续单轮独立组件沿原8667已核VLM／processor／BF16及容量签名，永久上限5次；
+5次真实POST全成功、未知／重试／额外预热为0，原始答复与原Extract parser结果均为`{"color":"Blue"}`。
+原SDK返回slot、completion ID与HTTP attempt关联通过，保留全部重复参考发生项。
+组件“消息→原解析关系”1.332686583秒，服务启动78.093255054秒分列；不是完整源→sink或独立暖查询成绩。
+价格、输出token ID、首次engine accept与kernel时间未观测，不填零。进程／socket／SHM及租约清理通过，
+原生tracker警告仍保留在原件中。组件没有完整查询质量，旧Q2b的Join全False、Extract0、F1=0及103原答关联缺口不变；
+实际Join→非空Extract端到端资格仍未完成。
+
+三份归档及全部payload已独立核字节／SHA256，按运行标识从服务器协调者取原件：
+
+| 运行标识 | payload数 | 归档字节数 | SHA256 |
+|---|---:|---:|---|
+| baseline-11f745-imlane-topk-cpu-20261113-r1 | 1379 | 3496153 | `7d5e0fb673776165013935d70bc1af7712ca12b046bff77965e6c258b044444c` |
+| lotus-mmqa-extract-component-11f-20261113-r1 | 35 | 39883 | `af6f16e3ead97ae103703349b997eed8a5029adfb20823c912c5d99946f6de22` |
+| lotus-mmqa-extract-component-11f-20261113-r2 | 89 | 118103 | `055c637399f5e6c291209152e78cdae88cb4238cac1e68f438b7bef696d8f4b4` |
 
 ## 原题 Map／Extract 复用 VARCHAR 接点与计时
 
