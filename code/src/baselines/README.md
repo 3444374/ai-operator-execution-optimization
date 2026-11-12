@@ -526,7 +526,9 @@ MMQA Q5 使用[独立原生聚合入口](#sembench-mmqa-aggregation)；现有单
 Medical 已核实上游自带的完整文本资产，按上方原文本入口直接复制；Cars／Medical 的普通准备会顺带下载图音素材，
 文本准备不可盲跑整套 setup。需要其他规模时选择现成原 CSV 或原采样方法，不另写采样。
 E-Commerce 的嵌套 `productDescriptors` 保留原 DEFAULT 的整对象字符串，不能抽取一个 description 字段代替；
-E-Commerce Q3／Cars Q10 的 keyword Extract、E-Commerce Q5 的 Map suffix 需要单独绑定，当前有限 hook 尚未接这些参数。
+共享文本绑定现支持 keyword Extract 和 Map suffix：E-Commerce Q3／Cars Q10 的
+`input_cols/output_cols` 与 E-Commerce Q5 的 `suffix` 不再需要专门执行接点，
+它们仍需绑定各场景的真实输入、原查询及评价，不能据此宣布这些题已取得完整运行资格。
 这些属于待接线／待数据，不是系统缺少原算法。E-Commerce、Cars 和 Medical 的其他原实现按各自文件与能力准备；
 此前限定目录中未找到的数据只记待定位，不推断全服务器没有，也不下载或改写算子凑结果。
 
@@ -545,9 +547,16 @@ LOTUS／Palimpzest 的逐题方法或脚本定义查询，ThalamusDB／BigQuery 
 
 本地 Ray／Daft 的 prepared 路径共享 LOTUS 方法，后端拥有各自原生执行图；IMLane／Kalypso
 按作者接点分别核对。它们不是上述论文四系统的完整复现，也不强行共用系统提示模板。
+固定官方 `GenericLotusRunner` 的默认 `policy` 是 `approximate`；本项目 Movie 调用原题时
+显式设为 `exact`，两者必须分别命名。论文系统设置描述了优化 Join，但各题实际 policy
+本轮未逐项核实，不据此推断所有论文题或官方默认都走 exact。
+原远程 Gemini 的并发与输出长度是来源事实，不是本地模型的推荐容量；本地仍需显式绑定实际参数，
+校准和请求上限按具体机器、模型、服务及 workload 核对。
 文本入口现按捕获到的算子检查能力：普通 Filter／Map／Extract 使用既有接点，Join／TopK
 要求显式 LOTUS resident；prepared 请求入口拒绝其他算子，不在缺少 stage 时以属性异常退出。
 此项只移除题号决定后端能力的限制，不开放新的场景、聚合或多算子完整查询；这些仍需接入与验证。
+同一普通算子的 positional／keyword 参数由一个共享绑定处理，Map 的命名输出列按原 `suffix`
+写入；普通 Extract 保留声明字段及原 JSON 解析，quotes/raw 等未支持的选项仍明确拒绝。
 
 ### 完整查询时钟与仍未统一的路径
 

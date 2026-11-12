@@ -104,6 +104,20 @@ class JoinOperation:
             source_pair_order='left-major; original positions, including same IDs and text')
 
 
+def _operator_arguments(args, kwargs, parameters, optional=()):
+    """Bind ordinary accessor arguments without changing their task values."""
+    if len(args) > len(parameters):
+        raise ValueError('unsupported positional semantic operator arguments')
+    values = dict(zip(parameters, args))
+    for name, value in kwargs.items():
+        if name in values or name not in (*parameters, *optional):
+            raise ValueError('duplicate or unsupported semantic operator argument: ' + name)
+        values[name] = value
+    if any(name not in values for name in parameters):
+        raise ValueError('missing required semantic operator arguments')
+    return values
+
+
 def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
     """Translate only the argument shapes used by the selected original queries."""
     import lotus
@@ -150,16 +164,17 @@ def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
             for i, (label, row) in enumerate(frame[list(columns)].iterrows()))
         return TopKOperation(frame.copy(deep=True), model_name, generation, args[0], records, columns)
     if kind in ('filter', 'map'):
-        if len(args) != 1 or kwargs:
-            raise ValueError('this original query profile uses one ordinary instruction without overrides')
-        method = (FilterMethod(model_name, args[0]) if kind == 'filter' else
-                  MapMethod(model_name, args[0], output_column='_map'))
+        values = _operator_arguments(args, kwargs, ('user_instruction',),
+                                     ('suffix',) if kind == 'map' else ())
+        method = (FilterMethod(model_name, values['user_instruction']) if kind == 'filter' else
+                  MapMethod(model_name, values['user_instruction'], output_column=values.get('suffix', '_map')))
     else:
-        if (len(args) != 2 or set(kwargs) - {'extract_quotes', 'return_raw_outputs'}
-                or kwargs.get('extract_quotes', False) is not False
-                or kwargs.get('return_raw_outputs', False) is not False):
+        values = _operator_arguments(args, kwargs, ('input_cols', 'output_cols'),
+                                     ('extract_quotes', 'return_raw_outputs'))
+        if (values.get('extract_quotes', False) is not False
+                or values.get('return_raw_outputs', False) is not False):
             raise ValueError('the selected original Extract uses ordinary JSON fields without quotes/raw outputs')
-        method = ExtractMethod(model_name, tuple(args[0]), args[1])
+        method = ExtractMethod(model_name, tuple(values['input_cols']), values['output_cols'])
         generation = replace(generation, response_format={'type': 'json_object'})
     stage = StageSpec(kind, method, generation).bind()
     columns = (method.input_columns if kind == 'extract' else stage.method.resolved_input_columns)
@@ -299,7 +314,8 @@ class SemBenchTextQuery:
             **(dict(scale_factor=self.scale_factor, scale_unit='patient rows; model rows are query-specific')
                if self.scenario == 'medical' else {}),
             expected_model_calls=0 if operation is None else operation['expected_model_calls'],
-            policy='original exact ordinary operator; result cache disabled; no warmup or retry',
+            policy='explicit exact ordinary-operator profile; not the official runner default; '
+                   'result cache disabled; no warmup or retry',
             label_scope=('original Medical patient labels used only for evaluation'
                          if self.scenario == 'medical' else
                          'original evaluation only; Movie labels excluded from execution input'),

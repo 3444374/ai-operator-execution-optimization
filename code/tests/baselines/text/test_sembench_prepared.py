@@ -15,6 +15,61 @@ from src.serving.backends.vllm_protocol import GenerationSpec
 
 
 class PreparedSemanticsTests(unittest.TestCase):
+    def test_named_arguments_and_output_columns_match_native_accessors(self):
+        from copy import deepcopy
+        from src.semantic_methods.lotus.engine import engine_response
+        from src.semantic_methods.lotus.record_method import LotusRecordMethod
+        from tests.experiments.test_sembench_text_original import _reply
+
+        for column in ('text', 'productDescriptors'):
+            frame = pd.DataFrame({column: [{'description': 'first'}, {'description': 'second'}],
+                                  'category': ['old-first', 'old-second']}, index=[7, 7])
+            instruction = 'Describe {' + column + '}'
+            cases = [
+                ('filter', (), dict(user_instruction=instruction), ['True', 'False']),
+                ('map', (instruction,), dict(suffix='category'), ['first category', 'second category']),
+                ('map', (), dict(user_instruction=instruction, suffix='category'), ['first category', 'second category']),
+                ('extract', (), dict(input_cols=[column], output_cols={'category': 'category'}),
+                 ['{"category":"first"}', '{"category":"second"}']),
+                ('extract', ([column],), dict(output_cols={'category': 'category'}),
+                 ['{"category":"first"}', '{"category":"second"}']),
+            ]
+            for kind, args, kwargs, texts in cases:
+                with self.subTest(column=column, kind=kind, args=args, kwargs=kwargs):
+                    operation = _operation(kind, frame, args, kwargs, model_name='openai/CPU-only',
+                        generation=GenerationSpec(), query_id='named-arguments')
+                    reference = LotusRecordMethod(operation.stage)
+                    observed = []
+                    def respond(data, options, *unused):
+                        observed.extend(deepcopy(message) for message, _ in data)
+                        return [engine_response(_reply(dict(call_id=str(i)), text), reference.lm)
+                                for i, text in enumerate(texts)]
+                    reference.lm._process_uncached_messages = respond
+                    with lotus.settings.context(lm=reference.lm, enable_cache=False):
+                        expected = getattr(frame.copy(deep=True), 'sem_' + kind)(*args, **kwargs)
+                    def execute(handler):
+                        report = handler(operation, None)
+                        return report['frame'], report
+                    query = SimpleNamespace(operation=operation, query_id='named-arguments', execute=execute)
+                    method, prepared, requests = prepare(query)
+                    self.assertEqual([row['messages'] for row in requests], observed)
+                    predictions = [dict(call_id=row['call_id'], generated_text=text)
+                                   for row, text in zip(prepared, texts, strict=True)]
+                    actual, _ = finish(query, method, prepared, predictions[::-1])
+                    pd.testing.assert_frame_equal(actual, expected)
+
+    def test_duplicate_or_unsupported_accessor_arguments_are_not_silently_dropped(self):
+        frame = pd.DataFrame({'text': ['input']})
+        for kind, args, kwargs in (
+                ('map', ('Label {text}',), dict(user_instruction='other')),
+                ('map', ('Label {text}',), dict(return_explanations=True)),
+                ('extract', (['text'],), dict(input_cols=['text'], output_cols={'label': None})),
+                ('extract', (), dict(input_cols=['text'])),
+                ('extract', (), dict(input_cols=['text'], output_cols={'label': None}, extract_quotes=True))):
+            with self.subTest(kind=kind, kwargs=kwargs), self.assertRaises(ValueError):
+                _operation(kind, frame, args, kwargs, model_name='openai/CPU-only',
+                    generation=GenerationSpec(), query_id='invalid-arguments')
+
     def test_non_row_operator_is_rejected_before_stage_or_model_access(self):
         for kind in ('join', 'topk', 'aggregate'):
             query = SimpleNamespace(operation=SimpleNamespace(describe=lambda: dict(kind=kind)))
