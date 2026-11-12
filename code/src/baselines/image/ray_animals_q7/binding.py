@@ -1,11 +1,13 @@
-"""Q7 thin binding: original LOTUS query owns both filters and ordinary sink.
+"""Animals Filter binding: the original LOTUS query owns its ordinary sink.
 
-The caller supplies the qualified native Ray executor and shared two-pass guard.
+The caller supplies the qualified native Ray executor and finite query budget.
 """
 from copy import deepcopy
 import hashlib
 import json
 import time
+
+from src.baselines.image.sembench_animals import filter_passes
 
 
 def message_digest(message):
@@ -13,10 +15,11 @@ def message_digest(message):
                                      separators=(',', ':')).encode()).hexdigest()
 
 
-def rows_per_pass(physical_attempt_limit):
-    if type(physical_attempt_limit) is not int or physical_attempt_limit <= 0 or physical_attempt_limit % 2:
-        raise ValueError('Q7 requires a finite positive 2N physical attempt limit')
-    return physical_attempt_limit // 2
+def rows_per_pass(physical_attempt_limit, query_id=7):
+    passes = filter_passes(query_id)
+    if type(physical_attempt_limit) is not int or physical_attempt_limit <= 0 or physical_attempt_limit % passes:
+        raise ValueError('Animals Filter requires a finite positive full-query physical attempt limit')
+    return physical_attempt_limit // passes
 
 
 def reconcile(rows, predictions):
@@ -30,20 +33,21 @@ def reconcile(rows, predictions):
     return [by_id[key] for key in expected]
 
 
-class TwoPassBinding:
-    def __init__(self, execute, occurrence_count):
+class FilterBinding:
+    def __init__(self, execute, occurrence_count, *, query_id=7):
         if type(occurrence_count) is not int or occurrence_count <= 0:
-            raise ValueError('Q7 needs the positive frozen source occurrence count')
+            raise ValueError('Animals Filter needs the positive frozen source occurrence count')
         self.execute = execute
         self.occurrence_count = occurrence_count
+        self.query_id, self.expected_passes = query_id, filter_passes(query_id)
         self.passes = []
         self.messages = []
 
     def __call__(self, messages):
         stage = len(self.passes)
-        if stage >= 2 or len(messages) != self.occurrence_count or any(p['status'] != 'complete' for p in self.passes):
-            raise ValueError('Q7 requires two full frozen-source passes, without retries or warmup')
-        rows = [dict(call_id=f'q7-pass-{stage}-row-{i}', messages=deepcopy(message))
+        if stage >= self.expected_passes or len(messages) != self.occurrence_count or any(p['status'] != 'complete' for p in self.passes):
+            raise ValueError('Animals Filter requires complete frozen-source passes, without retries or warmup')
+        rows = [dict(call_id=f'q{self.query_id}-pass-{stage}-row-{i}', messages=deepcopy(message))
                 for i, message in enumerate(messages)]
         # Spend before dispatch: a failed stage must not be retried on this object.
         self.passes.append(dict(stage=stage, status='dispatched'))
@@ -53,13 +57,13 @@ class TwoPassBinding:
         return result
 
     def require_complete(self):
-        if len(self.passes) != 2 or any(p['status'] != 'complete' for p in self.passes):
-            raise ValueError('Q7 incomplete; do not publish a partial sink')
+        if len(self.passes) != self.expected_passes or any(p['status'] != 'complete' for p in self.passes):
+            raise ValueError('Animals Filter incomplete; do not publish a partial sink')
         for outcome, messages in zip(self.passes, self.messages, strict=True):
             outcome['message_sha256'] = [message_digest(message) for message in messages]
 
 
-def run(dataset, execute, *, on_result_ready=None, physical_attempt_limit=None):
+def run(dataset, execute, *, query_id=7, on_result_ready=None, physical_attempt_limit=None):
     """Native execution must already enforce the process-wide public-generate cap.
 
     Original runner calls the original parser and full City intersection itself.
@@ -70,10 +74,10 @@ def run(dataset, execute, *, on_result_ready=None, physical_attempt_limit=None):
     from lotus.types import LMOutput
     from src.baselines.image.sembench_animals import run_original_query, evaluate_original
 
-    source = dataset.preflight(7)
-    if physical_attempt_limit is not None and rows_per_pass(physical_attempt_limit) != source['rows']:
-        raise ValueError('Q7 physical attempt limit differs from the complete frozen source')
-    binding = TwoPassBinding(execute, source['rows'])
+    source = dataset.preflight(query_id)
+    if physical_attempt_limit is not None and rows_per_pass(physical_attempt_limit, query_id) != source['rows']:
+        raise ValueError('Animals Filter physical attempt limit differs from the complete frozen source')
+    binding = FilterBinding(execute, source['rows'], query_id=query_id)
     class NativeLM(LM):
         def __call__(self, messages, *args, **kwargs):
             return LMOutput(outputs=binding(messages))
@@ -81,7 +85,7 @@ def run(dataset, execute, *, on_result_ready=None, physical_attempt_limit=None):
                   max_batch_size=4, cache={}, top_p=1, seed=0, stop=[],
                   frequency_penalty=0, presence_penalty=0, max_ctx_len=32768)
     with lotus.settings.context(lm=lm, enable_cache=False):
-        result = run_original_query(dataset.checkout, dataset.frame, 7)
+        result = run_original_query(dataset.checkout, dataset.frame, query_id)
         sink_ready = time.monotonic_ns()
         if on_result_ready is not None:
             on_result_ready(result, sink_ready)
@@ -89,7 +93,7 @@ def run(dataset, execute, *, on_result_ready=None, physical_attempt_limit=None):
     binding.require_complete()
     audit_finished = time.monotonic_ns()
     evaluation_started = time.monotonic_ns()
-    quality = evaluate_original(dataset.checkout, result, dataset.frame(references=True), 7)
+    quality = evaluate_original(dataset.checkout, result, dataset.frame(references=True), query_id)
     return result, quality, binding.passes, dict(sink_ready_monotonic_ns=sink_ready,
         binding_audit_started_monotonic_ns=audit_started, binding_audit_finished_monotonic_ns=audit_finished,
         evaluation_started_monotonic_ns=evaluation_started, evaluation_finished_monotonic_ns=time.monotonic_ns())

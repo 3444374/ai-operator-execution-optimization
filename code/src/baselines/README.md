@@ -466,7 +466,11 @@ Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一
 服务启动和 GPU 归外部 host owner，入口仅监督查询子进程；该计时为已有服务上的完整查询，不能混入文本冷模型启动成绩。
 私有审计保留原 POST 的内容摘要和 PNG URI 摘要，避免在事件队列复制整幅 base64 图像；原请求字节不变。
 生成配置未给出的值按原 SemBench 8192 token／无 stop 解析，显式值保持，不继承短文本 Filter 的8 token／换行截断。
-[Ray Animals Q7](image/ray_animals_q7/README.md)使用原生 Ray LLM processor，顺序执行两遍64条 Filter和原 City交集；
+[Ray Animals Filter](image/ray_animals_q7/README.md)复用原生 Ray LLM processor、worker、预算和收尾，
+按原任务元数据执行 Q1/Q3/Q10 的一遍 Filter 或 Q7 的两遍 Filter及原 City交集。
+保留历史 module 路径；`RUN-BOUND.json` 的 `query` 默认为7，单遍预算为N，双遍为2N。
+新增单遍路径已有 N=1/7/13 的完整原查询／消息／评价及生命周期 CPU 检查，实际 SDK／GPU 尚待验证；
+下述64图资格只属于各自冻结的 Q7 来源。Q7 顺序执行两遍64条 Filter和原 City交集；
 两次各自启动/关闭，整体共享128次额度，不能标为同模型 warm。默认示例使用 Ray2.56.1／vLLM0.22.0；
 原128条模型资格与当前清理接口的Linux CPU资格分列，其他环境和完整公平计时另验。
 当前 Q7 保留第一 stage 的物理退出及清理，在最后 stage 预测原子发布后执行原 City 交集；

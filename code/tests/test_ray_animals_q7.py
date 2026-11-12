@@ -1,5 +1,5 @@
 import unittest
-from src.baselines.image.ray_animals_q7.binding import TwoPassBinding, reconcile
+from src.baselines.image.ray_animals_q7.binding import FilterBinding, reconcile
 
 class BindingTests(unittest.TestCase):
     def setUp(self):
@@ -15,13 +15,13 @@ class BindingTests(unittest.TestCase):
     def test_budget_and_complete(self):
         def execute(rows):
             return [dict(call_id=r['call_id'],generated_text='False') for r in rows[::-1]]
-        binding=TwoPassBinding(execute,64)
+        binding=FilterBinding(execute,64)
         with self.assertRaises(ValueError): binding.require_complete()
         for _ in range(2): self.assertEqual(binding(['image']*64),['False']*64)
         binding.require_complete()
         with self.assertRaises(ValueError): binding(['image']*64)
     def test_failure_is_spent(self):
-        binding=TwoPassBinding(lambda rows: [],64)
+        binding=FilterBinding(lambda rows: [],64)
         with self.assertRaises(ValueError): binding(['image']*64)
         self.assertEqual(len(binding.passes),1)
         with self.assertRaises(ValueError): binding.require_complete()

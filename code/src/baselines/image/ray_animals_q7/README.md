@@ -1,8 +1,11 @@
-# Ray Animals Q7
+# Ray Animals image Filters
 
-This entry runs the original Animals Q7 zebra and impala Filters and their City
-intersection. Each Filter uses a fresh native Ray processor/runtime for all N
-frozen source occurrences: two sequential native lifecycles and 2N model calls.
+The historical package/module path is retained for existing supervised callers.
+The bound integer `query` selects original Q1/Q3/Q7/Q10; omission keeps Q7.
+Q1/Q3/Q10 use one complete Filter, one native lifecycle and N model calls.
+Q7 uses the original zebra/impala Filters and City intersection, two sequential
+native lifecycles and 2N calls. All four reuse the same binding, worker, processor,
+budget and final-result release; the official query owns its relational result.
 The existing official sf64 manifest remains exactly 64 images / 128 calls; the
 same entry also accepts the existing explicitly labeled finite software samples.
 It does not relabel a sample as the complete official source or broaden the
@@ -30,7 +33,7 @@ model, tokenizer and processor identities. The package installs nothing.
 
 The outer host controller owns preflight, the single host/GPU lease, the complete
 query deadline and its cleanup allowance. Before launching, it creates a fresh
-private output directory, reserves an `AttemptBudget(budget_id, 2*N)`, and uses
+private output directory, reserves an `AttemptBudget(budget_id, passes*N)`, and uses
 `CellBudgetLedger` to reserve/claim a shared unit whose ID is `budget_id` in
 `output/logical-unit.sqlite`. No warmup or retry is added.
 
@@ -41,10 +44,14 @@ The following example is for the unchanged complete sf64 source. For another
 accepted manifest, `physical_attempt_limit` must be exactly twice its verified
 row count. The driver checks that count before either native stage is dispatched;
 each actor uses that same frozen cap and the existing shared ledger.
+For Q1/Q3/Q10 the complete cap is N instead of 2N. The shared task metadata
+determines the number of full-input Filter passes, not a per-question executor.
+There is no shared-runtime or same-model warm claim.
 
 ```json
 {
   "source": "/absolute/maintained-checkout",
+  "query": 7,
   "budget_id": "unique-q7-cold-id",
   "physical_attempt_limit": 128,
   "config": "/absolute/reviewed-config.json",
@@ -75,11 +82,11 @@ export LITELLM_LOCAL_MODEL_COST_MAP=True
 
 `Q7_SOURCE` must equal the frozen `source`. [runner.py](runner.py) reads the bound
 file and constructs [StageSupervisor](host_adapter.py) from `host_adapter`.
-Each native stage uses `native_python`. The first must establish worker exit,
+Each native stage uses `native_python`. Any nonfinal stage must establish worker exit,
 physical idle, resource acceptance, owned-process exit and private-socket cleanup
-before the second starts. The final stage publishes its complete predictions
+before the next starts. The final stage publishes its complete predictions
 atomically and holds its public Ray runtime until the original query returns its
-complete City result. The driver records that memory-sink timestamp and sends an
+complete query result. The driver records that memory-sink timestamp and sends an
 explicit release; only then does the final worker call `ray.shutdown()` and the
 same supervisor finish physical cleanup. The adapter uses the pinned host/socket helpers and the
 maintained [inactive semaphore cleanup](../../../observability/process_resources/inactive_semaphores.py).
@@ -150,6 +157,17 @@ in this runner; request spans are not pure GPU time. The common definitions are
 in [native baseline calibration](../../../../../experiments/plans/原生基线校准.md).
 
 Qualification scope:
+
+- The shared one/two-pass candidate has local CPU checks for Q1/Q3/Q10 at
+  N=1/7/13, their full original messages/parser/results/evaluators, single-stage
+  failure/abort/close paths, and the existing Q7 two-stage owner release.
+  The new test first compared unordered gold rows as ordered metadata; its
+  correction compares all original gold rows without imposing an ORDER BY.
+  Predictions and evaluator scores are unchanged. One earlier CPU-child attempt
+  was blocked by macOS process-tree inspection; its failure is retained and the
+  unchanged supervisor subsequently passed with process inspection permitted.
+  New single-pass native SDK/GPU/physical-cleanup qualification is pending;
+  historical Q7 GPU receipts below do not qualify this candidate or other queries.
 
 - Frozen `c1648b796dbead66fa5a86423ae1137b26ac89b8` completed 128 public generate
   calls and 128 terminals, two constructors, original City F1=1, and message/token

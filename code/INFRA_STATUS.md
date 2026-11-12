@@ -198,7 +198,10 @@ Movie Filter 的 `9507` 目标 Q2 尝试在旧 native CLI 的25/1200白名单处
 原配置绑定逐题数量，仅两份已完成测试回执按自身大小读取；生产与全局读限未改。
 来源、旧失败、质量结果与单冷轮边界见上述模块说明，不扩展为稳定性能排名。
 
-[Ray Animals Q7](src/baselines/image/ray_animals_q7/README.md)现保留第一 stage 的完整关闭，最终原 City
+[Ray Animals Filter](src/baselines/image/ray_animals_q7/README.md)现让 Q1/Q3/Q10 复用同一单遍 worker，
+Q7 复用两遍 worker；原题及原评价决定结果，不新写题目执行器。N=1/7/13 的原消息、parser、
+完整结果／评价、单遍错误收尾与旧 Q7 生命周期已有 CPU 检查；单遍的目标 SDK／GPU 待验。
+Q7 仍保留第一 stage 的完整关闭，最终原 City
 关系就绪后才 ACK 并关闭最后 runtime。原 19 项 CPU、真实本地子进程交接及 128 条旧答复身份／原 parser
 回放通过；`909f842c4` 又通过目标 64 张原图／128 条保存答复的完整 City／evaluator 回放，并在独立
 冷轮完成 128 条真实终态、原 City P/R/F1 = 1 和物理清理。此前因本任务未登记的 Python 观察进程

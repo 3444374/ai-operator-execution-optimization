@@ -28,6 +28,13 @@ MANIFEST_SCHEMA = "semloom.sembench_animals.v1"
 IMAGE_QUERY_IDS = (1, 3, 7, 10)
 
 
+def filter_passes(query_id):
+    """Semantic workload shape, shared by preflight and execution adapters."""
+    if type(query_id) is not int or query_id not in IMAGE_QUERY_IDS:
+        raise ValueError('only original Animals image queries Q1/Q3/Q7/Q10 are supported')
+    return 2 if query_id == 7 else 1
+
+
 def upstream_bytes(checkout, relative):
     root = Path(checkout).resolve()
     raw = subprocess.check_output(
@@ -136,7 +143,7 @@ class AnimalsDataset:
     def preflight(self, query_id=1):
         sources = verify_animals_checkout(self.checkout, query_id)
         value = self.read()
-        passes = 2 if query_id == 7 else 1
+        passes = filter_passes(query_id)
         if value["role"] == "official_animals_sf64":
             if value["provenance"].get("generator_sha256") != sources[SOURCE_FILES[2]]:
                 raise ValueError("Animals generation source is not the pinned upstream function")

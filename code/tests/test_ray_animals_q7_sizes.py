@@ -1,5 +1,6 @@
 """Finite Q7 source sizes; software images/Ray replies, no real model or server."""
 import gzip
+from copy import deepcopy
 import importlib
 import json
 import os
@@ -9,15 +10,53 @@ from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
+import pandas as pd
+
 from src.baselines.image.ray_animals_q7 import binding
 
 
 class FrozenSizeTests(unittest.TestCase):
+    def test_single_filter_failures_release_the_owner_and_preserve_only_observed_sink(self):
+        from tests.test_ray_animals_q7_sink import Q7SinkTests
+        for phase in ('native_failure', 'parse_failure', 'close_failure', 'after_sink_failure'):
+            helper = Q7SinkTests(); helper.setUp()
+            try:
+                helper.count = 7
+                helper.bound.update(query=1, physical_attempt_limit=7)
+                failure = RuntimeError('single Filter ' + phase)
+                setattr(helper, phase, failure)
+                report = helper.failed(failure)
+                self.assertEqual(report['timing']['sink_ready_monotonic_ns'] is not None,
+                    phase in ('close_failure', 'after_sink_failure'))
+                self.assertFalse((helper.root/'input-1.json.gz').exists())
+            finally:
+                helper.doCleanups()
+
+    def test_single_filter_tasks_reuse_the_same_worker_release_and_cleanup_flow(self):
+        from tests.test_ray_animals_q7_sink import Q7SinkTests
+        from src.baselines.image.ray_animals_q7 import runner
+        for query_id in (1, 3, 10):
+            for count in (1, 7, 13):
+                helper = Q7SinkTests(); helper.setUp()
+                try:
+                    helper.count = count
+                    helper.bound.update(query=query_id, physical_attempt_limit=count)
+                    report = runner.run_query(helper.root, helper.bound, helper.supervise)
+                    self.assertEqual(helper.actions, ['start-0', 'original-full-sink', 'close-0',
+                        'host-cleanup-0', 'binding-audit', 'evaluation'])
+                    self.assertEqual(len(report['stage_lifecycle']), 1)
+                    self.assertEqual(report['logical_occurrences'], count)
+                    self.assertFalse((helper.root/'input-1.json.gz').exists())
+                    self.assertLessEqual(report['timing']['sink_ready_monotonic_ns'],
+                        report['timing']['final_close_started_monotonic_ns'])
+                finally:
+                    helper.doCleanups()
+
     def test_two_complete_passes_and_no_dispatch_on_size_or_budget_error(self):
         for count in (1,7,13):
             execute=Mock(side_effect=lambda rows:[dict(call_id=r['call_id'],generated_text=str(i))
                 for i,r in reversed(list(enumerate(rows)))])
-            two=binding.TwoPassBinding(execute,count)
+            two=binding.FilterBinding(execute,count)
             with self.assertRaises(ValueError):two(['message']*(count+1))
             execute.assert_not_called()
             for _ in range(2):
@@ -67,6 +106,36 @@ class FrozenSizeTests(unittest.TestCase):
 @unittest.skipUnless(os.environ.get('SEMLOOM_NATIVE_TEST_CHECKOUT'),
     'requires pinned c814 source and existing original LOTUS/evaluator dependencies')
 class OriginalSmallSourceTests(unittest.TestCase):
+    def test_single_filter_tasks_keep_original_messages_parser_result_and_evaluator(self):
+        from tests.baselines.image.test_sembench_animals_original import OriginalAnimalsImageTests
+        helper = OriginalAnimalsImageTests(); helper.checkout = Path(os.environ['SEMLOOM_NATIVE_TEST_CHECKOUT'])
+        helper.setUp(); self.addCleanup(helper.doCleanups)
+        for query_id in (1, 3, 10):
+            for count in (1, 7, 13):
+                with self.subTest(query=query_id, count=count):
+                    dataset = helper.make_dataset(count=count)
+                    answers = [['True', 'False', 'no verdict', 'False then True'][i % 4] for i in range(count)]
+                    expected, quality, batches = helper.run_query(query_id, answers, dataset=dataset)
+                    def execute(rows):
+                        return [dict(call_id=row['call_id'], generated_text=answers[i])
+                                for i, row in reversed(list(enumerate(rows)))]
+                    native = Mock(side_effect=execute)
+                    result, actual_quality, passes, _ = binding.run(dataset, native,
+                        query_id=query_id, physical_attempt_limit=count)
+                    pd.testing.assert_frame_equal(result, expected)
+                    observed, reference = deepcopy(actual_quality), deepcopy(quality)
+                    # The original gold SQL has no ORDER BY; retain all gold
+                    # rows without making their incidental order a requirement.
+                    observed_gold, reference_gold = observed.pop('ground_truth'), reference.pop('ground_truth')
+                    if isinstance(observed_gold, list):
+                        self.assertCountEqual(observed_gold, reference_gold)
+                    else:
+                        self.assertEqual(observed_gold, reference_gold)
+                    self.assertEqual(observed, reference)
+                    self.assertEqual(len(passes), 1)
+                    self.assertEqual([r['messages'] for r in native.call_args.args[0]],
+                        [message for batch in batches for message in batch])
+
     def test_original_two_pass_messages_parser_full_city_sink_and_capture(self):
         from tests.baselines.image.test_sembench_animals_original import OriginalAnimalsImageTests
         from src.baselines.image.ray_animals_q7 import capture_cpu

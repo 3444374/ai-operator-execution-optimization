@@ -13,7 +13,7 @@ def native_observer_setup():
     from .binding import rows_per_pass
     bound = json.loads((root / 'RUN-BOUND.json').read_text())
     cap = bound['physical_attempt_limit']
-    rows_per_pass(cap)
+    rows_per_pass(cap, bound.get('query', 7))
     if bound['budget_id'] != budget_id:
         raise ValueError('Q7 actor budget identity differs from the frozen owner binding')
     ledger = SharedClaimedUnit(root / 'logical-unit.sqlite', AttemptBudget(budget_id, cap), budget_id)

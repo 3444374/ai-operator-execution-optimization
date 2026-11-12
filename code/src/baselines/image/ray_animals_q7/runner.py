@@ -1,4 +1,4 @@
-"""Thin supervised one-cold-Q7 entrypoint; no lease or scheduling replacement."""
+"""Shared supervised Animals image Filter queries; no scheduling replacement."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -21,14 +21,14 @@ def wait_for_final_release(root, timeout_s):
     path = root / FINAL_RELEASE
     while not path.exists():
         if time.monotonic() >= deadline:
-            raise TimeoutError('Q7 final owner did not receive a result handoff within its stage budget')
+            raise TimeoutError('Animals Filter final owner did not receive a result handoff within its stage budget')
         time.sleep(.01)
     value = json.loads(path.read_text())
     if value.get('action') != 'complete' or type(value.get('sink_ready_monotonic_ns')) is not int:
-        raise RuntimeError('Q7 original query aborted before its final owner was released')
+        raise RuntimeError('Animals Filter original query aborted before its final owner was released')
     observed = time.monotonic_ns()
     if not 0 <= value['sink_ready_monotonic_ns'] <= observed:
-        raise ValueError('Q7 sink clock follows native release acceptance')
+        raise ValueError('Animals Filter sink clock follows native release acceptance')
     publish_private_json(root / 'final-stage-handoff.json', dict(**value,
         release_observed_monotonic_ns=observed, worker_pid=os.getpid()))
 
@@ -76,12 +76,16 @@ def native_stage(root, stage, bound):
     from .native_query import execute
     import importlib.metadata
     config = json.loads(Path(os.environ['Q7_CONFIG']).read_text())
+    from .binding import filter_passes, rows_per_pass
+    last_stage = filter_passes(bound.get('query', 7)) - 1
+    if not 0 <= stage <= last_stage:
+        raise ValueError('native stage is outside the original query Filter passes')
     versions = {k: importlib.metadata.version(k) for k in ('ray', 'vllm', 'torch', 'transformers')}
     expected = {'official-ray-0.22': '0.22.0', 'unified-candidate-0.25.1': '0.25.1'}
     if versions['ray'] != '2.56.1' or versions['vllm'] != expected[config['runtime_profile']]:
         raise ValueError('Native runtime does not match selected profile')
-    if (root / f'predictions-{stage}.json').exists() or (stage == 1 and (root / FINAL_RELEASE).exists()):
-        raise ValueError('Q7 native stage refuses stale prediction or release evidence')
+    if (root / f'predictions-{stage}.json').exists() or (stage == last_stage and (root / FINAL_RELEASE).exists()):
+        raise ValueError('Animals Filter native stage refuses stale prediction or release evidence')
     event(root, 'native_worker_entered', stage=stage, versions=versions)
     failure = None
     try:
@@ -90,15 +94,14 @@ def native_stage(root, stage, bound):
                  _temp_dir=str(Path(os.environ['RAY_TMPDIR']) / 'ray'))
         with gzip.open(root / f'input-{stage}.json.gz', 'rt') as stream:
             rows = json.load(stream)
-        from .binding import rows_per_pass
-        if len(rows) != rows_per_pass(bound['physical_attempt_limit']):
-            raise ValueError('Native Q7 stage differs from the frozen complete source size')
+        if len(rows) != rows_per_pass(bound['physical_attempt_limit'], bound.get('query', 7)):
+            raise ValueError('Native Animals Filter stage differs from the frozen complete source size')
         with observed_builder():
             event(root, 'native_pipeline_entered', stage=stage)
             predictions = execute(rows, bound['model'])
         event(root, 'native_pipeline_returned', stage=stage)
         publish_private_json(root / f'predictions-{stage}.json', predictions)
-        if stage == 1:
+        if stage == last_stage:
             wait_for_final_release(root, bound['host_adapter']['stage_timeout_s'])
     except BaseException as error:
         failure = error
@@ -124,23 +127,25 @@ def native_stage(root, stage, bound):
 def run_query(root, bound, supervise_stage=None):
     if supervise_stage is None:
         raise RuntimeError('Per-stage host supervision and physical-exit capability required; direct launch disabled')
-    from .binding import run
+    from .binding import run, filter_passes
     from src.baselines.image.sembench_animals import AnimalsDataset
     stale = [name for name in (FINAL_RELEASE, 'QUERY.json', 'QUERY-failure.json',
         'input-0.json.gz', 'input-1.json.gz', 'predictions-0.json', 'predictions-1.json',
         'final-stage-handoff.json', 'native-close-0.json', 'native-close-1.json') if (root / name).exists()]
     if stale:
-        raise ValueError('Q7 requires fresh query paths; existing evidence: ' + ', '.join(stale))
+        raise ValueError('Animals Filter requires fresh query paths; existing evidence: ' + ', '.join(stale))
     query_entered = event(root, 'fresh_source_query_entered')
     manifest = Path(bound['manifest'])
     dataset = AnimalsDataset(Path(bound['checkout']), manifest, bound['manifest_digest'])
+    query_options = {'query_id': bound['query']} if 'query' in bound else {}
+    last_stage = filter_passes(bound.get('query', 7)) - 1
     stage, final_future, pool, frame, failure = 0, None, None, None, None
-    report = dict(status='failed', result=None, quality=None, passes=[],
+    report = dict(status='failed', query=bound.get('query', 7), result=None, quality=None, passes=[],
         timing=dict(query_entered_monotonic_ns=query_entered, sink_ready_monotonic_ns=None,
             source_to_sink_seconds=None), controller_entry_monotonic_ns=None,
         first_engine_accept_monotonic_ns=None, stage_lifecycle=[],
-        lifecycle='two sequential native workers; final owner released after complete original City sink',
-        source_to_sink_scope='fresh source, both startups, required transport and first-stage cleanup; excludes final teardown, audit, evaluation and persistence',
+        lifecycle='native worker per original Filter; final owner released after complete original query sink',
+        source_to_sink_scope='fresh source, native startups, required transport and nonfinal-stage cleanup; excludes final teardown, audit, evaluation and persistence',
         request_span_is_GPU_time=False, warmup=0, retries=0,
         logical_occurrences=bound['physical_attempt_limit'])
 
@@ -148,7 +153,7 @@ def run_query(root, bound, supervise_stage=None):
         required = ('worker_exit_zero', 'physical_idle', 'resource_passed', 'owned_processes_exited', 'private_sockets_clear')
         if not isinstance(receipt, dict) or any(receipt.get(key) is not True for key in required):
             event(root, 'stage_exit_unconfirmed', stage=current)
-            raise RuntimeError('Native stage physical exit unconfirmed; retain outputs and stop Q7')
+            raise RuntimeError('Native stage physical exit unconfirmed; retain outputs and stop the query')
         write_private_json(root / f'lifecycle-{current}.json', receipt)
         report['stage_lifecycle'].append(dict(stage=current, receipt=receipt))
         event(root, 'stage_physical_exit_confirmed', stage=current)
@@ -162,26 +167,26 @@ def run_query(root, bound, supervise_stage=None):
         event(root, 'stage_worker_launch', stage=current)
         command = [bound['native_python'], '-m', __package__ + '.runner', str(root),
                    '--native-stage', str(current)]
-        if current == 0:
+        if current < last_stage:
             # The second model must not start until the first lifecycle is clean.
             confirm(supervise_stage(command, current, root), current)
-        elif current == 1:
+        elif current == last_stage:
             deadline = time.monotonic() + bound['host_adapter']['stage_timeout_s']
             pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='q7-final-supervisor')
             final_future = pool.submit(supervise_stage, command, current, root)
-            prediction = root / 'predictions-1.json'
+            prediction = root / f'predictions-{current}.json'
             while not prediction.exists():
                 if final_future.done():
                     final_future.result()  # Preserve the original supervisor failure.
                     raise RuntimeError('Final native stage exited before publishing its predictions')
                 if time.monotonic() >= deadline:
-                    raise TimeoutError('Q7 final predictions exceeded the existing stage budget')
+                    raise TimeoutError('Animals Filter final predictions exceeded the existing stage budget')
                 time.sleep(.01)
             if final_future.done():
                 final_future.result()
-                raise RuntimeError('Final native owner exited before the complete City sink')
+                raise RuntimeError('Final native owner exited before the complete original query sink')
         else:
-            raise ValueError('Q7 cannot dispatch more than its two declared stages')
+            raise ValueError('cannot dispatch more than the original query Filter passes')
         return json.loads((root / f'predictions-{current}.json').read_text())
 
     def accept(result, sink_ready):
@@ -192,27 +197,27 @@ def run_query(root, bound, supervise_stage=None):
         if final_future is None or final_future.done():
             if final_future is not None:
                 final_future.result()
-            raise RuntimeError('Q7 final owner is not held at the complete City sink')
+            raise RuntimeError('Animals Filter final owner is not held at the complete original query sink')
         event(root, 'full_memory_sink_ready', sink_ready_monotonic_ns=sink_ready)
         publish_private_json(root / FINAL_RELEASE, dict(action='complete', sink_ready_monotonic_ns=sink_ready))
         future = final_future
         final_future = None
         receipt = future.result()
-        confirm(receipt, 1)
+        confirm(receipt, last_stage)
         handoff = json.loads((root / 'final-stage-handoff.json').read_text())
-        close = json.loads((root / 'native-close-1.json').read_text())
+        close = json.loads((root / f'native-close-{last_stage}.json').read_text())
         if (handoff['sink_ready_monotonic_ns'] != sink_ready or
                 not sink_ready <= handoff['release_observed_monotonic_ns'] <= close['started_monotonic_ns']):
-            raise ValueError('Final native release/close does not follow the original City sink')
+            raise ValueError('Final native release/close does not follow the original query sink')
         report['timing'].update(final_release_observed_monotonic_ns=handoff['release_observed_monotonic_ns'],
             final_close_started_monotonic_ns=close['started_monotonic_ns'],
             final_close_finished_monotonic_ns=close['finished_monotonic_ns'])
 
     try:
         result, quality, passes, timing = run(dataset, execute, on_result_ready=accept,
-            physical_attempt_limit=bound['physical_attempt_limit'])
+            physical_attempt_limit=bound['physical_attempt_limit'], **query_options)
         if report['timing']['sink_ready_monotonic_ns'] is None:
-            raise RuntimeError('Original Q7 query omitted its complete memory-sink callback')
+            raise RuntimeError('Original Animals Filter query omitted its complete memory-sink callback')
         report.update(status='completed', quality=quality, passes=passes)
         report['timing'].update(timing)
     except BaseException as error:
@@ -266,9 +271,9 @@ def main():
     event(root, 'runner_entered', stage=args.native_stage)
     bound = json.loads((root / 'RUN-BOUND.json').read_text())
     from .binding import rows_per_pass
-    rows_per_pass(bound['physical_attempt_limit'])
+    rows_per_pass(bound['physical_attempt_limit'], bound.get('query', 7))
     if not (root / 'logical-unit.sqlite').is_file():
-        raise ValueError('Supervisor must reserve and claim one shared 2N-call unit before launch')
+        raise ValueError('Supervisor must reserve and claim the complete shared query unit before launch')
     os.environ.update(Q7_SOURCE=bound['source'], Q7_OUTPUT=str(root),
                       Q7_BUDGET_ID=bound['budget_id'], Q7_CONFIG=bound['config'])
     if args.native_stage is None:

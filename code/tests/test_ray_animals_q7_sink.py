@@ -42,11 +42,11 @@ class Q7SinkTests(unittest.TestCase):
         def shutdown():
             self.actions.append(f'close-{self.stage}')
             self.active.discard(self.stage)
-            if self.stage == 1 and self.close_failure is not None:
+            if self.stage == binding.filter_passes(self.bound.get('query', 7)) - 1 and self.close_failure is not None:
                 raise self.close_failure
 
         def execute(rows, model):
-            if self.stage == 1 and self.native_failure is not None:
+            if self.stage == binding.filter_passes(self.bound.get('query', 7)) - 1 and self.native_failure is not None:
                 raise self.native_failure
             self.assertEqual(model, 'not-loaded')
             self.assertEqual(len(rows), self.count)
@@ -67,13 +67,13 @@ class Q7SinkTests(unittest.TestCase):
         ):
             stack.enter_context(scope)
 
-    def original_query_fixture(self, dataset, execute, *, on_result_ready, physical_attempt_limit):
-        self.assertEqual(physical_attempt_limit,2*self.count)
-        two = binding.TwoPassBinding(execute,self.count)
-        two(['fixture-image'] * self.count)
-        self.assertEqual(self.active, set())
-        two(['fixture-image'] * self.count)
-        self.assertEqual(self.active, {1})
+    def original_query_fixture(self, dataset, execute, *, on_result_ready, physical_attempt_limit, query_id=7):
+        passes = binding.filter_passes(query_id)
+        self.assertEqual(physical_attempt_limit,passes*self.count)
+        two = binding.FilterBinding(execute,self.count,query_id=query_id)
+        for stage in range(passes):
+            two(['fixture-image'] * self.count)
+            self.assertEqual(self.active, {stage} if stage == passes - 1 else set())
         if self.parse_failure is not None:
             raise self.parse_failure
         self.actions.append('original-full-sink')
@@ -221,7 +221,7 @@ publish_private_json(root/f'native-close-{stage}.json',dict(started_monotonic_ns
 
         def query(dataset, execute, *, on_result_ready, physical_attempt_limit):
             self.assertEqual(physical_attempt_limit,128)
-            two = binding.TwoPassBinding(execute,64)
+            two = binding.FilterBinding(execute,64)
             two(['CPU-image'] * 64)
             self.assertEqual(len(processes), 1)
             two(['CPU-image'] * 64)
