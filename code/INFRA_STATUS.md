@@ -282,3 +282,7 @@ records resident 的顺序复用不能直接解释为共享 owner 上完整查�
 本机软件IPC/原256消息-token/关系回放与目标模型运行分开记录。`4c08b57b` 维护CLI已独立
 通过Linux完整SQL256／零模型及实际加载原52bf DSO检查，1173份原件已回收核验；
 其运行token是软件placeholder，不是新GPU token资格。当前组合未作整体目标／GPU执行。
+
+[步骤额度的后续真实比较](../experiments/results/diagnostics/record_chain_comparison_20261111/README.md#batch-invariant-followup-20261112)
+在共同原生批次不变模式及实际 worker 回读下通过两组严格输出与正常资源检查；时间方向不一致，
+不改变默认步骤额度。原数值模式的47/48失败和归档阶段错误分别保留。

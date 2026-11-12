@@ -1,0 +1,587 @@
+{
+  "schema": "semloom.pr99_batch_invariant_followup.v1",
+  "scope": "Cold project MMF; each session owns a fresh model and Ray. New common batch-invariant profile, not original R1 or native SemBench task. No startup subtraction.",
+  "final_status": "failed",
+  "failure": {
+    "error_type": "Error",
+    "error": "[('/tmp/p99bi-1nz9ln63/r2-default-actions/session_2026-11-12_15-45-23_340190_48936/sockets/plasma_store', '<data-root>/semloom-pr99-batch-invariant-20261112/readback-followup/host/RUNS/r2-default-actions/session_2026-11-12_15-45-23_340190_48936/sockets/plasma_store', \"[Errno 6] No such device or address: '/tmp/p99bi-1nz9ln63/r2-default-actions/session_2026-11-12_15-45-23_340190_48936/sockets/plasma_store'\"), ('/tmp/p99bi-1nz9ln63/r2-default-actions/session_latest/sockets/plasma_store', '<data-root>/semloom-pr99-batch-invariant-20261112/readback-followup/host/RUNS/r2-default-actions/session_latest/sockets/plasma_store', \"[Errno 6] No such device or address: '/tmp/p99bi-1nz9ln63/r2-default-actions/session_latest/sockets/plasma_store'\"), ('/tmp/p99bi-1nz9ln63/r2-one-action/session_2026-11-12_15-46-56_655293_50111/sockets/plasma_store', '<data-root>/semloom-pr99-batch-invariant-20261112/readback-followup/host/RUNS/r2-one-action/session_2026-11-12_15-46-56_655293_50111/sockets/plasma_store', \"[Errno 6] No such device or address: '/tmp/p99bi-1nz9ln63/r2-one-action/session_2026-11-12_15-46-56_655293_50111/sockets/plasma_store'\"), ('/tmp/p99bi-1nz9ln63/r2-one-action/session_latest/sockets/plasma_store', '<data-root>/semloom-pr99-batch-invariant-20261112/readback-followup/host/RUNS/r2-one-action/session_latest/sockets/plasma_store', \"[Errno 6] No such device or address: '/tmp/p99bi-1nz9ln63/r2-one-action/session_latest/sockets/plasma_store'\"), ('/tmp/p99bi-1nz9ln63/r3-one-action/session_2026-11-12_15-48-49_127384_51352/sockets/plasma_store', '<data-root>/semloom-pr99-batch-invariant-20261112/readback-followup/host/RUNS/r3-one-action/session_2026-11-12_15-48-49_127384_51352/sockets/plasma_store', \"[Errno 6] No such device or address: '/tmp/p99bi-1nz9ln63/r3-one-action/session_2026-11-12_15-48-49_127384_51352/sockets/plasma_store'\"), ('/tmp/p99bi-1nz9ln63/r3-one-action/session_latest/sockets/plasma_store', '<data-root>/semloom-pr99-batch-invariant-20261112/readback-followup/host/RUNS/r3-one-action/session_latest/sockets/plasma_store', \"[Errno 6] No such device or address: '/tmp/p99bi-1nz9ln63/r3-one-action/session_latest/sockets/plasma_store'\"), ('/tmp/p99bi-1nz9ln63/r3-default-actions/session_2026-11-12_15-50-22_327858_52539/sockets/plasma_store', '<data-root>/semloom-pr99-batch-invariant-20261112/readback-followup/host/RUNS/r3-default-actions/session_2026-11-12_15-50-22_327858_52539/sockets/plasma_store', \"[Errno 6] No such device or address: '/tmp/p99bi-1nz9ln63/r3-default-actions/session_2026-11-12_15-50-22_327858_52539/sockets/plasma_store'\"), ('/tmp/p99bi-1nz9ln63/r3-default-actions/session_latest/sockets/plasma_store', '<data-root>/semloom-pr99-batch-invariant-20261112/readback-followup/host/RUNS/r3-default-actions/session_latest/sockets/plasma_store', \"[Errno 6] No such device or address: '/tmp/p99bi-1nz9ln63/r3-default-actions/session_latest/sockets/plasma_store'\")]"
+  },
+  "lease_released": true,
+  "shm_unchanged": true,
+  "physical_gpu_final": {
+    "index": 0,
+    "name": "NVIDIA GeForce RTX 4090",
+    "uuid": "GPU-ae66eec2-3dd6-abcb-1666-a3e964a50634",
+    "total_mib": 24564,
+    "used_mib": 1,
+    "compute": [],
+    "compute_inventory_complete": true
+  },
+  "rows": [
+    {
+      "pair": "pair-2",
+      "case": "one-action",
+      "status": "completed",
+      "model_calls": 48,
+      "confirmed_calls": 48,
+      "full_relation_s": 61.346252383,
+      "worker_to_full_relation_s": 81.336704333,
+      "owner_including_close_s": 66.557477911,
+      "worker_wall_s": 88.115061644,
+      "ray": {
+        "ray_owned": true,
+        "ray_init_s": 8.835790367,
+        "ray_shutdown_s": 1.456649809
+      },
+      "replay": {
+        "status": "passed",
+        "recorded_answers_replayed": 48,
+        "model_calls": 0,
+        "native_prompt_ids_checked": true
+      },
+      "native_profile": {
+        "status": "observed_worker_execution_profile",
+        "pid": 50844,
+        "batch_invariant_requested": true,
+        "batch_invariant_active": true,
+        "source": "initialized vLLM worker environment and installed batch-invariant mode"
+      },
+      "outputs_sha256": "d32df3b2cc0bbac4e46ced0e893cab19da8c6adef1784acf19ab3a1dc8055128",
+      "call_fields_sha256": "6963d2560d8b3f6b35285b2581a78a3f0c3acf2935028fdb3d72850f4bebf076",
+      "source": "4294f14bc412cbec2c067157605c50c63d2e4d26",
+      "generation": {
+        "max_tokens": 8,
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "seed": 0,
+        "stop": [
+          "\n"
+        ],
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "repetition_penalty": 1.0,
+        "logprobs": null,
+        "response_format": null
+      },
+      "resources": {
+        "cpu_workers": 1,
+        "gpu_workers": 1,
+        "prepare_batch_rows": 1,
+        "model_batch_rows": 1,
+        "max_active_batches": 4,
+        "query_timeout_s": 180,
+        "startup_timeout_s": 180,
+        "model_rpc_workers": null
+      },
+      "step_actions": {
+        "core_capacity": {
+          "item_input_bytes": 2097152,
+          "item_result_bytes": 2097152,
+          "metadata_bytes": 2048,
+          "step_actions": 1,
+          "poll_interval_s": 0.01,
+          "budget": null
+        },
+        "method_advance_bound": 1
+      },
+      "model_api_span_s": 4.521999439224601
+    },
+    {
+      "pair": "pair-2",
+      "case": "default-actions",
+      "status": "completed",
+      "model_calls": 48,
+      "confirmed_calls": 48,
+      "full_relation_s": 62.364822474,
+      "worker_to_full_relation_s": 82.196694097,
+      "owner_including_close_s": 67.872578964,
+      "worker_wall_s": 89.237885317,
+      "ray": {
+        "ray_owned": true,
+        "ray_init_s": 9.672895859,
+        "ray_shutdown_s": 1.46021105
+      },
+      "replay": {
+        "status": "passed",
+        "recorded_answers_replayed": 48,
+        "model_calls": 0,
+        "native_prompt_ids_checked": true
+      },
+      "native_profile": {
+        "status": "observed_worker_execution_profile",
+        "pid": 49670,
+        "batch_invariant_requested": true,
+        "batch_invariant_active": true,
+        "source": "initialized vLLM worker environment and installed batch-invariant mode"
+      },
+      "outputs_sha256": "d32df3b2cc0bbac4e46ced0e893cab19da8c6adef1784acf19ab3a1dc8055128",
+      "call_fields_sha256": "6963d2560d8b3f6b35285b2581a78a3f0c3acf2935028fdb3d72850f4bebf076",
+      "source": "4294f14bc412cbec2c067157605c50c63d2e4d26",
+      "generation": {
+        "max_tokens": 8,
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "seed": 0,
+        "stop": [
+          "\n"
+        ],
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "repetition_penalty": 1.0,
+        "logprobs": null,
+        "response_format": null
+      },
+      "resources": {
+        "cpu_workers": 1,
+        "gpu_workers": 1,
+        "prepare_batch_rows": 1,
+        "model_batch_rows": 1,
+        "max_active_batches": 4,
+        "query_timeout_s": 180,
+        "startup_timeout_s": 180,
+        "model_rpc_workers": null
+      },
+      "step_actions": {
+        "core_capacity": {
+          "item_input_bytes": 2097152,
+          "item_result_bytes": 2097152,
+          "metadata_bytes": 2048,
+          "step_actions": 16,
+          "poll_interval_s": 0.01,
+          "budget": null
+        },
+        "method_advance_bound": 4
+      },
+      "model_api_span_s": 4.5859599662944674
+    },
+    {
+      "pair": "pair-3",
+      "case": "one-action",
+      "status": "completed",
+      "model_calls": 48,
+      "confirmed_calls": 48,
+      "full_relation_s": 63.458744557,
+      "worker_to_full_relation_s": 84.465974877,
+      "owner_including_close_s": 68.738943095,
+      "worker_wall_s": 91.270076876,
+      "ray": {
+        "ray_owned": true,
+        "ray_init_s": 8.910216668,
+        "ray_shutdown_s": 1.452937077
+      },
+      "replay": {
+        "status": "passed",
+        "recorded_answers_replayed": 48,
+        "model_calls": 0,
+        "native_prompt_ids_checked": true
+      },
+      "native_profile": {
+        "status": "observed_worker_execution_profile",
+        "pid": 52093,
+        "batch_invariant_requested": true,
+        "batch_invariant_active": true,
+        "source": "initialized vLLM worker environment and installed batch-invariant mode"
+      },
+      "outputs_sha256": "d32df3b2cc0bbac4e46ced0e893cab19da8c6adef1784acf19ab3a1dc8055128",
+      "call_fields_sha256": "6963d2560d8b3f6b35285b2581a78a3f0c3acf2935028fdb3d72850f4bebf076",
+      "source": "4294f14bc412cbec2c067157605c50c63d2e4d26",
+      "generation": {
+        "max_tokens": 8,
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "seed": 0,
+        "stop": [
+          "\n"
+        ],
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "repetition_penalty": 1.0,
+        "logprobs": null,
+        "response_format": null
+      },
+      "resources": {
+        "cpu_workers": 1,
+        "gpu_workers": 1,
+        "prepare_batch_rows": 1,
+        "model_batch_rows": 1,
+        "max_active_batches": 4,
+        "query_timeout_s": 180,
+        "startup_timeout_s": 180,
+        "model_rpc_workers": null
+      },
+      "step_actions": {
+        "core_capacity": {
+          "item_input_bytes": 2097152,
+          "item_result_bytes": 2097152,
+          "metadata_bytes": 2048,
+          "step_actions": 1,
+          "poll_interval_s": 0.01,
+          "budget": null
+        },
+        "method_advance_bound": 1
+      },
+      "model_api_span_s": 4.599583708681166
+    },
+    {
+      "pair": "pair-3",
+      "case": "default-actions",
+      "status": "completed",
+      "model_calls": 48,
+      "confirmed_calls": 48,
+      "full_relation_s": 62.512629308,
+      "worker_to_full_relation_s": 82.02995787,
+      "owner_including_close_s": 68.076418269,
+      "worker_wall_s": 89.151684273,
+      "ray": {
+        "ray_owned": true,
+        "ray_init_s": 8.503159601,
+        "ray_shutdown_s": 1.459097335
+      },
+      "replay": {
+        "status": "passed",
+        "recorded_answers_replayed": 48,
+        "model_calls": 0,
+        "native_prompt_ids_checked": true
+      },
+      "native_profile": {
+        "status": "observed_worker_execution_profile",
+        "pid": 53273,
+        "batch_invariant_requested": true,
+        "batch_invariant_active": true,
+        "source": "initialized vLLM worker environment and installed batch-invariant mode"
+      },
+      "outputs_sha256": "d32df3b2cc0bbac4e46ced0e893cab19da8c6adef1784acf19ab3a1dc8055128",
+      "call_fields_sha256": "6963d2560d8b3f6b35285b2581a78a3f0c3acf2935028fdb3d72850f4bebf076",
+      "source": "4294f14bc412cbec2c067157605c50c63d2e4d26",
+      "generation": {
+        "max_tokens": 8,
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "seed": 0,
+        "stop": [
+          "\n"
+        ],
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "repetition_penalty": 1.0,
+        "logprobs": null,
+        "response_format": null
+      },
+      "resources": {
+        "cpu_workers": 1,
+        "gpu_workers": 1,
+        "prepare_batch_rows": 1,
+        "model_batch_rows": 1,
+        "max_active_batches": 4,
+        "query_timeout_s": 180,
+        "startup_timeout_s": 180,
+        "model_rpc_workers": null
+      },
+      "step_actions": {
+        "core_capacity": {
+          "item_input_bytes": 2097152,
+          "item_result_bytes": 2097152,
+          "metadata_bytes": 2048,
+          "step_actions": 16,
+          "poll_interval_s": 0.01,
+          "budget": null
+        },
+        "method_advance_bound": 4
+      },
+      "model_api_span_s": 4.495681466534734
+    }
+  ],
+  "pairs": [
+    {
+      "pair": "pair-2",
+      "strict": true,
+      "comparison": {
+        "status": "captured_receipts_compared",
+        "public_git_commit": "4294f14bc412cbec2c067157605c50c63d2e4d26",
+        "cases": [
+          {
+            "case_id": "one-action",
+            "calls": 48,
+            "function": "passed",
+            "W_exercised": null,
+            "successor_contention_exercised": null,
+            "full_owner_call_s": 66.557477911,
+            "worker_wall_s": 88.115061644,
+            "timing_scope": "owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded",
+            "physical_cleanup": "separate external supervisor receipt required",
+            "progression": {
+              "policy": "record",
+              "batch_rows": null,
+              "scope": "successor submission over the same single-row async model path"
+            },
+            "resources": {
+              "cpu_workers": 1,
+              "gpu_workers": 1,
+              "prepare_batch_rows": 1,
+              "model_batch_rows": 1,
+              "max_active_batches": 4,
+              "query_timeout_s": 180,
+              "startup_timeout_s": 180,
+              "model_rpc_workers": null
+            },
+            "capacity": {
+              "active_request_limit": 4,
+              "held_task_limit": 4,
+              "retained_rows": 4,
+              "retained_bytes": 218106880,
+              "row_reservation_bytes": 54526720
+            },
+            "step_actions": {
+              "core_capacity": {
+                "item_input_bytes": 2097152,
+                "item_result_bytes": 2097152,
+                "metadata_bytes": 2048,
+                "step_actions": 1,
+                "poll_interval_s": 0.01,
+                "budget": null
+              },
+              "method_advance_bound": 1
+            }
+          },
+          {
+            "case_id": "default-actions",
+            "calls": 48,
+            "function": "passed",
+            "W_exercised": null,
+            "successor_contention_exercised": null,
+            "full_owner_call_s": 67.872578964,
+            "worker_wall_s": 89.237885317,
+            "timing_scope": "owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded",
+            "physical_cleanup": "separate external supervisor receipt required",
+            "progression": {
+              "policy": "record",
+              "batch_rows": null,
+              "scope": "successor submission over the same single-row async model path"
+            },
+            "resources": {
+              "cpu_workers": 1,
+              "gpu_workers": 1,
+              "prepare_batch_rows": 1,
+              "model_batch_rows": 1,
+              "max_active_batches": 4,
+              "query_timeout_s": 180,
+              "startup_timeout_s": 180,
+              "model_rpc_workers": null
+            },
+            "capacity": {
+              "active_request_limit": 4,
+              "held_task_limit": 4,
+              "retained_rows": 4,
+              "retained_bytes": 218106880,
+              "row_reservation_bytes": 54526720
+            },
+            "step_actions": {
+              "core_capacity": {
+                "item_input_bytes": 2097152,
+                "item_result_bytes": 2097152,
+                "metadata_bytes": 2048,
+                "step_actions": 16,
+                "poll_interval_s": 0.01,
+                "budget": null
+              },
+              "method_advance_bound": 4
+            }
+          }
+        ],
+        "outputs_strictly_comparable": true,
+        "differences": [
+          {
+            "case_id": "one-action",
+            "changed_calls": [],
+            "final_outputs_identical": true
+          },
+          {
+            "case_id": "default-actions",
+            "changed_calls": [],
+            "final_outputs_identical": true
+          }
+        ],
+        "performance_qualification": "not established: n1 small functional smoke even if outputs identical",
+        "mechanism_gate": "poll, dispatch and delivery share the action budget; local ready/Core-offer events do not isolate callback cost or prove GPU starvation",
+        "suite": "step-actions",
+        "comparison_scope": "same C4 count/FIFO record progression; only Core step_actions differs"
+      },
+      "one_action_s": 61.346252383,
+      "default_actions_s": 62.364822474,
+      "one_vs_default_reduction_fraction": 0.01633244593014993
+    },
+    {
+      "pair": "pair-3",
+      "strict": true,
+      "comparison": {
+        "status": "captured_receipts_compared",
+        "public_git_commit": "4294f14bc412cbec2c067157605c50c63d2e4d26",
+        "cases": [
+          {
+            "case_id": "one-action",
+            "calls": 48,
+            "function": "passed",
+            "W_exercised": null,
+            "successor_contention_exercised": null,
+            "full_owner_call_s": 68.738943095,
+            "worker_wall_s": 91.270076876,
+            "timing_scope": "owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded",
+            "physical_cleanup": "separate external supervisor receipt required",
+            "progression": {
+              "policy": "record",
+              "batch_rows": null,
+              "scope": "successor submission over the same single-row async model path"
+            },
+            "resources": {
+              "cpu_workers": 1,
+              "gpu_workers": 1,
+              "prepare_batch_rows": 1,
+              "model_batch_rows": 1,
+              "max_active_batches": 4,
+              "query_timeout_s": 180,
+              "startup_timeout_s": 180,
+              "model_rpc_workers": null
+            },
+            "capacity": {
+              "active_request_limit": 4,
+              "held_task_limit": 4,
+              "retained_rows": 4,
+              "retained_bytes": 218106880,
+              "row_reservation_bytes": 54526720
+            },
+            "step_actions": {
+              "core_capacity": {
+                "item_input_bytes": 2097152,
+                "item_result_bytes": 2097152,
+                "metadata_bytes": 2048,
+                "step_actions": 1,
+                "poll_interval_s": 0.01,
+                "budget": null
+              },
+              "method_advance_bound": 1
+            }
+          },
+          {
+            "case_id": "default-actions",
+            "calls": 48,
+            "function": "passed",
+            "W_exercised": null,
+            "successor_contention_exercised": null,
+            "full_owner_call_s": 68.076418269,
+            "worker_wall_s": 89.151684273,
+            "timing_scope": "owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded",
+            "physical_cleanup": "separate external supervisor receipt required",
+            "progression": {
+              "policy": "record",
+              "batch_rows": null,
+              "scope": "successor submission over the same single-row async model path"
+            },
+            "resources": {
+              "cpu_workers": 1,
+              "gpu_workers": 1,
+              "prepare_batch_rows": 1,
+              "model_batch_rows": 1,
+              "max_active_batches": 4,
+              "query_timeout_s": 180,
+              "startup_timeout_s": 180,
+              "model_rpc_workers": null
+            },
+            "capacity": {
+              "active_request_limit": 4,
+              "held_task_limit": 4,
+              "retained_rows": 4,
+              "retained_bytes": 218106880,
+              "row_reservation_bytes": 54526720
+            },
+            "step_actions": {
+              "core_capacity": {
+                "item_input_bytes": 2097152,
+                "item_result_bytes": 2097152,
+                "metadata_bytes": 2048,
+                "step_actions": 16,
+                "poll_interval_s": 0.01,
+                "budget": null
+              },
+              "method_advance_bound": 4
+            }
+          }
+        ],
+        "outputs_strictly_comparable": true,
+        "differences": [
+          {
+            "case_id": "one-action",
+            "changed_calls": [],
+            "final_outputs_identical": true
+          },
+          {
+            "case_id": "default-actions",
+            "changed_calls": [],
+            "final_outputs_identical": true
+          }
+        ],
+        "performance_qualification": "not established: n1 small functional smoke even if outputs identical",
+        "mechanism_gate": "poll, dispatch and delivery share the action budget; local ready/Core-offer events do not isolate callback cost or prove GPU starvation",
+        "suite": "step-actions",
+        "comparison_scope": "same C4 count/FIFO record progression; only Core step_actions differs"
+      },
+      "one_action_s": 63.458744557,
+      "default_actions_s": 62.512629308,
+      "one_vs_default_reduction_fraction": -0.015134785714075338
+    }
+  ],
+  "groups": [
+    {
+      "case": "one-action",
+      "independent_cold_sessions": 2,
+      "all_full_relation_s": [
+        61.346252383,
+        63.458744557
+      ],
+      "median_s": 62.40249847,
+      "min_s": 61.346252383,
+      "max_s": 63.458744557
+    },
+    {
+      "case": "default-actions",
+      "independent_cold_sessions": 2,
+      "all_full_relation_s": [
+        62.364822474,
+        62.512629308
+      ],
+      "median_s": 62.438725891000004,
+      "min_s": 62.364822474,
+      "max_s": 62.512629308
+    }
+  ],
+  "cross_pair_complete_call_fields_equal": true,
+  "observed_model_calls": 192,
+  "global_budget": {
+    "schema": "semloom.cell_budget.v1",
+    "budget_id": "pr99-batch-invariant-20261112",
+    "limit": 288,
+    "allocated_requests": 288,
+    "deadline_utc": 1794470153.8004081,
+    "units": [
+      {
+        "unit_id": "pair-1",
+        "first_attempt": 1,
+        "requests": 96,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pair-2",
+        "first_attempt": 97,
+        "requests": 96,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pair-3",
+        "first_attempt": 193,
+        "requests": 96,
+        "claimed": 1
+      }
+    ]
+  },
+  "strict_success": true,
+  "archive_repair_status": "regular_files_copied_and_hash_verified"
+}

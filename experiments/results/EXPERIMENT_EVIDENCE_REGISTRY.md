@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+## 2026-11-12：Core步骤预算的批次不变模式补验
+
+[原报告补充](diagnostics/record_chain_comparison_20261111/README.md#batch-invariant-followup-20261112)
+保存原观测失败和4294f14bc上两组成对真实比较；原累计额度／截止时间未重置。两组完整请求／输出／
+关系一致与正常资源检查通过，耗时方向不一致，未建立稳定收益。新数值配置不转授旧47/48失败；
+结束后的socket归档失败与逐文件修复分别保留，不将完整controller原状态改判。
+
+
 ## 2026-11-12：Core 步骤预算的真实两臂比较未通过严格 token 验收
 
 [同一报告的服务器结果](diagnostics/record_chain_comparison_20261111/README.md#server-step-actions-20261112)
