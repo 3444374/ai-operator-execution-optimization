@@ -40,10 +40,15 @@ def main():
     tokenizer_template=manager.tokenizer.chat_template
     template_sha=hashlib.sha256(tokenizer_template.encode()).hexdigest()
     assert template_sha==cfg['expected_template_sha256']
-    if any(q.get('task') in TEXT_TASKS for u in cfg.get('units',[]) for q in u['queries']):
-        from .movie_map_cpu import check
-        kind='filter' if cfg['units'][0]['queries'][0]['task']=='sembench-filter' else 'map'
-        report=check(cfg,a.output,executor,manager,SemanticPlan,data,max_model_len,kind=kind)
+    tasks={q.get('task') for u in cfg.get('units',[]) for q in u['queries']}
+    if tasks.intersection((*TEXT_TASKS,'sembench-join')):
+        if tasks=={'sembench-join'}:
+            from .join_cpu import check
+            report=check(cfg,a.output,executor,manager,SemanticPlan,data,max_model_len)
+        else:
+            from .movie_map_cpu import check
+            kind='filter' if cfg['units'][0]['queries'][0]['task']=='sembench-filter' else 'map'
+            report=check(cfg,a.output,executor,manager,SemanticPlan,data,max_model_len,kind=kind)
         report.update(native_launch=launch,template_sha256=template_sha,
             cuda_initialized=torch.cuda.is_initialized(),model_calls=0,model_weights_loaded=False,
             native_model_config=dict(max_model_len=max_model_len,dtype=str(model_config.dtype)))

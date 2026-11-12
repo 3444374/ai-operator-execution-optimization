@@ -29,7 +29,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 | 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
 |---|---|---|---|---|---|
 | 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；Cars/E-Commerce Filter 有软件检查，真实数据/SQL待验；原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
-| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接，软件检查；Linux/模型待验，非作者 Join 算法复现 | 未接线 |
+| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接，软件检查；Linux/模型待验，非作者 Join 算法复现 | 原 CP＋Filter 已接，完整原题／原作者方法与 planner 软件检查；作者环境／模型待验 |
 | 原 quick TopK；Movie Q9 TopK profile | 显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -236,6 +236,15 @@ occurrence 需要 N 次有限预算。五类来源九个原题、全否与 sink 
 边界检查通过；结合上述 Map、owner 与计时共 63 项不同软件检查通过，0 跳过、0 模型。
 旧 Movie／私有入口的结果保留各自身份；新入口的作者 planner／模型仍待验。
 见[Filter 字段绑定](src/baselines/text/frameworks/kalypso_native/README.md#按原题字段复用-filter)。
+
+Kalypso `sembench-join` 把原左右表交给作者 `CartesianProduct → SemFilter`，一个 Join driver
+复用现行 predicate/source/sink 生命周期；预算为全部 L×R，保留作者8 token、原判定和调度。
+只补原 CP 未传递的配对 `idx` 元数据及原 `:left/:right` 指令字段，不改候选展开／准入。
+原 SDK 只恢复关系，不再调用模型；Kalypso 模型输入包含全部声明字段，不借用 LOTUS SDK 的单列投影。
+Movie Q5/Q6/Q7 与 E-Commerce Q7 的原结果／评分、2×3重复输入和原 planner／本地真实 tokenizer
+软件门检通过，连同受影响旧路径共68项不同检查，0 skip、0真实模型。新作者环境／模型仍 pending；
+这不代表任意连续算子或 E-Commerce 多分支查询已在 Kalypso 完成。
+见[原生 Join 绑定](src/baselines/text/frameworks/kalypso_native/README.md#原生-join-组合与配对身份)。
 
 [IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257`、可选
 schema-child 和 varchar-owned 工程变体。连同[完整原关系交接](src/experiments/native_imlane_relation.py)，

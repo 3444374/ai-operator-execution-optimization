@@ -310,3 +310,40 @@ Map 核对原动态 cap 和8192重试上界，Filter 核对原8 token cap，均�
 多字段顺序回归先复现了同一字段映射在反向遍历时产生不同 context 的失败；现统一 JSON 字段顺序，
 避免 driver CPU 准备与 fresh source 所在 Python 进程的列集合迭代顺序改变 prompt/token。
 保留完整单元格文字、原指令及单字段上下文；这是输入绑定修复，不是后端调度或模型性能成绩。
+
+### 原生 Join 组合与配对身份
+
+`task="sembench-join"` 的 spec 给原 `scenario`／`query`，N 为实际全部 L×R 有序发生项；
+`expected_calls`／`max_native_calls` 均为 N，单独 unit 显式给完整有限 `call_cap`。
+原左右表分别写为作者真正读取的 CSV，固定字段表放独立空 `map_prompt_root`。模型使用原作者
+`join` logical op，仍由原 `SemanticPlan` 展开为 `CartesianProduct → SemFilter`，不在客户端
+逐配对派发、不借用 Map 重试、ICP、cascade 或自有调度。
+
+源码依据为固定 `05024f02` 的
+[`SemanticPlan.parse_ops/build`](https://github.com/goodluck-hojae/kalypso/blob/05024f027f932c0e398852e38302be30b9015481/vllm/kalypso/controller/plan.py)、
+[`CartesianProduct.__call__`](https://github.com/goodluck-hojae/kalypso/blob/05024f027f932c0e398852e38302be30b9015481/vllm/kalypso/sem_ops/joins.py)
+和[响应的 idx 序列化](https://github.com/goodluck-hojae/kalypso/blob/05024f027f932c0e398852e38302be30b9015481/vllm/entrypoints/openai/api_server.py#L600)。
+原 CP 新建 context 的 `idx` 为默认 -1；[绑定](join_binding.py)保留原方法与结果对象，只把此响应／
+观察元数据设为 `left_position*R+right_position`。已核原 controller／execution 不以该字段调度；
+原 pin、KV、priority、候选和 Filter 方法不变。两个相同文本仍有不同发生项身份。
+
+原指令的 `:left/:right` 被一次性替换为全部声明字段，仍使用作者 Join prompt 与8 token Filter
+判定。原 planner 对 CP 后阶段的预估使用 CP 前左 context；预估继续原方法，实际请求必须有完整
+右 context。没有伪造右行、预填模型结果或改变原生预算估计策略。
+[`JoinDriver`](sembench_join.py)复用 Filter 的 source／HTTP／完整 sink／审计流程，原 SDK 仅用
+实际 native membership 恢复关系并交回原题；SDK 的消息不发送给第二个模型，也不冒充 Kalypso 的
+模型输入。全部真实读入、必需 CSV／字段表、原生查询和关系恢复均在 v3 source→sink 内；额外
+source 校验、审计、评分和保存仍在区间外。不事后扣除关系恢复或双重格式化成本。
+
+[检查](../../../../../tests/baselines/text/test_kalypso_sembench_join.py)涵盖四个原题完整结果／评分、
+2×3重复上下文、逆序答复、全否、N次预算和完整消息；直接加载固定作者 Git 对象的 CP、Filter、
+parse_ops/build、Stage 与 Task，在显式软件 KV／API／未执行的 PlanExecutor 下运行，并用已有
+Qwen tokenizer 核对全部配对和 context 边界。结合旧路径共68项不同 CPU 检查通过，0 skip、
+0真实模型；不是整个作者 SDK／GPU 或性能资格。最初软件模块名覆盖及缺少 Query 类型占位的
+fixture 失败已修正，原失败保留；生产接口未增加替身开关。
+
+两个正式 CPU CLI 为 Join 使用[独立冻结交接](join_inputs.py)和[原生规划检查](join_cpu.py)，
+author Python 仍只读 CSV／JSON，不导入 pandas／LOTUS。新清单绑定当前源、模板、原表和 L×R。
+零配对输入仍受现有正预算 owner 合同限制，明确 pending；全否导致的空结果已覆盖。
+真实 Cars/E-Commerce 资产与新作者环境／模型资格单独判断，Join 不授予后继 Extract／TopK 或
+任意多分支查询的支持。

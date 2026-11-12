@@ -27,11 +27,11 @@ def install_prompt(cfg, unit, operator_class, method_name, op):
         current_query[0] = qid
         value = table(qid)
         if type(ctx.state.idx) is not int or not 0 <= ctx.state.idx < len(value['rows']):
-            raise ValueError('Invalid native Native occurrence index')
+            raise ValueError('Invalid native occurrence index')
         row = value['rows'][ctx.state.idx]
         if (ctx.input.right_data or ctx.input.data != get_data_prompt(row['data'].strip())
                 or self.instruction != value['instruction']):
-            raise ValueError('Native Map context/instruction differs from its source occurrence')
+            raise ValueError('Native context/instruction differs from its source occurrence')
         data_prompt, _ = original_prompt(self,ctx)
         # Preserve all original referenced fields inside the author's native template.
         formatted = self.instruction.format_map(row['fields'])

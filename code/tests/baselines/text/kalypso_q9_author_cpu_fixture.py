@@ -1,9 +1,11 @@
 """Test-only isolated interpreter: actual author CPU CLI with explicit native stubs."""
 import argparse
+from contextlib import ExitStack
 import csv
 import hashlib
 import importlib.abc
 import json
+import os
 from pathlib import Path
 import runpy
 import sys
@@ -39,11 +41,14 @@ class Tokenizer:
     def encode(self,text,**kwargs):return list(text.encode())
 class Manager:
     tokenizer=Tokenizer()
+    bytes_per_token=1
     @classmethod
     def init(cls,*a):pass
     @classmethod
     def get_instance(cls):return cls()
     def reset_stages(self):pass
+    def capacity(self):return 6*1024**3
+    def register_stage(self,*a,**kw):pass
     def apply_chat_template(self,prompt):return self.tokenizer.apply_chat_template(prompt)
     def token_length(self,text):return len(text.encode())
 class Map:
@@ -99,10 +104,21 @@ module('vllm.kalypso.data',data=NS(_data_source=data_source))
 module('vllm.entrypoints.cli.serve',ServeSubcommand=Serve)
 module('vllm.engine.arg_utils',AsyncEngineArgs=Args)
 module('vllm.utils.argparse_utils',FlexibleArgumentParser=argparse.ArgumentParser)
+native_methods=ExitStack()
+cfg=json.loads(args.config.read_text())
+if {q['task'] for u in cfg['units'] for q in u['queries']}=={'sembench-join'}:
+    from tests.baselines.text.kalypso_join_author import methods
+    author=native_methods.enter_context(methods(os.environ['SEMLOOM_NATIVE_TEST_KALYPSO_CHECKOUT'],Manager.get_instance(),planning=True))
+    module('vllm.kalypso.controller',SemanticPlan=author.SemanticPlan)
+    module('vllm.kalypso.sem_ops.joins',CartesianProduct=author.CartesianProduct)
+    module('vllm.kalypso.sem_ops.filters',SemFilter=author.SemFilter)
+    module('vllm.kalypso.sem_ops.base',OpName=author.OpName)
+    module('vllm.kalypso.sem_ops.prompt_utils',get_data_prompt=author.get_data_prompt,get_prompt=author.get_prompt)
+    module('vllm.kalypso.data',data=NS(_data_source=author._data_source))
 argv=['check_kalypso_native_cpu.py','--config',str(args.config),'--output',str(args.output)]
 # Only the existing native environment is substituted. Handoff validation,
 # maintained source checks, CSV/prompt loading and actual CPU CLI remain real.
-with patch.dict(sys.modules,modules),patch.object(cpu_native,'check_author_source') as author_source,patch.object(sys,'argv',argv):
+with native_methods,patch.dict(sys.modules,modules),patch.object(cpu_native,'check_author_source') as author_source,patch.object(sys,'argv',argv):
     runpy.run_path(str(args.repo/'code/scripts/experiments/check_kalypso_native_cpu.py'),run_name='__main__')
     assert author_source.call_count==1
 assert not blocked

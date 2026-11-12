@@ -29,8 +29,8 @@ def query_task(spec):
         query = MOVIE_MAP_QUERIES[task]
         return dict(scenario='movie', query_id=query,
                     **(dict(ranking='map') if query == '9' else {}))
-    if task not in ('sembench-map','sembench-filter'):
-        raise ValueError('A supported original Map task is required; not TopK')
+    if task not in ('sembench-map','sembench-filter','sembench-join'):
+        raise ValueError('A supported original text Filter/Map/Join task is required; not TopK')
     binding=dict(scenario=spec['scenario'], query_id=str(spec['query']).lower().removeprefix('q'),
                  **{name: spec[name] for name in ('scale_factor', 'ranking') if name in spec})
     if binding['scenario']=='movie' and binding['query_id']=='9' and binding.get('ranking') is None:
@@ -255,6 +255,15 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         binding=install(cfg,unit,directory,sys.modules[__name__],SemMap,MapRatioEstimator)
         counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
         counters['map_binding']=binding
+    elif any(q.get('task')=='sembench-join' for q in unit['queries']):
+        if any(q.get('task')!='sembench-join' for q in unit['queries']):
+            raise ValueError('Native Join requires its own finite owner unit')
+        from vllm.kalypso.sem_ops.joins import CartesianProduct
+        from src.baselines.text.frameworks.kalypso_native.join_binding import install
+        from src.baselines.text.frameworks.kalypso_native.map_observation import install_response_observation
+        install(cfg,unit,sys.modules[__name__],CartesianProduct,filter_class)
+        counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
+        counters['join_binding']='original CartesianProduct/SemFilter; added pair indices and original instruction fields'
     elif any(q.get('task')=='sembench-filter' for q in unit['queries']):
         if any(q.get('task')!='sembench-filter' for q in unit['queries']):
             raise ValueError('Field-bound Filter requires its own finite owner unit')

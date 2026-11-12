@@ -36,9 +36,14 @@ def query_driver_type(unit):
         from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
         physical_call_caps(unit)
         return FilterDriver
+    if tasks=={'sembench-join'}:
+        from src.baselines.text.frameworks.kalypso_native.sembench_join import JoinDriver
+        from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
+        physical_call_caps(unit)
+        return JoinDriver
     if tasks and tasks <= {'movie-q1','movie-q2','movie-q3','movie-q4'}:
         return native.NativeQueryDriver
-    raise ValueError('Maintained Kalypso CLI supports Movie Filter or original text Filter/Map units; not TopK')
+    raise ValueError('Maintained Kalypso CLI supports Movie Filter or original text Filter/Map/Join units; not TopK')
 
 
 def run_attached(cfg,unit,output,observer=None):
@@ -74,14 +79,17 @@ def main():
     parser.add_argument('--unit',required=True)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--prepare-native-cpu',action='store_true',
-        help='prepare frozen original text Filter/Map inputs in driver Python; no model or native runtime')
+        help='prepare frozen original text Filter/Map/Join inputs in driver Python; no model or native runtime')
     args=parser.parse_args()
     cfg=json.loads(args.config.read_text())
     server_argv(cfg)  # Reject legacy engine overrides before client/service attachment.
     unit=next(u for u in cfg['units'] if u['unit_id']==args.unit)
     if 'sembench' not in cfg:cfg['sembench']=str(Path(cfg['baseline_packet'])/'sembench')
     if args.prepare_native_cpu:
-        from src.baselines.text.frameworks.kalypso_native.movie_map_inputs import prepare_inputs
+        if {q['task'] for q in unit['queries']}=={'sembench-join'}:
+            from src.baselines.text.frameworks.kalypso_native.join_inputs import prepare_inputs
+        else:
+            from src.baselines.text.frameworks.kalypso_native.movie_map_inputs import prepare_inputs
         print(json.dumps(prepare_inputs(cfg,unit,args.output)))
         return
     cfg.update(url='http://127.0.0.1:'+str(cfg['port']),native_trace=str(args.output.parent/'native-trace.jsonl'),
