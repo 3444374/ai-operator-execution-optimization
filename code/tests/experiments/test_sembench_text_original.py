@@ -91,6 +91,33 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         self.addCleanup(self._assert_aliases_restored)
         self._write_inputs()
 
+    def test_imlane_filter_budget_binds_actual_original_source_not_fixed_sizes(self):
+        from src.experiments import native_imlane_filters as entry
+        from src.infrastructure.private_artifacts import file_identity
+        from transformers import AutoTokenizer
+
+        value = json.loads((entry.CODE / 'configs/sembench_imlane_movie_filter.example.json').read_text())
+        value.update(sembench_checkout=CHECKOUT, data_dir=str(self.data),
+            input_sha256={'Reviews.csv': file_identity(self.data / 'Reviews.csv')['sha256']},
+            query_id='1', max_model_calls=11)
+        # Only tokenization is synthetic. Original source loading, query capture,
+        # LOTUS formatting and occurrence-budget validation execute unchanged.
+        tokenizer = Mock()
+        tokenizer.apply_chat_template.return_value = [1, 2]
+        with patch.object(AutoTokenizer, 'from_pretrained', return_value=tokenizer):
+            query, method, prepared, requests, tokens, rows = entry.prepare_query(value)
+            self.assertEqual(len(query.operation.records), 11)
+            self.assertEqual(len(prepared), 11)
+            self.assertEqual(len(rows), 11)
+            self.assertEqual(list(method.columns), ['reviewText'])
+            tokenizer.reset_mock()
+            for wrong_budget in (10, 12, 2000):
+                with self.subTest(budget=wrong_budget), self.assertRaisesRegex(ValueError, 'every original occurrence'):
+                    entry.prepare_query(dict(value, max_model_calls=wrong_budget))
+            tokenizer.apply_chat_template.assert_not_called()
+            with self.assertRaisesRegex(ValueError, 'original prompt columns'):
+                entry.prepare_query(dict(value, prompt_columns=['Reviewtext']))
+
     def _assert_aliases_restored(self):
         for name in self.aliases:
             self.assertIs(sys.modules.get(name, self.absent), self.original_aliases[name])

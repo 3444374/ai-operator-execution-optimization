@@ -311,7 +311,8 @@ Linux 零模型门复用 [现有 gate](../../tests/baselines/text/qualify_imlane
 Medical Q1 的 `--original-run` 指向冻结原件 `model-output/run/cold`，依次单独执行
 `--case complete`、`missing-row`、`duplicate-id`。完整门必须真实执行原 DSO/SQL/Arrow/IPC，
 核对 1200 次、原 Series 序列化／质量和 sink→ACK；两个反例须在 prediction 前失败且零请求。
-复用 build 时必须匹配当前 driver_source/kernel，否则只重链薄 driver，不重编 DSO。
+复用当前 build 时必须匹配 driver_source/kernel/relation_handoff.hpp；缺少 ACK header 身份的旧记录
+仍保留为原版本历史证据，不能声明当前头文件已编入。只重链薄 driver 生成新记录，不重编 DSO。
 冻结源码 `70a153810cbe901ae3d4ee24c9af5cbe9c966c5c` 已独立通过上述Linux门，并完成一次
 cold1200/hardcap1200、warmup0、retry0；1200条实际完整消息/token逐条一致，完整原Series
 结果40行，precision=0.5、recall=0.4、F1=0.4444444444444445。完整sink、ACK和退出／资源
@@ -553,3 +554,27 @@ Q9构建记录绑定当前q9.cpp、q9_udf.py、relation_handoff.hpp以及实际b
 `fe608fe2254d25c9241bb90b1984b085067c9244200044ffae94ab5055b2521a`，汇总见仓库外
 `imlane-q9-maintained-linux-gate-20261112/RESULT.json`。当前Medical＋Q9组合只有本机回归和源码适用性
 核对，未作整体目标／GPU执行；各组件的原失败证据与独立成绩保持原身份。
+
+### Filter 源规模与构建身份
+
+`native_imlane_filters.configuration` 不再把 Movie/MMQA/Medical 的历史 2000/120/25/1200 行数当作
+执行能力白名单。显式 `max_model_calls` 仍由现有 `AttemptBudget` 验证为正整数；
+`prepare_query` 必须从冻结 SHA 对应的原题源码读取完整 occurrence，并验证数量等于该预算，
+不截断、不补行、不重试。支持题号、原 8192-token 生成参数及 Medical scale 11112 保持。
+接受其他输入规模不授权额外运行，目标运行仍只使用已批准的冻结配置和持久预算。
+
+`prompt_columns` 保存原 LOTUS 观察到的源列顺序，而非渲染 header。原 `StageSpec.bind`
+已经从原题 instruction 解析列名，准备阶段核对相同列集合，再应用显式冻结顺序；
+不按展示大小写映射、不排序、不跨进程重新推断顺序。当前入口仍要求先记录该原始顺序，
+未新增配置生成框架。历史 Q3a 冻结包与证据不改。
+
+prepared Q1 和 Filter 构建记录现在同时绑定当前 driver 源码、kernel 与编入的
+`relation_handoff.hpp`，在 model owner 启动前验证。旧构建缺字段时明确要求重链薄 driver；
+不将旧 binary 认定为损坏，不回写历史成绩，也不因此要求重跑所有 GPU 查询。
+CPU 边界回归见 `tests.experiments.test_imlane_build_binding`、
+`tests.experiments.test_native_imlane_filters` 和原源码 suite 的
+`test_imlane_filter_budget_binds_actual_original_source_not_fixed_sizes`。
+
+本轮限定 CPU 回归 33 项通过、0 跳过，包括原 SemBench c814 的 11 行 Movie Q1 源码与
+LOTUS formatter/预算一致性。tokenizer 为软件替身，build/DSO 为不执行的身份 fixture；
+真实 CLI 参数解析和构建身份检查执行。未运行 native Linux SQL、模型或 GPU，不授予目标资格。

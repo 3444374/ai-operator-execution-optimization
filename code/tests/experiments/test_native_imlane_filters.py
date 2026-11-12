@@ -24,7 +24,7 @@ def config():
 
 
 class FilterBindingTests(unittest.TestCase):
-    def test_only_explicit_single_filter_query_and25_budget_are_allowed(self):
+    def test_only_supported_single_filter_and_explicit_positive_budget_are_allowed(self):
         value = config()
         for query in entry.QUERIES:
             value['query_id'] = query
@@ -32,8 +32,13 @@ class FilterBindingTests(unittest.TestCase):
         for query in ('1', '4', '3b-3g', '6a-6c'):
             value['query_id'] = query
             with self.assertRaises(ValueError): entry.configuration(value)
-        value['query_id'], value['max_model_calls'] = '6a', 75
-        with self.assertRaises(ValueError): entry.configuration(value)
+        value['query_id'] = '6a'
+        for budget in (7, 25, 75, 120, 1200, 2000):
+            value['max_model_calls'] = budget
+            self.assertEqual(entry.configuration(value)[0]['max_model_calls'], budget)
+        for budget in (None, 0, -1, True, 1.5, '25'):
+            value['max_model_calls'] = budget
+            with self.assertRaises(ValueError): entry.configuration(value)
 
     def test_real_arrow_uses_original_parser_and_occurrence_order(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -70,7 +75,7 @@ class FilterBindingTests(unittest.TestCase):
         for query_id in ('1', '4'):
             value['query_id'] = query_id
             self.assertEqual(entry.configuration(value)[0], value)
-        for changes in (dict(query_id='10'), dict(scale_factor=1200), dict(max_model_calls=25),
+        for changes in (dict(query_id='10'), dict(scale_factor=1200), dict(max_model_calls=0),
                         dict(scale_factor=None), dict(schema=entry.SCHEMA)):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 entry.configuration(dict(value, **changes))

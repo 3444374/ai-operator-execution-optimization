@@ -19,6 +19,11 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 <a id="refactor-completion-checklist"></a>
 ## 当前能力与待处理项
 
+IMLane Filter 不再用历史输入行数作为配置白名单；完整原 occurrence 数仍须等于显式冻结预算。
+prepared Q1/Filter 的薄 driver 构建身份补齐源文件及编入的 ACK header，旧记录保留历史资格，
+当前重用需重链薄 driver 补齐身份。详见[边界说明](integrations/imlane_duckdb/README.md#filter-源规模与构建身份)。
+这不改变原生算法、采样、源列顺序、时钟、DSO 或运行额度；新目标 native SQL 验证仍待执行。
+
 | 部分 | 当前实现 | 未完成或未验证 |
 |---|---|---|
 | 文本语义与查询 | Filter／Map／Extract 保留原提示、解析、顺序和关系屏障；原生系统各自拥有执行与调度 | records 的 Join／TopK 未接入；完整查询与质量按各路径报告判断 |

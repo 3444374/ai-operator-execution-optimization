@@ -90,6 +90,9 @@ def verified_build(path):
             or record['status'] != 'built' or record['variant'] != VARIANT
             or record['duckdb_library']['sha256'] != DSO_SHA256):
         raise ValueError('the separately qualified VARCHAR-owned DSO and prepared driver are required')
+    for label, filename in (('driver_source', 'sembench.cpp'), ('relation_handoff', 'relation_handoff.hpp')):
+        if file_identity(CODE / 'integrations/imlane_duckdb' / filename) != record.get(label):
+            raise ValueError('prepared build must bind current ' + filename + '; relink the thin driver')
     for name in ('binary', 'duckdb_library', 'kernel'):
         if file_identity(Path(record[name + '_path'])) != record[name]:
             raise ValueError('native build artifact changed: ' + name)

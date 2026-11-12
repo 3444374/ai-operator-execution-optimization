@@ -256,6 +256,7 @@ def driver(args, *, sembench=False, native_filter=False, movie_scores=False):
             variant='original-author' if native_filter else 'varchar-owned-engineering', source_header=source_header,
             binary_path=str(output), duckdb_library_path=str(library),
             kernel_path=str(kernel), kernel=file_identity(kernel),
+            relation_handoff=file_identity(OWNED / 'relation_handoff.hpp'),
             DSO_rebuilt=False)
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=args.timeout_seconds)

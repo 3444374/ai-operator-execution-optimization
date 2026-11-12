@@ -117,6 +117,8 @@ class PreparedDriverBuildTests(unittest.TestCase):
         record = json.loads(self.args.output.with_suffix('.build.json').read_text())
         self.assertEqual(record['status'], 'built')
         self.assertEqual(record['variant'], 'varchar-owned-engineering')
+        self.assertEqual(record['driver_source'], build.file_identity(build.OWNED / 'sembench.cpp'))
+        self.assertEqual(record['relation_handoff'], build.file_identity(build.OWNED / 'relation_handoff.hpp'))
         self.assertFalse(record['DSO_rebuilt'])
         self.assertEqual(record['duckdb_library_path'], str(self.library))
         self.assertEqual(record['binary_path'], str(self.args.output))

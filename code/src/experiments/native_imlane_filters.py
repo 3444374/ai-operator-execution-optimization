@@ -51,13 +51,11 @@ def configuration(value):
     if medical:
         fields.add('scale_factor')
     queries = ('1', '4') if medical else ('1', '2', '3', '4') if movie else QUERIES
-    limit = 1200 if medical else (2000 if value.get('query_id') == '1' else 120) if movie else 25
     if (type(value) is not dict or set(value) != fields
             or value['schema'] not in (SCHEMA, MEDICAL_SCHEMA, MOVIE_SCHEMA)
             or value['query_id'] not in queries
-            or value['max_model_calls'] != limit
             or medical and value['scale_factor'] != 11112):
-        raise ValueError('select Movie Q1 with 2000 calls, Q2–Q4 with 120, MMQA Q3/Q6 with 25, or Medical Q1/Q4 with 1200 and scale 11112')
+        raise ValueError('select a supported original Filter query; Medical Q1/Q4 requires scale 11112')
     generation = GenerationSpec.from_dict(value['generation'])
     if generation.response_format is not None or generation.max_tokens != 8192:
         raise ValueError('native Filter requires the original unstructured 8192-token generation')
@@ -126,6 +124,8 @@ def verified_build(path):
         raise ValueError('the original 072f typed DSO and single-query Filter driver are required')
     if file_identity(CODE / 'integrations/imlane_duckdb/mmqa_filter.cpp') != record.get('driver_source'):
         raise ValueError('Filter build must bind the current native driver source; relink the thin driver')
+    if file_identity(CODE / 'integrations/imlane_duckdb/relation_handoff.hpp') != record.get('relation_handoff'):
+        raise ValueError('Filter build must bind current relation_handoff.hpp; relink the thin driver')
     for name in ('binary', 'duckdb_library', 'kernel'):
         if file_identity(Path(record[name + '_path'])) != record[name]:
             raise ValueError('native Filter build artifact changed: ' + name)
