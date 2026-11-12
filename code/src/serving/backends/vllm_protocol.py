@@ -191,13 +191,20 @@ class EngineSpec:
     disable_cascade_attn: bool | None = None
     cudagraph_mode: str | None = None
     cudagraph_capture_sizes: tuple[int, ...] | None = None
+    enforce_eager: bool | None = None
+    kv_transfer_config: dict | None = None
 
     def __post_init__(self) -> None:
         if type(self.enable_mfu_metrics) is not bool:
             raise TypeError("enable_mfu_metrics must be boolean")
-        for name in ('enable_prefix_caching', 'enable_chunked_prefill', 'disable_cascade_attn'):
+        for name in ('enable_prefix_caching', 'enable_chunked_prefill', 'disable_cascade_attn', 'enforce_eager'):
             if getattr(self, name) is not None and type(getattr(self, name)) is not bool:
                 raise TypeError(name + ' must be boolean or omitted')
+        if self.kv_transfer_config is not None:
+            if not isinstance(self.kv_transfer_config, dict):
+                raise TypeError('kv_transfer_config must be an object')
+            object.__setattr__(self, 'kv_transfer_config', json.loads(json.dumps(
+                self.kv_transfer_config, allow_nan=False)))
         if self.cudagraph_mode is not None and self.cudagraph_mode not in (
                 'NONE', 'PIECEWISE', 'FULL', 'FULL_DECODE_ONLY', 'FULL_AND_PIECEWISE'):
             raise ValueError('unknown native CUDA Graph mode')
@@ -228,7 +235,7 @@ class EngineSpec:
         result = {name: getattr(self, name) for name in (
             "dtype", "max_model_len", "max_num_seqs", "max_num_batched_tokens",
             "gpu_memory_utilization", 'enable_prefix_caching', 'enable_chunked_prefill',
-            'disable_cascade_attn') if getattr(self, name) is not None}
+            'disable_cascade_attn', 'enforce_eager', 'kv_transfer_config') if getattr(self, name) is not None}
         compilation = {}
         if self.cudagraph_mode is not None:
             compilation['cudagraph_mode'] = self.cudagraph_mode
@@ -452,3 +459,12 @@ def sampling_params(values, sampling_type, structured_outputs_type):
     if "structured_outputs" in options:
         options["structured_outputs"] = structured_outputs_type(**options["structured_outputs"])
     return sampling_type(**options)
+
+
+def native_engine_kwargs(spec):
+    """Materialize native connector configuration only in the model interpreter."""
+    options = spec.optional_kwargs()
+    if spec.kv_transfer_config is not None:
+        from vllm.config import KVTransferConfig
+        options['kv_transfer_config'] = KVTransferConfig(**spec.kv_transfer_config)
+    return options

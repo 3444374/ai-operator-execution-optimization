@@ -15,6 +15,95 @@ enter the native `compilation_config`. These controls are experimental inputs,
 not an adaptive policy. [Candidate evidence](../../../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)
 separates constructor checks, CPU metadata and actual device runs.
 
+## Native text prefill/decode handoff
+
+`prefill_decode_process.PrefillDecodeProcess` is an opt-in synchronous owner of
+two native vLLM 0.25.1 processes. `NixlPlacement` assigns each process one visible
+GPU and a distinct localhost side-channel port. Both stages use the same
+`EngineSpec`; `NixlConnector` owns KV memory, reads and native block release.
+The model environment needs `nixl==1.3.0` separately from the driver.
+
+P generates one disposable token and returns an opaque native transfer record.
+D receives the **original full conversation** and the original `GenerationSpec`,
+plus that record through native sampling `extra_args`. Its complete response is
+the logical output. Neither prompts nor output budgets are split. Every result
+retains `stage_receipts` for physical-call and usage accounting; do not count
+only D when computing physical cost. Missing transfer or mismatched association
+stops the owner, and native KV-load errors use `fail`, without automatic retries.
+
+```python
+from src.serving.backends.prefill_decode_process import NixlPlacement
+from src.serving.backends.pipelined_prefill_decode import PipelinedPrefillDecodeProcess
+from src.serving.backends.vllm_protocol import AsyncEngineLimits
+
+owner = PipelinedPrefillDecodeProcess(
+    engine, generation, private_control_dir, deadline_monotonic, startup_timeout_s=240,
+    prefill=NixlPlacement("0", 5600), decode=NixlPlacement("0", 5601),
+    limits=AsyncEngineLimits(max_inflight=32), batch_size=16, prefill_window=16,
+)
+try:
+    results = owner.run_prepared(prepared_rows, generation=generation)
+finally:
+    close_report = owner.close(timeout=30)
+```
+
+The caller owns GPU allocation, memory fractions and the total deadline. CPU
+staging is also explicit via `kv_buffer_device="cpu"`. `cancel()` wakes an active
+pipeline and prevents further admission; `close()` stops and reports each process separately and does not claim
+GPU exit. An unconsumed P handoff remains native-owned until its send expiry or
+process shutdown. The serial implementation remains a functional control.
+Dynamic routing, live decode migration, vision-encoder splitting and query-adapter
+integration remain pending. Colocated execution remains available.
+The `EngineSpec` memory fraction applies to **each** stage; a total fraction of
+0.6 uses 0.3 per stage. Example capacities are illustrative and require calibration.
+
+`pipelined_prefill_decode.PipelinedPrefillDecodeProcess` adds cross-request
+concurrency over two `AsyncEngineProcess` owners. Pass explicit `limits`,
+`batch_size` and `prefill_window`. One logical capacity covers P, waiting handoffs
+and D; each P terminal can advance immediately, independent of its IPC batch peers.
+Native vLLM owns physical continuous batching. A shared progress event wakes the
+coordinator; there is no fixed polling sleep. Results restore input order and keep
+both physical receipts. Failure stops admission, drains retained receipts and closes
+both owners. This object accepts one call at a time and supports resident reuse.
+`batch_size` is a member ceiling. If an encoded batch cannot fit the input-byte
+allowance, the coordinator shortens its prefix before any member is accepted;
+single requests remain complete and an oversized single item still fails.
+This is frame packing, not model retry; other encoding errors are not retried.
+Command-queue capacity release also wakes the coordinator, so a held request cannot
+hide newly available submission space. The caller deadline is checked before and
+after environment validation; process creation and the native READY wait honor
+that deadline. Environment metadata probes retain their existing finite limits.
+If the API close is unknown, a dead IPC parent still triggers the existing registered
+process-group cleanup; its observed exit does not turn the unknown API result into
+success. Final process reports retain both the direct-child and group scopes.
+Registered-process cleanup uses the same absolute close deadline, with no extra
+fixed wait after it. Unknown results keep their observed process identities for
+a later close; physical process exit does not confirm the model API outcome.
+
+The [resident worker](../../experiments/native_stage_pipeline.py) compares against
+native `LLM.chat` on the complete request set, retains first outputs and every timed
+repeat, and separates warmup and startup. Its caller supplies matched total resources
+and the same external safeguards as the functional worker. The async native logger
+captures NIXL updates even in iterations without output; absent or unsupported
+metrics remain explicit. CPU IPC checks establish pipeline behavior, not GPU benefit.
+The [single-GPU comparison](../../../../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#async-pipeline-20261111)
+also verifies native batching, real transfer totals and complete output parity.
+Both tested eager request replays were slower than matched native colocated execution;
+full queries, multiple GPUs and real GPU failure injection remain unqualified.
+
+The [worker](../../experiments/native_stage_handoff.py) compares exact prompt IDs,
+output IDs, text and finish reasons. Its caller supplies preflight, host lease,
+persistent attempt budget, process supervision and final GPU observation.
+Set `VLLM_LOGGING_LEVEL=DEBUG` for this diagnostic worker. It checks native
+receive completion through the returned producer request ID and the decoder's
+own finished receipt; it does not infer identity from internal ID suffixes.
+Native cumulative NIXL metrics are also retained at close. In the observed sync
+path those counters remained zero beside completed transfer logs, so they cannot
+currently provide transfer bytes or duration. This does not affect the preserved
+output and receive-completion checks.
+See the [plan](../../../../experiments/plans/数据组织.md#native-stage-handoff)
+and [evidence](../../../../experiments/results/diagnostics/native_stage_handoff_20261110/README.md).
+
 Explicit result and control frame allowances may be below 4096 bytes. Frames
 still have to fit their actual encoded bytes, and each submitted identity must
 fit its compact terminal receipt. Defaults remain 2 MiB per result and 64 KiB

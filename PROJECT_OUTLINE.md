@@ -31,6 +31,10 @@ LOTUS 主线由 SemBench 提供任务与评价，保留 LOTUS 原方法及全局
 真实图片传输和构造消费轨迹的观察。Q8 实机请求的布局干预减少工作和请求耗时，但计数误差与逐行准确率更差；
 该具体变体不采用。资源位置、阶段协同和完整查询继续分别验证。
 
+[原生文本阶段交接](experiments/results/diagnostics/native_stage_handoff_20261110/README.md)已提供
+两个模型进程之间的 prefill/decode 与 KV 传输，单卡四条请求的输出、接收和资源退出核对通过。
+它是原生能力接入的组件证据；跨 GPU 实测、完整查询和性能改善仍待验证。
+
 records→结果独立建设，旧 request 接点按实际适用范围复用。LOTUS 目标配置为 Daft 扫描／普通关系处理
 加 Ray Core／Actor，SemLoom 自管准备、供给与回收；Ray Data、Daft、IMLane 对照各自原生执行。
 职责见[架构](experiments/plans/系统架构.md#lotus-data-execution)，接口、模型资格与候选状态从代码状态和证据台账核对。

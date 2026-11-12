@@ -9,6 +9,10 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 区分各 PR 的窄实现与未完成项：完整查询候选接线、实际未缓存工作／成本输入、动态消费者与多层表示、
 真实位置路由及 #101 短期限具名资源回收仍未完成；负结果候选按停止条件处理。
 
+[实际 KV TCP 路径诊断](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#kv-tcp-fragment-20261112)
+在固定机器／构建上把每轮复制和同步从 20160 降到 6720，传输量与输出保持；
+该单会话机制证据不授予默认调参、直接 CUDA IPC 或完整查询加速资格。
+
 <a id="native-gpu-decision-observation"></a>
 本分支继续增加显式就绪工作选择、排队／传输／重建成本路由、有界提前准备与原生引擎可选参数。
 [执行候选报告](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)记录 Q8／Q9 布局、
@@ -18,6 +22,8 @@ GPU 阶段关联、实际配置和未完成项以该报告为准。
 后续修正了提前准备取消顺序、CPU 传输超时收尾和布局原对照的重复格式化；
 第二轮审查补齐失败后关闭期间到达的回执，提交／接收／确认／未接收分别记账，见
 [审查和验证](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#second-code-review-20261111)。
+同一回执实现已在整合源码完成真实模型失败补验，关闭期间到达的unknown及已知用量保持，见
+[修复版服务器补验](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#server-revalidation-20261111)。
 [固定 PR 审查收尾](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#pr100-review-closeout)
 记录 CPU 验证范围、历史计时偏差及仍不支持的结论。
 
@@ -30,10 +36,27 @@ v1 另有 cascade 接点，当前 v2 没有该分支。[代码与 CPU 验证](..
 [实现与本地证据](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
 区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备、CPU 检查与准确 b1d965f 的 MMF GPU 对照。
 [原配置服务器回执](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md#server-qualification-20261111)
-保留严格 token 46/48 与该 head 的 v1 决策缺项，不转授后继配置资格。完整查询收益、encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
+保留严格 token 46/48 与该 head 的 v1 决策缺项；后续整合树的批次不变配置为一对 48/48 功能诊断，见上述修复版补验，二者不转授资格。
+这些排序／媒体／供给策略的稳定 GPU 性能与完整查询收益、encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 
 <a id="current-refactor-status"></a>
 <a id="refactor-completion-checklist"></a>
+## 原生文本阶段交接候选
+
+[后端](src/serving/backends/README.md#native-text-prefilldecode-handoff)提供显式启用的双进程 prefill/decode 与 NIXL KV 交接。单卡双进程的四条完整请求通过输出与原生接收检查；具体证据见[主报告](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md)；跨卡性能、运行中 decode 迁移、视觉编码器分离及完整查询接入尚未验证。
+
+可选异步 owner 已补跨请求推进、批提交和共同在途上限，CPU 子进程验证覆盖慢批成员、取消与失败回执。
+已完成单卡原生批／KV统计及同资源配置的常驻请求回放：Q8与合成长输出均慢于原生共置，
+具体来源与全部重复见[异步流水比较](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#async-pipeline-20261111)。
+启动期限、命令槽唤醒与未知关闭的进程组回收已有独立CPU反例验证；完整查询接入仍未验证。
+后续[边界复核](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#second-review-boundaries)
+补齐按实际输入字节缩批、共用关闭deadline及重试身份保留；旧实机数据保留原身份。
+修复版已完成服务器CPU、真实模型窄字节／失败回执及同资源常驻重复，仍未建立单卡流水优势。
+极短期限取消保留unknown并确认注册进程退出，但留下的具名信号量需要外层定向收尾；
+该格不具备完整自动资源回收资格，原失败与补充收尾证据见上述修复版补验。
+后续[成本归因](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#cost-diagnosis-20261112)
+记录单实例异步控制、KV主机中转与小复制／同步观察，分片配置探针未改变实际路径；不新增生产配置或性能资格。
+
 ## 当前能力与待处理项
 
 | 部分 | 当前实现 | 未完成或未验证 |
@@ -136,6 +159,10 @@ records resident 的顺序复用不能直接解释为共享 owner 上完整查�
 | 旧关闭故障与负结果 | 原 1596 第二项关闭失败及模型 unknown 等仍按主报告保存；后来检查通过不解释旧故障原因 |
 
 没有运行回执的能力保留为 pending。正式模型比较使用对应计划、实际环境和准确版本，不能从本页推断已运行。
+
+[关闭 profiler 后的独立重复](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#kv-unprofiled-20261112)
+确认固定机器／构建／C128下 TCP 分片配置的流水内部收益；共置仍更快，未改变默认值，
+未授予完整查询、其他并发或取消清理资格。
 
 有限链实验入口可用独立原生 API 阶段计时冻结就绪策略成本，绑定源码／模型／输入／资源，并记录实际 Core 接收的顺序变化；该入口的真实结果见对应执行候选报告。它不提供原生未缓存工作量或动态成本闭环。
 

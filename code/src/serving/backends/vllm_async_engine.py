@@ -59,8 +59,9 @@ class VllmAsyncEngine:
         self._context_observed = None
         self._reserved_model_calls = self._input_bytes = 0
         self._loop = asyncio.get_running_loop()
-        self._feedback = NativeStats(self.engine_uid, enable_mfu_metrics=self.spec.enable_mfu_metrics) \
-            if self.limits.feedback_interval_s or self.spec.enable_mfu_metrics else None
+        self._feedback = NativeStats(self.engine_uid, enable_mfu_metrics=self.spec.enable_mfu_metrics,
+                                     enable_nixl_metrics=self.spec.kv_transfer_config is not None) \
+            if self.limits.feedback_interval_s or self.spec.enable_mfu_metrics or self.spec.kv_transfer_config else None
         if self.spec.enable_mfu_metrics:
             from src.observability.metrics.mfu_trace import install
             install(self.engine_uid)
@@ -72,7 +73,7 @@ class VllmAsyncEngine:
             distributed_executor_backend="uni", trust_remote_code=False,
             generation_config="vllm", max_logprobs=common.MAX_LOGPROBS,
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
-            **self.spec.optional_kwargs(),
+            **common.native_engine_kwargs(self.spec),
             **({"worker_extension_cls": (
                 "src.observability.metrics.vllm.VllmObservationWorkerExtension"
                 if 'VLLM_BATCH_INVARIANT' in os.environ else VLLM_GPU_IDENTITY_EXTENSION)}
@@ -160,7 +161,7 @@ class VllmAsyncEngine:
                         "native_mfu_configuration": configuration_snapshot(self._llm.vllm_config)}
                        if self.spec.enable_mfu_metrics else {}))
 
-    async def generate_prepared(self, row, *, request_id, generation=None,
+    async def generate_prepared(self, row, *, request_id, generation=None, kv_transfer_params=None,
                                 deadline_monotonic):
         self._control()
         if deadline_monotonic is not None:
@@ -175,7 +176,12 @@ class VllmAsyncEngine:
         context = self._context_report()
         if effective.max_tokens > context['max_model_len']:
             raise ValueError("max_tokens exceeds max_model_len")
-        sampling = self._sampling(effective.kwargs())
+        values = effective.kwargs()
+        if kv_transfer_params is not None:
+            if self.spec.kv_transfer_config is None or not isinstance(kv_transfer_params, dict):
+                raise ValueError('KV transfer requires a connector and an object descriptor')
+            values['extra_args'] = {'kv_transfer_params': kv_transfer_params}
+        sampling = self._sampling(values)
         identities, conversations = common._prepared([row])
         identity = identities[0]
         size = len(json.dumps(row, ensure_ascii=False, allow_nan=False).encode())
@@ -270,7 +276,11 @@ class VllmAsyncEngine:
         cached = getattr(output, "num_cached_tokens", None)
         prompt = result.get("prompt_tokens")
         valid = (type(cached) is int and type(prompt) is int and 0 <= cached <= prompt
-                 and not getattr(output, "kv_transfer_params", None))
+                 and self.spec.kv_transfer_config is None
+                 and not getattr(output, 'kv_transfer_params', None))
+        if self.spec.kv_transfer_config is not None:
+            result['kv_transfer_params'] = getattr(output, 'kv_transfer_params', None)
+            result['native_num_cached_tokens'] = cached
         result["prompt_cached_tokens"] = cached if valid else None
         result["prompt_computed_tokens"] = prompt - cached if valid else None
         result["input_work_source"] = "vllm_request_output_cache_tokens" if valid else None
@@ -320,7 +330,11 @@ class VllmAsyncEngine:
                 _, pending = await asyncio.wait(pending, timeout=max(0, deadline - time.monotonic()))
             return dict(status="unknown" if pending else "closed", engine_api_shutdown_confirmed=True,
                         gpu_exit_confirmed=None, uncertain_requests=len(self._requests),
-                        pending_request_tasks=len(pending))
+                        pending_request_tasks=len(pending),
+                        **({'native_scheduler_final': self._feedback.snapshot()}
+                           if self._feedback is not None else {}),
+                        **({'native_kv_transfer_final': self._feedback.nixl.snapshot()}
+                           if self.spec.kv_transfer_config is not None else {}))
         except Exception as error:
             # A timeout leaves the same shutdown task running. Its eventual
             # return can confirm that attempt; an actual exception cannot.
@@ -347,13 +361,17 @@ class VllmAsyncEngine:
 class NativeStats:
     """Constant-size vLLM 0.25.1 stat logger; no I/O in the output handler."""
 
-    def __init__(self, engine_uid, *, clock=time.monotonic, enable_mfu_metrics=False):
+    def __init__(self, engine_uid, *, clock=time.monotonic, enable_mfu_metrics=False,
+                 enable_nixl_metrics=False):
         self.engine_uid, self.clock = engine_uid, clock
         self.sequence = self.preemptions = self.finished = self.tokens = 0
         self.latest = None
+        self.running_peak = 0
         self.first_sample_ready = asyncio.Event()
         from src.observability.metrics.mfu import NativeMfuTotals
         self.mfu = NativeMfuTotals(engine_uid, clock=clock) if enable_mfu_metrics else None
+        from src.observability.metrics.nixl import NativeNixlTotals
+        self.nixl = NativeNixlTotals(engine_uid) if enable_nixl_metrics else None
 
     def record(self, scheduler_stats, iteration_stats, mm_cache_stats=None, engine_idx=0):
         if self.mfu is not None:
@@ -364,10 +382,14 @@ class NativeStats:
             self.finished += sum(getattr(item.finish_reason, "name", str(item.finish_reason)).lower() != "abort"
                                  for item in iteration_stats.finished_requests)
         if scheduler_stats is not None:
+            if self.nixl is not None:
+                self.nixl.record(scheduler_stats.kv_connector_stats)
+            self.running_peak = max(self.running_peak, scheduler_stats.num_running_reqs)
             self.sequence += 1
             self.latest = dict(engine_uid=self.engine_uid, sequence=self.sequence,
                 observed_at_s=self.clock(), running=scheduler_stats.num_running_reqs,
                 waiting=scheduler_stats.num_waiting_reqs, kv_usage=scheduler_stats.kv_cache_usage,
+                running_peak=self.running_peak,
                 preemptions_total=self.preemptions, finished_total=self.finished,
                 generation_tokens_total=self.tokens)
             if self.sequence == 1:
@@ -380,4 +402,5 @@ class NativeStats:
         pass
 
     def snapshot(self):
-        return None if self.latest is None else dict(self.latest)
+        return None if self.latest is None else dict(self.latest,
+            **({'nixl': self.nixl.snapshot()} if self.nixl is not None else {}))

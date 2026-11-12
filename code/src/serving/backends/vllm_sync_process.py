@@ -90,7 +90,8 @@ def _verified_terminal(row, expected, engine_uid):
 class EngineProcess:
     """No retry, model sharing, batching policy or GPU routing lives here."""
 
-    def __init__(self, engine, generation, control_dir, deadline, startup_timeout_s):
+    def __init__(self, engine, generation, control_dir, deadline, startup_timeout_s,
+                 *, worker_env=None, worker_log=None):
         import psutil
 
         self.control = Path(control_dir)
@@ -121,11 +122,18 @@ class EngineProcess:
         try:
             environment = dict(os.environ, PYTHONPATH=str(CODE_ROOT),
                                HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
-            self.process = subprocess.Popen(
-                self._command(engine, write_fd),
-                stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                pass_fds=(write_fd,), start_new_session=True, env=environment, bufsize=0,
-            )
+            environment.update(worker_env or {})
+            log = None if worker_log is None else open(worker_log, 'xb')
+            try:
+                self.process = subprocess.Popen(
+                    self._command(engine, write_fd), stdin=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL if log is None else log,
+                    stderr=subprocess.DEVNULL if log is None else log,
+                    pass_fds=(write_fd,), start_new_session=True, env=environment, bufsize=0,
+                )
+            finally:
+                if log is not None:
+                    log.close()
             self.created = psutil.Process(self.process.pid).create_time()
             self.owned.add((self.process.pid, self.created))
             _publish(self.report_path, dict(status="starting", model_pid=self.process.pid,

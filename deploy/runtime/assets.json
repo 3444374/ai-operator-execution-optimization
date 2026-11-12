@@ -22,6 +22,9 @@
       {"module": "openai", "install": "openai>=1.0"},
       {"module": "transformers", "install": "transformers"}
     ],
+    "native-kv-transfer": [
+      {"module": "nixl._api", "install": "nixl==1.3.0"}
+    ],
     "sql-readers": [
       {"module": "sqlalchemy", "install": "SQLAlchemy>=2,<3"},
       {"module": "sqlglot", "install": "sqlglot>=30,<30.9"},

@@ -4,6 +4,9 @@ This package owns passive measurement and result observation. Measurement code m
 over the execution policy it observes.
 
 - `metrics/` contains reusable metric collectors and summaries.
+- `metrics/nixl.py` accumulates the fixed vLLM 0.25.1 native transfer statistics
+  without storing per-update arrays. Async owners include output-free scheduler
+  updates; missing or unsupported observations remain explicit.
 - `native_gpu_decisions.py` observes the qualified vLLM 0.25.1 v1 runner's cascade
   and graph decisions using CPU metadata. It preserves native results and exceptions;
   the optional [record observer](../../scripts/profiling/record_observation/README.md#native-gpu-decisions)

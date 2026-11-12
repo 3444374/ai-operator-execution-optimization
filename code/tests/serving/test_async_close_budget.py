@@ -82,6 +82,7 @@ class CloseBudgetTests(unittest.TestCase):
                 owner.limits = limits()
                 owner.spec = EngineSpec('/tmp/memory-model', sys.executable, sys.executable)
                 owner._condition = threading.Condition()
+                owner._progress_signal = None
                 owner._stop, owner._io_done = threading.Event(), threading.Event()
                 owner._closing = owner._close_sent = owner._drain_requested = False
                 owner._data, owner._control, owner._results = (MemorySocket() for _ in range(3))

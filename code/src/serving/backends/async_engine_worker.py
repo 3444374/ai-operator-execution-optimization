@@ -132,6 +132,8 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
                 else:
                     result = await engine.generate_prepared(row, request_id=key,
                         generation=common.GenerationSpec.from_dict(value["generation"]),
+                        **({'kv_transfer_params': value['kv_transfer_params']}
+                           if 'kv_transfer_params' in value else {}),
                         deadline_monotonic=value["deadline"])
             except Exception as error:
                 identities, _ = common._prepared([row])
@@ -158,7 +160,9 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
                 if value.get('op') == 'submit':
                     if size > limits.item_input_bytes:
                         raise ValueError('single request exceeds IPC item allowance')
-                    items = [dict(request_id=value['request_id'], row=value['row'])]
+                    items = [dict(request_id=value['request_id'], row=value['row'],
+                        **({'kv_transfer_params': value['kv_transfer_params']}
+                           if 'kv_transfer_params' in value else {}))]
                     charges = [size]
                 elif value.get('op') == 'submit_batch':
                     items = value.get('requests')
@@ -187,7 +191,7 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
                 for item in items:
                     key, slot = item['request_id'], owned[item['request_id']]
                     await reply(dict(op='accepted', request_id=key))
-                    slot['task'] = asyncio.create_task(run(key, slot, dict(row=item['row'],
+                    slot['task'] = asyncio.create_task(run(key, slot, dict(item,
                         generation=value['generation'], deadline=value['deadline'])))
                     slot['task'].add_done_callback(observe_request)
                 value = items = None  # Do not retain other members after their terminal.

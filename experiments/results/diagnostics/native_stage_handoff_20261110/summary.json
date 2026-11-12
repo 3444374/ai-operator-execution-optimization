@@ -1,0 +1,47 @@
+{
+  "run_id": "native-stage-r1b",
+  "source": {
+    "head": "39844da2a622562017ad0c97d4d0f6d5be8abd5a",
+    "tree": "668a1e912295a49b2003cc568ecc0baa691b4102",
+    "reserved_cumulative": 12
+  },
+  "status": "passed",
+  "physical_calls": {
+    "colocated": 4,
+    "prefill": 4,
+    "decode": 4
+  },
+  "logical_requests": 4,
+  "exact_output_parity": true,
+  "native_receive_completions": 4,
+  "native_external_tokens": [
+    154,
+    154,
+    162,
+    154
+  ],
+  "request_elapsed_s": {
+    "colocated": 0.8701027184724808,
+    "split": 1.8931397590786219
+  },
+  "gpu_devices": 1,
+  "all_stage_close_statuses": {
+    "decode": "closed",
+    "prefill": "closed"
+  },
+  "gpu_empty_after": true,
+  "lease_absent": true,
+  "transfer_metric_coverage": "native counters exported zero despite four matched receive completions; bytes and duration unavailable",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "model_snapshot_metadata_revision": [
+    "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+  ],
+  "not_established": [
+    "cross-GPU execution",
+    "query-level integration",
+    "query quality",
+    "performance improvement",
+    "encoder separation",
+    "live decode migration"
+  ]
+}
