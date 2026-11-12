@@ -11,9 +11,9 @@ import lotus
 from lotus.types import LMOutput
 import pandas as pd
 
-from src.baselines.text.sembench_text import _operation
+from src.baselines.text.sembench_text import SemBenchTextQuery, _operation
 from src.baselines.text.sembench_prepared import prepare
-from src.baselines.text.frameworks.lotus_native_join import execute_native_join, make_lm
+from src.baselines.text.frameworks.lotus_native_join import audit, execute_native_join, finish_accounting, make_lm
 from src.serving.backends.vllm_protocol import GenerationSpec
 from src.infrastructure.private_artifacts import content_digest
 
@@ -21,9 +21,9 @@ from src.infrastructure.private_artifacts import content_digest
 INSTRUCTION = 'Same sentiment: {reviewText:left} and {reviewText:right}'
 
 
-def operation(frame):
+def operation(frame, right=None, instruction=INSTRUCTION):
     with lotus.settings.context(enable_cache=False):
-        return _operation('join', frame, (frame,), dict(join_instruction=INSTRUCTION),
+        return _operation('join', frame, (frame if right is None else right,), dict(join_instruction=instruction),
             model_name='openai/local-qwen2.5-7b', generation=GenerationSpec(max_tokens=8192, stop=()),
             query_id='join-cpu')
 
@@ -62,12 +62,78 @@ class NativeJoinTests(unittest.TestCase):
         self.assertEqual(len(joined), 64)
         self.assertEqual(call.call_count, 1)
 
-    def test_changed_join_policy_or_different_right_side_is_not_this_binding(self):
-        for args, kwargs in (((self.frame.iloc[:2],), dict(join_instruction=INSTRUCTION)),
-                ((self.frame,), dict(join_instruction=INSTRUCTION, cascade_args='approximate'))):
-            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, 'exact self Join'):
+    def test_changed_join_policy_or_missing_sided_columns_is_not_this_binding(self):
+        for args, kwargs in (((self.frame,), dict(join_instruction=INSTRUCTION, cascade_args='approximate')),
+                ((self.frame,), dict(join_instruction='Same {reviewText:left} and {missing:right}')),
+                ((self.frame,), dict(join_instruction='Same {reviewText}')),
+                ((None,), dict(join_instruction=INSTRUCTION))):
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, 'ordinary exact Join'):
                 _operation('join', self.frame, args, kwargs, model_name='openai/local',
                            generation=GenerationSpec(), query_id='cpu')
+
+    def test_rectangular_join_preserves_sided_columns_occurrences_and_original_sink(self):
+        left = pd.DataFrame(dict(note=['equal', 'equal'], label=[7, 7]), index=['left-a', 'left-b'])
+        right = pd.DataFrame(dict(summary=['one', 'two', 'three'], label=[8, 8, 9]),
+                             index=['right-a', 'right-b', 'right-c'])
+        instruction = 'Does {note:left} agree with {summary:right}?'
+        op = operation(left, right, instruction)
+        self.assertEqual(op.describe()['expected_model_calls'], 6)
+        self.assertEqual(op.describe()['model_columns'], ['note:left', 'summary:right'])
+        self.assertEqual([record.source_index for record in op.records],
+                         [f'{l}:{r}' for l in left.index for r in right.index])
+        self.assertEqual([record.values for record in op.records],
+                         [dict(zip(('note:left', 'summary:right'), (l, r)))
+                          for l in left.note for r in right.summary])
+        self.assertEqual(len({record.row_id for record in op.records}), 6)
+        texts = ['True', 'False', 'unparseable', 'False', 'True', 'True']
+        reference_messages, captured = [], []
+        lm = make_lm(op, 2)
+
+        def reference_answer(current, messages, **kwargs):
+            reference_messages.extend(deepcopy(messages))
+            return LMOutput(outputs=texts)
+
+        with lotus.settings.context(lm=lm, enable_cache=False), patch.object(type(lm), '__call__', reference_answer):
+            reference = left.sem_join(right, join_instruction=instruction)
+
+        @contextmanager
+        def scope(lm, expected, budget, **kwargs):
+            def report():
+                return dict(calls=dict(counts=dict(succeeded=6, missing=0), records=[
+                    dict(row, status='succeeded', text=text, messages_sha256=content_digest(prompt['messages']))
+                    for row, text, prompt in zip(expected, texts, captured, strict=True)]))
+            yield SimpleNamespace(capture_prompts=lambda prompts: captured.extend(deepcopy(prompts)), report=report)
+
+        owner = SimpleNamespace(generation=op.generation, concurrency=2, query=scope)
+        query = object.__new__(SemBenchTextQuery)
+        query.files, query.operation = {}, op
+        query.generation, query.model_name, query.query_id = op.generation, op.model_name, 'join-cpu'
+        query._original = lambda: left.sem_join(right, join_instruction=instruction).head(3)
+        with patch.object(type(lm), '__call__', return_value=LMOutput(outputs=texts)):
+            result, report = query.execute(lambda actual, invoke: execute_native_join(actual, invoke=invoke,
+                shared_owner=owner, query_id=query.query_id, budget=SimpleNamespace(remaining=6)))
+        self.assertEqual(report['status'], 'native_returned')
+        pd.testing.assert_frame_equal(report['frame'], reference)
+        pd.testing.assert_frame_equal(result, reference.head(3))
+        self.assertEqual([prompt['messages'] for prompt in captured], reference_messages)
+        finish_accounting(report)
+        audit(query, report, result, report['frame'])
+        self.assertEqual(report['status'], 'completed')
+        with self.assertRaisesRegex(ValueError, 'complete ordered-pair allowance'):
+            execute_native_join(op, invoke=lambda: self.fail('accessor ran'),
+                shared_owner=SimpleNamespace(generation=op.generation),
+                query_id='short-budget', budget=SimpleNamespace(remaining=5))
+
+    def test_changed_right_input_is_rejected_before_native_execution(self):
+        right = self.frame.iloc[:2].copy()
+        op = operation(self.frame, right)
+        query = object.__new__(SemBenchTextQuery)
+        query.files, query.operation = {}, op
+        query.generation, query.model_name, query.query_id = op.generation, op.model_name, 'join-cpu'
+        query._original = lambda: self.frame.sem_join(right, join_instruction=INSTRUCTION)
+        right.loc[8, 'reviewText'] = 'changed after preflight'
+        with self.assertRaisesRegex(ValueError, 'changed after preflight'):
+            query.execute(lambda *args: self.fail('native operator ran with changed right input'))
 
     def test_join_cannot_enter_prepared_fme_backends(self):
         with self.assertRaisesRegex(ValueError, 'original LOTUS resident'):

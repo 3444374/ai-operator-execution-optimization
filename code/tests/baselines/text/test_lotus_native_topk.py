@@ -2,6 +2,7 @@
 from copy import deepcopy
 from contextlib import contextmanager
 import importlib
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -18,8 +19,8 @@ from src.serving.backends.vllm_protocol import GenerationSpec
 INSTRUCTION = 'Which review shows the most positive sentiment about the movie? Review: {reviewText}'
 
 
-def operation(frame):
-    return _operation('topk', frame, (INSTRUCTION,),
+def operation(frame, instruction=INSTRUCTION):
+    return _operation('topk', frame, (instruction,),
         dict(K=len(frame), method='quick', return_stats=True), model_name='openai/local-qwen2.5-7b',
         generation=GenerationSpec(max_tokens=8192, stop=()), query_id='cpu-topk')
 
@@ -85,9 +86,69 @@ class NativeTopKTests(unittest.TestCase):
         for change in (dict(K=1, method='quick', return_stats=True),
                        dict(K=8, method='heap', return_stats=True),
                        dict(K=8, method='quick', return_stats=True, strategy='zs-cot')):
-            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'original Movie Q9'):
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'ordinary quick TopK'):
                 _operation('topk', self.frame, (INSTRUCTION,), change,
                     model_name='openai/local', generation=GenerationSpec(), query_id='cpu')
+
+    def test_referenced_columns_keep_original_formatter_and_complete_rank_relation(self):
+        from lotus.templates import task_instructions
+        topk = importlib.import_module('lotus.sem_ops.sem_topk')
+        instruction = 'Rank by {summary}, then {title}'
+        frame = pd.DataFrame(dict(title=['same'] * 4, summary=['equal'] * 4,
+                                  label=[0, 1, 2, 3]), index=['row-a', 'row-b', 'row-c', 'row-d'])
+        op = operation(frame, instruction)
+        self.assertEqual(op.columns, tuple(lotus.nl_expression.parse_cols(instruction)))
+        self.assertEqual(op.describe()['expected_model_calls'], 6)
+        self.assertEqual([record.source_index for record in op.records], list(frame.index))
+        self.assertTrue(all(record.values == dict(title='same', summary='equal') for record in op.records))
+        lm = make_lm(op, 2)
+        docs = task_instructions.df2multimodal_info(frame, list(op.columns))
+        formatted = lotus.nl_expression.nle2str(instruction, list(op.columns))
+        pairs, messages, answers = [], [], []
+
+        def batch(source_pairs, invoke):
+            pairs.extend(source_pairs)
+            answers[:] = ['Document 1' if left < right else 'Document 2' for left, right in source_pairs]
+            return invoke()
+
+        def answer(current, prompts, **kwargs):
+            messages.extend(deepcopy(prompts))
+            return LMOutput(outputs=list(answers))
+
+        np.random.seed(2)  # Software fixture only; preserve the native pivot algorithm.
+        with lotus.settings.context(lm=lm, enable_cache=False), patch.object(type(lm), '__call__', answer), \
+                comparisons(op, lm, batch):
+            ranked, stats = frame.sem_topk(instruction, K=4, method='quick', return_stats=True)
+        pd.testing.assert_frame_equal(ranked, frame.reset_index(drop=True))
+        self.assertEqual(stats['total_llm_calls'], len(pairs))
+        self.assertLessEqual(len(pairs), 6)
+        self.assertEqual(len({tuple(sorted(pair)) for pair in pairs}), len(pairs))
+        self.assertEqual(messages, [topk.get_match_prompt_binary(docs[left], docs[right], formatted, lm)
+                                    for left, right in pairs])
+
+    def test_zero_or_one_source_requires_no_comparison_or_native_model_start(self):
+        for count in (0, 1):
+            frame = pd.DataFrame(dict(summary=['one'] * count), index=['source'] * count)
+            instruction = 'Rank {summary}'
+            op = operation(frame, instruction)
+            owner = SimpleNamespace(generation=op.generation, concurrency=2,
+                start=lambda: self.fail('zero comparisons must not start a model'),
+                query=lambda *a, **k: self.fail('zero comparisons must not open a model query'))
+            with self.subTest(count=count), patch('lotus.models.LM.__call__',
+                    side_effect=AssertionError('zero comparisons must not call a model')):
+                report = execute_native_topk(op, invoke=lambda: frame.sem_topk(
+                    instruction, K=count, method='quick', return_stats=True), shared_owner=owner,
+                    query_id='zero-comparisons', budget=SimpleNamespace(remaining=0))
+            pd.testing.assert_frame_equal(report['frame'], frame.reset_index(drop=True))
+            self.assertEqual(report['request_upper_bound'], 0)
+            self.assertEqual(report['calls'], [])
+            self.assertEqual(report['native_stats']['total_llm_calls'], 0)
+
+    def test_topk_requires_present_referenced_source_columns(self):
+        for instruction, message in (('Rank all rows', 'no parameterized columns'),
+                                     ('Rank {missing}', 'present source columns')):
+            with self.subTest(instruction=instruction), self.assertRaisesRegex(ValueError, message):
+                operation(self.frame, instruction)
 
     def test_incomplete_allowance_stops_before_native_model_start(self):
         from types import SimpleNamespace
