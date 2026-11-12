@@ -6,12 +6,12 @@ ordinary selection and projection; existing native operator adapters execute it.
 
 from dataclasses import asdict
 from functools import partial
-from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 import tomllib
 
 from .sembench_source import SEMBENCH_COMMIT, load_module, verify_checkout
+from .sembench_evaluation import csv_result_frame
 from src.infrastructure.private_artifacts import file_identity
 
 
@@ -49,7 +49,6 @@ def evaluate_original(checkout, query_id, result, *, data_dir, source_identity):
     Execute its unchanged SQL against the bound data without that cache write.
     """
     import duckdb
-    import pandas as pd
 
     query = _query_id(query_id)
     data = Path(data_dir).resolve()
@@ -69,10 +68,7 @@ def evaluate_original(checkout, query_id, result, *, data_dir, source_identity):
     # Match GenericRunner.save_results(index=False) followed by the evaluator's
     # read_csv, including dtype/NA inference. Q14 returns string IDs while gold
     # SQL retains integer IDs; direct in-memory comparison changes its score.
-    try:
-        result = pd.read_csv(StringIO(result.to_csv(index=False)))
-    except pd.errors.EmptyDataError:
-        result = pd.DataFrame()
+    result = csv_result_frame(result)
     metric = module.GenericEvaluator.compute_accuracy_score(
         definition['accuracy_metric'], truth, result)
     return dict(original_metric=asdict(metric), sembench_commit=SEMBENCH_COMMIT)

@@ -407,6 +407,22 @@ Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 �
 补充文本入口的配置省略生成项时均采用原 LM 的8192 token／无 stop，显式值保留。
 这改变了旧补充 Movie／MMQA 的省略项解析；显式8 token／换行 stop 的旧配置和普通 Filter 类型默认不变，旧结果不改写。
 
+### Cars 原文本查询
+
+[Cars 绑定](text/sembench_cars.py)直接执行官方 Q1／Q4／Q10，复用同一个文本任务、Filter／Extract、
+prepared、原生 LOTUS 及已有后端入口；没有新的题目执行器。设置 `scenario=cars` 和所选题，
+`scale_factor` 默认157376，仅选择 `data/sf_N/` 下原 CSV；模型调用量从真实投诉／车辆连接关系取得。
+数据目录为作者 Cars 场景根，须保留 `data/full_data/` 金标 CSV。Q1 不要求车辆／图像／音频表，
+Q4／Q10 只额外读取车辆表；完整标签不进入模型消息，也不在执行区间扫描。
+
+Q1 保留 `car_id` Series，Q4 保留原 `2026 - joined.year.mean()`，Q10 保留完整多分类关系与重复车辆行。
+原 CarsEvaluator 的标签筛选、gold 生成和指标直接复用，gold 缓存写入新临时目录；
+评分输入共用[原 CSV 往返](text/sembench_evaluation.py)，不向上游 checkout 写文件。
+Q4 查询按投诉连接后的行加权，而作者 gold 按车辆选择求平均；该差异保留，不能为了得分去重查询行。
+Q10 继续用作者 macro precision／recall／F1，不做类别修正、答案截断或按车辆 ID 合并模型调用。
+原 SDK、记录链、原生 LM 接点及 prepared 软件对照覆盖三题；真实资产和模型资格仍待验证。
+其他 Cars 图音路径未由本入口接线；所选官方 LOTUS tree 缺少部分题目的脚本，不据此推断其他系统不支持。
+
 ### E-Commerce 原文本查询
 
 [E-Commerce 绑定](text/sembench_ecomm.py)直接调用官方 Q3／Q5／Q7 的 `run(data_dir)`：Q3 对完整

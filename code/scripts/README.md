@@ -124,6 +124,9 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py prepa
 Medical driver 使用 Python 3.12；原查询与评价源码须在固定 checkout 中可读，稀疏 checkout 需包含
 `files/medical/query/lotus` 和所选的原文本 CSV。准备后用 `--data-dir "$MEDICAL_TEXT_DIR"`，
 配置设置 `scenario=medical`、`query=1/4/10`；可选 `scale_factor` 默认11112，仅选择已有原 CSV 文件名。
+Cars 文本同样使用该共享 `check/run`，设置 `scenario=cars`、`query=1/4/10`，`scale_factor` 默认157376。
+`--data-dir` 指向原 Cars 场景根，保留 `data/sf_N/` 执行 CSV 和 `data/full_data/` 标签 CSV；
+实际模型行数由原投诉／车辆连接取得。原函数、评分与当前验证范围见[Cars 绑定](../src/baselines/README.md#cars-原文本查询)。
 完整资产的三题各1200次；原 `_25` 只有1条症状，不将患者数当模型行数。
 原 `src.runner` 导入只在固定 MMQA 模块加载期映射到同 checkout 的 canonical runner，随后恢复，
 不替换 SemLoom `src` 或修改上游源码。字母题号在 JSON 的 `query` 直接写 `3a`／`6c` 等。

@@ -228,16 +228,18 @@ class SemBenchTextQuery:
         from .sembench_medical import FULL_SCALE_FACTOR, TEXT_QUERY_IDS as MEDICAL_QUERY_IDS, text_files
         from .sembench_mmqa import TEXT_QUERY_IDS as MMQA_QUERY_IDS
         from .sembench_ecomm import TEXT_QUERY_IDS as ECOMM_QUERY_IDS, TEXT_FILE
+        from .sembench_cars import FULL_SCALE_FACTOR as CARS_SCALE, TEXT_QUERY_IDS as CARS_QUERY_IDS, text_files as cars_files
 
         query = str(query_id).lower().removeprefix('q')
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
                 or (scenario == 'mmqa' and query in MMQA_QUERY_IDS)
                 or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)
-                or (scenario == 'ecomm' and query in ECOMM_QUERY_IDS)):
+                or (scenario == 'ecomm' and query in ECOMM_QUERY_IDS)
+                or (scenario == 'cars' and query in CARS_QUERY_IDS)):
             raise ValueError('this entry supports Movie Q1-Q10 (Q5-Q7 native Join, Q9 Map or TopK), twelve ordinary MMQA text queries '
-                             'plus Medical Q1/Q4/Q10 and E-Commerce Q3/Q5/Q7')
-        if scenario != 'medical' and scale_factor is not None:
-            raise ValueError('scale_factor applies only to the Medical authored CSV filenames')
+                             'plus Medical/Cars Q1/Q4/Q10 and E-Commerce Q3/Q5/Q7')
+        if scenario not in ('medical', 'cars') and scale_factor is not None:
+            raise ValueError('scale_factor applies only to the Medical/Cars authored CSV filenames')
         if ranking is not None and (scenario != 'movie' or query != '9' or ranking not in ('map', 'topk')):
             raise ValueError('ranking=map/topk applies only to Movie Q9')
         if type(execution_id) is not str or not execution_id.strip():
@@ -258,6 +260,14 @@ class SemBenchTextQuery:
             if query == '4':
                 names.append(self.patients_file)
             self.evaluation_files.add(self.labels_file)
+        elif scenario == 'cars':
+            self.scale_factor = CARS_SCALE if scale_factor is None else scale_factor
+            cars, complaints, full_cars, full_complaints = cars_files(self.scale_factor)
+            names = [complaints, full_complaints]
+            self.evaluation_files.add(full_complaints)
+            if query != '1':
+                names = [cars, complaints, full_cars, full_complaints]
+                self.evaluation_files.add(full_cars)
         elif scenario == 'ecomm':
             names = [TEXT_FILE]
         elif query == '1':
@@ -314,6 +324,10 @@ class SemBenchTextQuery:
             from .sembench_medical import bind_original_query
             return bind_original_query(self.checkout, self.query, self._load,
                 data_dir=self.data_dir, scale_factor=self.scale_factor)
+        if self.scenario == 'cars':
+            from .sembench_cars import bind_original_query
+            return bind_original_query(self.checkout, self.query, self._load, data_dir=self.data_dir,
+                                       scale_factor=self.scale_factor)
         if self.scenario == 'ecomm':
             from .sembench_ecomm import bind_original_query
             return bind_original_query(self.checkout, self.query, self._load, data_dir=self.data_dir)
@@ -331,11 +345,15 @@ class SemBenchTextQuery:
             **(dict(ranking=self.ranking) if self.scenario == 'movie' and self.query == '9' else {}),
             **(dict(scale_factor=self.scale_factor, scale_unit='patient rows; model rows are query-specific')
                if self.scenario == 'medical' else {}),
+            **(dict(scale_factor=self.scale_factor, scale_unit='authored Cars sample; model rows follow original complaint joins')
+               if self.scenario == 'cars' else {}),
             expected_model_calls=0 if operation is None else operation['expected_model_calls'],
             policy='explicit exact ordinary-operator profile; not the official runner default; '
                    'result cache disabled; no warmup or retry',
             label_scope=('original Medical patient labels used only for evaluation'
                          if self.scenario == 'medical' else
+                         'original full Cars labels used only for evaluation'
+                         if self.scenario == 'cars' else
                          'original Parquet retained; only authored text columns enter model messages'
                          if self.scenario == 'ecomm' else
                          'original evaluation only; Movie labels excluded from execution input'),
@@ -416,6 +434,9 @@ class SemBenchTextQuery:
             return evaluate_original(self.checkout, self.query, result,
                 self.frames[self.labels_file], self.frames[self.symptoms_file],
                 scale_factor=self.scale_factor)
+        if self.scenario == 'cars':
+            from .sembench_cars import evaluate_original
+            return evaluate_original(self.checkout, self.query, result, self.frames, scale_factor=self.scale_factor)
         if self.scenario == 'ecomm':
             from .sembench_ecomm import evaluate_original, TEXT_FILE
             return evaluate_original(self.checkout, self.query, result, data_dir=self.data_dir,

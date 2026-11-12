@@ -352,6 +352,112 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         self.assertEqual(quality['metric_type'], 'f1-score')
         self.assertEqual(quality['accuracy'], 1)
 
+    def _write_cars_inputs(self, scale=7):
+        from src.baselines.text.sembench_cars import text_files
+
+        cars, complaints, full_cars, full_complaints = text_files(scale)
+        for name in (cars, complaints, full_cars, full_complaints):
+            (self.data / name).parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(dict(car_id=[1,2], year=[2010,2020])).to_csv(self.data / cars, index=False)
+        pd.DataFrame(dict(car_id=[1,1,2,2], complaint_id=[101,102,103,104],
+            summary=['crash and engine','engine second','engine fails','steering fails'])).to_csv(
+                self.data / complaints, index=False)
+        pd.DataFrame(dict(car_id=[1,2,3], year=[2010,2020,2000])).to_csv(self.data / full_cars, index=False)
+        pd.DataFrame(dict(car_id=[1,1,2,2,3], complaint_id=[101,102,103,104,105],
+            summary=['crash and engine','engine second','engine fails','steering fails','outside sample'],
+            crash=[True,False,False,False,True], component_class=['ENGINE','ENGINE','ENGINE','STEERING','ENGINE'],
+            private_label=['REFERENCE_ONLY_']*5)).to_csv(self.data / full_complaints, index=False)
+
+    def test_cars_text_original_queries_reuse_record_native_and_prepared_semantics(self):
+        from src.baselines.text.sembench_prepared import prepare, finish
+        from src.baselines.text.sembench_cars import text_files
+        from pandas.testing import assert_frame_equal, assert_series_equal
+
+        self._write_cars_inputs()
+        cases = [('1',['True','False','False','False']), ('4',['True','True','True','False']),
+                 ('10',[json.dumps({'problem_category': value}) for value in ('ENGINE','ENGINE','ENGINE','STEERING')])]
+        for key, answers in cases:
+            with self.subTest(query=key):
+                query = SemBenchTextQuery(CHECKOUT,self.data,'cars',key,execution_id='cars-'+key,
+                    model_name='openai/local-fixture',generation=self.generation,scale_factor=7)
+                expected, native_batches = self._reference(query, answers)
+                execute, batches, _ = self._chain(query, answers)
+                actual, _ = query.execute(execute)
+                native_execute, requests, _, _, _ = self._native(query, answers, native_batches[0][0])
+                native, _ = query.execute(native_execute)
+                method, prepared, wire = prepare(query)
+                predicted = [dict(call_id=row['call_id'],generated_text=text)
+                    for row,text in zip(prepared,answers,strict=True)][::-1]
+                restored, _ = finish(query,method,prepared,predicted)
+                equal = assert_series_equal if isinstance(expected,pd.Series) else assert_frame_equal
+                for result in (actual,native,restored):equal(result,expected)
+                messages = [json.loads(row['messages_json']) for row in prepared]
+                self.assertEqual(messages,native_batches[0][0])
+                self.assertNotIn('REFERENCE_ONLY_',json.dumps(messages))
+                self.assertNotIn('component_class',json.dumps(messages))
+                self.assertEqual(len(wire),4)
+                quality=query.evaluate(actual)['original_metric']
+                if key == '1':
+                    self.assertEqual(actual.tolist(),[1])
+                    self.assertEqual(quality['f1_score'],1)
+                elif key == '4':
+                    self.assertAlmostEqual(actual.iloc[0,0],2026-(2010+2010+2020)/3)
+                    self.assertAlmostEqual(quality['absolute_error'],abs(actual.iloc[0,0]-11))
+                    self.assertGreater(quality['absolute_error'],0)
+                else:
+                    self.assertEqual(actual.car_id.tolist(),[1,1,2,2])
+                    self.assertEqual(quality['f1_score'],1)
+                execution_files=set(query.files)-query.evaluation_files
+                self.assertNotIn(text_files(7)[-1],execution_files)
+
+    def test_cars_authored_scale_changes_paths_not_model_cardinality_or_gold_labels(self):
+        from src.baselines.text.sembench_cars import text_files
+
+        for scale in (7,29):
+            self._write_cars_inputs(scale)
+            query=SemBenchTextQuery(CHECKOUT,self.data,'cars','4',execution_id='cars-scale',
+                model_name='openai/local-fixture',generation=self.generation,scale_factor=scale)
+            self.assertEqual(query.describe()['expected_model_calls'],4)
+            self.assertIn(text_files(scale)[0],query.files)
+            execute, _, _ = self._chain(query,['True']*4)
+            original=query._read_file
+            reads=[]
+            def read(path):
+                reads.append(path.relative_to(self.data).as_posix())
+                return original(path)
+            with patch.object(query,'_read_file',side_effect=read):
+                query.execute(execute)
+            self.assertEqual(reads,list(text_files(scale)[:2]))
+        for scale in (0,-1,True,1.5):
+            with self.subTest(scale=scale),self.assertRaisesRegex(ValueError,'Cars scale_factor'):
+                text_files(scale)
+
+    def test_cars_q1_needs_only_text_inputs_and_uses_selected_full_labels(self):
+        from src.baselines.text.sembench_cars import text_files
+
+        self._write_cars_inputs()
+        cars, complaints, full_cars, full_complaints=text_files(7)
+        (self.data/cars).unlink()
+        (self.data/full_cars).unlink()
+        query=SemBenchTextQuery(CHECKOUT,self.data,'cars','1',execution_id='cars-text-only',
+            model_name='openai/local-fixture',generation=self.generation,scale_factor=7)
+        self.assertEqual(set(query.files),{complaints,full_complaints})
+        execute, _, _=self._chain(query,['True','False','False','False'])
+        result,_=query.execute(execute)
+        self.assertEqual(query.evaluate(result)['original_metric']['f1_score'],1)
+
+    def test_cars_empty_extract_keeps_original_missing_output_column_error(self):
+        from src.baselines.text.sembench_cars import text_files
+
+        self._write_cars_inputs()
+        complaints=self.data/text_files(7)[1]
+        pd.read_csv(complaints).iloc[:0].to_csv(complaints,index=False)
+        query=SemBenchTextQuery(CHECKOUT,self.data,'cars','10',execution_id='cars-empty',
+            model_name='openai/local-fixture',generation=self.generation,scale_factor=7)
+        execute,batches,_=self._chain(query,[])
+        with self.assertRaises(KeyError):query.execute(execute)
+        self.assertEqual(batches,[])
+
     def _reference(self, query, answers):
         """Run the complete original query and original accessor with no provider."""
         import lotus
