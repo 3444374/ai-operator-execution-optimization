@@ -187,8 +187,24 @@ Qualification scope:
   evidence/EXIT-status changes have local CPU qualification only.
 - The maintained host-resource policy has 22 local CPU checks covering ordinary
   Python observations, real-conflict rejection, incomplete inventories, safe SHM
-  refusal, and outer-before → stage → outer-after policy consistency. Target Linux
-  process/GPU inventory and cleanup acceptance remain pending; no model was run.
+  refusal, and outer-before → stage → outer-after policy consistency.
+  Exact `933157666e1db81d47872fe21422ac8315ea7be3` subsequently passed those
+  22 checks on the target and an actual supervised `pass` stage. Outer-before,
+  stage-before, stage-after and outer-after all used
+  `semloom.host_resource_boundary.v1` and policy SHA256
+  `9139a7e954c713796e960e3b15838c861963d31c9d1d022be7434156957e411c`.
+  Both unclassified Python observations were recorded without asserting their
+  harmlessness or CPU isolation; resources, sockets, SHM and lease acceptance
+  passed. The pinned `7c1d0d3f...` cleanup helper remained unchanged. This accepts
+  the new host policy and outer/stage binding, not a new Ray Q7 model run.
+  Run identity `semloom-pr99-step-actions-20261112-r1` and archive SHA256
+  `f1879a799e8c6afd89b7add0c797dfe7d8f13c9301967242b7eb9247ecbe3b0d`
+  locate the retained private originals; the separate workload comparison is
+  reported in [PR #99](https://github.com/3444374/ai-operator-execution-optimization/pull/99)
+  and failed strict output-token equivalence despite clean resource release.
+  Its outer controller also checked exact 1 MiB; that historical extra condition
+  is not copied into the maintained policy, which uses the frozen configured
+  idle-memory ceiling and complete compute inventory.
   The later unknown Python PID in the a535 source check remains unattributed and
   failed under its original policy. New snapshot semantics do not rewrite it.
 

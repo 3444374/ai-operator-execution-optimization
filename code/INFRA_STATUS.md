@@ -19,6 +19,13 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 <a id="refactor-completion-checklist"></a>
 ## 当前能力与待处理项
 
+宿主资源边界不再仅凭 Python 进程存在判定冲突：原生任务、GPU 使用及不完整清单仍拒绝，
+未分类 Python 保留观测，且阻止仅凭时间窗口归属残留信号量并清理。
+`933157666` 已通过目标 22 项 CPU 检查和实际零模型 stage，外层与阶段边界使用同一策略，
+资源／租约释放通过；[资格与迁移范围](src/baselines/image/ray_animals_q7/README.md#evidence-and-timing)
+保留旧失败、不声明 CPU 无干扰或新 Ray Q7 模型资格。仍须显式迁移活动外层 owner 的 loader，
+不能只更新 stage。已冻结 helper 仍拥有租约和清理职责，不按旧文件名删除。
+
 IMLane Filter 不再用历史输入行数作为配置白名单；完整原 occurrence 数仍须等于显式冻结预算。
 现有 `freeze-config` 零模型入口从原题准备生成同 schema 的 SHA、实际 occurrence 数和首次观察的
 原始列顺序；正式 Filter 复用共享 prepare 消费冻结顺序，不再重复 formatter 接线。
