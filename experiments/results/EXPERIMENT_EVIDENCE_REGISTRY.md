@@ -34,6 +34,10 @@ prepared prompt worker、按源身份回填的原 parser/查询和 sink 回调�
 [方法候选](../../docs/research/优化方法依据.md#gpu-engine-coordination)属于推断与待验证设计。
 本次没有新增模型请求、硬件画像或性能结果，不以文档和源码接口存在授予运行资格，也不改变 PR #93／#94 及旧 MMQA 的证据身份。
 
+## 2026-11-09：Ecomm Q11 同资产表示 CPU 原型
+
+[隔离原型主报告](diagnostics/ecomm_media_consumers_20261109/README.md)唯一维护软件 fixture、真实 Ecomm 资产及各次源码／运行身份；不将 fixture 转授实际成本或 GPU 收益。
+
 ## 2026-11-08：直接链的方法状态与请求槽分别计量
 
 [Q9旧设置、同额重算与20项CPU](diagnostics/records_runtime_refactor_20261104/README.md#chain-method-preview-20261108)保留原单份方法状态设置，不将R136或37934宽松计数解释为实际驻留量。

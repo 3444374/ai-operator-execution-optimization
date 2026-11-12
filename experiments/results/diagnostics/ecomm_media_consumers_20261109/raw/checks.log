@@ -1,0 +1,102 @@
+run_id=ecomm-media-local-checks-20261109-r1
+start_utc=2026-11-09T07:12:07.631961+00:00
+Python 3.12.6
+Local dependency inventory: {'pandas': False, 'lotus': False, 'PIL': True, 'ruff': False}
+Initial invocation failed before loading tests: PYTHONPATH=code python3 -m unittest code.tests.research.data_organization.test_ecomm_media code.tests.research.data_organization.test_ecomm_media_native -v
+AttributeError: module 'code' has no attribute 'tests'
+FAILED (errors=2); corrected invocation uses unittest discover below.
+$ python3 -m unittest discover -s code/tests/research/data_organization -p test_ecomm_media*.py -v
+test_duplicate_missing_and_excess_occurrences_fail (test_ecomm_media.EcommMediaTests.test_duplicate_missing_and_excess_occurrences_fail) ... ok
+test_observer_retains_native_index_cache_and_releases_only_tile_arrays (test_ecomm_media.EcommMediaTests.test_observer_retains_native_index_cache_and_releases_only_tile_arrays) ... ok
+test_reordered_requests_keep_duplicates_media_params_and_dependencies (test_ecomm_media.EcommMediaTests.test_reordered_requests_keep_duplicates_media_params_and_dependencies) ... ok
+test_replay_never_invents_an_output_for_an_unseen_request (test_ecomm_media.EcommMediaTests.test_replay_never_invents_an_output_for_an_unseen_request) ... ok
+test_same_request_coverage_rejects_changed_media_model_params_or_dependency (test_ecomm_media.EcommMediaTests.test_same_request_coverage_rejects_changed_media_model_params_or_dependency) ... ok
+test_tile_reuses_native_string_without_merging_requests_or_mutable_images (test_ecomm_media.EcommMediaTests.test_tile_reuses_native_string_without_merging_requests_or_mutable_images) ... ok
+test_tiles_preserve_every_occurrence_and_first_seen_asset_order (test_ecomm_media.EcommMediaTests.test_tiles_preserve_every_occurrence_and_first_seen_asset_order) ... ok
+test_original_join_suffix_and_image_requests_equal_with_duplicates_and_mixed_outputs (test_ecomm_media_native.NativeEcommMediaTests.test_original_join_suffix_and_image_requests_equal_with_duplicates_and_mixed_outputs) ... skipped 'needs an existing pinned SemBench checkout and native LOTUS SDK'
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.001s
+
+OK (skipped=1)
+
+exit_code=0
+$ python3 -m src.research.data_organization.ecomm_media_profile --help
+usage: ecomm_media_profile.py [-h] --sembench-checkout SEMBENCH_CHECKOUT
+                              --data-dir DATA_DIR --styles-file STYLES_FILE
+                              --mapping-file MAPPING_FILE --image-rows
+                              IMAGE_ROWS --tile-assets TILE_ASSETS
+                              --max-logical-requests MAX_LOGICAL_REQUESTS
+                              --model MODEL --max-tokens MAX_TOKENS
+                              [--temperature TEMPERATURE]
+                              [--model-kwargs MODEL_KWARGS]
+                              [--pattern {all_true,mixed}] [--warmup WARMUP]
+                              [--repeats REPEATS] --output-dir OUTPUT_DIR
+
+CPU Q11 replay: native LOTUS versus tile-scoped image preparation. No engine,
+tokenizer, provider or GPU is constructed. All three authored joins still run
+in native LOTUS. Private audits contain full image-bearing messages.
+
+options:
+  -h, --help            show this help message and exit
+  --sembench-checkout SEMBENCH_CHECKOUT
+  --data-dir DATA_DIR   existing root with images/; no downloads
+  --styles-file STYLES_FILE
+  --mapping-file MAPPING_FILE
+  --image-rows IMAGE_ROWS
+  --tile-assets TILE_ASSETS
+  --max-logical-requests MAX_LOGICAL_REQUESTS
+  --model MODEL         recorded identity only; no model is loaded
+  --max-tokens MAX_TOKENS
+  --temperature TEMPERATURE
+  --model-kwargs MODEL_KWARGS
+  --pattern {all_true,mixed}
+  --warmup WARMUP
+  --repeats REPEATS
+  --output-dir OUTPUT_DIR
+                        new private run directory
+
+exit_code=0
+$ python3 -m compileall -q code/src/research/data_organization/ecomm_media.py code/src/research/data_organization/ecomm_media_profile.py code/tests/research/data_organization/test_ecomm_media.py code/tests/research/data_organization/test_ecomm_media_native.py
+
+exit_code=0
+$ python3 -m ruff check code/src/research/data_organization/ecomm_media.py code/src/research/data_organization/ecomm_media_profile.py code/tests/research/data_organization/test_ecomm_media.py code/tests/research/data_organization/test_ecomm_media_native.py
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3: No module named ruff
+
+exit_code=1
+end_utc=2026-11-09T07:12:07.869621+00:00
+
+run_id=ecomm-media-review-checks-20261109-r1
+start_utc=2026-11-09T07:46:11.124032+00:00
+tested_sha256 code/src/research/data_organization/ecomm_media.py 74820ce8b720e7873a4173f6066f6468ebad339f744c8cc783a77bba6e08201d
+tested_sha256 code/src/research/data_organization/ecomm_media_profile.py 2cdbcff47684bc77b8b86f768c26cb4182632f2e4e963341a94a3589b96ac9fc
+tested_sha256 code/tests/research/data_organization/test_ecomm_media.py fd1ccdac3eab03d898cc68211a5294121887f28494abc2480663902e85da2262
+tested_sha256 code/tests/research/data_organization/test_ecomm_media_native.py 2f6972c2e34003d8d99dae9a6b0972fcf816f63f0c1bb59e8f03f523d95885f8
+$ python3 -m unittest discover -s code/tests/research/data_organization -p test_ecomm_media*.py -v
+test_duplicate_missing_and_excess_occurrences_fail (test_ecomm_media.EcommMediaTests.test_duplicate_missing_and_excess_occurrences_fail) ... ok
+test_failed_profile_keeps_completed_observations_in_one_private_record (test_ecomm_media.EcommMediaTests.test_failed_profile_keeps_completed_observations_in_one_private_record) ... ok
+test_observer_retains_native_index_cache_and_releases_only_tile_arrays (test_ecomm_media.EcommMediaTests.test_observer_retains_native_index_cache_and_releases_only_tile_arrays) ... ok
+test_reordered_requests_keep_duplicate_occurrences_and_complete_media (test_ecomm_media.EcommMediaTests.test_reordered_requests_keep_duplicate_occurrences_and_complete_media) ... ok
+test_replay_never_invents_an_output_for_an_unseen_request (test_ecomm_media.EcommMediaTests.test_replay_never_invents_an_output_for_an_unseen_request) ... ok
+test_same_request_coverage_rejects_changed_media_model_params_or_dependency (test_ecomm_media.EcommMediaTests.test_same_request_coverage_rejects_changed_media_model_params_or_dependency) ... ok
+test_tile_reuses_native_string_without_merging_requests_or_mutable_images (test_ecomm_media.EcommMediaTests.test_tile_reuses_native_string_without_merging_requests_or_mutable_images) ... ok
+test_tiles_preserve_every_occurrence_and_first_seen_asset_order (test_ecomm_media.EcommMediaTests.test_tiles_preserve_every_occurrence_and_first_seen_asset_order) ... ok
+test_original_join_suffix_and_image_requests_equal_with_duplicates_and_mixed_outputs (test_ecomm_media_native.NativeEcommMediaTests.test_original_join_suffix_and_image_requests_equal_with_duplicates_and_mixed_outputs) ... skipped 'needs an existing pinned SemBench checkout and native LOTUS SDK'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.002s
+
+OK (skipped=1)
+
+exit_code=0
+$ python3 -m compileall -q code/src/research/data_organization/ecomm_media.py code/src/research/data_organization/ecomm_media_profile.py code/tests/research/data_organization/test_ecomm_media.py code/tests/research/data_organization/test_ecomm_media_native.py
+
+exit_code=0
+$ python3 -m src.research.data_organization.ecomm_media_profile --help
+help_exit=0; input_role_option_present=True; regenerated_help_sha256=8de697264e38f42eed5b7694b5c4e53280844d4eba75c7deb42b904c67fcac4c
+exit_code=0
+$ python3 -m ruff check code/src/research/data_organization/ecomm_media.py code/src/research/data_organization/ecomm_media_profile.py code/tests/research/data_organization/test_ecomm_media.py code/tests/research/data_organization/test_ecomm_media_native.py
+/Library/Frameworks/Python.framework/Versions/3.12/bin/python3: No module named ruff
+
+exit_code=1
+end_utc=2026-11-09T07:46:11.344930+00:00
