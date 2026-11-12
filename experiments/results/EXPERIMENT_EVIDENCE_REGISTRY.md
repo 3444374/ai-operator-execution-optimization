@@ -13,6 +13,33 @@
 新行为先保存差异，再返回1并在标准输出给出严格一致标记。来源为本地临时回执和 CPU 验证，
 没有模型或服务器调用；既有61项服务器 CPU 检查仍绑定原提交，不转授为本次修改的服务器验证。
 
+## 2026-11-11：原生 baseline 隔离组合的 CPU 验证
+
+[报告](diagnostics/baseline_validated_integration_20261111/README.md)记录 `2e2616a5` 与 `6a31cc38` 的组合，
+34 模块限定回归、五组零模型回放及两类测试夹具修复。缺资产跳过、首轮失败与最终结果分列；
+协调器报告的目标结果保留原提交身份，不授予组合树模型/性能资格，main 与既有脏文档不变。
+
+## 2026-11-11：LOTUS Movie exact Join 的有限接线
+
+[报告](diagnostics/lotus_movie_join_native_20261111/README.md)记录 Q5/Q6/Q7 共用原生 Join 分支和每题 8×8 软件 IPC 回放。
+原作者拥有比较、parser、全 Join 及最终关系；逐对报告在完整 sink 后构造。
+这批证据支持源码接线和 CPU 时钟/预算正确性，不是模型质量、目标物理清理或完整 256×256 资格。
+
+## 2026-11-10：原生LOTUS同owner结果与正式入口迁移
+
+[报告](diagnostics/lotus_mmqa_q3a_native_20261110/README.md)保存ee625/fd06的Q3a冷25＋暖25真实资格、
+完整GPU输入token、原答复差异和独立计数未知项。当前main的显式resident迁移复用既有CLI/stage/监督，
+声明式绑定取代固定历史源码约束；CPU回归和待目标验证范围另列，不重跑或转授旧模型成绩。
+
+## 2026-11-10：Daft 原生 AI 接线整理与完整 sink 边界
+
+[报告](diagnostics/daft_native_semantics_20261110/README.md)记录从已有 Medical Q10/MMQA 私有原生接线恢复的
+prepared prompt worker、按源身份回填的原 parser/查询和 sink 回调。
+新计时不再主动等待模型关闭后才执行原 sink；CPU SDK/软件模型证据与目标真实模型资格分开。
+`ffbc352ac` 的 Q3a25/Q4 24 真实资格已归档；最新 main 整合只追加相同执行代码的 CPU/API/完整关系复验，
+保留 main 已删除的 SDK wrapper，不重复模型、不转授其他17题或暖轮资格。
+历史成绩及失败保留，不将这次保存答复的回放质量算作新模型结果。
+
 ## 2026-11-10：DAG 观察与 GPU／引擎候选的源码、文献核查
 
 来源为公开项目 `f44f174a`、固定 SemBench 以及[本轮一手文献／引擎源码](../../docs/research/ai_operator_literature_inventory.md#dag-gpu-engine-sources)。

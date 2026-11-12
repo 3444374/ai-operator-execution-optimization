@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 
 from .native_server import check_author_source, native_launch_report, server_argv
-from src.baselines.text.movie_tasks import MovieTask
 
 
 def main():
@@ -21,8 +20,8 @@ def main():
     import torch
     import vllm
     from vllm.kalypso.budget import KVMemoryManager
-    from vllm.kalypso.controller import SemanticPlan
     from vllm.kalypso.execution.vllm_executor import VLLMExecutor
+    from vllm.kalypso.controller import SemanticPlan
     from vllm.kalypso.data import data
     from vllm.entrypoints.cli.serve import ServeSubcommand
     from vllm.engine.arg_utils import AsyncEngineArgs
@@ -41,6 +40,17 @@ def main():
     tokenizer_template=manager.tokenizer.chat_template
     template_sha=hashlib.sha256(tokenizer_template.encode()).hexdigest()
     assert template_sha==cfg['expected_template_sha256']
+    if any(q.get('task')=='movie-q9' for u in cfg.get('units',[]) for q in u['queries']):
+        from .movie_map_cpu import check
+        report=check(cfg,a.output,executor,manager,SemanticPlan,data,max_model_len)
+        report.update(native_launch=launch,template_sha256=template_sha,
+            cuda_initialized=torch.cuda.is_initialized(),model_calls=0,model_weights_loaded=False,
+            native_model_config=dict(max_model_len=max_model_len,dtype=str(model_config.dtype)))
+        if report['cuda_initialized']:raise ValueError('CPU check initialized CUDA')
+        (a.output/'CPU-NATIVE-RESULT.json').write_text(json.dumps(report,indent=2)+'\n')
+        print(json.dumps(report,indent=2))
+        return
+    from src.baselines.text.movie_tasks import MovieTask
     plans=[]
     for profile in ('qualification','warmup','full'):
         for q in sorted(MovieTask.from_config(name).query for name in cfg['reference_inputs'][profile]):

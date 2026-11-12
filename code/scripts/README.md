@@ -14,7 +14,7 @@
 | 补充 Movie／MMQA／Medical 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
 | 原生 LOTUS MMQA Q5 聚合 | [run_sembench_lotus_mmqa_aggregate.py](experiments/run_sembench_lotus_mmqa_aggregate.py) | 原分层聚合、无模型首层预检、外部服务及逐 POST 预算；[配置](#sembench-native-mmqa-aggregate) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
-| 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 查询脚本直接调用实验生命周期；baseline客户端不反向导入实验，作者服务与默认保持 |
+| 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | Movie Filter Q1–Q4／Q9 Map 走同一维护 CLI；作者服务与默认保持，Q9 非 TopK |
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
 | 有限链功能对照 | [validate_record_chain_options.py](experiments/validate_record_chain_options.py) | 既有 options／matched-execution／progression 及[步骤预算对照](#record-chain-step-actions)；项目自定义 MMF，不是原 SemBench 查询 |
 | 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 文件输入与公共 CLIP 实现 |
@@ -90,10 +90,10 @@ positive_review_cnt=ready['result']['positive_review_cnt'], checkout=sembench_ch
 
 ## Movie session 配置
 
-普通Movie CLI及参数保持原入口；查询评价和回执合并由
+Movie 查询评价和回执合并由
 [`movie_records_query.py`](../src/experiments/movie_records_query.py)共用，普通模型构造／运行／关闭由
 [`movie_records_worker.py`](../src/experiments/movie_records_worker.py)负责。Session、service和IMLane直接调用所属模块，
-不再从CLI取得旧私有worker或查询函数；生产核心不依赖这些实验模块。
+生产核心不依赖这些实验模块。
 
 普通矩阵已有 `check`、准备、owner／附着与恢复子命令，实际帮助从上述标准入口读取。
 计划的 `backend` 可选择 `semloom-core`、`semloom-static-reference`、`lotus-native`、`daft`、`ray-data`、`imlane`。
@@ -112,6 +112,13 @@ positive_review_cnt=ready['result']['positive_review_cnt'], checkout=sembench_ch
 `fixture` 使用真实 SDK 和原评价、明确标为零推理软件检查；`run` 不带 `--execute-model` 时只检查。
 真实 run worker 仍在现有外部 host 租约／资源 supervisor 内运行，独立进程使用现有 CLI supervisor。
 
+Ray 的原生完整查询使用 [ray_native 配置](../configs/sembench_ray_native.example.json)和同一 `check/run` 命令。
+不加该配置仍是旧记录链；普通 `fixture` 也不证明新的原生接点。
+新路径的软件完整回放使用 `python -m tests.baselines.text.replay_ray_sembench`
+的 `--config / --sembench-checkout / --data-dir / --tokenizer / --reference / --output-dir` 参数。
+保存答复按 occurrence 绑定，不能把模型答复按并发抵达顺序或提示去重后分配。
+计时、原生版本、预算与退出条件见 [Ray 内存 sink](../src/baselines/README.md#ray-native-prepared-sembench)。
+
 ```sh
 PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py prepare-mmqa-text \
   --sembench-checkout "$SEMBENCH_CHECKOUT" --source-dir "$MMQA_SOURCE_CSV" \
@@ -124,6 +131,18 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py check
 
 各变量由本机仓库外 runtime／packet 提供；准备输出必须是新的 Git 外私有目录。
 Movie 数据目录需要 `Reviews.csv`，Q10 另需原 `Movies.csv`，后者仅用于评价。
+Movie Q5/Q6/Q7 只允许[显式原生 LOTUS resident Join](../src/baselines/README.md#lotus-movie-exact-join)。
+它复用同一 `check/run`，不进入 prepared F/M/E；8 条样本每题需完整 64 对预算。
+零模型回放使用已冻结的前 8 条输入、真实 LOTUS SDK 和软件模型 IPC：
+
+```sh
+LITELLM_LOCAL_MODEL_COST_MAP=True PYTHONHASHSEED=3 PYTHONPATH=code "$DRIVER_PYTHON" \
+  -m tests.baselines.text.replay_lotus_join --config "$JOIN_CPU_CONFIG" \
+  --sembench-checkout "$SEMBENCH_CHECKOUT" --data-dir "$JOIN_SAMPLE8_DIR" \
+  --output-dir "$FRESH_CPU_OUTPUT"
+```
+
+该回放不使用模型答案，不能报告真实质量或延迟；目标 `run` 仍需精确源码、模型/输入绑定与外层监督。
 MMQA 准备仅调用原三种文本生成方法并复制固定表，不下载、不生成图片、不调用模型。
 Medical 准备只复制所选已有规模的三份原 CSV，保留 `data/` 布局，不重新采样或启动图音准备：
 
@@ -268,13 +287,13 @@ MMQA 配置改为 `scenario=mmqa`、选择 `Q2a/Q2b/Q7`，参数改用 `--data-d
 
 ## 独立研究与离线分析
 
-三个[离线代价入口](../src/experiments/operator_costs/README.md)共用明确的profile／比较模块，不再互相加载脚本。
-比较命令必须选择`--data-csv`或`--ref-json`，context-LOO还须显式给`--output`；Ridge原参数保持。
-新结果不默认写入历史日期目录，旧完整来源从具名投影恢复；这些估计不控制当前单查询。
+三个[离线代价入口](../src/experiments/operator_costs/README.md)使用共享的profile／比较模块。
+比较命令必须选择`--data-csv`或`--ref-json`，context-LOO还须显式给`--output`。
+输出路径由各命令参数确定；这些估计不控制当前单查询。
 
 [SemFilter参考校准命令](analysis/build_semfilter_reference_calibration.py)直接使用
 [离线构建器](../src/experiments/operator_costs/semfilter_reference_calibration.py)，保留显式`--source`／`--output`。
-它只处理汇总观测和产物文件，历史固定服务身份不提供当前模型或数据库执行入口。
+它只处理汇总观测和产物文件，不启动模型或数据库。
 
 SAOR 的离线汇总与容量回放继续读取已有结果，接口见[研究组件](../src/research/multitask/README.md)。
 `run_ai_operator_scenarios.py` 用于显式 profiler 装配和 CPU 行为检查。

@@ -1,0 +1,135 @@
+{
+  "status": "passed_CPU_only",
+  "base_commit": "1d0a5a978bcb86c83f2b5acb3fe626eff60014a4",
+  "source_sha256": {
+    "code/src/baselines/text/frameworks/daft_sembench_native.py": "427a81ce91e6e6b0ea3ca4113dc17224af92ebf561695fa342bf5e5abf26e95f",
+    "code/src/baselines/text/frameworks/daft_native_owner.py": "9d5250abc09dec1a31153af54cfd14294d1a0ef2145d85031e02584d9007ddd9",
+    "code/src/baselines/text/frameworks/daft_native_trace.py": "c50f8ab15f06d9f101cbc496748224fef602e25900f542abfb1cab800bd207f5",
+    "code/src/baselines/text/sembench_prepared.py": "a71eb71e57add62515dd58819f1911c7999162582e888f06ff4b2b7fc732df46",
+    "code/src/experiments/native_daft_query.py": "22412655c47ad7bba0c54ef0e3060686ba149bbfa43da13e20cdc169f3f87b84",
+    "code/src/experiments/native_daft_sembench.py": "0e1206a6de8a455e75eea897585b58bbe437eb7134029054291195fc8ac3eccb",
+    "code/tests/baselines/text/replay_daft_sembench.py": "f6ba5922aacd72bd971a92d1bbf36489b677c41ef6131c66ec2b36d8d75f3391",
+    "code/tests/baselines/text/native_sdk_fixtures.py": "ba2f34a771f780dfdafd24084accf2334070bf1dd989c73de826683ff9385837"
+  },
+  "new_model_calls": 0,
+  "new_GPU_tasks": 0,
+  "cases": [
+    {
+      "query": "Q3a",
+      "software_requests": 25,
+      "source_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "status": "passed",
+      "reference_sha256": "a539cd5adc31191de316d2fb620804b845f56a9a23843e86970f91d0dce7c8b1",
+      "cpu_receipt_sha256": "9e0a8ba966d488f2907650b4078d86d0a956d599b9fd8691cda6199763abc59e",
+      "driver_receipt_sha256": "a68ac94f40fb1838db5af998c48c14fb4424814a77255d7a8ed7f0ba094c1b08",
+      "complete_messages_tokens_relation_sink_evaluator_equal": true,
+      "budget_next_rejected": true,
+      "physical_gpu": null,
+      "quality_origin": "saved historical replies, not new model output"
+    },
+    {
+      "query": "Q4",
+      "software_requests": 24,
+      "source_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "status": "passed",
+      "reference_sha256": "913d6c02f87459ca752f0e5cd99c5c3335d2751432d48670720308863b91df56",
+      "cpu_receipt_sha256": "66ee68f263b5efff24411088707e7c677f6b0a937afaf815d48d08bce57fe74d",
+      "driver_receipt_sha256": "39b4a8cd41a6408f494e439d89d3d3720ba3a83223b84c5395e0f9f7ef1160ad",
+      "complete_messages_tokens_relation_sink_evaluator_equal": true,
+      "budget_next_rejected": true,
+      "physical_gpu": null,
+      "quality_origin": "saved historical replies, not new model output"
+    }
+  ],
+  "tests": {
+    "methods": 27,
+    "core_methods": 22,
+    "owned_software_process_shutdown_methods": 5,
+    "failures": 0,
+    "skips": 0,
+    "logs": [
+      {
+        "name": "tests-final.log",
+        "sha256": "93e0eabcd1161b20672477c355ca782b239b9c5f06fa76200be51665f3aeb2d1"
+      },
+      {
+        "name": "shutdown-r1.log",
+        "sha256": "dcfd53038c976f04097d38ecdf022c4dd4f4a3ae82a93773d829cad71082c549"
+      }
+    ]
+  },
+  "versions": {
+    "daft": "0.7.21",
+    "lotus-ai": "1.2.4",
+    "transformers": "4.57.6",
+    "pandas": "2.3.3"
+  },
+  "model_library": "not installed or executed; SamplingParams software constructor in CPU tests",
+  "formal_parameterized_tasks": 19,
+  "actual_full_query_CPU_cases": 2,
+  "scope": "Native Daft SDK/executor/CPU relation plus recorded replies; same-process supervision seam in full replay, five real software-process owner tests separately",
+  "pending": [
+    "target native vLLM import and SamplingParams types",
+    "actual model/generation and physical GPU/SHM cleanup",
+    "other 17 parameterized tasks with their exact source and sink",
+    "strict host controller clock and common hardware manifest",
+    "native same-owner warm support; this entry is cold only"
+  ],
+  "initial_failure": {
+    "test": "test_filter_map_extract_reordered_predictions_preserve_source_rows_and_original_parser",
+    "observed": "native LOTUS null result is string 'None'",
+    "resolution": "corrected CPU assertion; original parser unchanged"
+  },
+  "prior_frozen_deliveries_modified": false
+}

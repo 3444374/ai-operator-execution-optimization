@@ -85,6 +85,8 @@ class DuckDBScope(owner.AuthorScope):
             str(author / 'source/third_party/nanoarrow/dist/lib'),
             str(author / 'source/third_party/fmt/dist/lib'),
             str(author / 'source/third_party/boost/dist/lib'), str(Path(method_info['base']) / 'lib')]
+        if getattr(self.args, 'duckdb_library', None) is not None:
+            libraries.insert(0, str(Path(self.args.duckdb_library).resolve().parent))
         if os.environ.get('LD_LIBRARY_PATH'):
             libraries.append(os.environ['LD_LIBRARY_PATH'])
         env = dict(os.environ, CUDA_VISIBLE_DEVICES='', PYTHONDONTWRITEBYTECODE='1',

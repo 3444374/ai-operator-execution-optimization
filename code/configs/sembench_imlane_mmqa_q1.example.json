@@ -1,0 +1,35 @@
+{
+  "schema": "semloom.imlane.mmqa_q1.v1",
+  "query_id": "imlane-owned-mmqa-q1-cold",
+  "sembench_checkout": "/path/to/verified-SemBench-c814e380",
+  "data_dir": "/path/to/mmqa-q1-input",
+  "input_sha256": {
+    "ben_piazza.csv": "d3863f140fcd6ae3eb8e00abc77c79791b78b8273533dba8ccf0ef08c8b1e9be",
+    "ben_piazza_text_data.csv": "3b8ae2c645f6a06e0ed0838a71f68732ca6a5b4475272a2d722944152080f519"
+  },
+  "model_name": "openai/local-qwen2.5-7b",
+  "tokenizer": "/path/to/verified-local-tokenizer",
+  "generation": {
+    "max_tokens": 8192,
+    "temperature": 0,
+    "top_p": 1,
+    "seed": 0,
+    "stop": [],
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "repetition_penalty": 1,
+    "response_format": {"type": "json_object"}
+  },
+  "model_service": {
+    "model_python": "/path/to/existing-model-venv/bin/python",
+    "model": "/path/to/verified-model-weights",
+    "served_model_name": "local-qwen2.5-7b",
+    "dtype": "bfloat16",
+    "engine_options": {}
+  },
+  "max_model_calls": 25,
+  "query_timeout_s": 1200,
+  "cleanup_s": 120,
+  "stop_grace_s": 8,
+  "request_timeout_s": 1200
+}

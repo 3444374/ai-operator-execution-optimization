@@ -8,7 +8,7 @@
 
 | 对照 | 真实入口／实现 | 谁拥有执行 | 当前限制 |
 |---|---|---|---|
-| 原生 LOTUS | [lotus_native_local.py](text/frameworks/lotus_native_local.py)，普通 Movie session 的 `backend=lotus-native` | 原算子、`LM.__call__`、`_process_uncached_messages`、LiteLLM `batch_completion`；公共 provider 只接本地模型 IPC | 新非 HTTP 路径只有 CPU 资格，官方完整 Q123 依赖及实机待验 |
+| 原生 LOTUS | [lotus_native_local.py](text/frameworks/lotus_native_local.py)，`backend=lotus-native` | 原算子、`LM.__call__`、`_process_uncached_messages`、LiteLLM `batch_completion`；公共 provider 只接本地模型 IPC | 冻结MMQA Q3a/Q4已真实冷暖通过；正式resident迁移的CPU与目标资格[分别记录](../../../experiments/results/diagnostics/lotus_mmqa_q3a_native_20261110/README.md)，不外推完整Movie Q123 |
 | Daft | [daft_lotus_records.py](text/frameworks/daft_lotus_records.py) | `read_csv`、原生 class／batch UDF 与模型 class 生命周期 | 明确的隔离配置；可选[单线程 session](text/frameworks/daft_lotus_session.py)单独比较 |
 | Ray Data | [ray_data_lotus_records.py](text/frameworks/ray_data_lotus_records.py) | Dataset、`map_batches`、ActorPoolStrategy 与原生图 | runtime 复用不等于跨查询模型复用 |
 | IMLane | [resident.py](../../integrations/imlane_records/resident.py)、[隔离入口](../experiments/imlane_movie_formal.py) | 作者 CPython Filter 桥接与作者执行；共享方法／模型内核 | 原生作者能力和有限桥接合同保留，不等于任意 DAG |
@@ -132,12 +132,159 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
   DBEnd函数alias、Arrow16.1及PROCESS／THREAD软件CPU链路和外层清理，2000→120软件COUNT14；后续[模型provider／服务owner／worker](../../integrations/imlane_duckdb/README.md#本地ipc模型接线)已接，准确e420真实作者＋软件HTTP正常／错误CPU闭环完成，GPU仍待验；
   当前本地IPC项目适配共享一个AsyncLLM，作者执行保持，124项CPU通过；完整作者＋软件IPC及真实模型仍单列待验。原Q7模型客户端未公开，不称论文客户端复现；
   固定来源中的SCHEDULE Filter为空实现，不能靠注册该kind声称完成接入。现有records桥不取代该路径。
+  [MMQA Q1 工程版](../../integrations/imlane_duckdb/README.md#mmqa-q1-工程版接线)单独绑定已验
+  varchar-owned DSO，保留原 JSON Extract／完整 sink；25 条 CPU 保存答复回放不授予原作者或新 GPU 资格。
 
 原公开Movie2000输入的Q3为120个模型输入、金标14正面／106负面；本地用金标固定回复通过原评价器，
 只证明数据、结果形状和评价接线，不是模型质量结果。首批两个新API各一次冷查询共240个逻辑请求；
 第三条接线通过后再加120。67a4单次复测不作稳定性能，实际retry／资源／完整退出和三轮交错比较按计划另验。
 Daft复测使用[新worker／监督入口](../experiments/native_daft_query.py)，另追加120且保留原消耗；
 外部调用方继续负责host租约、永久额度、preflight、离线评价和最终物理GPU／SHM检查。
+
+<a id="daft-native-prepared-sembench"></a>
+### Daft 原生 AI 的完整文本查询入口
+
+[原 worker](../experiments/native_daft_query.py)的 `sembench` 动作现在调用
+[统一的单查询接线](../experiments/native_daft_sembench.py)，复用原监督器、Daft
+`prompt(provider="vllm-prefix-caching")`、原生 `LocalVLLMExecutor` 和实际模型 owner。
+driver 与模型 Python 依赖保持隔离；共享 LOTUS 完整提示与 parser，
+[原 SemBench 查询](text/sembench_text.py)继续拥有选择、连接、分组、最终 sink 和 evaluator。
+它与上方 native class／batch UDF 接线是不同执行路径，不借用后者的资格。
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.native_daft_query sembench \
+  --config "$FROZEN_CONFIG" --output-dir "$NEW_PRIVATE_OUTPUT" \
+  --model-python "$DAFT_NATIVE_PYTHON"
+```
+
+[配置模板](../../configs/sembench_daft_native.example.json)以 MMQA Q3a 单冷25条为例。
+支持原单 F/M/E 工作负载入口的 Movie Q1/Q2/Q3/Q4/Q8/Q9-map/Q10、MMQA Q1/Q3a–g/Q4/Q6a–c、
+Medical Q1/Q4/Q10；这是参数化接线范围，**不是22题均已完成当前资格**。
+Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON 约束。
+输入完整关系超出 `max_model_calls` 时在模型启动前拒绝；已有 SQLite 预算在每次原生
+`generate` 前扣除，失败不退还，耗尽后不委托第 N+1 次。没有额外预热或整轮自动重试。
+
+原始预测发布后，监督器立即调用原 parser/完整查询 sink；driver 不先等待 worker 关闭。
+`source_start_ns → sink_ready_ns` 含 fresh CSV、prepare、模型启动、原生执行及完整原查询，
+实际 IPC/polling 包含在内；原 sink 后才记录持久化、评价，模型 close/进程退出另列，
+close 可能与 driver 后处理重叠。严格 host controller 入口仍未知，不能把该区间追认为
+包含 host 导入、预检和租约的统一 cold 总时钟。native generate/add/final 为 API 证据，
+引擎首次接受和 kernel 时间没有独立观测。此入口只声明单冷，不伪造同 owner 暖轮。
+
+本地实际 Daft0.7.21 CPU 表达式/执行器、Q3a/Q4保存答复全关系回放、预算及清理结果见
+[资格报告](../../../experiments/results/diagnostics/daft_native_semantics_20261110/README.md)。
+`ffbc352ac` 的 Q3a25/Q4 24 已完成目标原生参数、真实模型和物理清理资格；后续已把消息摘要及
+关系序列化移至 sink 后，旧49条时长不追认为该新边界。`48a6b42d0` 的 Movie Q1/Q2/Q3 已分别
+完成 2000/120/120 次真实单冷、完整原 sink 和逐条审计，零 unknown、零重试，物理清理完成。
+这些成绩绑定原提交；当前整合仅重跑受影响 CPU 回归。其余题按各自冻结回执判断，同 owner 暖轮
+仍未取得资格。保留每个系统自己的依赖版本，不以迁移到统一 vLLM 为前提。
+
+<a id="ray-native-prepared-sembench"></a>
+### Ray 原生完整查询的内存 sink
+
+现有 `run_sembench_text_query.py` 使用
+[显式 `ray_native` 配置](../../configs/sembench_ray_native.example.json)时，调用
+[原生 processor 接点](text/frameworks/ray_data_sembench_native.py)的 `execute_prepared`。
+Ray Data LLM processor 拥有图、chat template、tokenization、batching、模型 actor 和调度；
+[准备及完成接口](text/sembench_prepared.py)复用原 LOTUS 消息/parser 与固定 SemBench 原查询。
+不调用 SemLoom Core、原自写记录链或 HTTP 替代模型。
+
+[查询编排](../experiments/native_ray_sembench.py)重新读取已核输入，按 occurrence `call_id` 接收完整预测。
+`materialize().take_all()` 后，在 `ray.shutdown()` 前执行原 parser 和完整关系查询；
+原查询返回的内存结果立即标记 `sink_ready_ns`。`source_to_sink_seconds` 包含本轮新鲜 source/prepare、
+Ray/模型启动及原关系计算；消息摘要、关系序列化、评价、持久化和关闭在 sink 后另记事件。
+`query_seconds` 仍是包含审计和 runtime close 的较宽区间，不能代替 sink 指标。
+最早 host/controller 入口未在此 worker 观察，保持空值；AsyncLLM 首提交、末确认终态与构造返回事件
+保存在 `native-events-*.jsonl` 并在查询报告汇总，不能称为引擎接受或 GPU kernel 时间。
+
+`profile` 是本地独占 `ray.init` 参数；`ray_native.processor_options` 保留未覆盖的原生默认。
+引擎显式设置由 `engine` 与 `ray_native.engine_kwargs` 一致组合，冲突拒绝。
+模型 actor 的 `py_executable` 使用声明的原生环境；不套用项目模型桥的固定 vLLM 版本。
+Ray 2.56.1 / 官方 vLLM 0.22 可作为目标组合，实际版本由 actor 回执核验。
+actor setup hook 复用已核 Q7 的版本相关接点；SDK、跨解释器加载和 tokenizer 资格绑定实际运行版本。
+
+调用方先预留永久 SQLite 的单次单位，worker 领取后由原生 `AsyncLLM.generate` 前的
+[预算观察器](text/frameworks/ray_native_observer.py)逐次扣除；相同提示不去重，失败不返还。
+模型 stage 明确设置 `max_restarts=0` / `max_task_retries=0`，不重跑整查询。
+单位计数和原生终态不完整时不能报成功。原 parser、后置审计、close 或持久化失败均保留失败状态
+及已有答复；已观察到 sink 不会因此擦除。外层继续使用既有 host 租约、资源监督和物理清理，
+`ray.shutdown` 的 driver 断开本身不证明模型进程、SHM 或 GPU 已释放。
+`startup_timeout_s + query_timeout_s + 30` 是既有监督器的 worker 总窗口，包含其退出预留；
+不是独立 host 全流程期限。此入口只实现单冷，不声称同 owner 暖轮。
+
+CPU 回放使用 `python -m tests.baselines.text.replay_ray_sembench --help`，Ray API 与模型为明确的软件替身。
+Movie Q10 的 2,000 条真实保存答复保留 1,864 个不同提示及 136 个重复提示 occurrence；
+完整消息/token、原 Map 关系、105 电影 sink 和原 evaluator 与冻结参考一致，2,001 次申请被拒绝。
+这些答复来自历史 Daft Q10，只用于接线等价，不是新 Ray 质量或性能。受控时钟证明后置摘要、
+序列化和关闭不进入 sink 区间；成功、解析/审计/关闭失败、空输入和乱序关联均有软件检查。
+`ac4440328` 另已完成目标原生 Q10 full2000、Q8 120 和 Q9 Map256：实际 token／答复、
+完整原 sink、永久预算及物理清理逐项核对，零 unknown、零重试；Q10 保留原105组普通聚合。
+Q9 Map 不代表 TopK。上述是该冻结提交的独立单冷成绩，当前整合仅做受影响 CPU 回归，
+其余题与同 owner 暖轮仍按各自回执判断。
+
+旧的无 `ray_native` 配置继续作为明确标注的历史记录图入口；其耗时不纳入新口径。
+该入口及 `execute_q3` 各有现行调用者，本次不删除。完成目标资格及调用方配置迁移后，
+再退出被替代的完整文本记录图；不删除原始成功/失败证据或活跃公共清理 helper。
+
+<a id="lotus-native-resident-sembench"></a>
+### 原生 LOTUS 的显式 resident 文本查询
+
+现有 `run_sembench_text_query.py` 默认仍执行 isolated 单查询。选择
+[resident 配置](../../configs/sembench_lotus_native.example.json)后，同一原生 LOTUS owner 执行冷查询和
+指定数量的新鲜暖查询；每轮重新读取 source/prepare，经原 accessor、LM、LiteLLM 和本地原生模型 IPC
+到完整原 sink。`native_lm_max_batch_size=64` 是显式实验 profile，不是作者默认；SemLoom Core 不参与调度。
+
+```bash
+PYTHONHASHSEED=3 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHON" -B \
+  code/scripts/experiments/run_sembench_text_query.py check \
+  --config "$RUN_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" --data-dir "$DATA_DIR"
+```
+
+经唯一 host 协调者安排后，同一入口使用 `run --execute-model --output-dir "$NEW_PRIVATE_OUTPUT"`。
+外层继续提供 host 租约、CPU/GPU 限额、空闲预检和最终物理清理；本入口不再创建一套 host 控制器。
+配置绑定所选当前 commit/code tree、输入文件与有序发生项摘要、完整模型/分片和 tokenizer 文件摘要，
+以及实际 generation/resources/profile；真实路径保存在仓库外。模型文件列表应列全实际权重、索引和配置，
+不能只填写示例的单个占位项。`occurrences_sha256` 由现有原查询的 `occurrence_digest` 产生。
+永久 SQLite 的各轮单位须由调用方预留且未被领取；worker 逐轮领取，失败不退还，结束后关闭该单位。
+
+原 stage 可借用 owner，成功或失败均由外层生命周期负责最终关闭；原 isolated 调用仍自行关闭。
+source→完整 sink 与最早脚本事件→sink、监督器 Popen 前事件→sink 分列；模型实际 ready、首原生提交、
+末确认终态、snapshot/审计、评价、查询持久化和最终 close 分列。adapter-ready 不冒充模型 ready，
+引擎首次接受和 kernel 时间留空。每轮持久化终点在 `session.json`，该文件本身的写入终点见
+`session-persistence.json`；不能从文件写入前的快照宣称已落盘完成。
+示例 `timeout_s=600` 已含监督器的30秒退出预留；正常 owner close 在 worker 内，外层 host 清理另计，
+不能称完整 host 流程已被这600秒覆盖。结果缓存关闭，模型 KV 和磁盘缓存按真实配置记录，不伪称全冷。
+
+完整软件回放使用 `python -m tests.baselines.text.replay_lotus_resident`，保存答复按完整消息身份绑定，
+由真实原生 accessor/LM/LiteLLM/IPC执行，具体资格和已完成的冻结 GPU 结果见
+[报告](../../../experiments/results/diagnostics/lotus_mmqa_q3a_native_20261110/README.md)。
+完成后的 session 报告按实际文件大小读取，配置文件仍保持默认大小限制，并拒绝符号链接和非有限数。
+`50eae2e04` 已完成 Movie Q10 冷暖各2000次及独立离线审计；长度修复没有改变原查询或计时边界。
+当前整合不重跑该模型资格，不将它改记为整合分支的实测。
+
+<a id="lotus-movie-q9-topk"></a>
+### Movie Q9 作者 TopK 候选
+
+同一 CLI 显式设置 `scenario=movie`、`query=9`、`ranking=topk`、`backend=lotus-native` 和
+`lifecycle=resident`，调用原 SemBench `quick`、`K=N` 分支。省略 `ranking` 时 Q9 仍使用原 Map。
+TopK 不进入 F/M/E 记录图；原 LOTUS 拥有随机 pivot、比较批次、答案解析和排序。
+比较绑定左右 source occurrence，再由原 LM 的有序返回关联终态，不能按并发抵达顺序或相同文本去重。
+
+使用现有 resident 配置模板；单冷资格设置 `resident.repetitions=1`，只预留一个冷单位。
+每轮预算为 `N*(N-1)/2` 上界，`engine.max_model_calls` 和永久总预算为该上界乘轮数。
+8 条样本最多 28 个模型请求，实际比较数可更少；两轮不可共用一份 28 次预算。
+结果缓存关闭，`num_retries=max_retries=0`；每次实际 IPC 提交前由原预算守卫收费。
+完整原查询返回即记 sink，再按保存的实际 RNG 状态、比较答复重放原算法并核对完整关系和原 sink，
+随后评价、持久化和关闭。重放不发模型请求；审计失败保留失败与原生答复。
+
+CPU 软件资格使用 `python -m tests.baselines.text.replay_lotus_topk replay`。
+该模块的 `renderer` 子命令只核目标 vLLM 原生消息渲染/token，不加载引擎或权重。
+TopK 原消息含文本列表，不能直接把 Qwen tokenizer 的 TypeError 用自定义提示绕过。
+本机 source-derived token 参考与目标原生 renderer 验收分开；软件回归见
+[原 quick 比较测试](../../tests/baselines/text/test_lotus_native_topk.py)，renderer 回执路径修复见
+[入口测试](../../tests/baselines/text/test_lotus_topk_renderer_receipt.py)。
+原候选 `2338d4c49` 和回执修复 `c9cadb1df` 的资格按各自冻结记录判断；当前整合未运行目标 renderer 或模型。
+既有 Q9 Map 的 512 次冷暖不授予 TopK 质量或性能资格。
 
 <a id="additional-sembench-text"></a>
 ## 补充 SemBench 文本查询
@@ -151,8 +298,26 @@ Daft复测使用[新worker／监督入口](../experiments/native_daft_query.py)�
 原生 LOTUS 保留 accessor、LM、LiteLLM 原批调用与解析，provider 复用现有本地模型 IPC。
 它观察原 LM 的真实消息，不额外格式化预遍。旧 ledger 的 `lotus-filter-v1` 是保留的身份协议，
 Map／Extract 的真实类型另由 stage 和有限阶段 ID 映射记录，不把它们当 Filter 算法。
-Ray／Daft／IMLane 使用原来已有的有限记录图和单个阶段；它们与旧普通 Filter 图是分别命名的执行布局。
+无 `ray_native` 的 Ray／旧 Daft／IMLane 使用原来已有的有限记录图和单个阶段；
+新的 [Ray 原生完整查询](#ray-native-prepared-sembench)及 Daft AI 入口另行明确选择。
+它们与旧普通 Filter 图是分别命名的执行布局。
 原 Q1/Q2/Q3 及 Q4 的普通 records、session、矩阵入口继续保留。
+正式 `SemBenchTextQuery` 也已开放 Movie Q1/Q2/Q3，Daft 原生 AI 使用同一 prepared 入口，
+不再被题号白名单拒绝；这属于项目查询绑定缺口，不是 Daft 不支持 Filter。
+Q1/Q2 保留作者带引号的完整指令，Q3 使用作者另一条原指令，不混用提示。
+先执行全部原 Filter 输入，再由作者原函数做 head(5)／COUNT；重复 reviewId 仍是独立 occurrence。
+全阴性时 Q1/Q2 保留作者空表的三列，Q3 返回单行零，不修饰成另一种 schema。
+原 accessor、完整消息、完整 token、sink 和 evaluator 的零模型回归不授予真实模型或性能资格。
+
+**旧 isolated 计时不能直接进入统一 source→内存 sink 比较。**
+[旧单算子入口](../experiments/sembench_text_query.py)的 `query_seconds` 等待完整 operator 返回，
+其中 Ray／Daft 记录流在 EOF 内关闭，IMLane 作者阶段也使用 `close_on_eof=True`；
+审计文件回收、模型／作者清理及 Ray runtime 断开可能已在原关系汇总之前完成。
+此字段保留原始含义；新的 `source_to_sink_seconds` 明确留空并附未观测原因，不以改名、减去
+关闭用时或历史结果回填制造统一口径。这包括旧 Movie Q10，不能与已有独立 sink 边界的
+[Daft 原生 AI](#daft-native-prepared-sembench)及[LOTUS resident](#lotus-native-resident-sembench)时间混用。
+需要补测的原生路径须在完整原关系交付时观察独立终点，并将事后审计、评价、持久化和关闭另计；
+不修改原作者算法或调度来补非空结果。现有成功、失败、质量及 cleanup 证据保持不变。
 
 下表是现成 Movie2000、原 MMQA generator 的 sf25／seed42 单次完整执行预计调用量，
 不含暖机、重试或重复。Movie 金标 `Movies.csv` 为116行、105个唯一电影 ID，覆盖评论中的全部105部电影；
@@ -160,6 +325,9 @@ Ray／Daft／IMLane 使用原来已有的有限记录图和单个阶段；它们
 
 | 数据集 | 题号 | 原方法 | 实际模型输入行数／预计调用 |
 |---|---|---|---:|
+| Movie | Q1 | 完整评论 Filter 后原 head(5)，不提前停止或去重 | 2000 |
+| Movie | Q2 | taken_3 完整 Filter 后原 head(5)，不提前停止或去重 | 120 |
+| Movie | Q3 | taken_3 完整 Filter 后原 COUNT | 120 |
 | Movie | Q4 | taken_3 正面比例，Filter 后用完整分母 | 120 |
 | Movie | Q8 | 原 POSITIVE／NEGATIVE Map 后计数 | 120 |
 | Movie | Q9 map | Ant-Man 评论的原 rubric Map，保留原无效值回退3.0 | 当前 packet 为256，实际 CSV 由 check 核算 |
@@ -188,16 +356,16 @@ sf25 机场关系含一个缺失 `Destinations`：输入 CSV／原 DataFrame 仍
 
 | 对照 | 本轮接线范围 | 未验证／留空原因 |
 |---|---|---|
-| 原生 LOTUS | 上述十六题，原 accessor／LM 路径 | CPU 原查询差分通过；新的实际模型与完整生命周期未跑 |
-| Ray Data | 上述十六题，既有 Dataset／actor 有限图 | SDK／分发合同 CPU 通过；新图的实际 Ray／模型未跑 |
-| Daft | 上述十六题，既有 native class／batch 有限图 | SDK／分发合同 CPU 通过；实际 Daft／模型未跑 |
-| IMLane | 上述十六题的原作者有限记录链 | 作者构建、Arrow ABI、显式有限容量及实际启动仍需绑定／验证 |
-| Kalypso | 旧 Movie Filter 路径可组合 Q4 ratio，CPU 辅助按显式任务清单检查 | 当前原生绑定没有 Movie Map 或 MMQA；不新增算法补齐，相关项留空 |
+| 原生 LOTUS | 上述十九题，原 accessor／LM 路径 | 原查询差分与 resident 分开验证；实际模型范围按冻结提交判断 |
+| Ray Data | 上述十九题的有限记录图；显式原生 processor 另见上文 | 旧图无独立 sink 边界；原生 processor 不继承旧图时长 |
+| Daft | 上述十九题的有限记录图；原生 AI 另见上文 | 旧图无独立 sink 边界；原生 AI 不继承旧图时长 |
+| IMLane | 有限记录链的语义合同与独立 DuckDB 作者入口分别核验；原生 TINYINT Filter／DOUBLE Map 已有具名真实运行 | 原 `072f8257` 的 VARCHAR 返回通路存在根／子 Arrow schema 错配；不把十九题合同 fixture 或 `398ba063` 工程补丁算作作者原版全部支持 |
+| Kalypso | 正式目录含 Movie Filter；另有 Movie Q8/Q9/Q10 Map、MMQA Q3a–g／Q6a–c 和 Medical Q1/Q4 的具名私有原生运行 | 本统一文本 CLI 未暴露作者服务；新接点的私有迁移已做保存响应回放，目标运行绑定待核，旧结果不自动取得新内存 sink 口径。原 `05024f02` 未透传结构化输出，MMQA Q1／Q4 Extract 留空 |
 
 这些是 CPU 接线范围，不是模型质量或性能成绩。原查询／原 accessor、共享链和 NativeStage 的
-软件回复差分与全部十六题 CLI fixture 均运行；真实模型逐行一致性仍待实机检查。
+软件回复差分与原十六题 CLI fixture 均运行；真实模型逐行一致性按对应源码和运行回执判断。
 原 aggregate 分数不能排除相抵的分类错误，保留原调用文本和旧普通 Filter 的逐行审计供核对。
-Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFrame；Extract 保留实际额外／碰撞 key
+MMQA Q1 的原 Series 仅在原评价入口按官方 CSV 往返转换成同名 DataFrame；Extract 保留实际额外／碰撞 key
 和原 Index label 写入，不补未返回的声明字段。后处理失败仍保留已完成调用与关闭回执。
 
 本地组合为 LOTUS1.2.4／LiteLLM1.95.1／OpenAI2.50.0／pandas2.3.3／Arrow24；
@@ -213,12 +381,14 @@ Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 �
 原评价源码使用 Python 3.12 的 f-string 语法，运行 driver 需要 Python 3.12。
 
 固定上游完整资产有11112名患者、1200条症状及对应标签；三题各1200次调用，每个 baseline 共3600次，
-LOTUS／Ray Data／Daft／IMLane 四种共14400次。上述四种复用既有普通 F/M/E 接线，实际模型与作者桥仍需机器验证；
-Kalypso 当前没有 Medical 绑定，留空。`scale_factor` 表示患者规模，不能直接当模型输入行数：
+四种普通 F/M/E 合同的计划额度合计14400次，不表示四种原版均支持或全部通过；IMLane 的 VARCHAR
+限制同上。Kalypso 未由本统一 CLI 暴露，私有作者入口按其独立绑定／回执判断，不能据此 CLI 判为
+整个系统不支持 Medical。`scale_factor` 表示患者规模，不能直接当模型输入行数：
 原 `_25` 资产有25名患者、仅1条症状，且没有 Q1 的 allergy 或 Q4 的 acne 金标，只适合诊断。
 该诊断切片的 Q1 空集对空集可被原评价记为1，Q4 保留 NaN；不能把这些结果当作模型质量。
 原 Q10 指令的 `DIMORPHIC HEMORRHOID` 与原标签复数拼写也不被适配器改写或归一化。
-`check` 读取原关系并核算实际调用数；所有 baseline 的模型、生成和输入身份须一致。
+`check` 读取原关系并核算实际调用数；尽量匹配模型、可公开配置的生成项和输入身份。
+各系统保留原生依赖及必要策略，不能匹配的实际参数／提示／parser 差异单列，不强改作者算法。
 补充文本入口的 Movie／MMQA／Medical 配置省略生成项时均采用原 LM 的8192 token／无 stop，显式值保留。
 这改变了旧补充 Movie／MMQA 的省略项解析；显式8 token／换行 stop 的旧配置和普通 Filter 类型默认不变，旧结果不改写。
 
@@ -234,6 +404,9 @@ Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求�
 预检使用本地 tokenizer JSON 和原 LM 计数，记录声明的服务上下文、完整首层消息和计数来源，零模型／零额度消耗；
 本地 tokenizer 身份不代替服务端验证。运行使用既有持久预算逐 POST 消费，保留原分层归并、失败尝试和原 JSON 评价。
 该路径计时基于已就绪的外部服务，模型启动／退出另由宿主核查，不能与普通文本冷启动成绩混算。
+`source_to_sink_seconds` 从本地 LM／tokenizer 准备前到完整原聚合结果返回，排除 observer 收尾、评价、
+结果编码和持久化；旧 `query_seconds` 保持原边界。原 sf25 保存输入的软件 SDK 回放不证明目标 tokenizer
+的首层划分，真实调用上限仍需上述目标预检，不能直接使用软件 fixture 的单请求数。
 当前仅原生 LOTUS 聚合已接线，另外四种 baseline 的聚合项留空，不增加替代算法。
 配置与命令见[脚本说明](../../scripts/README.md#sembench-native-mmqa-aggregate)。
 
@@ -280,7 +453,6 @@ Qwen2-VL-2B-Instruct 的配置、processor、索引及两个权重分片齐全�
 Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一个合法第一，不强求某一结果帧或同时输出全部第一。
 
 当前 `serving/backends/vllm_protocol.py` 的记录模型通道只接文本，sync 引擎也按 token-only 渲染；
-LOTUS 的 `IMAGE_TEXT_PROFILE` 没有当前生产调用者，其旧 prepared-call seam 也不接 Extract 的 `json_object`。
 [原生 LOTUS 视觉运行入口](../../scripts/experiments/run_sembench_lotus_image_query.py)已将这些原查询直接接到原 LM SDK 的 OpenAI-compatible 服务。
 原生 SDK 保留 PNG 消息、并发批调用、`zs-cot` 和 Extract `json_object`，不用 prepared-call seam 或文本 IPC。
 本地多模态 IPC owner 仍未接通；本次服务入口的真实模型、processor／generation 与物理服务关闭待机器验证。
@@ -290,8 +462,19 @@ LOTUS 的 `IMAGE_TEXT_PROFILE` 没有当前生产调用者，其旧 prepared-cal
 服务启动和 GPU 归外部 host owner，入口仅监督查询子进程；该计时为已有服务上的完整查询，不能混入文本冷模型启动成绩。
 私有审计保留原 POST 的内容摘要和 PNG URI 摘要，避免在事件队列复制整幅 base64 图像；原请求字节不变。
 生成配置未给出的值按原 SemBench 8192 token／无 stop 解析，显式值保持，不继承短文本 Filter 的8 token／换行截断。
-Ray／Daft 已有 CLIP 图不构成上述 VLM Filter／Join／Extract 支持；IMLane／Kalypso 当前视觉绑定未建立，
-不由此推断整个上游系统永远不支持视觉。原 LOTUS 明确不支持的音频题留空，其余未验证能力另记。
+[Ray Animals Q7](image/ray_animals_q7/README.md)使用原生 Ray LLM processor，顺序执行两遍64条 Filter和原 City交集；
+两次各自启动/关闭，整体共享128次额度，不能标为同模型 warm。默认示例使用 Ray2.56.1／vLLM0.22.0；
+原128条模型资格与当前清理接口的Linux CPU资格分列，其他环境和完整公平计时另验。
+当前 Q7 保留第一 stage 的物理退出及清理，在最后 stage 预测原子发布后执行原 City 交集；
+完整内存 sink 就绪后 ACK，再完成最后 runtime 的公开关闭和宿主清理。第一 stage 的释放仍属于
+该双 worker profile 的必要流程。19 项 CPU 及 128 条保存答复身份／parser 回放通过，完整原 City／
+evaluator 和目标 Ray／GPU 新终点后来已由 `909f842c` 完成独立资格；后续失败诊断/退出码
+改动与本组合树仍只按各自 CPU 证据解释，不从公共 runtime 存活推断内部模型 actor 驻留。
+旧结果包含最后关闭，不能减去估计清理时间回填新口径。
+
+Ray／Daft 的 CLIP 图仍是独立嵌入路径；Q7 的资格不扩大为其他 VLM Join／Extract 支持。
+IMLane／Kalypso 当前视觉绑定未建立，不由此推断整个上游系统永远不支持视觉。
+原 LOTUS 明确不支持的音频题留空，其余未验证能力另记。
 
 CPU 视觉夹具使用真实 ImageArray、原 PNG 格式化、原 Filter／Join／Extract 解析与关系结果。
 MMQA 同一图片的多个匹配行仍逐个 Extract，JSON response_format 保留原值。
@@ -302,13 +485,34 @@ Q2b 无匹配时，原零行 Extract 返回后保留声明的 `color` 列，最�
 原失败记录及46.740秒失败耗时保留，离线评价不补记正常 API 返回或成功端到端计时。
 这些软件回复检查与离线恢复不授予修复版本新的 VLM 质量或性能资格。
 
-### 后续 Join、TopK 与缺失数据
+<a id="lotus-movie-exact-join"></a>
+### Movie Q5/Q6/Q7 原生 exact Join
 
-Movie Q5/Q6/Q7 的原 exact Join 入口和原评价已可直接选择；现有单个 F/M/E worker 不因此支持 Join。
-现有 Ant-Man256行的每题是65536个候选对，模型之后才剔除相同 reviewId 的512对；
-Q5/Q6 的 LIMIT10 也在完整 Join 之后，不能预裁剪、去重或按十次调用申请预算。
-原 LOTUS1.2.4 会先 materialize 全部 pair 的 prompt，须单独验证主机内存、启动／查询期限与原生模型 owner；
-三题单遍预算196608次，暂未申请或运行。
+同一文本 CLI 显式选择 `backend=lotus-native`、`lifecycle=resident`、`scenario=movie` 和 `query=5/6/7`，
+调用[一条共享 Join 接点](text/frameworks/lotus_native_join.py)。原 `sem_join` 拥有全部有序对、formatter、
+LM/LiteLLM batching、Boolean parser 和关系构造；现有 owner/预算/监督继续复用，默认 F/M/E、TopK 不变。
+pair 按左右 source position 关联，原 SDK 有序返回绑定相同消息的不同 occurrence，不能去重。
+完整原查询返回后才转移逐对 receipt 报告，再做原 Join/最终 sink 重放、评价与持久化。
+
+共享准备层不再把自 Join 或 `reviewText` 写成后端能力限制：普通 exact inner Join
+按原指令绑定各自左右表及显式字段，完整预算为 L×R，并在执行前核对右表未变；
+quick TopK 使用原指令引用列，保持原 K=N、pivot 和比较算法。
+`4e1f8a44` 的目标 26 项零模型检查通过，包括矩形 Join、重复 occurrence、完整关系及原任务回归。
+这不开放新的任务题号、Join 策略或任意 DAG，也不继承旧题的 GPU／性能资格；
+同轮原件及归档失败恢复见[记录](image/ray_animals_q7/README.md#evidence-and-timing)。
+
+首份 [CPU 资格](../../../experiments/results/diagnostics/lotus_movie_join_native_20261111/README.md)
+只用原 Ant-Man 顺序前 8 条：每题 64 对，Q5/Q6/Q7 分别完成软件 IPC 回放。
+配置复用 [resident 模板](../../configs/sembench_lotus_native.example.json)，单冷设置 `resident.repetitions=1`，
+输入声明改为该份 `Reviews.csv`，原生模型与永久预算分别绑定每题 64 次；CPU 命令见[脚本说明](../../scripts/README.md#additional-sembench-text-entry)。
+这些是合成答复，不是新模型质量、性能或目标物理清理资格。
+
+完整 Ant-Man 256 条的每题是 65,536 个候选对，模型之后才剔除相同 reviewId 的 512 对；
+Q5/Q6 的 `head(10)` 也在完整 Join 之后，不能预裁剪或按 10 次调用申请预算。
+原 LOTUS 1.2.4 会先 materialize 全部 pair prompt。完整输入的主机内存、期限和目标模型资格仍待核；
+三题完整单遍上限 196,608 次没有因此释放。
+
+### 后续 TopK 与缺失数据
 
 Q9 原 TopK 仍须显式选择 `ranking=topk`，不能借用本次 Map 的256次资格。
 其 `quick` 路径随机选 pivot；完整 N=256 排序的候选比较数上界32640，精确次数依赖 pivot 和模型判断，
@@ -337,13 +541,11 @@ PG 查询矩阵与其专用脚本／测试／配置已从现用树移除。PG �
 SAOR 调度算法与离线研究材料保留；依赖退役 HTTP 的历史启动胶水隔离恢复。
 公开结果／来源门槛见[历史复现](../../../experiments/reproduction/native_baselines/README.md)。
 
-
 原生本地文本对照共享中性 EngineSpec：dtype、显存比例及三项 vLLM 容量未指定时均保留省略，
 显式合法值仍原样传递；没有改作者图、LM 客户端批大小、提示或生成设置。
 ready 的精度／显存比例来自实际原生配置，缺测保持未知；CPU 构造替身不是实际 vLLM、质量或性能资格。
 [当前配置修正记录](../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-defaults-capacity-combination)
 保留独立 source、所选测试和未完成范围，历史具名投影继续读取准确旧参数。
-
 
 本地 LOTUS provider 仍由原 LM 声明并发，并按原单项大小及控制槽公式构造传输额度；
 现在一次构造明确请求数，不再先建立内部8再覆盖。显式较小传输额度保持，原算子和客户端调度不改。

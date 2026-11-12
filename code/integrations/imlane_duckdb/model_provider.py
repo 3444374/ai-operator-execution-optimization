@@ -152,10 +152,15 @@ def _run_batch(config, request, receipt):
                 primary.add_note('IPC client close also failed: ' + type(error).__name__)
 
 
-def infer_batch(messages_batch):
-    """Return original model texts in the same order, or preserve the failure."""
+def infer_batch(messages_batch, *, occurrence_ids=None):
+    """Return texts in native batch order; optional IDs stay in local receipts."""
     if type(messages_batch) is not list:
         raise TypeError('Q3 model provider requires a list of message lists')
+    if occurrence_ids is not None and (
+            type(occurrence_ids) is not list or len(occurrence_ids) != len(messages_batch)
+            or any(type(value) is not str or not value for value in occurrence_ids)
+            or len(set(occurrence_ids)) != len(occurrence_ids)):
+        raise ValueError('receipt occurrence IDs must uniquely identify every native batch position')
     if not messages_batch:
         return []
     path = os.environ.get(CONFIG_ENV)
@@ -189,6 +194,9 @@ def infer_batch(messages_batch):
             requested_payload=dict(sampling, model=config['model'], messages=row),
             attempted=None, status='unknown', response=None, truncated=None)
             for index, row in enumerate(messages)])
+    if occurrence_ids is not None:
+        for call, occurrence in zip(receipt['calls'], occurrence_ids, strict=True):
+            call['occurrence_id'] = occurrence
     destination = Path(config['receipt_dir']) / ('model-batch-' + batch_id)
     publish_private_json(destination.with_suffix('.started.json'), receipt)
     primary = None

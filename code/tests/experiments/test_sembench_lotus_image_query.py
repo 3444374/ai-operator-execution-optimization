@@ -237,6 +237,13 @@ class NativeLotusImageQueryTests(unittest.TestCase):
         return [dict(zip(value["columns"], row, strict=True)) for row in value["data"]]
 
     def assert_audit(self, report, directory, replies):
+        self.assertIsInstance(report["source_started_ns"], int)
+        if report["sink_ready_ns"] is None:
+            self.assertIsNone(report["source_to_sink_seconds"])
+        else:
+            self.assertEqual(report["source_to_sink_seconds"],
+                (report["sink_ready_ns"] - report["source_started_ns"]) / 1e9)
+            self.assertLessEqual(report["sink_ready_ns"], report["result_serialization_started_ns"])
         events = [json.loads(line) for line in (directory / "native-http.jsonl").read_text().splitlines()]
         requests = [event for event in events if event["event"] == "request"]
         self.assertEqual(Counter(event["request_values_sha256"] for event in requests),
