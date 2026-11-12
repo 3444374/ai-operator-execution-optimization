@@ -343,6 +343,11 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         pd.testing.assert_series_equal(result, expected)
         self.assertEqual(result.tolist(), ['11-11', '11-22', '22-11', '22-22', '33-33'])
         self.assertEqual(batches[0], batches[1])
+        self.assertEqual(len(report['native_join_inputs']), 1)
+        observed = report['native_join_inputs'][0]
+        self.assertEqual(len(observed['declared_columns']), 4)
+        self.assertEqual(len(observed['selected_columns']), 2)
+        self.assertFalse(observed['all_declared_columns_selected'])
         quality = query.evaluate(result)['original_metric']
         self.assertEqual(quality['metric_type'], 'f1-score')
         self.assertEqual(quality['accuracy'], 1)

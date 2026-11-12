@@ -33,6 +33,25 @@ def make_lm(config, *, max_ctx_len=None, tokenizer=None, api_key=None):
         max_batch_size=config["native_lm_max_batch_size"], **options)
 
 
+@contextmanager
+def native_query_settings(lm):
+    """Configure one isolated native query, including the SDK's own worker threads.
+
+    ContextVar overrides alone do not enter LOTUS's groupby ThreadPoolExecutor.
+    Keep the original configure() globals visible there and restore them after
+    the query, while also overriding any outer context in the calling thread.
+    """
+    import lotus
+
+    previous = {name: object.__getattribute__(lotus.settings, name) for name in ('lm', 'enable_cache')}
+    lotus.settings.configure(lm=lm, enable_cache=False)
+    try:
+        with lotus.settings.context(lm=lm, enable_cache=False):
+            yield
+    finally:
+        lotus.settings.configure(**previous)
+
+
 def _audit_value(value):
     """Hash inline image bytes in evidence, leaving the actual SDK POST untouched."""
     if isinstance(value, dict):
@@ -54,6 +73,7 @@ class NativeServiceCalls:
         self.lock = threading.Lock()
         self.requests, self.succeeded, self.failed, self.finished = set(), set(), set(), set()
         self.lm_calls = []
+        self._active_lm_calls = {}
 
     def record(self, event):
         attempt, kind = event.get("attempt"), event["event"]
@@ -81,14 +101,23 @@ class NativeServiceCalls:
         def observed(current, messages, *args, **kwargs):
             if current is not lm:
                 raise RuntimeError("the original " + (kind or "visual") + " query invoked another model")
-            before = len(self.requests)
             stage = dict(input_occurrences=len(messages),
-                kind=kind or ("extract" if kwargs.get("response_format") == {"type": "json_object"} else "filter_or_join"))
-            self.lm_calls.append(stage)
+                kind=("extract" if kwargs.get("response_format") == {"type": "json_object"} else kind or "filter_or_join"))
+            with self.lock:
+                before = len(self.requests)
+                index = len(self.lm_calls)
+                self.lm_calls.append(stage)
+                if self._active_lm_calls:
+                    for active in (*self._active_lm_calls.values(), stage):
+                        active['post_attempts_unavailable_reason'] = 'overlapping native LM calls; global request delta is not per-call attribution'
+                self._active_lm_calls[index] = stage
             try:
                 return original(current, messages, *args, **kwargs)
             finally:
-                stage["post_attempts"] = len(self.requests) - before
+                with self.lock:
+                    stage["post_attempts"] = (None if 'post_attempts_unavailable_reason' in stage
+                                              else len(self.requests) - before)
+                    del self._active_lm_calls[index]
 
         lm_type.__call__ = observed
         try:

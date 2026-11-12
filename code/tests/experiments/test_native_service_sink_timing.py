@@ -1,15 +1,20 @@
 """Controlled source/sink boundaries for visual and aggregate service wrappers."""
 
 from contextlib import ExitStack, contextmanager, nullcontext
+from concurrent.futures import ThreadPoolExecutor
+import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
+import threading
 import unittest
 from unittest.mock import patch
 
 from src.baselines.image import sembench_animals, sembench_mmqa
+from src.baselines.text.frameworks import lotus_native_join
 from src.experiments import sembench_lotus_image_query as image
 from src.experiments import sembench_lotus_mmqa_aggregate as aggregate
 from src.experiments import native_http_observer
+from src.experiments.native_service_query import NativeServiceCalls, native_query_settings
 from src.observability import buffered_events
 from src.semantic_methods.lotus import engine
 
@@ -104,7 +109,9 @@ class ServiceFixture:
         audit = SimpleNamespace(lm_calls=self.stages, requests=self.requests, snapshot=self.snapshot,
             observe_lm=lambda *a, **k: nullcontext(), record=lambda event: None)
         clock = SimpleNamespace(monotonic=lambda: self.now, monotonic_ns=lambda: self.now * 1_000_000_000)
-        fake_lotus = SimpleNamespace(settings=SimpleNamespace(context=lambda **kwargs: nullcontext()))
+        settings = SimpleNamespace(lm=None, enable_cache=False, context=lambda **kwargs: nullcontext())
+        settings.configure = lambda **values: vars(settings).update(values)
+        fake_lotus = SimpleNamespace(settings=settings)
         with ExitStack() as stack:
             for scope in (
                 patch.dict("sys.modules", {"lotus": fake_lotus}),
@@ -115,6 +122,8 @@ class ServiceFixture:
                 patch.object(buffered_events, "BufferedEvents", return_value=writer),
                 patch.object(native_http_observer, "observe_native_httpx", self.observe),
                 patch.object(engine, "lm_report", self.lm_report),
+                patch.object(lotus_native_join, 'observe_native_join_inputs', lambda events: nullcontext()),
+                patch.object(lotus_native_join, 'describe_native_join_inputs', lambda events: []),
             ):
                 stack.enter_context(scope)
             if self.kind == "aggregate":
@@ -211,6 +220,50 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
         self.assertEqual(failure.query_report["source_to_sink_seconds"], 3)
         self.assertEqual(failure.query_report["result"]["data"], fixture.rows)
         self.assertNotIn("quality", failure.query_report)
+
+
+class NativeQueryObservationTests(unittest.TestCase):
+    def test_overlapping_native_calls_keep_query_totals_without_false_stage_counts(self):
+        barrier = threading.Barrier(2, timeout=5)
+        events = []
+        calls = NativeServiceCalls(SimpleNamespace(record=events.append), 'openai/software-model')
+
+        class LM:
+            def __call__(self, messages):
+                barrier.wait()
+                for attempt in messages:
+                    calls.record(dict(event='request', attempt=attempt))
+                    calls.record(dict(event='http_response', attempt=attempt, status=200,
+                        response=dict(model='software-model', choices=[{}])))
+                    calls.record(dict(event='http_finished', attempt=attempt))
+                barrier.wait()
+                return messages
+
+        lm = LM()
+        with calls.observe_lm(lm), ThreadPoolExecutor(max_workers=2) as pool:
+            self.assertEqual(list(pool.map(lm, ([1], [2]))), [[1],[2]])
+        self.assertEqual(calls.snapshot(), dict(attempts=2,succeeded=2,failed=0,unknown=0,unfinished=0))
+        self.assertTrue(all(stage['post_attempts'] is None for stage in calls.lm_calls))
+        self.assertTrue(all('overlapping' in stage['post_attempts_unavailable_reason'] for stage in calls.lm_calls))
+
+    @unittest.skipUnless(importlib.util.find_spec('lotus'), 'requires the native LOTUS settings API')
+    def test_native_worker_threads_receive_the_query_model_and_globals_are_restored(self):
+        import lotus
+
+        before = {name: object.__getattribute__(lotus.settings,name) for name in ('lm','enable_cache')}
+        outer, current = object(), object()
+        with lotus.settings.context(lm=outer,enable_cache=True):
+            with native_query_settings(current), ThreadPoolExecutor(max_workers=1) as pool:
+                self.assertIs(lotus.settings.lm,current)
+                self.assertIs(pool.submit(lambda: lotus.settings.lm).result(),current)
+                self.assertFalse(pool.submit(lambda: lotus.settings.enable_cache).result())
+            self.assertIs(lotus.settings.lm,outer)
+            self.assertTrue(lotus.settings.enable_cache)
+        self.assertEqual({name: object.__getattribute__(lotus.settings,name) for name in before},before)
+        with self.assertRaisesRegex(RuntimeError,'native query failure'):
+            with native_query_settings(current):
+                raise RuntimeError('native query failure')
+        self.assertEqual({name: object.__getattribute__(lotus.settings,name) for name in before},before)
 
 
 if __name__ == "__main__":

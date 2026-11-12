@@ -144,6 +144,10 @@ Daft复测使用[新worker／监督入口](../experiments/native_daft_query.py)�
 <a id="daft-native-prepared-sembench"></a>
 ### Daft 原生 AI 的完整文本查询入口
 
+当前完整 SemBench 调用走本节和下节的共享查询入口；当前已核服务器活动绑定也没有使用旧
+`execute_q3`／`semloom.native_daft_q3.v1`。旧 Q3 原生 API 对照仍保留其完整 cohort 的原生
+Filter／COUNT、默认重试和 runtime 归属；它与 prepared 图不同，不能用转调新函数来冒充行为不变。
+
 [原 worker](../experiments/native_daft_query.py)的 `sembench` 动作现在调用
 [统一的单查询接线](../experiments/native_daft_sembench.py)，复用原监督器、Daft
 `prompt(provider="vllm-prefix-caching")`、原生 `LocalVLLMExecutor` 和实际模型 owner。
@@ -413,15 +417,43 @@ Q3／Q5 复用上述普通 Extract／Map、prepared、原生 LOTUS 和既有后�
 源固定检查也覆盖 `files/ecomm/queries`；查询真实重读 Parquet，不以预检快照替代。
 Q7 则由同一个原生 LOTUS resident Join 接点运行：保留原 `price <= 500` 选择、两侧各两列描述、
 全部 N×N 有序候选对及原 `id` 拼接，包含自身和对称项；不套用 Movie 的后置 ID 排除。
-Join 的 positional／keyword 参数共用普通绑定，不再只准许每侧一列。此入口仍显式选择 exact，
+Join 的 positional／keyword 参数共用普通绑定，任务可声明多列；实际入模字段由原 SDK 决定。
+当前 LOTUS1.2.4 accessor 每侧只选一个 Series，新增 `native_join_inputs` 记录实际选列、dtype、
+发生项数及遗漏引用，不向原生 prompt 补字段。已有多列差分通过仅证明与该 SDK 的行为一致。
+此入口仍显式选择 exact，
 官方 runner 的 approximate 不被声称为已复现；Ray／Daft prepared 仍明确不接 Join。
 
 评价直接执行原 TOML 的 gold SQL，再调用官方 EcommEvaluator 所用的 `GenericEvaluator`，
 Q3／Q5 保留 adjusted Rand index 的分组评分语义，Q7 保留原 F1；不把分组评分改成品牌名称
-精确匹配，也不向上游树写 gold 缓存。Q7 原 Series 在评价处按官方 CSV 读取形状转为同名 DataFrame。
+精确匹配，也不向上游树写 gold 缓存。评价在内存中执行原 `to_csv(index=False) → read_csv`，
+保留 Series 形状和 dtype／NA 推断；例如 Q14 的字符串 ID 会像官方评分输入一样读回整数，原查询输出不变。
 本地临时 Parquet 的原 SDK／记录链／prepared 差分覆盖完整消息、普通选择、原投影、乱序答复、
 空输入和文件变化；这些是零模型软件检查。真实 E-Commerce 数据、目标 SDK 和模型运行仍待验证，
 IMLane 的 VARCHAR 限制及 Kalypso 未由此 CLI 接入的边界继续适用。
+
+### E-Commerce 原完整多模态查询
+
+同一[E-Commerce 任务绑定](text/sembench_ecomm.py)也绑定官方 Q10／Q11／Q12／Q14，使用现有
+[LOTUS 视觉服务入口](../experiments/sembench_lotus_image_query.py)，设置 `scenario=ecomm` 和所选 `query`
+并提供作者数据目录。Q12 原函数继续拥有 Parquet 读取、普通选择／合并、文本 Filter、对实际保留行的
+图像 Extract，以及最终 JSON Series；没有复制题目执行器，也不通过单算子 prepared 桥执行。
+原生 LM、HTTP 观测、永久预算、完整 sink 和原 TOML gold SQL／F1 评价共用已有实现。
+
+预检调用原函数到首个语义边界即停止，保留所有发生项（包括重复商品／图像映射），不模拟 Filter
+结果或后续 Extract。Q12 首阶段 N 项，后续只处理实际保留的 M 项；预算按最多2N预留，实际收费N+M，
+不把上界当成真实调用量。运行时重新读取两份 Parquet，真实图像由原 ImageArray 读取／编码；
+源码绑定及文件／像素身份校验位于 v3 查询区间外。原题在空结果或缺失 `generated_json` 时的 KeyError
+保留，不补造输出列或金标。临时数据软件检查与原始数据／真实 VLM 资格分列。
+
+Q10／Q11 的多分支 Filter／Join、Q14 的分组 TopK 也直接运行原函数；真实中间关系决定下游调用量，
+预检只提供首个 Filter 的下界，不强制按最坏笛卡尔积预留。调用方须给明确的永久尝试额度，
+耗尽后停止并保留失败；没有把未知总量记为零或预检样本量。多列 Join 的实际选列限制同上，
+不能把完整原函数可运行称为全部声明输入语义已满足。
+分组 TopK 使用官方 `settings.configure` 让原生线程池取得当前 LM，查询结束恢复全局设置；
+没有串行化原生线程池。并发 LM 调用不能用全局请求增量作逐阶段归因，重叠时该值留空并说明，
+完整查询仍核全部原生请求、成功终态和预算。此入口用于单查询隔离进程，不声明同进程多查询并发。
+数据准备须使用固定作者生成过程：包含43条指定注入行，`scale_factor > 43`，随机种子12345600；
+不能仅截取同样行数来替代作者采样。实际规模以生成结果和输入预检为准，数据缺失不能记为系统不支持。
 
 <a id="sembench-mmqa-aggregation"></a>
 ### MMQA Q5 原分层聚合

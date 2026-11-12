@@ -108,6 +108,10 @@ LITELLM_LOCAL_MODEL_COST_MAP=True PYTHONHASHSEED=3 PYTHONPATH=code "$DRIVER_PYTH
 该回放不使用模型答案，不能报告真实质量或延迟；目标 `run` 仍需精确源码、模型/输入绑定与外层监督。
 LOTUS resident 可显式设置 `model_initialization=before_queries`，先初始化同一原生模型，
 再执行 `ready_first/ready_repeat`，不发额外预热查询；省略时仍是查询内惰性启动的 `cold/warm`。
+E-Commerce Q10／Q11／Q12／Q14 使用[完整 LOTUS 视觉服务入口](../src/experiments/sembench_lotus_image_query.py)，
+设置 `scenario=ecomm`、所选 `query` 和 `--data-dir`；沿用配置模板、预付预算与外层服务监督。
+真实中间关系交给原生后续算子，不进入单算子文本 CLI；Q12 上界为2N，其余总量依实际结果变化。
+LOTUS1.2.4 多列 Join 的实际选列限制及分组 TopK 生命周期见[接入范围](../src/baselines/README.md#e-commerce-原完整多模态查询)。
 MMQA 准备仅调用原三种文本生成方法并复制固定表，不下载、不生成图片、不调用模型。
 Medical 准备只复制所选已有规模的三份原 CSV，保留 `data/` 布局，不重新采样或启动图音准备：
 

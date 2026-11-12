@@ -15,6 +15,7 @@ import itertools
 import json
 import os
 from pathlib import Path
+import re
 import socket
 import tempfile
 import threading
@@ -34,9 +35,10 @@ KEY_VALUE = "test-key"
 
 
 class NativeHTTPReplies:
-    def __init__(self, case, scenario, *, mode="success", failure=None, response_model=None):
+    def __init__(self, case, scenario, *, mode="success", failure=None, response_model=None, query='Q12'):
         self.case, self.scenario = case, scenario
         self.mode, self.failure, self.response_model = mode, failure, response_model
+        self.query = query
         self.requests, self.lock = [], threading.Lock()
 
     @staticmethod
@@ -55,7 +57,12 @@ class NativeHTTPReplies:
         body = json.loads(request.content)
         self.case.assertEqual(body["model"], "local-image-fixture")
         uris = self.image_uris(body)
-        self.case.assertTrue(uris, "original visual requests must contain their actual image")
+        extract = body.get("response_format") == {"type": "json_object"}
+        native_join = self.scenario == 'ecomm' and 'first product' in json.dumps(body).lower()
+        if self.scenario == "ecomm" and self.query == 'Q12' and not extract:
+            self.case.assertFalse(uris, "the original first Filter uses text only")
+        elif not native_join:
+            self.case.assertTrue(uris, "original visual requests must contain their actual image")
         self.case.assertTrue(all(uri.startswith("data:image/png;base64,") for uri in uris))
         self.case.assertNotIn("REFERENCE_ONLY_", json.dumps(body))
         self.case.assertEqual(body.get("max_tokens", body.get("max_completion_tokens")), 32)
@@ -78,7 +85,33 @@ class NativeHTTPReplies:
         if self.failure == "api":
             return httpx.Response(503, request=request,
                 json={"error": {"message": "software fixture API failure", "type": "server_error"}})
-        if body.get("response_format") == {"type": "json_object"}:
+        if self.scenario == "ecomm":
+            text_parts = [message['content'] if isinstance(message['content'], str) else
+                '\n'.join(part['text'] for part in message['content'] if part['type'] == 'text')
+                for message in body['messages']]
+            content = '\n'.join(text_parts)
+            if self.query != 'Q12':
+                claim = content.rsplit('Claim:', 1)[-1].lower()
+                if 'Document 1' in content and 'Document 2' in content:
+                    text = 'Document 1'
+                elif native_join or len(uris) > 1:
+                    text = 'True'
+                elif self.query == 'Q14':
+                    text = 'True' if 'white socks' not in claim or pixels[0] == (255,0,0) else 'False'
+                else:
+                    color = ((255,0,0) if 'feet' in claim or 'pair of' in claim else
+                             (0,128,0) if 'lower part' in claim else
+                             (0,0,255) if 'upper part' in claim else (255,255,0))
+                    text = 'True' if pixels[0] == color else 'False'
+            elif extract:
+                product = int(re.search(r'\[Id\]:\s*«?(\d+)', content, re.IGNORECASE).group(1))
+                value = dict(id=product, brand='adidas' if product == 1 else 'puma',
+                             category='footwear' if product == 1 else 'apparel')
+                text = '{}' if self.mode == 'empty_json' else json.dumps(
+                    dict(generated_json=json.dumps(value, separators=(',', ':'))))
+            else:
+                text = 'True' if self.mode != 'no_matches' and 'keep-' in content else 'False'
+        elif extract:
             text = "{}" if self.mode == "empty_json" else '{"color":"red"}'
         elif self.scenario == "animals":
             pixel = pixels[0]
@@ -192,6 +225,24 @@ class NativeLotusImageQueryTests(unittest.TestCase):
                 writer.writerows(rows)
         return dict(data_dir=directory)
 
+    def ecomm_inputs(self):
+        import pandas as pd
+
+        directory = self.new_directory('ecomm')
+        (directory / 'images').mkdir()
+        rows = []
+        for product, category, brand, name in ((1, 'Footwear', 'ADIDAS', 'keep-shoe'),
+                (2, 'Apparel', 'PUMA', 'keep-tee'), (3, 'Accessories', 'OTHER', 'drop-watch'),
+                (4, 'Home', 'OTHER', 'drop-home')):
+            filename = str(product) + '.png'
+            self.Image.new('RGB', (3, 2), 'red').save(directory / 'images' / filename)
+            rows.append(dict(id=product, masterCategory={'typeName':category}, brandName=brand,
+                productDisplayName=name, productDescriptors={'description':name}, gold='REFERENCE_ONLY_'))
+        pd.DataFrame(rows).to_parquet(directory / 'styles_details.parquet', index=False)
+        pd.DataFrame(dict(id=['1','1','2','3','4'], filename=['1.png','1.png','2.png','3.png','4.png'])).to_parquet(
+            directory / 'image_mapping.parquet', index=False)
+        return dict(data_dir=directory)
+
     def config(self, scenario="animals", query="Q1", **changes):
         value = dict(schema="semloom.sembench_lotus_image_run.v1", scenario=scenario,
             query=query, query_id="cpu-image-query", model_name="openai/local-image-fixture",
@@ -206,6 +257,25 @@ class NativeLotusImageQueryTests(unittest.TestCase):
         config, generation = self.entry.configuration(path)
         self.assertEqual(generation.max_tokens, value["generation"]["max_tokens"])
         return config, path
+
+    def ecomm_outfit_inputs(self, query):
+        import pandas as pd
+
+        directory = self.new_directory('ecomm-outfit')
+        (directory / 'images').mkdir()
+        rows = []
+        for product, master, sub, kind, color in ((1,'Footwear','Shoes','Socks','red'),
+                (2,'Apparel','Bottomwear','Trousers','green'), (3,'Apparel','Topwear','Shirts','blue'),
+                (4,'Accessories','Bags','Bags','yellow')):
+            self.Image.new('RGB', (3,2), color).save(directory / 'images' / (str(product)+'.png'))
+            rows.append(dict(id=product, masterCategory={'typeName':master}, subCategory={'typeName':sub},
+                articleType={'typeName':kind}, baseColour='White' if query == 'Q14' else 'Black', price=80,
+                brandName='ADIDAS', productDisplayName='adidas '+kind,
+                productDescriptors={'description':{'value':'adidas '+kind}}, gold='REFERENCE_ONLY_'))
+        pd.DataFrame(rows).to_parquet(directory / 'styles_details.parquet', index=False)
+        pd.DataFrame(dict(id=[1,1,2,3,4],filename=['1.png','1.png','2.png','3.png','4.png'])).to_parquet(
+            directory / 'image_mapping.parquet', index=False)
+        return dict(data_dir=directory)
 
     def ledger(self, config, requests):
         from src.experiments.attempt_ledger import AttemptBudget
@@ -258,7 +328,7 @@ class NativeLotusImageQueryTests(unittest.TestCase):
         evidence = (directory / "native-http.jsonl").read_text() + json.dumps(report)
         self.assertNotIn("data:image/png;base64,", evidence)
         self.assertNotIn(KEY_VALUE, evidence)
-        if requests:
+        if any(replies.image_uris(row['body']) for row in replies.requests):
             self.assertIn("url_sha256", evidence)
 
     def test_check_and_run_without_execute_model_do_not_claim_or_send(self):
@@ -352,6 +422,107 @@ class NativeLotusImageQueryTests(unittest.TestCase):
                         {"DomesticOnly", "EuropeanLine"})
                     self.assertTrue(report["inputs"]["original_source_difference"])
                 self.assert_audit(report, directory, replies)
+
+    def test_ecomm_full_query_passes_actual_filter_survivors_to_native_multimodal_extract(self):
+        import pandas as pd
+        reads = []
+        original = pd.read_parquet
+        def read(path, **kwargs):
+            reads.append((Path(path).name, time.monotonic_ns()))
+            return original(path, **kwargs)
+
+        inputs = self.ecomm_inputs()
+        config, _ = self.config('ecomm', 'Q12')
+        replies = NativeHTTPReplies(self, 'ecomm')
+        with patch.object(pd, 'read_parquet', read):
+            report, directory, claim = self.invoke(config, inputs, replies)
+        self.assertEqual(report['inputs']['maximum_model_calls'], 8)
+        self.assertEqual(report['inputs']['filter_occurrences'], 4)
+        self.assertEqual([s['input_occurrences'] for s in report['native_lm_calls']], [4,3])
+        self.assertEqual([s['kind'] for s in report['native_lm_calls']], ['native_query','extract'])
+        self.assertEqual((claim.attempts, claim.remaining), (7,1))
+        self.assertEqual([json.loads(row['id'])['id'] for row in self.result_rows(report)], [1,1,2])
+        self.assertEqual(report['quality']['original_metric']['accuracy'], 1)
+        self.assertEqual([name for name, at in reads if report['source_started_ns'] <= at <= report['sink_ready_ns']],
+                         ['styles_details.parquet','image_mapping.parquet'])
+        self.assert_audit(report, directory, replies)
+
+    def test_ecomm_keeps_original_missing_extract_field_failure_and_actual_attempts(self):
+        for mode, calls in (('no_matches',4), ('empty_json',7)):
+            inputs = self.ecomm_inputs()
+            config, _ = self.config('ecomm', 'Q12')
+            replies = NativeHTTPReplies(self, 'ecomm', mode=mode)
+            with self.subTest(mode=mode), self.assertRaises(KeyError) as caught:
+                self.invoke(config, inputs, replies)
+            report = caught.exception.query_report
+            self.assertEqual(report['model_calls'], calls)
+            self.assertEqual(report['status'], 'failed')
+            self.assertIsNone(report['sink_ready_ns'])
+            self.assertNotIn('quality', report)
+            self.assert_audit(report, self.last['directory'], replies)
+
+    def test_ecomm_missing_assets_are_missing_files_before_any_service_or_budget(self):
+        config, _ = self.config('ecomm', 'Q12')
+        with patch.object(self.entry, '_make_lm', side_effect=AssertionError('missing data started a model')), \
+                self.assertRaises(FileNotFoundError):
+            self.entry.check(config, self.checkout, data_dir=self.new_directory('missing-ecomm'))
+        with self.assertRaisesRegex(ValueError, 'supported E-Commerce bindings'):
+            self.entry.check(dict(config, query='Q13'), self.checkout, data_dir='unused')
+
+    def test_ecomm_post_sink_source_change_keeps_full_result_and_fails_the_audit(self):
+        inputs = self.ecomm_inputs()
+        config, _ = self.config('ecomm', 'Q12')
+        replies = NativeHTTPReplies(self, 'ecomm')
+        respond = replies.respond
+        source = Path(inputs['data_dir']) / 'styles_details.parquet'
+        original_bytes = source.read_bytes()
+        changed = []
+        def change_after_source_read(request):
+            response = respond(request)
+            if not changed:
+                source.write_bytes(original_bytes + b'\n')
+                changed.append(True)
+            return response
+        with patch.object(replies, 'respond', change_after_source_read), \
+                self.assertRaisesRegex(ValueError, 'source changed') as caught:
+            self.invoke(config, inputs, replies)
+        report = caught.exception.query_report
+        self.assertEqual(report['model_calls'], 7)
+        self.assertIsNotNone(report['sink_ready_ns'])
+        self.assertEqual([json.loads(row['id'])['id'] for row in self.result_rows(report)], [1,1,2])
+        self.assertNotIn('quality', report)
+
+    def test_ecomm_multibranch_joins_and_grouped_topk_use_the_unchanged_full_query(self):
+        for query, expected, count in (('Q10',['1-2-3']*2,19), ('Q11',['1-2-3-4']*2,25),
+                                      ('Q14',['1']*4,17)):
+            inputs = self.ecomm_outfit_inputs(query)
+            config, _ = self.config('ecomm',query)
+            replies = NativeHTTPReplies(self,'ecomm',query=query)
+            with self.subTest(query=query):
+                report, directory, claim = self.invoke(config,inputs,replies,allowance=32)
+                self.assertIsNone(report['inputs']['maximum_model_calls'])
+                self.assertEqual(report['inputs']['minimum_model_calls'],5)
+                self.assertEqual(claim.attempts,count)
+                self.assertEqual([row['id'] for row in self.result_rows(report)],expected)
+                self.assertEqual(report['quality']['original_metric']['accuracy'],1)
+                self.assertTrue(all(not item['all_declared_columns_selected']
+                                    for item in report['native_join_inputs']))
+                self.assertTrue(all(len(item['selected_columns']) == 2 for item in report['native_join_inputs']))
+                self.assert_audit(report,directory,replies)
+
+    def test_ecomm_data_dependent_query_stops_at_the_actual_attempt_cap(self):
+        config, _ = self.config('ecomm','Q10')
+        replies = NativeHTTPReplies(self,'ecomm',query='Q10')
+        inputs = self.ecomm_outfit_inputs('Q10')
+        with self.assertRaises(Exception) as caught:
+            self.invoke(config,inputs,replies,allowance=5)
+        report = caught.exception.query_report
+        self.assertEqual((self.last['claim'].attempts,self.last['claim'].remaining),(5,0))
+        self.assertEqual(len(replies.requests),5)
+        self.assertEqual(report['model_calls'],5)
+        self.assertEqual(report['status'],'failed')
+        self.assertIsNone(report['sink_ready_ns'])
+        self.assertNotIn('quality',report)
 
     def test_mmqa_native_parser_uses_final_answer_without_rewriting_reasoning(self):
         inputs = self.mmqa_inputs()

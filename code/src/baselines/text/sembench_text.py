@@ -100,6 +100,7 @@ class JoinOperation:
             expected_model_calls=left_count * right_count, call_count_kind='exact ordered Cartesian pairs',
             input_columns=list(self.frame.columns), right_input_columns=list(self.right_frame.columns),
             model_columns=list(self.columns),
+            model_columns_scope='declared instruction references; native_join_inputs reports actual SDK projection',
             instruction=self.instruction, result_cache=False, cascade=False,
             source_pair_order='left-major; original positions, including same IDs and text')
 

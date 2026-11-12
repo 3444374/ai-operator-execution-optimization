@@ -4,7 +4,10 @@ The author owns pair construction, formatting, LM batching, parsing and the
 joined relation. This adapter binds ordered source occurrences and post-sink
 replay; it neither builds an alternative execution graph nor prunes pairs.
 """
+from contextlib import contextmanager
 from copy import deepcopy
+from functools import wraps
+from importlib import import_module
 import time
 
 from src.infrastructure.private_artifacts import content_digest
@@ -26,9 +29,44 @@ def make_lm(operation, concurrency):
     return LM(operation.model_name, max_batch_size=concurrency, **options)
 
 
+@contextmanager
+def observe_native_join_inputs(events):
+    """Observe the SDK's actual selected Series without rewriting its payload."""
+    module = import_module('lotus.sem_ops.sem_join')
+    original = module.sem_join
+
+    @wraps(original)
+    def observe(left, right, left_ids, right_ids, left_label, right_label, model, instruction, *args, **kwargs):
+        events.append(dict(instruction=instruction, selected_columns=[left_label, right_label],
+            selected_dtypes=[str(left.dtype), str(right.dtype)], rows=[len(left), len(right)]))
+        return original(left, right, left_ids, right_ids, left_label, right_label, model, instruction, *args, **kwargs)
+
+    module.sem_join = observe
+    try:
+        yield
+    finally:
+        module.sem_join = original
+
+
+def describe_native_join_inputs(events):
+    """Report declared versus actual native input columns after the full sink."""
+    from lotus.nl_expression import parse_cols
+
+    values = []
+    for event in events:
+        declared = sorted(parse_cols(event['instruction']))
+        missing = sorted(set(declared) - set(event['selected_columns']))
+        values.append(dict(declared_columns=declared,
+            **{key: value for key, value in event.items() if key != 'instruction'},
+            omitted_columns=missing, all_declared_columns_selected=not missing,
+            scope='unmodified native sem_join Series inputs; declared references alone do not prove payload fidelity'))
+    return values
+
+
 def finish_accounting(report, *, require_complete=True):
     """Transfer receipt accounting after full sink, or preserve it on failure."""
     binding = report.pop('_native_binding')
+    report['native_join_inputs'] = describe_native_join_inputs(report.pop('_native_join_inputs'))
     try:
         report.update(binding.report())
         counts = report['calls']['counts']
@@ -55,7 +93,7 @@ def execute_native_join(operation, *, invoke, shared_owner, query_id, budget):
     lm = make_lm(operation, owner.concurrency)
     report = dict(status='failed', original_operators_used=True, production_core_used=False,
         scheduler_owner='original LOTUS sem_join / LM / LiteLLM batch_completion',
-        expected_model_calls=len(expected), prompts=[])
+        expected_model_calls=len(expected), prompts=[], _native_join_inputs=[])
     binding = None
 
     def capture(prompts):
@@ -66,7 +104,8 @@ def execute_native_join(operation, *, invoke, shared_owner, query_id, budget):
         with owner.query(lm, expected, budget, query_id=query_id) as binding:
             report['model_ready_observed_ns'] = time.monotonic_ns()
             with lotus.settings.context(lm=lm, enable_cache=False), \
-                    _observe_messages(lm, operation.records, capture):
+                    _observe_messages(lm, operation.records, capture), \
+                    observe_native_join_inputs(report['_native_join_inputs']):
                 frame = invoke()
         # Keep this inactive binding alive until the original full query returns.
         # Its report constructs per-pair accounting, which belongs after sink.

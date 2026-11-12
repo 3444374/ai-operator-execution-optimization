@@ -1,4 +1,4 @@
-"""Read-only preparation for original finite Animals and MMQA visual queries."""
+"""Read-only preparation for original finite multimodal SemBench queries."""
 
 import argparse
 import json
@@ -22,8 +22,13 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
             raise ValueError("MMQA requires data_dir, without Animals manifest arguments")
         from src.baselines.image.sembench_mmqa import describe_inputs
         inputs = describe_inputs(checkout, data_dir, query)
+    elif scenario == "ecomm":
+        if data_dir is None or manifest is not None or manifest_digest is not None:
+            raise ValueError("E-Commerce requires data_dir, without Animals manifest arguments")
+        from src.baselines.text.sembench_ecomm import describe_visual_inputs
+        inputs = describe_visual_inputs(checkout, data_dir, query)
     else:
-        raise ValueError("visual preparation supports animals and mmqa")
+        raise ValueError("visual preparation supports animals, mmqa and ecomm")
     return dict(schema="semloom.sembench_image_query_check.v1", status="prepared_cpu_only",
         scenario=scenario, query=inputs["query"], inputs=inputs,
         execution_enabled=False, model_calls=0, requests_reserved=0, requests_claimed=0,
@@ -44,7 +49,7 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sembench-checkout", required=True)
-    parser.add_argument("--scenario", choices=("animals", "mmqa"), required=True)
+    parser.add_argument("--scenario", choices=("animals", "mmqa", "ecomm"), required=True)
     parser.add_argument("--query", required=True)
     parser.add_argument("--data-dir")
     parser.add_argument("--manifest")

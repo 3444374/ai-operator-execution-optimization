@@ -17,7 +17,7 @@ from src.infrastructure.private_artifacts import (
 from src.infrastructure.redact import redact_text
 from .sembench_image_query import check as check_inputs
 from .native_service_query import (
-    NativeServiceCalls as _NativeCalls, make_lm as _make_lm, run_prepaid_query,
+    NativeServiceCalls as _NativeCalls, make_lm as _make_lm, native_query_settings, run_prepaid_query,
 )
 
 
@@ -69,7 +69,7 @@ def check(config, checkout, *, data_dir=None, manifest=None, manifest_digest=Non
 
 def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=None, manifest_digest=None):
     """Execute one complete native query; the VLM service remains externally owned."""
-    import lotus
+    from src.baselines.text.frameworks.lotus_native_join import observe_native_join_inputs, describe_native_join_inputs
     from src.observability.buffered_events import BufferedEvents
     from src.experiments.native_http_observer import observe_native_httpx
     from src.semantic_methods.lotus.engine import lm_report
@@ -94,6 +94,7 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
     started = time.monotonic()
     report["worker_entry_ns"] = time.monotonic_ns()
     writer = audit = lm = result = None
+    join_inputs = []
     failure = None
 
     def preserve_failure(error, phase):
@@ -104,9 +105,12 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             failure.add_note(phase + " failed: " + type(error).__name__)
 
     def serialize_result():
+        import pandas as pd
+
         report["result_serialization_started_ns"] = time.monotonic_ns()
         try:
-            report["result"] = json_metric(result.to_dict(orient="split"))
+            relation = result.to_frame() if isinstance(result, pd.Series) else result
+            report["result"] = json_metric(relation.to_dict(orient="split"))
         finally:
             report["result_serialization_finished_ns"] = time.monotonic_ns()
 
@@ -114,6 +118,8 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         checked = check(config, checkout, data_dir=data_dir, manifest=manifest, manifest_digest=manifest_digest)
         inputs = report["inputs"] = checked["inputs"]
         maximum = inputs.get("expected_model_calls", inputs.get("maximum_model_calls"))
+        if maximum is None:
+            maximum = inputs['minimum_model_calls']
         if budget.remaining < maximum:
             raise ValueError("the already-reserved request unit cannot cover this complete visual query")
         writer = BufferedEvents(Path(directory) / "native-http.jsonl")
@@ -123,11 +129,17 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             from src.baselines.image.sembench_animals import AnimalsDataset, bind_original_query, evaluate_original
             source = AnimalsDataset(Path(checkout), Path(manifest), manifest_digest)
             execute_query = bind_original_query(checkout, source.bind_frame(), inputs["query_id"])
-        else:
+        elif config["scenario"] == "mmqa":
             from src.baselines.image.sembench_mmqa import bind_original_query, evaluate_original
             execute_query = bind_original_query(checkout, data_dir, config["query"])
+        else:
+            import pandas as pd
+            from src.baselines.text.sembench_ecomm import bind_original_query, evaluate_original, verify_visual_inputs
+            execute_query = bind_original_query(checkout, config["query"],
+                lambda name, **kwargs: pd.read_parquet(Path(data_dir) / name, **kwargs), data_dir=data_dir)
         report["preflight_finished_ns"] = time.monotonic_ns()
-        with lotus.settings.context(lm=lm, enable_cache=False), audit.observe_lm(lm):
+        with native_query_settings(lm), observe_native_join_inputs(join_inputs), \
+                audit.observe_lm(lm, kind='native_query' if config['scenario'] == 'ecomm' else None):
             with observe_native_httpx(budget, audit.record, checked["endpoint"], timeout_s=config["query_timeout_s"]):
                 report["source_started_ns"] = time.monotonic_ns()
                 result = execute_query()
@@ -139,17 +151,24 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             if config["scenario"] == "animals":
                 source.read()
                 expected_stages = [inputs["rows"]] * inputs["native_filter_passes"]
-            else:
+            elif config["scenario"] == "mmqa":
                 if check(config, checkout, data_dir=data_dir)["inputs"] != inputs:
                     raise ValueError("MMQA visual input changed while executing the original query")
                 expected_stages = [inputs["exact_join_candidates"]]
                 if inputs["query"] == "Q2b":
                     expected_stages.append(len(result))
-            if ([stage["input_occurrences"] for stage in audit.lm_calls] != expected_stages
-                    or any(stage["post_attempts"] != stage["input_occurrences"] for stage in audit.lm_calls)):
+            else:
+                verify_visual_inputs(inputs)
+                expected_stages = [inputs["filter_occurrences"], len(result)] if inputs['query'] == 'Q12' else None
+                if not audit.lm_calls or audit.lm_calls[0]['input_occurrences'] != inputs['filter_occurrences']:
+                    raise RuntimeError('native query first Filter differs from the original source frontier')
+            if (expected_stages is not None and [stage["input_occurrences"] for stage in audit.lm_calls] != expected_stages
+                    or any(stage["post_attempts"] is not None and stage["post_attempts"] != stage["input_occurrences"]
+                           for stage in audit.lm_calls)):
                 raise RuntimeError("native visual calls differ from the complete uncached original query")
             accounting = audit.snapshot()
-            if accounting["succeeded"] != sum(expected_stages) or accounting["failed"] or accounting["unknown"] or accounting["unfinished"]:
+            if (accounting["succeeded"] != sum(stage['input_occurrences'] for stage in audit.lm_calls)
+                    or accounting["failed"] or accounting["unknown"] or accounting["unfinished"]):
                 raise RuntimeError("native visual POSTs lack complete successful response/model evidence")
         finally:
             report["post_sink_audit_finished_ns"] = time.monotonic_ns()
@@ -158,8 +177,15 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         evaluated = time.monotonic()
         report["evaluation_started_ns"] = time.monotonic_ns()
         try:
-            report["quality"] = json_metric(evaluate_original(checkout, result, source.frame(references=True), inputs["query_id"])
-                if config["scenario"] == "animals" else evaluate_original(checkout, config["query"], result))
+            if config["scenario"] == "animals":
+                quality = evaluate_original(checkout, result, source.frame(references=True), inputs["query_id"])
+            elif config["scenario"] == "ecomm":
+                from src.baselines.text.sembench_ecomm import TEXT_FILE
+                quality = evaluate_original(checkout, config["query"], result, data_dir=data_dir,
+                    source_identity=inputs['files'][TEXT_FILE])
+            else:
+                quality = evaluate_original(checkout, config["query"], result)
+            report["quality"] = json_metric(quality)
         finally:
             report["evaluation_finished_ns"] = time.monotonic_ns()
             report["evaluation_seconds"] = time.monotonic() - evaluated
@@ -176,6 +202,7 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             except BaseException as error:
                 preserve_failure(error, "result serialization")
         report["audit_finalization_started_ns"] = time.monotonic_ns()
+        report['native_join_inputs'] = describe_native_join_inputs(join_inputs)
         if audit is not None:
             report.update(native_lm_calls=audit.lm_calls, model_calls=len(audit.requests))
             try:
