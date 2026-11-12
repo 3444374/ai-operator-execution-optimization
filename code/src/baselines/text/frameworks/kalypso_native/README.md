@@ -7,7 +7,7 @@
 `NativeQueryDriver.query()` 在原生 HTTP 响应解析、发生项索引／模型／返回数量校验，以及原
 `MovieTask.result_frame()` 的完整投影或聚合完成后，立即记录
 `backend_report.memory_sink_timing.memory_sink_ready_ns`，随后发布 `memory_sink_ready` 事件。
-维护版 Filter／Movie Map 的 v2 查询时间从额外预检后的 `source_started_ns` 到这个客户端单调时钟；
+维护版 Filter／Map 的 v2 查询时间从额外预检后的 `source_started_ns` 到这个客户端单调时钟；
 外层 `query_start_ns` 到 sink 另存 `caller_to_memory_sink_seconds`，不从旧 `answer_ready_s` 扣除估计开销。
 作者 HTTP handler 会等待完整 `processor.execute()` 后才返回所有存活 context，客户端只恢复
 原生 `idx` 对应的发生项，不改变 Filter parser、调用预算、HTTP 模型路径、pin 或 KV 策略。
@@ -131,8 +131,8 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 后退出。其冻结原件、两轮各自答复及成功/失败证据保留，不把历史成绩转授给新源码。
 
 冻结 `e5ea4842f` 已完成 Linux 作者 SDK／planner／request-object 与2376条完整 token 检查，
-模型调用0、未初始化 CUDA。当前 Map 文件与该候选一致，但共享查询层后续仍有改动；
-整合来源的目标环境资格单独验证，不把零模型规划检查当成完整原查询、GPU 或性能成绩。
+模型调用0、未初始化 CUDA。该资格只属于冻结候选；当前 Map 已扩展原题字段绑定，
+目标环境资格单独验证，不把零模型规划检查当成完整原查询、GPU 或性能成绩。
 
 新配置除了现有 owner／模型／输入绑定，还必须有：
 
@@ -249,3 +249,29 @@ PYTHONPATH="$VERIFIED_REPO/code" "$AUTHOR_PYTHON" -B \
 输入预检不替代每次模型查询的新鲜原 source 扫描，也不改变 Map 重试、评分、排序或计时口径。
 没有 pandas 的 `-I -S` 子解释器测试通过实际 CPU CLI，显式原生替身只存在于测试脚本；生产 CLI
 没有替身选项。该测试不能授予目标作者 runtime／tokenizer／GPU 资格，仍须在原隔离环境重跑两步。
+
+### 按原题字段复用 Map
+
+`movie_map.MapDriver` 及既有两个 CPU CLI 也接受 `task="sembench-map"`，每个 query spec
+另给 `scenario`、`query`，有需要时给原题已有的 `scale_factor`／`ranking`。原三个 `movie-q*`
+名称继续使用同一 driver；新绑定不维护第二套逐题执行器。只有 `SemBenchTextQuery` 捕获到真实
+普通 Map 才允许准备，Filter、Extract、Join、TopK 不改名冒用此入口，后续第二语义算子仍未接线。
+Movie Q9 在此入口默认显式 Map；它不替代官方 runner 的策略身份。
+
+字段来自原指令实际引用列的 DEFAULT 单元格文字，单字段上下文保持原样；多字段把全部字段名及
+完整文字写入一个 JSON 文本上下文，并把原指令中的字段引用逐一替换。源表、原 Map parser、
+完整关系与评价器不变，类别标签／业务 ID 不进入未被原指令引用的模型字段。上下文和提示仍由
+作者 `get_data_prompt`／`get_prompt(..., SEM_MAP)` 生成，与 LOTUS 消息模板不同。
+`fields`／`data` 随完整 occurrence 表冻结；旧 CPU manifest 不跨源码摘要复用。
+
+工程依据为作者固定 `05024f02` 的
+[`SemMap._build_prompt/_planned_max_tokens/_run_single`](https://github.com/goodluck-hojae/kalypso/blob/05024f027f932c0e398852e38302be30b9015481/vllm/kalypso/sem_ops/map.py)
+及 [`prompt_utils`](https://github.com/goodluck-hojae/kalypso/blob/05024f027f932c0e398852e38302be30b9015481/vllm/kalypso/sem_ops/prompt_utils.py)：
+原 Map 不限定影评或数字输出，本次仅扩展字段绑定，原生输出估计、length→8192 重试、ratio、
+pin/KV、采样和服务调度保持。原文件名保留实际 owner／CPU 调用，未增加兼容壳。
+
+[多字段检查](../../../../../tests/baselines/text/test_kalypso_sembench_map.py)覆盖 E-Commerce Q5 的
+1／7／13 个临时 occurrence、重复文本、嵌套描述、完整原关系与 ARI 评价；直接从作者 Git 对象
+加载原模板函数核对全部字段。与既有 50 项回归共 56 项不同本机软件检查通过，0 跳过、0 模型。
+初次断言误把原 DEFAULT 字典文字中的 `\\n` 当真实换行，已修正测试，失败记录保留；没有改变
+原单元格表达。真实 E-Commerce 资产尚未齐备，新多字段作者环境／planner／模型资格仍待验证。

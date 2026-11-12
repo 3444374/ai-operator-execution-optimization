@@ -46,12 +46,12 @@ def install(cfg, unit, directory, native, map_class, estimator_class):
         if type(ctx.state.idx) is not int or not 0 <= ctx.state.idx < len(value['rows']):
             raise ValueError('Invalid native Map occurrence index')
         row = value['rows'][ctx.state.idx]
-        if (ctx.input.right_data or ctx.input.data != get_data_prompt(str(row['reviewText']).strip())
+        if (ctx.input.right_data or ctx.input.data != get_data_prompt(row['data'].strip())
                 or self.instruction != value['instruction']):
             raise ValueError('Native Map context/instruction differs from its source occurrence')
         data_prompt, _ = original_prompt(self,ctx)
-        # Preserve the original task instruction/review inside the author's Map template.
-        formatted = self.instruction.format(reviewText=row['reviewText'])
+        # Preserve all original referenced fields inside the author's Map template.
+        formatted = self.instruction.format_map(row['fields'])
         return data_prompt, get_prompt(formatted,ctx.input.data,op=OpName.SEM_MAP)
     async def run(self,ctx,priority=0):
         qid = ctx.state.raw_request.headers.get('X-Kalypso-Observation')

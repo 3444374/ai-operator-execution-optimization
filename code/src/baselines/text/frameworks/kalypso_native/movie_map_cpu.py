@@ -1,4 +1,4 @@
-"""Complete Movie Map prompt/planner preflight in the native CPU environment."""
+"""Complete SemBench Map prompt/planner preflight in the native CPU environment."""
 import json
 from pathlib import Path
 
@@ -10,8 +10,8 @@ from .movie_map_inputs import load_inputs
 def check(cfg,output,executor,manager,planner_class,data,max_model_len):
     from vllm.kalypso.sem_ops.map import SemMap
     from vllm.kalypso.controller.map_estimator import MapRatioEstimator
-    if len(cfg['units'])!=1 or any(q['task'] not in native_server.MOVIE_MAP_QUERIES for q in cfg['units'][0]['queries']):
-        raise ValueError('Movie CPU preflight requires one dedicated Map unit')
+    if len(cfg['units'])!=1 or any(q['task'] not in native_server.MAP_TASKS for q in cfg['units'][0]['queries']):
+        raise ValueError('CPU preflight requires one dedicated Map unit')
     unit=cfg['units'][0]
     caps=native_server.physical_call_caps(unit)
     manifest,inputs=load_inputs(cfg)
@@ -45,12 +45,14 @@ def check(cfg,output,executor,manager,planner_class,data,max_model_len):
             if len(ids)+max(chat.max_tokens,8192)>max_model_len:
                 raise ValueError('Complete Map prompt and native retry cap exceed model context')
             previews.append(dict(idx=idx,row_id=rows[idx]['row_id'],source_position=rows[idx]['source_position'],
-                source_index=rows[idx]['source_index'],reviewId=rows[idx]['reviewId'],messages=prompt,messages_sha256=digest(prompt),
+                source_index=rows[idx]['source_index'],
+                **(dict(reviewId=rows[idx]['reviewId']) if 'reviewId' in rows[idx] else {}),
+                messages=prompt,messages_sha256=digest(prompt),
                 prompt_tokens=len(ids),token_ids=ids,first_max_tokens=chat.max_tokens))
         (output/(spec['query_id']+'-native-prompts.json')).write_text(json.dumps(previews,indent=2)+'\n')
         plans.append(dict(query_id=spec['query_id'],logical_occurrences=len(rows),physical_call_cap=caps[spec['query_id']],
             plan_segments=len(plan),max_prompt_tokens=max(r['prompt_tokens'] for r in previews)))
-    return dict(status='passed_real_native_CPU_Movie_Map_planning_no_model_execution',plans=plans,
+    return dict(status='passed_real_native_CPU_Map_planning_no_model_execution',plans=plans,
         frozen_input_binding=manifest['binding'],frozen_input_manifest_sha256=cfg['native_cpu_inputs']['sha256'],
         native_retry='original length-to8192 branch, at most two calls per occurrence',
         CPU_numeric_KV_budget_GiB=6,performance_claim=False)

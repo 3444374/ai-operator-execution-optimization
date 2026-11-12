@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from src.baselines.text.frameworks.kalypso_native import adapter as native
-from src.baselines.text.frameworks.kalypso_native.native_server import MOVIE_MAP_QUERIES, server_argv
+from src.baselines.text.frameworks.kalypso_native.native_server import MAP_TASKS, server_argv
 
 
 def owner_cli_bindings(cfg):
@@ -26,14 +26,14 @@ def owner_cli_bindings(cfg):
 
 def query_driver_type(unit):
     tasks={q['task'] for q in unit['queries']}
-    if tasks and tasks<=MOVIE_MAP_QUERIES.keys():
+    if tasks and tasks<=set(MAP_TASKS):
         from src.baselines.text.frameworks.kalypso_native.movie_map import MapDriver
         from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
         physical_call_caps(unit)
         return MapDriver
     if tasks and tasks <= {'movie-q1','movie-q2','movie-q3','movie-q4'}:
         return native.NativeQueryDriver
-    raise ValueError('Maintained Kalypso CLI supports Movie Filter Q1-Q4 or Map Q8-Q10 units; not TopK')
+    raise ValueError('Maintained Kalypso CLI supports Movie Filter or original text Map units; not TopK')
 
 
 def run_attached(cfg,unit,output,observer=None):
@@ -69,7 +69,7 @@ def main():
     parser.add_argument('--unit',required=True)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--prepare-native-cpu',action='store_true',
-        help='prepare frozen Movie Map inputs in driver Python; no model or native runtime')
+        help='prepare frozen original Map inputs in driver Python; no model or native runtime')
     args=parser.parse_args()
     cfg=json.loads(args.config.read_text())
     server_argv(cfg)  # Reject legacy engine overrides before client/service attachment.

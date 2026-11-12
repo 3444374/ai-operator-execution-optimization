@@ -1,4 +1,4 @@
-"""Original Movie Map queries using the existing native owner session."""
+"""Original SemBench Map queries using the existing native owner session."""
 import csv
 from dataclasses import replace
 from numbers import Integral
@@ -9,24 +9,28 @@ import time
 from src.baselines.text.frameworks.kalypso_native import adapter as native
 from src.baselines.text.sembench_text import SemBenchTextQuery
 from src.serving.backends.vllm_protocol import GenerationSpec
-from .native_server import MOVIE_MAP_QUERIES
+from .native_server import map_task
 
 
 def make_query(cfg,qid,task='movie-q9'):
-    if task not in MOVIE_MAP_QUERIES:
-        raise ValueError('A supported original Movie Map task is required; not TopK')
-    query_id=MOVIE_MAP_QUERIES[task]
+    binding=map_task(dict(task=task) if isinstance(task,str) else task)
     hashes=cfg['source_data_sha256']
-    required={'Reviews.csv','Movies.csv'} if query_id=='10' else {'Reviews.csv'}
-    if not required<=set(hashes) or set(hashes)-{'Reviews.csv','Movies.csv'}:
-        raise ValueError('Map requires the complete original source and evaluation file hashes')
+    if binding['scenario']=='movie':
+        required={'Reviews.csv','Movies.csv'} if binding['query_id']=='10' else {'Reviews.csv'}
+        if not required<=set(hashes) or set(hashes)-{'Reviews.csv','Movies.csv'}:
+            raise ValueError('Map requires the complete original source and evaluation file hashes')
     for name, expected in hashes.items():
         if native.sha(Path(cfg['data_dir'])/name) != expected:
             raise ValueError('Bound Map source data changed: '+name)
     # These stage metadata fields do not set author first-request SamplingParams.
-    return SemBenchTextQuery(cfg['sembench'],cfg['data_dir'],'movie',query_id,execution_id=qid,
+    query=SemBenchTextQuery(cfg['sembench'],cfg['data_dir'],**binding,execution_id=qid,
         model_name=cfg['model_name'],generation=GenerationSpec(max_tokens=8192),
-        **({'ranking':'map'} if query_id=='9' else {}))
+    )
+    if not set(query.files)<=set(hashes):
+        raise ValueError('Map requires the complete original source and evaluation file hashes')
+    if query.operation is None or query.operation.describe()['kind']!='map':
+        raise ValueError('The original query must use an ordinary text Map, not Filter/Extract/Join/TopK')
+    return query
 
 
 def prepare(cfg,spec,directory,operation):
@@ -35,15 +39,26 @@ def prepare(cfg,spec,directory,operation):
         raise ValueError('Original Map selection differs from the bound complete input')
     frame = operation.frame
     records = operation.records
-    values = [dict(idx=i,row_id=r.row_id,source_position=r.source_position,source_index=r.source_index,
-        reviewId=(int(frame.iloc[i]['reviewId']) if isinstance(frame.iloc[i]['reviewId'],Integral)
-                  else frame.iloc[i]['reviewId']),reviewText=r.values['reviewText']) for i,r in enumerate(records)]
+    values = []
+    for i,r in enumerate(records):
+        fields=dict(r.values)
+        # Preserve the existing single-field author context. Multiple fields
+        # keep their names and complete native per-cell text in one context.
+        data=next(iter(fields.values())) if len(fields)==1 else json.dumps(fields,ensure_ascii=False)
+        row=dict(idx=i,row_id=r.row_id,source_position=r.source_position,source_index=r.source_index,
+                 fields=fields,data=data)
+        if 'reviewText' in fields:
+            row['reviewText']=fields['reviewText']
+        if 'reviewId' in frame:
+            review_id=frame.iloc[i]['reviewId']
+            row['reviewId']=int(review_id) if isinstance(review_id,Integral) else review_id
+        values.append(row)
     if len({v['row_id'] for v in values}) != len(values):
         raise ValueError('Duplicate occurrence identity')
     directory.mkdir(mode=0o700,parents=True,exist_ok=True)
     path = directory/'native-input.csv'
     with path.open('x',newline='') as out:
-        w=csv.DictWriter(out,fieldnames=['data']);w.writeheader();w.writerows({'data':v['reviewText']} for v in values)
+        w=csv.DictWriter(out,fieldnames=['data']);w.writeheader();w.writerows({'data':v['data']} for v in values)
     table=Path(cfg['map_prompt_root'])/(spec['query_id']+'.json');table.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
     with table.open('x') as out:json.dump(dict(query_id=spec['query_id'],instruction=operation.stage.method.instruction,rows=values),out,ensure_ascii=False)
     return values,path
@@ -116,7 +131,7 @@ class MapDriver(native.NativeQueryDriver):
             timing['phase_overlap']='original_query includes input, HTTP, parser and original relational work; do not add nested phase durations'
             native_report={};responses=[]
             with native.query_phase(timing,'source_preflight'):
-                query=make_query(self.cfg,spec['query_id'],spec['task'])
+                query=make_query(self.cfg,spec['query_id'],spec)
                 execute_query=query.bind_execution()
             def execute(operation,unused_original):
                 with native.query_phase(timing,'source_and_required_input'):
@@ -159,7 +174,7 @@ class MapDriver(native.NativeQueryDriver):
             with native.query_phase(timing,'source_snapshot'):
                 query.verify_source()
                 source=query.describe()
-                source['policy']='original Movie Map relation; cache disabled; no implicit warmup or transport retry'
+                source['policy']='original SemBench Map relation; cache disabled; no implicit warmup or transport retry'
                 source['native_retry_policy']='author SemMap length branch: at most once at 8192'
                 artifacts['source.json']=source
             emit('result_ready')
@@ -168,13 +183,13 @@ class MapDriver(native.NativeQueryDriver):
                 artifacts['quality.json']=quality
             report.update(status='completed',query_id=spec['query_id'],backend='kalypso-native',
                 baseline_name='Kalypso author SemMap with original SemBench instruction-field binding',
-                semantic_operator='SemMap, original Movie '+source['query']+' parser, relation and evaluator',
+                semantic_operator='SemMap, original '+source['scenario']+' '+source['query']+' parser, relation and evaluator',
                 execution_backend='author Kalypso controller/KV/ratio estimator and native vLLM persistent service',
                 logical_occurrences=spec['expected_calls'],physical_call_cap=spec['max_native_calls'],
                 native_retry_policy='one length-triggered retry at 8192; no transport retry',physical_native_calls=len(native_report['native_API_units']),
                 native_API_units=native_report['native_API_units'],result=result,quality=quality,
                 evaluation_seconds=(evaluated-evaluation_started)/1e9,native_server_latency_s=native_report['latency_s'],
                 generation='author dynamic first max_tokens, native length-to8192 retry, seed42/frequency.5/repetition1.3',
-                prompt_scope='exact original Movie instruction/review substituted into author Map prompt template, different from LOTUS messages')
+                prompt_scope='exact original instruction and referenced field text bound to author Map prompt template, different from LOTUS messages')
         return report
 

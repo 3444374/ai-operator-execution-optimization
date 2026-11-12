@@ -28,7 +28,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 
 | 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
 |---|---|---|---|---|---|
-| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；Cars/E-Commerce Filter 有软件检查，真实数据/SQL待验；原版字符串输出受限 | Movie Filter/Map 已接；MMQA/Medical 有具名私有 Filter；原版结构化输出未透传，E-Commerce/Cars 未接线 |
+| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；Cars/E-Commerce Filter 有软件检查，真实数据/SQL待验；原版字符串输出受限 | Movie Filter、按原字段的普通 Map 已接；E-Commerce Q5 有软件检查，真实资产/作者模型待验；MMQA/Medical 有私有 Filter，其他接点分列 |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接，软件检查；Linux/模型待验，非作者 Join 算法复现 | 未接线 |
 | 原 quick TopK；Movie Q9 TopK profile | 显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
@@ -218,9 +218,16 @@ length→8192 重试、原 parser 和完整关系后处理。Q10 另绑定原 Mo
 不设固定样本量。候选 `e5ea4842f` 的既有 48 项 CPU 检查与 4000 条保存答复回放为软件证据；
 交接后的隔离组合另通过 22 项零模型回归，覆盖三题的小规模原查询／评价及 CLI 交接。
 冻结候选 `e5ea4842f` 已由独立服务器会话通过 Linux 作者 SDK／planner／request-object 及完整 token
-检查，合计2376条，模型调用0、未初始化 CUDA；其 Map 接点文件与当前分支相同。
-当前分支随后修改了共享查询绑定，整合后的目标环境验证仍为 pending，不转授该候选或旧 GPU 结果；
+检查，合计2376条，模型调用0、未初始化 CUDA。
+当前分支随后修改了共享查询及 Map 字段绑定，整合后的目标环境验证仍为 pending，不转授该候选或旧 GPU 结果；
 查询终点仍是完整内存关系，审计、评价、编码、持久化和关闭位于该终点之后。
+
+同一 Kalypso Map driver 现在按原题引用字段绑定，不限定 Movie 题号／`reviewText`／数字结果；
+新的 `sembench-map` spec 直接指定原 scenario/query，旧 Movie 名称仍使用它。E-Commerce Q5 的
+完整多字段描述、原分类列与 ARI 已有本机原查询／SDK／作者模板软件检查；结合 Movie/owner/计时
+回归共 56 项不同检查通过，0 跳过、0 模型。真实 E-Commerce 数据未齐，作者 planner／模型待验；
+Extract 的结构化输出、连续算子及其他未接线能力不因此获得支持。
+来源、输入表示与边界见[Map 字段绑定](src/baselines/text/frameworks/kalypso_native/README.md#按原题字段复用-map)。
 
 [IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257`、可选
 schema-child 和 varchar-owned 工程变体。连同[完整原关系交接](src/experiments/native_imlane_relation.py)，

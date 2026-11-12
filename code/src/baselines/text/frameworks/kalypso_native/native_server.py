@@ -18,6 +18,23 @@ ROW = contextvars.ContextVar('observed_native_row',default=None)
 CALL = contextvars.ContextVar('observed_native_call',default=None)
 AUTHOR_SOURCE_COMMIT = '05024f027f932c0e398852e38302be30b9015481'
 MOVIE_MAP_QUERIES = {'movie-q8': '8', 'movie-q9': '9', 'movie-q10': '10'}
+MAP_TASKS = (*MOVIE_MAP_QUERIES, 'sembench-map')
+
+
+def map_task(spec):
+    """Bind the original query; its captured accessor must still be Map."""
+    task = spec['task']
+    if task in MOVIE_MAP_QUERIES:
+        query = MOVIE_MAP_QUERIES[task]
+        return dict(scenario='movie', query_id=query,
+                    **(dict(ranking='map') if query == '9' else {}))
+    if task != 'sembench-map':
+        raise ValueError('A supported original Map task is required; not TopK')
+    binding=dict(scenario=spec['scenario'], query_id=str(spec['query']).lower().removeprefix('q'),
+                 **{name: spec[name] for name in ('scale_factor', 'ranking') if name in spec})
+    if binding['scenario']=='movie' and binding['query_id']=='9' and binding.get('ranking') is None:
+        binding['ranking']='map'
+    return binding
 
 
 def check_author_source(cfg):
@@ -142,11 +159,11 @@ def physical_call_caps(unit):
         if type(logical) is not int or logical<=0:
             raise ValueError('Native query needs a finite positive logical occurrence count')
         cap=query.get('max_native_calls',logical)
-        if query.get('task') in MOVIE_MAP_QUERIES:
+        if query.get('task') in MAP_TASKS:
             if cap!=2*logical:
                 raise ValueError('Map requires twice the logical occurrence count as its physical call cap')
         elif cap!=logical:
-            raise ValueError('Only Movie Map binds a native length retry allowance')
+            raise ValueError('Only Map binds a native length retry allowance')
         if type(cap) is not int or cap<=0 or query['query_id'] in caps:
             raise ValueError('Invalid or duplicate native query budget')
         caps[query['query_id']]=cap
@@ -228,8 +245,8 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         finally:
             ROW.reset(token)
 
-    if any(q.get('task') in MOVIE_MAP_QUERIES for q in unit['queries']):
-        if any(q.get('task') not in MOVIE_MAP_QUERIES for q in unit['queries']):
+    if any(q.get('task') in MAP_TASKS for q in unit['queries']):
+        if any(q.get('task') not in MAP_TASKS for q in unit['queries']):
             raise ValueError('Map requires its own finite owner unit')
         from vllm.kalypso.sem_ops.map import SemMap
         from vllm.kalypso.controller.map_estimator import MapRatioEstimator

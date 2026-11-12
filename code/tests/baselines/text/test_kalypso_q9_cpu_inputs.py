@@ -27,7 +27,8 @@ class CPUInputContracts(unittest.TestCase):
         for spec in unit(count,task)['queries']:
             root=self.root/spec['query_id'];root.mkdir()
             rows=[dict(idx=i,row_id=spec['query_id']+'-row-'+str(i),source_position=i,
-                source_index=i*7,reviewId='duplicate',reviewText='review '+str(i)) for i in range(count)]
+                source_index=i*7,reviewId='duplicate',reviewText='review '+str(i),
+                fields={'reviewText':'review '+str(i)},data='review '+str(i)) for i in range(count)]
             (root/'prompt.json').write_text(json.dumps(dict(query_id=spec['query_id'],instruction='original',rows=rows)))
             with (root/'input.csv').open('w',newline='') as stream:
                 writer=csv.DictWriter(stream,fieldnames=['data']);writer.writeheader()

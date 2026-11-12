@@ -1,11 +1,11 @@
-"""Frozen Movie Map input handoff from the SemBench driver to native CPU Python."""
+"""Frozen Map input handoff from the SemBench driver to native CPU Python."""
 import csv
 import hashlib
 import json
 import subprocess
 from pathlib import Path
 
-from .native_server import AUTHOR_SOURCE_COMMIT, MOVIE_MAP_QUERIES, physical_call_caps
+from .native_server import AUTHOR_SOURCE_COMMIT, MOVIE_MAP_QUERIES, MAP_TASKS, map_task, physical_call_caps
 
 # Preserve the existing protocol name; each query's task is bound in the unit.
 SCHEMA = 'semloom.kalypso_q9_cpu_inputs.v1'
@@ -19,6 +19,7 @@ SOURCE_FILES = (
     'src/baselines/text/sembench_source.py',
     'src/baselines/text/sembench_text.py',
     'src/baselines/text/sembench_movie.py',
+    'src/baselines/text/sembench_ecomm.py',
     'src/experiments/kalypso_query_lifecycle.py',
 )
 
@@ -47,8 +48,8 @@ def source_binding(cfg):
 
 def binding(cfg, unit):
     if (len(cfg['units']) != 1 or not unit['queries'] or cfg['units'][0] != unit
-            or any(q['task'] not in MOVIE_MAP_QUERIES for q in unit['queries'])):
-        raise ValueError('Movie CPU preparation requires one dedicated Map unit')
+            or any(q['task'] not in MAP_TASKS for q in unit['queries'])):
+        raise ValueError('CPU preparation requires one dedicated Map unit')
     physical_call_caps(unit)
     if cfg['source_commit'] != AUTHOR_SOURCE_COMMIT:
         raise ValueError('Map CPU input handoff requires original author05024')
@@ -72,11 +73,11 @@ def prepare_inputs(cfg, unit, output):
         qid = spec['query_id']
         if Path(qid).name != qid or qid in ('.', '..'):
             raise ValueError('Map CPU query identity must be a filename-safe name')
-        query = make_query(local, qid, spec['task'])
+        query = make_query(local, qid, spec)
         directory = output / ('query-' + str(index))
         rows, csv_path = prepare(local, spec, directory, query.operation)
         description = query.describe()
-        description['policy'] = 'original Movie Map selection; no model calls in CPU preparation'
+        description['policy'] = 'original SemBench Map selection; no model calls in CPU preparation'
         description['native_retry_policy'] = 'author length retry remains at most once at8192'
         source_path = directory / 'source.json'
         source_path.write_text(json.dumps(description, ensure_ascii=False, indent=2) + '\n')
@@ -88,7 +89,7 @@ def prepare_inputs(cfg, unit, output):
         preparation='original SemBench selection in driver Python; author Python consumes only frozen files')
     path = output / 'CPU-INPUTS.json'
     path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
-    return dict(status='prepared_original_Movie_Map_CPU_inputs_no_model', manifest=str(path.resolve()),
+    return dict(status='prepared_original_Map_CPU_inputs_no_model', manifest=str(path.resolve()),
                 sha256=sha(path), queries=len(queries), logical_occurrences=sum(q['logical_occurrences'] for q in queries))
 
 
@@ -118,9 +119,9 @@ def load_inputs(cfg):
             paths[role] = target
         description = json.loads(paths['source'].read_text())
         table = json.loads(paths['prompt'].read_text())
-        query=MOVIE_MAP_QUERIES[spec['task']]
-        if (description['scenario'] != 'movie' or description['query'] != 'Q'+query
-                or description.get('ranking') != ('map' if query=='9' else None)
+        original=map_task(spec)
+        if (description['scenario'] != original['scenario'] or description['query'] != 'Q'+original['query_id']
+                or description.get('ranking') != original.get('ranking')
                 or description['query_id'] != spec['query_id']
                 or description['sembench_commit'] != 'c814e3807e72d4cf876b852b17e77f3cc94575c2'
                 or type(description['expected_model_calls']) is not int or description['expected_model_calls'] != count
@@ -136,7 +137,7 @@ def load_inputs(cfg):
             raise ValueError('Frozen Map CPU occurrence identities differ')
         with paths['csv'].open(newline='') as stream:
             reader = csv.DictReader(stream)
-            if reader.fieldnames != ['data'] or [r['data'] for r in reader] != [r['reviewText'] for r in rows]:
+            if reader.fieldnames != ['data'] or [r['data'] for r in reader] != [r['data'] for r in rows]:
                 raise ValueError('Frozen Map CPU CSV differs from complete occurrence table')
         loaded.append(dict(spec=spec, table=table, paths=paths))
     return manifest, loaded
