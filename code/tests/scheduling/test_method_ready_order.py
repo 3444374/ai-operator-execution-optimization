@@ -2,6 +2,7 @@
 
 from dataclasses import asdict
 import unittest
+from unittest.mock import patch
 
 from src.semantic_methods.budget import MethodBudgetPool, MethodCapacity, row_reservation
 from src.semantic_methods.continuation import Continue, Final, MethodLimits, Request
@@ -42,6 +43,45 @@ def finish(driver, backend):
 
 
 class ReadyOrderTests(unittest.TestCase):
+    def test_delivery_bound_interleaves_offers_without_changing_full_requests_or_occurrences(self):
+        observations = []
+        for bound in (1, 2):
+            events, tasks, outputs = [], [], []
+            driver, core, backend, _, pool = make(rows=2, slots=2, policy='fifo', observer=events.append)
+            self.addCleanup(driver.close)
+            offer = driver.session.offer
+            def capture(batch):
+                outcome = offer(batch)
+                tasks.extend(asdict(t) for t in batch[:outcome.accepted_prefix_count])
+                return outcome
+            with patch.object(driver.session, 'offer', side_effect=capture):
+                for i in range(2):
+                    self.assertTrue(driver.offer_row(RowIdentity(i, 'same-business-id'), b'2'))
+                driver.end_input()
+                driver.advance(2); driver.advance(2)
+                self.assertEqual(len(backend.pending), 2)
+                for key in tuple(backend.pending): backend.complete(key, b'OK')
+                events.clear()
+                for _ in range(2 // bound): driver.advance(bound)
+                order = [(e.action, e.row.sequence) for e in events
+                         if e.action in ('method_ready', 'Core_offer_accepted')]
+                for _ in range(20):
+                    driver.advance(bound)
+                    for key in tuple(backend.pending): backend.complete(key, b'OK')
+                    for result in driver.results(2):
+                        outputs.append((asdict(result.row), result.value))
+                        driver.release_result(result.row)
+                    if driver.finished: break
+            self.assertTrue(driver.finished)
+            self.assertEqual(len(tasks), 4)
+            self.assertEqual(pool.used, (0, 0))
+            self.assertFalse(any(vars(core.capacity.usage()).values()))
+            observations.append((order, tasks, outputs))
+        ready, offered = 'method_ready', 'Core_offer_accepted'
+        self.assertEqual(observations[0][0], [(ready, 0), (offered, 0), (ready, 1), (offered, 1)])
+        self.assertEqual(observations[1][0], [(ready, 0), (ready, 1), (offered, 0), (offered, 1)])
+        self.assertEqual(observations[0][1:], observations[1][1:])
+
     def run_order(self, policy, stages=4, *, aging=100):
         events = []
         d, core, backend, clock, pool = make(policy=policy, aging=aging, observer=events.append)

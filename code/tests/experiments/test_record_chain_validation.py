@@ -1,7 +1,9 @@
 """Private-config and captured-receipt fixtures; never start Ray or native models."""
 from copy import deepcopy
+from contextlib import redirect_stdout
 from dataclasses import asdict
 import hashlib
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -234,6 +236,30 @@ class CapturedUidTests(unittest.TestCase):
     def test_positive_distinct_native_engines(self):
         self.assertTrue(self.compare()['outputs_strictly_comparable'])
 
+    def test_compare_cli_retains_differences_and_fails_on_token_or_relation_changes(self):
+        original = deepcopy(self.reports)
+        self.config['artifact_root'] = str(self.root)
+        self.save()
+        for changed in ('none', 'output_tokens', 'final_relation'):
+            with self.subTest(changed=changed):
+                self.reports = deepcopy(original)
+                if changed == 'output_tokens':
+                    self.reports[1]['calls'][0]['output_token_ids_json'] = '[3]'
+                elif changed == 'final_relation':
+                    self.reports[1]['outputs'] = [{'row_id': 'different'}]
+                self.compare()
+                output = self.root / (changed + '-comparison.json')
+                stdout = io.StringIO()
+                with redirect_stdout(stdout):
+                    status = entry.main(['compare', '--config', str(self.path),
+                                         '--output', str(output)])
+                saved = json.loads(output.read_text())
+                self.assertEqual(saved['outputs_strictly_comparable'], changed == 'none')
+                self.assertEqual(status, 0 if changed == 'none' else 1)
+                self.assertEqual(json.loads(stdout.getvalue())['outputs_strictly_comparable'],
+                                 saved['outputs_strictly_comparable'])
+                self.assertIn('not established', saved['performance_qualification'])
+
     def test_null_empty_missing_and_nonstring_UIDs_reject(self):
         for value in (None,'',' ',17,False,[],{},' padded '):
             with self.subTest(value=value):
@@ -253,7 +279,7 @@ class CapturedUidTests(unittest.TestCase):
 
 
 class NormalQueryBridgeTests(unittest.TestCase):
-    def test_four_options_use_actual_resources_and_same_original_method_reference(self):
+    def test_options_and_step_budgets_use_same_complete_method_requests_and_outputs(self):
         from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
         from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
         from tests.execution_provider.test_lotus_record_local_tokens import QueryTokenTests
@@ -269,19 +295,109 @@ class NormalQueryBridgeTests(unittest.TestCase):
             config = config_for(name)
             resources = entry.make_resources(config)
         baseline = None
-        for _, token, priority in entry.CASES:
-            with self.subTest(token=token,priority=priority), ThreadedRuntime([]), \
+        cases = [dict(case_id=name, token=token, successor=priority) for name, token, priority in entry.CASES]
+        for case in cases + checks.step_action_cases():
+            with self.subTest(case=case['case_id']), ThreadedRuntime([]), \
                     patch.object(AsyncCoreModelActor,'_process_type',return_value=Process):
                 budget, _ = checks.make_budget(fixture.tok,fixture.model,chain,records)
                 actors = AsyncRecordsActorOwner.for_prepared(fixture.model,chain.stages[0].generation,resources)
+                capacity = checks.CoreRecordsCapacity(**case['core_capacity']) if 'core_capacity' in case else None
                 result = checks.run_case(records,chain,fixture.model,resources,control_dir=None,
-                    token_budget=budget if token else None,priority=priority,actor_owner=actors)
+                    token_budget=budget if case['token'] else None,priority=case['successor'],actor_owner=actors,
+                    capacity=capacity, observe_ready=capacity is not None)
                 replay = checks.replay_native_answers(records,chain,result)
                 self.assertEqual((len(result['calls']),replay['recorded_answers_replayed']),(48,48))
                 self.assertEqual(result['close']['status'],'closed')
                 outputs = [r.describe() for r in result['records']]
                 if baseline is None: baseline = outputs
                 self.assertEqual(outputs,baseline)
+                if capacity is not None:
+                    self.assertEqual(result['step_actions'], dict(core_capacity=asdict(capacity),
+                        method_advance_bound=min(capacity.step_actions, 4)))
+                    self.assertEqual(result['capacity']['active_request_limit'], 4)
+                    self.assertEqual(result['capacity']['retained_rows'], 4)
+                    self.assertEqual(sum(e['action'] == 'Core_offer_accepted' for e in result['ready_events']), 48)
+
+
+class StepActionTests(unittest.TestCase):
+    save = ConfigTests.save
+
+    def setUp(self):
+        ConfigTests.setUp(self)
+        self.config.update(suite='step-actions')
+        self.config['ray_roots'] = {c['case_id']:str(self.root / c['case_id']) for c in checks.step_action_cases()}
+        self.save()
+
+    def test_existing_C4_grants_call_budget_and_CLI_bind_the_two_step_budgets(self):
+        config, engine, resources, _ = entry.configuration(self.path)
+        self.assertEqual(config['cases'], checks.step_action_cases())
+        self.assertEqual((resources.max_active_batches, engine.max_model_calls, engine.max_num_seqs), (4, 48, 4))
+        limits, method = [], []
+        for case in config['cases']:
+            capacity = checks.CoreRecordsCapacity(**case['core_capacity'])
+            value = asdict(capacity.limits(resources)); value.pop('step_actions')
+            limits.append(value)
+            method.append(asdict(capacity.method_capacity(resources, capacity.method_limits(3))))
+        self.assertEqual(limits[0], limits[1])
+        self.assertEqual(method[0], method[1])
+        with patch.object(entry, 'checkout_identity', return_value={'commit':'a'*40}):
+            checked = entry.check(self.path)
+        self.assertEqual((checked['suite'], checked['max_requests'], checked['models'], checked['claims']),
+                         ('step-actions', 96, 0, 0))
+        with patch.object(entry, 'supervised_case', return_value={}) as run:
+            entry.main(['case', '--config', str(self.path), '--ready', str(self.root / 'ready.json'),
+                        '--case', 'one-action', '--execute-model'])
+        self.assertEqual(run.call_args.args[-1], 'one-action')
+
+    def test_token_mode_foreign_case_and_wrong_C_stop_before_model_preparation(self):
+        with patch.object(entry, 'objects') as objects, self.assertRaisesRegex(ValueError, 'count-only'):
+            entry.qualify(self.path, self.root / 'ready.json')
+        objects.assert_not_called()
+        with self.assertRaisesRegex(ValueError, 'not part'):
+            entry.qualified(self.path, self.root / 'ready.json', case_id='fifo-count')
+        self.config['resources']['max_active_batches'] = 1; self.save()
+        with self.assertRaisesRegex(ValueError, 'max_active_batches=4'):
+            entry.configuration(self.path)
+
+    def test_comparison_rejects_changed_processing_bound_and_unequal_grants(self):
+        config, engine, resources, generation = entry.configuration(self.path)
+        fixture = CapturedUidTests(); fixture.setUp(); self.addCleanup(fixture.doCleanups)
+        digest = entry.file_identity(self.path)['sha256']
+        reports = fixture.reports[:2]
+        for case, report in zip(config['cases'], reports):
+            progression = dict(policy='record', batch_rows=None)
+            report.update(case_id=case['case_id'], suite='step-actions', config_sha256=digest,
+                input_sha256=config['input']['sha256'], execution='record_local_sections',
+                engine=json.loads(json.dumps(asdict(engine))), generation=asdict(generation), resources=asdict(resources),
+                progression=progression, driver_progression=progression,
+                capacity=dict(active_request_limit=4, held_task_limit=4,
+                    retained_rows=4, retained_bytes=400, row_reservation_bytes=100),
+                step_actions=dict(core_capacity=case['core_capacity'],
+                    method_advance_bound=min(case['core_capacity']['step_actions'], 4)),
+                ready_events=[dict(action=action, row={'sequence':i}, stage_index=stage)
+                              for action in ('method_ready', 'Core_offer_accepted') for i in range(16) for stage in range(3)],
+                close=dict(execution='record_local_sections', progression=progression, status='closed', query_completed=True,
+                    cross_query_model_reuse=False, model_batch_rows=1, core_usage={'active_work':0},
+                    peak_core_usage={'active_requests':4, 'held_tasks':4}))
+        def compare():
+            root = Path(config['artifact_root'])
+            for case, report in zip(config['cases'], reports):
+                path = root / 'cases' / case['case_id']; path.mkdir(parents=True, exist_ok=True)
+                (path / 'case.json').write_text(json.dumps(report))
+            return checks.compare(root, config, config_sha256=digest)
+        self.assertTrue(compare()['outputs_strictly_comparable'])
+        original = deepcopy(reports[1])
+        for field, invalid in [
+            ('step_actions', {**original['step_actions'], 'method_advance_bound':1}),
+            ('step_actions', None), ('ready_events', []), ('ready_events', original['ready_events'][:-1]),
+            ('config_sha256', '0'*64),
+            ('resources', {**original['resources'], 'max_active_batches':1}),
+            ('capacity', {**original['capacity'], 'retained_bytes':800, 'row_reservation_bytes':200}),
+            ('close', {**original['close'], 'core_usage':{'active_work':1}}),
+        ]:
+            with self.subTest(field=field):
+                reports[1] = {**deepcopy(original), field:invalid}
+                with self.assertRaises(ValueError): compare()
 
 
 class ExecutionComparisonTests(unittest.TestCase):
@@ -324,7 +440,7 @@ class ExecutionComparisonTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unknown validation suite'):
             entry.configuration(self.path)
 
-    def test_worker_uses_the_selected_path_and_does_not_boot_Ray_for_fused(self):
+    def test_worker_routes_execution_and_step_capacity_without_changing_native_call_cap(self):
         from types import SimpleNamespace
         from unittest.mock import MagicMock
         from src.semantic_methods.lotus.record_chain import RecordOccurrence
@@ -333,10 +449,17 @@ class ExecutionComparisonTests(unittest.TestCase):
         self.config.update(execution_enabled=True, external_owner={'fixture': 'lease check is mocked'},
                            physical_gpu_UUID='GPU-fixture')
         self.save()
-        config, engine, resources, generation = entry.configuration(self.path)
+        configurations = [entry.configuration(self.path)]
+        self.config.update(suite='step-actions')
+        self.config['resources']['max_active_batches'] = 4
+        self.config['ray_roots'] = {c['case_id']:str(self.root / c['case_id']) for c in checks.step_action_cases()}
+        self.save()
+        configurations.append(entry.configuration(self.path))
         ready = dict(source={'commit': 'a' * 40}, config_sha256='b' * 64,
                      W=None, token_estimator_signature=None)
-        for case in config['cases']:
+        runs = [(values, case) for values in configurations for case in values[0]['cases']]
+        for (config, engine, resources, generation), case in runs:
+            execution = case.get('execution', 'record_local_sections')
             fake_ray = SimpleNamespace(__version__='2.56.1', is_initialized=lambda: False,
                                        init=Mock(), shutdown=Mock())
             sampler = MagicMock(); sampler.summary.return_value = {}
@@ -353,12 +476,17 @@ class ExecutionComparisonTests(unittest.TestCase):
                     patch('src.observability.process_resources.phase_sampler.ProcessSampler', return_value=sampler), \
                     patch('src.observability.records_telemetry.RecordsTelemetry', return_value=telemetry):
                 report = entry.execute_worker(self.path, self.root / 'ready.json', case['case_id'])
-                self.assertEqual(run.call_args.kwargs['execution'], case['execution'])
-                if case['execution'] == 'fused':
+                self.assertEqual(run.call_args.kwargs.get('execution', 'record_local_sections'), execution)
+                if 'core_capacity' in case:
+                    self.assertEqual(asdict(run.call_args.kwargs['capacity']), case['core_capacity'])
+                    self.assertTrue(run.call_args.kwargs['observe_ready'])
+                    self.assertIsNone(run.call_args.kwargs['token_budget'])
+                    self.assertFalse(run.call_args.kwargs['priority'])
+                if execution == 'fused':
                     self.assertTrue(Path(run.call_args.kwargs['control_dir']).is_dir())
-                self.assertEqual(fake_ray.init.call_count, int(case['execution'] != 'fused'))
-                self.assertEqual(fake_ray.shutdown.call_count, int(case['execution'] != 'fused'))
-                self.assertEqual(report['caller_runtime']['ray_owned'], case['execution'] != 'fused')
+                self.assertEqual(fake_ray.init.call_count, int(execution != 'fused'))
+                self.assertEqual(fake_ray.shutdown.call_count, int(execution != 'fused'))
+                self.assertEqual(report['caller_runtime']['ray_owned'], execution != 'fused')
                 self.assertEqual(ledger.call_args.args[1].limit, 96)
 
     def test_fused_C4_is_still_rejected_before_source_or_model_creation(self):
@@ -368,6 +496,9 @@ class ExecutionComparisonTests(unittest.TestCase):
                                   entry.make_resources(self.config), execution='fused')
 
     def test_C1_pair_uses_real_query_owners_and_one_model_per_query(self):
+        import time
+        from types import SimpleNamespace
+        from src.execution_provider.adapters import records_query_runtime, lotus_chain_fused_runtime
         from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
         from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
         from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime
@@ -405,9 +536,42 @@ class ExecutionComparisonTests(unittest.TestCase):
             'resources': {**self.config['resources'], 'max_active_batches': 1}})
         model = EngineSpec(str(fixture.config), sys.executable, sys.executable, max_model_len=4096)
         results = []
+        clock = SimpleNamespace(ns=100_000_000_000)
+        observed_time = SimpleNamespace(monotonic=time.monotonic, monotonic_ns=lambda: clock.ns)
+        owner_type = checks.SemLoomRecordChainCore
+        evaluate, close, finish = owner_type.evaluate, owner_type.close, owner_type.finish_query
+        closing = set()
+
+        def timed_evaluate(owner, *args, **kwargs):
+            stream = evaluate(owner, *args, **kwargs)
+            self.assertIsNone(stream.full_relation_ready_ns)
+            clock.ns += 3_000_000_000
+            return stream
+
+        def record_close(owner):
+            if owner not in closing:
+                # The complete relation marker must precede even the first automatic close.
+                self.assertEqual(owner._active.full_relation_ready_ns, clock.ns)
+                closing.add(owner)
+                clock.ns += 7_000_000_000
+
+        def timed_close(owner, *args, **kwargs):
+            record_close(owner)
+            return close(owner, *args, **kwargs)
+
+        def timed_finish(owner, *args, **kwargs):
+            record_close(owner)
+            return finish(owner, *args, **kwargs)
+
         with ThreadedRuntime([]) as runtime, patch.object(AsyncCoreModelActor, '_process_type', return_value=Process), \
                 patch.object(FusedChainBatch, '_engine_type', Engine), \
-                patch.object(EngineSpec, 'validate_driver_environment', return_value={}):
+                patch.object(EngineSpec, 'validate_driver_environment', return_value={}), \
+                patch.object(checks, 'time', observed_time), \
+                patch.object(records_query_runtime, 'time', observed_time), \
+                patch.object(lotus_chain_fused_runtime, 'time', observed_time), \
+                patch.object(owner_type, 'evaluate', timed_evaluate), \
+                patch.object(owner_type, 'close', timed_close), \
+                patch.object(owner_type, 'finish_query', timed_finish):
             for execution in ('fused', 'record_local_sections'):
                 result = checks.run_case(records, chain, model, resources, control_dir=self.root,
                                          execution=execution)
@@ -421,6 +585,11 @@ class ExecutionComparisonTests(unittest.TestCase):
                 self.assertLessEqual(result['timing']['caller_entered_ns'], result['timing']['evaluate_returned_ns'])
                 self.assertLessEqual(result['timing']['evaluate_returned_ns'], result['timing']['iterator_complete_ns'])
                 self.assertLessEqual(result['timing']['iterator_complete_ns'], result['timing']['caller_returned_ns'])
+                self.assertEqual(result['timing']['caller_to_full_relation_ready_s'], 3)
+                self.assertEqual(result['timing']['full_owner_call_s'], 10)
+                self.assertEqual(result['timing']['iterator_complete_ns'] -
+                                 result['timing']['full_relation_ready_ns'], 7_000_000_000)
+                self.assertEqual(result['columns'], list(records[0].values) + ['label'])
                 self.assertEqual(checks.replay_native_answers(records, chain, result)['model_calls'], 0)
             self.assertEqual(len(runtime.async_actors), 1)
         self.assertEqual(results[0], results[1])

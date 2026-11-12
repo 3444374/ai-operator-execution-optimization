@@ -1,0 +1,302 @@
+{
+  "schema": "semloom.pr99.public_server_observations.v1",
+  "run_id": "semloom-pr99-step-actions-20261112-r1",
+  "status": "two_arms_completed_strict_comparison_failed",
+  "source_commit": "122e6f383f9340a572a4c69c0e9e78023eeae0a3",
+  "base_commit": "55c0a7d0ef10227758b32a8587ab09cf556ace52",
+  "support_commit": "933157666e1db81d47872fe21422ac8315ea7be3",
+  "workload": {
+    "identity": "project custom 16-row Map→Map→Filter; not original SemBench",
+    "source_positions": [
+      0,
+      15
+    ],
+    "input_sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+    "text_field_mapping": {
+      "reviewText": "text"
+    },
+    "repetitions_per_arm": 1,
+    "run_order": [
+      "one-action",
+      "default-actions"
+    ],
+    "additional_warmup": 0,
+    "retries": 0
+  },
+  "environment": {
+    "GPU": "NVIDIA GeForce RTX 4090",
+    "model_name": "Qwen2.5-7B-Instruct",
+    "versions": {
+      "ray": "2.56.1",
+      "lotus-ai": "1.2.4",
+      "transformers": "4.57.6",
+      "tokenizers": "0.22.2",
+      "pyarrow": "24.0.0"
+    },
+    "vllm_actual": "0.25.1",
+    "engine": {
+      "dtype": "bfloat16",
+      "max_model_len": 4096,
+      "max_num_seqs": 4,
+      "max_num_batched_tokens": 4096,
+      "gpu_memory_utilization": 0.8,
+      "seed": 0,
+      "chat_template": null,
+      "max_model_calls": 48,
+      "enable_mfu_metrics": false
+    }
+  },
+  "generation": {
+    "max_tokens": 8,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "seed": 0,
+    "stop": [
+      "\n"
+    ],
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "logprobs": null,
+    "response_format": null
+  },
+  "arms": [
+    {
+      "case_id": "one-action",
+      "status": "completed",
+      "confirmed_calls": 48,
+      "columns": [
+        "text",
+        "label_0",
+        "label_1"
+      ],
+      "output_rows": 6,
+      "full_outputs_sha256": "72c198525f3e9b876839543c3e9f86f15a2504acbdacbdd9e49d81da1ab5ab8e",
+      "resources": {
+        "cpu_workers": 1,
+        "gpu_workers": 1,
+        "prepare_batch_rows": 1,
+        "model_batch_rows": 1,
+        "max_active_batches": 4,
+        "query_timeout_s": 180,
+        "startup_timeout_s": 180,
+        "model_rpc_workers": null
+      },
+      "capacity": {
+        "active_request_limit": 4,
+        "held_task_limit": 4,
+        "retained_rows": 4,
+        "retained_bytes": 218106880,
+        "row_reservation_bytes": 54526720
+      },
+      "step_actions": {
+        "core_capacity": {
+          "item_input_bytes": 2097152,
+          "item_result_bytes": 2097152,
+          "metadata_bytes": 2048,
+          "step_actions": 1,
+          "poll_interval_s": 0.01,
+          "budget": null
+        },
+        "method_advance_bound": 1
+      },
+      "progression": {
+        "policy": "record",
+        "batch_rows": null,
+        "scope": "successor submission over the same single-row async model path"
+      },
+      "process_start_ns": 5608953655419267,
+      "timing": {
+        "caller_entered_ns": 5608972771285645,
+        "owner_constructed_ns": 5608972800314687,
+        "evaluate_returned_ns": 5609027649436329,
+        "iterator_complete_ns": 5609035053608824,
+        "full_relation_ready_ns": 5609029868394089,
+        "caller_to_full_relation_ready_s": 57.097108444,
+        "caller_returned_ns": 5609035053624044,
+        "full_owner_call_s": 62.282338399,
+        "construct_s": 0.029029042,
+        "evaluate_s": 54.849121642,
+        "iterate_to_eof_s": 7.404172495,
+        "final_close_s": 1.4918e-05,
+        "full_relation_ready_scope": "complete consumed relation and finalized columns before automatic owner finish/close; caller interval includes owner construction/evaluate and model startup, not input loading before run_case",
+        "iteration_scope": "includes lazy model startup in fused and automatic query close in both paths",
+        "iterator_complete_scope": "not claimed earliest model result readiness"
+      },
+      "worker_to_relation_s": 76.212974822,
+      "replay_wall_s": 0.05165469,
+      "worker_wall_before_final_write_s": 82.671767093,
+      "caller_runtime": {
+        "ray_owned": true,
+        "ray_init_s": 8.587361748,
+        "ray_shutdown_s": 1.204339378
+      },
+      "replay": {
+        "status": "passed",
+        "recorded_answers_replayed": 48,
+        "model_calls": 0,
+        "native_prompt_ids_checked": true
+      },
+      "close_status": "closed",
+      "ray_shutdown_returned": true,
+      "lifecycle": {
+        "model_lifetime": "one_fresh_model_per_query",
+        "cross_query_model_reuse": false,
+        "ray_initialized_by_helper": false,
+        "adapter_uses_ray": true
+      }
+    },
+    {
+      "case_id": "default-actions",
+      "status": "completed",
+      "confirmed_calls": 48,
+      "columns": [
+        "text",
+        "label_0",
+        "label_1"
+      ],
+      "output_rows": 6,
+      "full_outputs_sha256": "72c198525f3e9b876839543c3e9f86f15a2504acbdacbdd9e49d81da1ab5ab8e",
+      "resources": {
+        "cpu_workers": 1,
+        "gpu_workers": 1,
+        "prepare_batch_rows": 1,
+        "model_batch_rows": 1,
+        "max_active_batches": 4,
+        "query_timeout_s": 180,
+        "startup_timeout_s": 180,
+        "model_rpc_workers": null
+      },
+      "capacity": {
+        "active_request_limit": 4,
+        "held_task_limit": 4,
+        "retained_rows": 4,
+        "retained_bytes": 218106880,
+        "row_reservation_bytes": 54526720
+      },
+      "step_actions": {
+        "core_capacity": {
+          "item_input_bytes": 2097152,
+          "item_result_bytes": 2097152,
+          "metadata_bytes": 2048,
+          "step_actions": 16,
+          "poll_interval_s": 0.01,
+          "budget": null
+        },
+        "method_advance_bound": 4
+      },
+      "progression": {
+        "policy": "record",
+        "batch_rows": null,
+        "scope": "successor submission over the same single-row async model path"
+      },
+      "process_start_ns": 5609039267351588,
+      "timing": {
+        "caller_entered_ns": 5609058128230641,
+        "owner_constructed_ns": 5609058158363891,
+        "evaluate_returned_ns": 5609100765923097,
+        "iterator_complete_ns": 5609108138230933,
+        "full_relation_ready_ns": 5609103016169536,
+        "caller_to_full_relation_ready_s": 44.887938895,
+        "caller_returned_ns": 5609108138248914,
+        "full_owner_call_s": 50.010018273,
+        "construct_s": 0.03013325,
+        "evaluate_s": 42.607559206,
+        "iterate_to_eof_s": 7.372307836,
+        "final_close_s": 1.7534e-05,
+        "full_relation_ready_scope": "complete consumed relation and finalized columns before automatic owner finish/close; caller interval includes owner construction/evaluate and model startup, not input loading before run_case",
+        "iteration_scope": "includes lazy model startup in fused and automatic query close in both paths",
+        "iterator_complete_scope": "not claimed earliest model result readiness"
+      },
+      "worker_to_relation_s": 63.748817948,
+      "replay_wall_s": 0.070010502,
+      "worker_wall_before_final_write_s": 70.160280597,
+      "caller_runtime": {
+        "ray_owned": true,
+        "ray_init_s": 8.281165956,
+        "ray_shutdown_s": 1.206895635
+      },
+      "replay": {
+        "status": "passed",
+        "recorded_answers_replayed": 48,
+        "model_calls": 0,
+        "native_prompt_ids_checked": true
+      },
+      "close_status": "closed",
+      "ray_shutdown_returned": true,
+      "lifecycle": {
+        "model_lifetime": "one_fresh_model_per_query",
+        "cross_query_model_reuse": false,
+        "ray_initialized_by_helper": false,
+        "adapter_uses_ray": true
+      }
+    }
+  ],
+  "comparison": {
+    "exit_code": 1,
+    "outputs_strictly_comparable": false,
+    "equal_request_fields_of_48": {
+      "messages_sha256": 48,
+      "prompt_token_ids_json": 48,
+      "text": 48,
+      "finish_reason": 48,
+      "output_token_ids_json": 47
+    },
+    "final_relation_identical": true,
+    "final_rows": 6,
+    "output_token_differences": [
+      {
+        "call_id": "lotus-record-method-v1:[\"current-main-MMF\",\"map0\",\"main\",\"movie:15\",15,0]",
+        "text": "Label: Film Review",
+        "finish_reason": "stop",
+        "output_token_ids": {
+          "one-action": [
+            2476,
+            25,
+            16631,
+            10294,
+            271
+          ],
+          "default-actions": [
+            2476,
+            25,
+            16631,
+            10294,
+            151645
+          ]
+        }
+      }
+    ]
+  },
+  "outer": {
+    "status": "failed",
+    "failure_stage": "strict_compare",
+    "resource_cleanup_passed": true,
+    "remaining_owned_count": 0,
+    "GPU_compute_count": 0,
+    "GPU_used_mib": 1,
+    "SHM_unchanged": true,
+    "lease_released": true
+  },
+  "claims": {
+    "performance_qualification": false,
+    "mechanism_causality": false,
+    "same_owner_warm": false,
+    "reason": "n=1 per arm and output token arrays differ; preserve all durations without a speedup or mechanism claim"
+  },
+  "evidence": {
+    "archive_sha256": "f1879a799e8c6afd89b7add0c797dfe7d8f13c9301967242b7eb9247ecbe3b0d",
+    "summary_sha256": "f74345cdf2e724a09cd62ee430d4773aadc6eb6b80fc83c81cfbcf992fe5c3da",
+    "verified_original_files": 101,
+    "source_files": {
+      "CONFIG.json": "33aa5c5b3d418bef31b32b10f10049c2cb55618e5e6215140fdfdf640480e543",
+      "COMPARISON.json": "05d9e2797ee7b085d35052e5a2734b427de91c716ef2863ca359d42efbb99185",
+      "gpu-host/FINAL.json": "8455159c19e6e71133031b75e0117a4638ca1efb8b4a3d97b6244d4467bec397",
+      "gpu-host/RUNS/stage-2-supervision/worker/supervisor.json": "9f65fc6b9b03d2938221f28173b93a287ea7e942f6eeb6ce810d42f572bda920",
+      "artifacts/cases/one-action/case.json": "b4532f9be0645948b1a9ff2ea2d9d28366f4e9a082e25b3d1bbc714ee57d1cc9",
+      "artifacts/cases/default-actions/case.json": "8c4e10a64d779e48213b02d6e5da42c13fa1e6ff4b1b5b7f73eaa6836a220ba2"
+    },
+    "public_scope": "selected observations and all original per-arm query timing fields; no machine/account/path/env/raw prompt export",
+    "originals_access": "retained private under the run identifier; recover the unchanged archive by SHA256"
+  }
+}

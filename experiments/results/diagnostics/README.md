@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[有限链比较的退出状态](record_chain_comparison_20261111/README.md)：保存输出差异后返回失败，原始反例与修复后 CPU 检查；不授予暖查询或 GPU 性能资格。
+
 [原生 baseline 隔离组合](baseline_validated_integration_20261111/README.md)：
 精确合并、限定 CPU 回归、保存答复/软件 IPC 及测试隔离修复；组件目标成绩保持原提交，尚未合 main。
 

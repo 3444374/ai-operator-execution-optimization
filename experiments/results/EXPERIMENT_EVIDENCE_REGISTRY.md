@@ -1,5 +1,26 @@
 # 实验与机制证据台账
 
+## 2026-11-12：Core步骤预算的批次不变模式补验
+
+[原报告补充](diagnostics/record_chain_comparison_20261111/README.md#batch-invariant-followup-20261112)
+保存原观测失败和4294f14bc上两组成对真实比较；原累计额度／截止时间未重置。两组完整请求／输出／
+关系一致与正常资源检查通过，耗时方向不一致，未建立稳定收益。新数值配置不转授旧47/48失败；
+结束后的socket归档失败与逐文件修复分别保留，不将完整controller原状态改判。
+
+
+## 2026-11-12：Core 步骤预算的真实两臂比较未通过严格 token 验收
+
+[同一报告的服务器结果](diagnostics/record_chain_comparison_20261111/README.md#server-step-actions-20261112)
+绑定 `122e6f383` 与独立资源支持 `933157666`：自定义 16 行 MMF 两臂各 48 次确认终态，
+最终关系及文本相同，但一项输出 token 不同，比较退出 1；原失败、完整时钟和资源清理结果保留。
+每臂 n=1，不授予性能收益、机制因果或原 SemBench 资格，PR #99 保持独立 Draft。
+
+## 2026-11-11：有限链回执比较的退出状态
+
+[原反例和修复检查](diagnostics/record_chain_comparison_20261111/README.md)证明旧比较命令在输出不一致时仍返回0，
+新行为先保存差异，再返回1并在标准输出给出严格一致标记。来源为本地临时回执和 CPU 验证，
+没有模型或服务器调用；既有61项服务器 CPU 检查仍绑定原提交，不转授为本次修改的服务器验证。
+
 ## 2026-11-11：原生 baseline 隔离组合的 CPU 验证
 
 [报告](diagnostics/baseline_validated_integration_20261111/README.md)记录 `2e2616a5` 与 `6a31cc38` 的组合，

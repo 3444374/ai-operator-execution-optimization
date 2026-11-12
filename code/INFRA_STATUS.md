@@ -191,6 +191,7 @@ Movie Filter 的 `9507` 目标 Q2 尝试在旧 native CLI 的25/1200白名单处
 ## 查询路径
 
 - 默认 fused 与可选 `record_local_sections` 使用不同编排；后者可显式选择同一异步后端上的完成推进。
+- [有限链验证入口](scripts/README.md#record-chain-step-actions)可在同一 C4 下比较已有 Core 步骤预算，保留 ready／Core offer、完整关系就绪及旧关闭时钟；比较命令将输出差异映射为失败退出。[真实两臂结果](../experiments/results/diagnostics/record_chain_comparison_20261111/README.md#server-step-actions-20261112)已各完成 48 次调用，最终关系相同但一项输出 token 不同，严格比较失败。它是项目自定义 MMF、每臂 n=1；没有性能或机制收益资格，不是 SemBench 原题验证。
 - 原生 baseline 不能注入 Core 调度；完整查询保留原关系处理、评价与工作量。
 - 容量、结果关联及逐行方法的接口见[执行适配](src/execution_provider/adapters/README.md)、
   [LOTUS 方法](src/semantic_methods/lotus/README.md)与[原生对照](src/baselines/README.md)。
@@ -206,6 +207,7 @@ Movie Filter 的 `9507` 目标 Q2 尝试在旧 native CLI 的25/1200白名单处
 C／R／work 与存储预算的具体取值和支持组合由[容量类型](src/execution_provider/adapters/records_capacity.py)及
 [配置总览](../docs/执行配置与优化开关.md)维护。未消费结果、unknown 和晚到请求继续占据其实际资源责任。
 模型 ready 返回的真实上下文用于长度核对，不能以配置省略推断上下文无限。
+显式声明原生 batch-invariant 配置时，ready 另外回读 worker 的请求值与实际初始化状态；回读失败保留 unavailable，默认执行不增加该 RPC。
 宿主内存与 cgroup 指标是观测，不等于资源授予。
 
 <a id="prepared-request-batching"></a>
@@ -280,3 +282,7 @@ records resident 的顺序复用不能直接解释为共享 owner 上完整查�
 本机软件IPC/原256消息-token/关系回放与目标模型运行分开记录。`4c08b57b` 维护CLI已独立
 通过Linux完整SQL256／零模型及实际加载原52bf DSO检查，1173份原件已回收核验；
 其运行token是软件placeholder，不是新GPU token资格。当前组合未作整体目标／GPU执行。
+
+[步骤额度的后续真实比较](../experiments/results/diagnostics/record_chain_comparison_20261111/README.md#batch-invariant-followup-20261112)
+在共同原生批次不变模式及实际 worker 回读下通过两组严格输出与正常资源检查；时间方向不一致，
+不改变默认步骤额度。原数值模式的47/48失败和归档阶段错误分别保留。
