@@ -224,6 +224,67 @@ print(json.dumps(dict(columns=m.columns,requests=r,tokens=t)))'''
         with self.assertRaisesRegex(ValueError, 'nonempty original input'):
             entry.freeze_config(self.seed)
 
+    def test_exact_join_uses_native_pair_membership_and_original_full_relation(self):
+        from src.baselines.text.sembench_prepared import result_value
+
+        pd.DataFrame(dict(reviewId=['duplicate','duplicate','third'],
+            id=['ant_man_and_the_wasp_quantumania']*3,reviewText=['same','same','other'])).to_csv(
+                self.root/'Reviews.csv',index=False)
+        pd.DataFrame(dict(id=[1,2,3],price=[100]*3,productDisplayName=['same','same','other'],
+            productDescriptors=[{'description':{'value':text}} for text in ['same','same','other']])).to_parquet(
+                self.root/'styles_details.parquet',index=False)
+        for scenario,query_id in [('movie','5'),('movie','6'),('movie','7'),('ecomm','7')]:
+            frozen=entry.freeze_config(dict(self.seed,schema=entry.JOIN_SCHEMA,scenario=scenario,query_id=query_id))
+            self.assertNotIn('prompt_columns',frozen)
+            query,lm,prepared,requests,tokens,rows=entry.prepare_query(frozen)
+            checked=entry.check(frozen)
+            self.assertEqual(checked['declared_join_columns'],list(query.operation.columns))
+            self.assertNotIn('effective_prompt_columns',checked)
+            self.assertEqual(len(rows),9)
+            self.assertEqual(frozen['max_model_calls'],9)
+            self.assertEqual(len({r['occurrence_id'] for r in rows}),9)
+            source=self.root/'join-messages.json'
+            source.write_text(json.dumps(dict(rows=rows)))
+            kernel.prepared.cache_clear();self.addCleanup(kernel.prepared.cache_clear)
+            answers=['True','False','invalid']*3
+            by_id=dict(zip((r['occurrence_id'] for r in rows),answers,strict=True))
+            reversed_rows=rows[::-1]
+            table=pa.table({field:[r[name] for r in reversed_rows]
+                for field,name in [('c0','occurrence_id'),('c1','title'),('c2','text')]})
+            def respond(messages,*,occurrence_ids):
+                self.assertEqual(messages,[r['messages'] for r in reversed_rows])
+                return [by_id[identifier] for identifier in occurrence_ids]
+            with patch.dict(os.environ,{kernel.CONFIG_ENV:str(source)}), \
+                    patch.object(kernel.model_provider,'infer_batch',side_effect=respond):
+                decisions=kernel.infer_mmqa(table).column(0).to_pylist()
+            native=dict(variant='original-author',expected_DSO_sha256=entry.DSO_SHA256,
+                return_type='TINYINT',full_filter_materialized_before_title_sink=True,
+                source_rows=9,eligible_rows=9,accepted_occurrences=[
+                    r for r,yes in zip(reversed_rows,decisions,strict=True) if yes])
+            binding=entry.FilterRelation(query,lm,prepared,requests,tokens,rows,query.bind_execution())
+            actual=binding.sink(native)
+            predictions=[dict(call_id=r['call_id'],generated_text=text)
+                for r,text in zip(prepared,answers,strict=True)]
+            expected,_=finish_relation(query,lm,prepared,predictions)
+            if isinstance(expected,pd.Series):
+                pd.testing.assert_series_equal(actual,expected)
+            else:
+                pd.testing.assert_frame_equal(actual,expected)
+            with self.subTest(query=query_id), self.assertRaisesRegex(ValueError,'duplicate or unknown'):
+                binding.sink(dict(native,accepted_occurrences=native['accepted_occurrences']*2))
+            directory=self.root/('calls-'+scenario+'-'+query_id);directory.mkdir()
+            (directory/'0.terminal.json').write_text(json.dumps(dict(calls=[dict(
+                occurrence_id=row['call_id'],response=dict(generated_text=by_id[row['call_id']]))
+                for row in prepared])))
+            query.evaluate=lambda result:dict(fixture_result=result_value(result))
+            with patch.object(entry,'audit_ipc',return_value=dict(software_fixture=True)):
+                audited=binding.audit(native,actual,directory,{})
+                self.assertEqual(audited['semantic']['native_join_inputs'][0]['all_declared_columns_selected'],scenario=='movie')
+                with self.assertRaisesRegex(ValueError,'membership differs'):
+                    binding.audit(dict(native,accepted_occurrences=[]),actual,directory,{})
+        with self.assertRaisesRegex(ValueError,'one original Join'):
+            entry.freeze_config(dict(self.seed,schema=entry.JOIN_SCHEMA,scenario='movie',query_id='1'))
+
     def test_native_sql_gate_compares_original_cells_separately_from_transport(self):
         from tests.baselines.text import qualify_imlane_movie_filter as gate
         pd.DataFrame({'reviewId':['duplicate'] * 7, 'id':['taken_3'] * 7,

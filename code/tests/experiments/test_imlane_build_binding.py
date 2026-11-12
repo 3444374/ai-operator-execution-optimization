@@ -13,7 +13,7 @@ class BuildBindingTests(unittest.TestCase):
     def test_current_build_and_stale_inputs_at_cli_boundary(self):
         for entry, stem, schema, variant, config_name in (
             (native_imlane_sembench, 'sembench', 'prepared', 'varchar-owned-engineering', 'mmqa_q1'),
-            (native_imlane_filters, 'mmqa_filter', 'filter', 'original-author', 'mmqa_filter'),
+            (native_imlane_filters, 'mmqa_filter', 'filter', 'original-author', 'filter'),
         ):
             with self.subTest(entry=entry.__name__), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
@@ -30,8 +30,12 @@ class BuildBindingTests(unittest.TestCase):
                     record[name + '_path'] = str(path)
                     record[name] = entry.file_identity(path)
                 build_path, config_path = root / 'build.json', root / 'config.json'
-                config_path.write_bytes((entry.CODE / 'configs' /
-                    ('sembench_imlane_' + config_name + '.example.json')).read_bytes())
+                configuration = json.loads((entry.CODE / 'configs' /
+                    ('sembench_imlane_' + config_name + '.example.json')).read_text())
+                if entry is native_imlane_filters:
+                    from tests.experiments.test_native_imlane_filters import config
+                    configuration = config()
+                config_path.write_text(json.dumps(configuration))
                 args = ['run', '--config', str(config_path), '--output', str(root / 'output'),
                     '--build-record', str(build_path), '--author-root', str(root / 'author'),
                     '--method-python', '/unused/python', '--kind', 'process',

@@ -29,7 +29,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 | 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
 |---|---|---|---|---|---|
 | 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；Cars/E-Commerce Filter 有软件检查，真实数据/SQL待验；原版字符串输出受限 | Movie Filter/Map 已接；MMQA/Medical 有具名私有 Filter；原版结构化输出未透传，E-Commerce/Cars 未接线 |
-| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 未接线 | 未接线 |
+| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接，软件检查；Linux/模型待验，非作者 Join 算法复现 | 未接线 |
 | 原 quick TopK；Movie Q9 TopK profile | 显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -183,6 +183,9 @@ Cars Q3／Q8 也复用原生视觉服务，保留完整图像发生项及最后 
 该官方实现缺口不等于其他系统不支持；不补造音频查询来宣称覆盖。
 共享原生 Join 接收多列 `:left/:right` 引用及 positional／keyword 指令，E-Commerce Q7 复用
 同一 resident、原价格选择、N×N self-join、ID 拼接与 F1，没有单独执行器或候选预筛。
+IMLane 也通过独立 `text_join` schema 将同一原消息和完整 pair 发生项交原版 TINYINT prediction；
+复用既有 owner/SQL/ACK，由原 SDK 恢复 Join／原题 sink，原始答复和实际选列在 sink 后审计。
+原版 DSO/kernel/C++ 未改；软件检查不替代真实 Linux SQL/模型资格，零候选仍是薄 driver 接线限制。
 已核当前 LOTUS1.2.4 accessor 实际每侧只选一个 Series；此前多列软件检查证明与原 SDK 一致，
 不证明全部声明字段进入模型。现在 `native_join_inputs` 记录真实选列／遗漏字段，保留原生行为；
 完整多列意图语义及真实目标模型仍未验证。

@@ -22,7 +22,8 @@ CONFIG_ENV = 'SEMLOOM_IMLANE_MMQA_FILTER_MESSAGES'
 
 @cache
 def prepared(path):
-    values = read_json(Path(path))['rows']
+    source = Path(path)
+    values = read_json(source, max_bytes=source.stat().st_size)['rows']
     rows = {row['occurrence_id']: row for row in values}
     if len(rows) != len(values):
         raise ValueError('native Filter occurrence identities must be unique')

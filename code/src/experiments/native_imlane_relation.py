@@ -169,8 +169,8 @@ def persist_relation_observation(directory, report, result, *, primary=None):
         raise failure
 
 
-def finish_mmqa_filters(native, bindings, *, execute_queries=None):
-    """Run complete original query sinks from prepared native Filter membership.
+def native_filter_membership(native, bindings):
+    """Bind original source occurrences to the native TINYINT membership.
 
     ``bindings`` maps a query label to ``(SemBenchTextQuery, source_rows)``.
     Source rows follow that query's operation.records order and explicitly carry
@@ -182,13 +182,11 @@ def finish_mmqa_filters(native, bindings, *, execute_queries=None):
         raise ValueError('the complete native TINYINT Filter relation is required')
     expected = {}
     for label, (query, sources) in bindings.items():
-        if query.operation is None or query.operation.describe()['kind'] != 'filter':
-            raise ValueError('this sink requires an original Filter operation')
         for record, source in zip(query.operation.records, sources, strict=True):
             occurrence = source['occurrence_id']
             if occurrence in expected:
                 raise ValueError('duplicate native Filter occurrence binding')
-            expected[occurrence] = (label, record, source, query)
+            expected[occurrence] = (label, record, source)
     if native['source_rows'] != len(expected) or native['eligible_rows'] != len(expected):
         raise ValueError('native Filter source cardinality differs from the frozen bindings')
     selected = {label: [] for label in bindings}
@@ -198,13 +196,22 @@ def finish_mmqa_filters(native, bindings, *, execute_queries=None):
         if occurrence in seen or occurrence not in expected:
             raise ValueError('duplicate or unknown native Filter result occurrence')
         seen.add(occurrence)
-        label, record, source, query = expected[occurrence]
+        label, record, source = expected[occurrence]
         if (value['source_position'] != source['source_position']
                 or value['title'] != source['title']):
             raise ValueError('native Filter result differs from its source occurrence')
-    for occurrence, (label, record, _source, _query) in expected.items():
+    for occurrence, (label, record, _source) in expected.items():
         if occurrence in seen:
             selected[label].append(record)
+    return selected
+
+
+def finish_mmqa_filters(native, bindings, *, execute_queries=None):
+    """Restore Filter relations and finish the unchanged original query sinks."""
+    for query, _sources in bindings.values():
+        if query.operation is None or query.operation.describe()['kind'] != 'filter':
+            raise ValueError('this sink requires an original Filter operation')
+    selected = native_filter_membership(native, bindings)
     results = {}
     for label, (query, _sources) in bindings.items():
         def original_operator(operation, _invoke):

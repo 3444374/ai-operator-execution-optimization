@@ -626,6 +626,12 @@ Ray 通过已有 `ray_native` 配置选择此能力，旧有限记录图的 Join
 软件检查覆盖真实 SDK 原题／消息／结果差分、Ray 软件 processor、Daft driver 跨进程 packet 和原 sink；
 Daft SDK／executor 必须在其独立环境另验，真实模型与宿主物理清理仍待对应版本验证。
 
+IMLane 复用同一原生 Join 接点，以独立 `text_join` schema 把完整 pair 发生项交原版 TINYINT
+prediction，实际成员关系交原 SDK／原题恢复完整 sink，之后审计原始答复、评价并关闭。
+原版 SQL、DSO、kernel、模型 owner 与 ACK 不变；这是 LOTUS Join 的执行接入，不是作者 Join 算法复现。
+配置及零候选接线限制见[IMLane 接点](../../integrations/imlane_duckdb/README.md#lotus-exact-join-与原版-imlane-prediction)。
+软件 Arrow／原 SDK 检查不授予该组合 Linux SQL／模型资格；旧 Filter 配置不会自动取得 Join 支持。
+
 共享准备层不再把自 Join 或 `reviewText` 写成后端能力限制：普通 exact inner Join
 按原指令绑定各自左右表及显式字段，完整预算为 L×R，并在执行前核对右表未变；
 quick TopK 使用原指令引用列，保持原 K=N、pivot 和比较算法。

@@ -28,6 +28,19 @@ def config():
 
 
 class FilterBindingTests(unittest.TestCase):
+    def test_generated_message_table_is_not_capped_by_configuration_json_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/'messages.json'
+            rows=[dict(occurrence_id='row-'+str(i),title=str(i),text='source',
+                       messages=[dict(role='user',content='x'*1024)]) for i in range(10000)]
+            source.write_text(json.dumps(dict(rows=rows)))
+            self.assertGreater(source.stat().st_size,8*1024**2)
+            kernel.prepared.cache_clear()
+            self.addCleanup(kernel.prepared.cache_clear)
+            values=kernel.prepared(str(source))
+            self.assertEqual(len(values),10000)
+            self.assertEqual(values['row-9999'],rows[-1])
+
     def test_configuration_leaves_task_support_to_original_preparation(self):
         value = config()
         for query in ('3a', '6c', 'new-task'):

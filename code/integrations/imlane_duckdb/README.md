@@ -621,7 +621,8 @@ Q9构建记录绑定当前q9.cpp、q9_udf.py、relation_handoff.hpp以及实际b
 须给 `scale_factor` 选择原 `data/sf_N/` 及完整金标；`semloom.imlane.ecomm_filter.v1` 绑定 E-Commerce Q1，
 读取原 Parquet，不给 scale。两者仍使用现有模板的运行字段、`freeze-config/check/run`、原版 DSO、
 TINYINT kernel 和完整 sink ACK。原 Filter 的存在由任务层捕获判断，不为每题添加 native SQL 或执行器。
-Cars Extract、E-Commerce Map/Extract 和 Join 不从此接点取得支持。真实数据／Linux／模型按对应来源另验。
+Cars Extract、E-Commerce Map/Extract 不从此接点取得支持。原 Filter schema 也不自动开放 Join，
+后者须使用下述独立查询身份。真实数据／Linux／模型按对应来源另验。
 
 三字符串 native ABI 不变：occurrence ID
 关联原完整 messages；原 `title/text` 运输字段现在携带 source index 与模型输入列的 JSON，
@@ -630,10 +631,32 @@ Cars Extract、E-Commerce Map/Extract 和 Join 不从此接点取得支持。真
 比例/join/mean 等后处理。新输入可改变运输字节与必要 I/O，不能直接继承旧时长或目标资格。
 
 模型启动前检查原任务形态，ready 后仍 fresh source/prepare；两次工作分别真实计入 cold 与
-ready-source 区间。完整内存 sink 早于 ACK、审计、评价和关闭。Join/TopK/Extract/Map 不通过
-这个 TINYINT 入口；零输入由现有正预算/native driver 合同明确拒绝，不伪装成模型运行。
+ready-source 区间。完整内存 sink 早于 ACK、审计、评价和关闭。TopK/Extract/Map 不通过
+这个 TINYINT 入口；零输入由现有正预算/native driver 合同明确拒绝，属于接线限制，不代表作者系统不支持空 SQL。
 正输入但全阴性的原空结果不受此限制。旧联合六题 packet 继续绑定它自己的旧 SOURCE；
 若迁移到新源码，其 source binding 必须显式带运输标签，不能从题号补猜。
+
+### LOTUS exact Join 与原版 IMLane prediction
+
+同一 [Boolean 任务入口](../../src/experiments/native_imlane_filters.py) 另接受
+`schema=semloom.imlane.text_join.v1`、`scenario=movie/ecomm` 和原查询号，复用原版 TINYINT
+prediction、三个字符串 ABI、模型 owner、单 query 预算和完整 sink ACK。没有新增 IMLane 调度器、
+DuckDB Join 算法或逐题执行器；逻辑 Join、原关系构造和最后后处理仍由固定 LOTUS／SemBench 拥有。
+当前原文本任务对应 Movie Q5/Q6/Q7 与 E-Commerce Q7。输入沿原模板填写其余运行字段，
+增加 `scenario`，不提供 Filter 的 `prompt_columns`，再用同一 `freeze-config/check/run`。
+预算是捕获到的完整 L×R，重复商品／review 和同文不同答复仍按 occurrence 关联。
+
+准备复用[共享原生 Join 接点](../../src/baselines/text/sembench_prepared_join.py)，保留原 SDK 消息和
+已知多列选列限制。native SQL 返回的实际 TINYINT 成员关系交原 SDK 重建完整关系／原题 sink，
+之后才 ACK、核对全部原始模型答复及实际入模字段、评价与关闭；没有把预检结果或金标当模型预测。
+原模型答复重放仅作后置审计，不再发请求；原 parser 决策与 native 成员关系不一致时失败并保留证据。
+正候选但全部不匹配的空 Join 结果保留；零候选仍受前述薄 driver 接线限制。
+完整消息准备、native 所需输入与 SQL、真实 source 读取和关系恢复实际计入 v3 查询区间。
+临时 CSV／Parquet、Arrow kernel 和原 SDK 的软件检查不授予真实作者 Linux SQL 或模型资格。
+生成的消息表按实际文件长度读取，不再把配置 JSON 的默认8MiB限额当成查询规模上限；
+每条消息／调用仍由原预算及实际模型上下文约束。配置文件的默认读取限制不变。
+本次 kernel 读取实现变化须由现有 build 流程生成绑定当前源码的新构建记录；原版 DSO 无需重编，
+旧记录保留其旧身份，不能手改摘要后宣称新组合已验。
 
 `prompt_columns` 保存原 LOTUS 观察到的源列顺序，而非渲染 header。原 `StageSpec.bind`
 已经从原题 instruction 解析列名，准备阶段核对相同列集合，再应用显式冻结顺序；
