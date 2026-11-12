@@ -421,7 +421,23 @@ Q1 保留 `car_id` Series，Q4 保留原 `2026 - joined.year.mean()`，Q10 保�
 Q4 查询按投诉连接后的行加权，而作者 gold 按车辆选择求平均；该差异保留，不能为了得分去重查询行。
 Q10 继续用作者 macro precision／recall／F1，不做类别修正、答案截断或按车辆 ID 合并模型调用。
 原 SDK、记录链、原生 LM 接点及 prepared 软件对照覆盖三题；真实资产和模型资格仍待验证。
-其他 Cars 图音路径未由本入口接线；所选官方 LOTUS tree 缺少部分题目的脚本，不据此推断其他系统不支持。
+文本入口不处理图音；Q3／Q8 使用下述同一原生视觉服务。
+
+### Cars 原图像查询
+
+同一 [Cars 任务绑定](text/sembench_cars.py)运行原 Q3／Q8，复用[原生视觉服务](../experiments/sembench_lotus_image_query.py)
+的 LM、预算、观测、完整 sink 和 v3 时钟。设置 `scenario=cars`、所选题和可选 `scale_factor`（默认157376），
+`--data-dir` 仍指向作者场景根。原函数读取 `data/sf_N/` 的车辆及 `image_car_data_N.csv`，
+按原 `image_path` 读取图像；迁移数据路径须在正式运行前固定，执行器不改写这些路径。
+评价另读 `data/full_data/car_data_full.csv` 和 `image_data_full.csv`，不要求文本／音频表。
+
+Q3 的 Manual 普通筛选、完整图像 Filter 和最后 `head(10)`，Q8 的完整 Filter 和最后 `head(100)`
+均由官方函数拥有；预算按实际连接后的图像发生项计算，重复车辆／图像不去重，不提前 LIMIT。
+原 CarsEvaluator 按采样 image_id／car_id 选择完整标签，并保留其命中相关的金标采样和 F1；
+gold 缓存只写临时目录。源码、CSV／图像及金标身份校验位于查询区间两侧，真实 CSV 读取、
+ImageArray 解码／编码和关系处理仍计入。临时资产／HTTP 软件检查不授予真实 Cars 或 VLM 资格。
+固定 LOTUS tree 只有 Q1/Q3/Q4/Q8/Q10 五份查询文件；Q2/Q5/Q6/Q7/Q9 缺少原实现，
+不能为凑全题数自行添加音频算法，也不据此推断其他系统不支持。
 
 ### E-Commerce 原文本查询
 
@@ -527,7 +543,8 @@ Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求�
 | MMQA Q2b | 同一切片，Join325次，后续 Extract 为实际匹配行数，最多再325次 | CPU 完整 Join→Extract 及零行 schema 通过；d061实测的空结果返回失败与离线评价单列，preset 单次 Extract 不构成完整模型资格 |
 | MMQA Q7 | sf25 机场25行与原25图，组合后625候选对 | 原源码无自然问题的欧洲预筛，保留并单列该差异；原生服务入口已接，实际服务待绑定／验证 |
 | E-Commerce 图像／多模态 | 首算子真实发生项及图像身份按原函数计算；原件待准备 | 原生服务入口已有软件检查，真实资产／VLM待验，不能记零分 |
-| Cars 图像／音频 | 原实现存在；此前已查目录未定位成套数据 | 本接入尚未接线，数据缺口另列，不能记原生不支持或零分 |
+| Cars Q3／Q8 图像 | 原车辆／图像 CSV 的真实连接规模；原件待定位／准备 | 原函数／服务／评价已接线，真实数据／VLM待验 |
+| Cars 其他图音 | 固定 LOTUS tree 缺 Q2/Q5/Q6/Q7/Q9 文件 | 官方实现缺口单列，不编造查询，不代表其他系统不支持 |
 
 上述预算不含暖机、重试或重复；Animals 四题与 MMQA Q2a/Q2b 共970到1295次，Q2b 的匹配数由真正的 Join 决定。
 Q7 需把已由原 generator 准备的机场表与同一图像切片绑定到一份输入目录，额外625次；
@@ -608,15 +625,15 @@ Q9 原 TopK 仍须显式选择 `ranking=topk`，不能借用本次 Map 的256次
 其 `quick` 路径随机选 pivot；完整 N=256 排序的候选比较数上界32640，精确次数依赖 pivot 和模型判断，
 不能把 SDK safe-mode 估算当实际消耗或额度上界。LM seed 不设置 NumPy pivot RNG。
 MMQA Q5 使用[独立原生聚合入口](#sembench-mmqa-aggregation)；现有单 F/M/E 链不接聚合，不能按输入行数猜次数。
-其余纯文本候选为 E-Commerce Q1/Q3/Q5、Cars Q1/Q4/Q10，目前没有已核实的目标成套输入。
+E-Commerce Q1/Q3/Q5 和 Cars Q1/Q4/Q10 的原文本任务已接线，目前没有已核实的目标成套输入。
 Medical 已核实上游自带的完整文本资产，按上方原文本入口直接复制；Cars／Medical 的普通准备会顺带下载图音素材，
 文本准备不可盲跑整套 setup。需要其他规模时选择现成原 CSV 或原采样方法，不另写采样。
 E-Commerce 的嵌套 `productDescriptors` 保留原 DEFAULT 的整对象字符串，不能抽取一个 description 字段代替；
 共享文本绑定现支持 keyword Extract 和 Map suffix：E-Commerce Q3／Cars Q10 的
 `input_cols/output_cols` 与 E-Commerce Q5 的 `suffix` 不再需要专门执行接点，
 它们仍需绑定各场景的真实输入、原查询及评价，不能据此宣布这些题已取得完整运行资格。
-这些属于待接线／待数据，不是系统缺少原算法。E-Commerce、Cars 和 Medical 的其他原实现按各自文件与能力准备；
-此前限定目录中未找到的数据只记待定位，不推断全服务器没有，也不下载或改写算子凑结果。
+这些属于待数据／目标验证，不是系统缺少原算法。其他原实现按各自文件与能力准备；
+此前限定目录中未找到的数据只记待定位，不推断全服务器没有；下载遵守官方来源与资源计划，不能改写算子凑结果。
 
 ## SemBench 原项目与本地接入职责
 

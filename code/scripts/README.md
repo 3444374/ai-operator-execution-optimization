@@ -219,6 +219,9 @@ Q7 改读 `tampa_international_airport.csv`，仍用同一 `images/`；原代码
 
 [run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py)直接调用 LOTUS 的原 LM、
 原算子与原 SemBench 查询／评价；支持 Animals Q1/Q3/Q7/Q10、MMQA Q2a/Q2b/Q7、E-Commerce Q2/Q4/Q6/Q8–Q14。
+Cars Q3／Q8 复用相同入口，配置 `scenario=cars` 和可选 `scale_factor`（默认157376）；
+`--data-dir` 指向含 `data/sf_N/` 与 `data/full_data/` 的原场景根，CSV 内图像路径须事先绑定可读原件。
+独立输入检查 CLI 也支持 `--scenario cars --query Q3 --scale-factor N`，不启动服务或消费模型额度。
 原 `check_sembench_image_query.py` 继续只做输入检查，其 `execution_enabled=False` 表示没有执行模型。
 实际服务运行使用这个新入口，`check` 或 `run` 不带 `--execute-model` 均不连服务、不消费额度。
 

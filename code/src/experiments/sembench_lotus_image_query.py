@@ -28,7 +28,7 @@ def configuration(path):
     required = {"schema", "scenario", "query", "query_id", "model_name", "api_base", "api_key_env",
         "generation", "native_lm_max_batch_size", "query_timeout_s", "service_profile"}
     if (type(config) is not dict or not required <= config.keys()
-            or config.keys() - required - {"budget"}
+            or config.keys() - required - {"budget", "scale_factor"}
             or config["schema"] != "semloom.sembench_lotus_image_run.v1"):
         raise ValueError("an explicit native LOTUS visual-service configuration is required")
     for name in ("query_id", "api_key_env"):
@@ -58,7 +58,7 @@ def configuration(path):
 
 def check(config, checkout, *, data_dir=None, manifest=None, manifest_digest=None):
     inputs = check_inputs(checkout, config["scenario"], config["query"], data_dir=data_dir,
-        manifest=manifest, manifest_digest=manifest_digest)["inputs"]
+        manifest=manifest, manifest_digest=manifest_digest, scale_factor=config.get('scale_factor'))["inputs"]
     return dict(schema="semloom.sembench_lotus_image_preflight.v1", status="checked_cpu_only",
         inputs=inputs, model_calls=0, execution_enabled=False, execution_available=True,
         endpoint=config["api_base"].rstrip("/") + "/chat/completions",
@@ -132,6 +132,12 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         elif config["scenario"] == "mmqa":
             from src.baselines.image.sembench_mmqa import bind_original_query, evaluate_original
             execute_query = bind_original_query(checkout, data_dir, config["query"])
+        elif config['scenario'] == 'cars':
+            import pandas as pd
+            from src.baselines.text.sembench_cars import bind_original_query, evaluate_visual_original, verify_visual_inputs
+            execute_query = bind_original_query(checkout, config['query'],
+                lambda name, **kwargs: pd.read_csv(Path(data_dir) / name, **kwargs),
+                data_dir=data_dir, scale_factor=inputs['scale_factor'])
         else:
             import pandas as pd
             from src.baselines.text.sembench_ecomm import bind_original_query, evaluate_original, verify_visual_inputs
@@ -157,6 +163,9 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
                 expected_stages = [inputs["exact_join_candidates"]]
                 if inputs["query"] == "Q2b":
                     expected_stages.append(len(result))
+            elif config['scenario'] == 'cars':
+                verify_visual_inputs(inputs)
+                expected_stages = [inputs['expected_model_calls']]
             else:
                 verify_visual_inputs(inputs)
                 expected_stages = [inputs["filter_occurrences"], len(result)] if inputs['query'] == 'Q12' else None
@@ -184,6 +193,8 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             elif config["scenario"] == "ecomm":
                 quality = evaluate_original(checkout, config["query"], result, data_dir=data_dir,
                     source_identity=inputs['gold_source_identity'])
+            elif config['scenario'] == 'cars':
+                quality = evaluate_visual_original(checkout, config['query'], result, inputs)
             else:
                 quality = evaluate_original(checkout, config["query"], result)
             report["quality"] = json_metric(quality)

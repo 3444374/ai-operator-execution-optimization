@@ -74,10 +74,6 @@ def evaluate_original(checkout, query_id, result, *, data_dir, source_identity):
     return dict(original_metric=asdict(metric), sembench_commit=SEMBENCH_COMMIT)
 
 
-class _SourcePrepared(BaseException):
-    """Stop before the original first semantic call; never simulate its output."""
-
-
 def describe_visual_inputs(checkout, data_dir, query_id):
     """Bind the first native operator frontier without simulating its output.
 
@@ -88,13 +84,13 @@ def describe_visual_inputs(checkout, data_dir, query_id):
     import pandas as pd
     from lotus.dtype_extensions import ImageDtype
     from src.baselines.image.sembench_animals import image_identity
-    from .sembench_text import _operators
+    from .sembench_text import capture_first_operator
 
     query = _query_id(query_id)
     if query not in VISUAL_QUERY_IDS:
         raise ValueError('this E-Commerce binding requires a multimodal query')
     data = Path(data_dir).resolve()
-    files, source_rows, selected = {}, {}, []
+    files, source_rows = {}, {}
 
     def load(name, **kwargs):
         path = data / name
@@ -106,20 +102,11 @@ def describe_visual_inputs(checkout, data_dir, query_id):
         source_rows[name] = len(frame)
         return frame
 
-    def capture(kind, frame, args, kwargs, _invoke):
-        if kind not in ('filter', 'map', 'extract', 'join'):
-            raise ValueError('unsupported first E-Commerce native operator: ' + kind)
-        right = (args[0] if args else kwargs['other']) if kind == 'join' else None
-        selected.append((kind, frame, right))
-        raise _SourcePrepared()
-
     execute = bind_original_query(checkout, query, load, data_dir=data)
-    with _operators(capture):
-        try:
-            execute()
-        except _SourcePrepared:
-            pass
-    (kind, frame, right), = selected
+    kind, frame, args, kwargs = capture_first_operator(execute)
+    if kind not in ('filter', 'map', 'extract', 'join'):
+        raise ValueError('unsupported first E-Commerce native operator: ' + kind)
+    right = (args[0] if args else kwargs['other']) if kind == 'join' else None
     first_calls = len(frame) * (len(right) if right is not None else 1)
     images = []
     for side in (frame,) if right is None else (frame, right):

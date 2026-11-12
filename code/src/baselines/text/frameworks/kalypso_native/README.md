@@ -117,6 +117,7 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 记录观察器构造失败和两个会话交错退出的CPU反例；它们不代表真实作者服务并发或模型资格。
 
 
+<a id="movie-q9-map-维护版接线"></a>
 ## Movie Q8–Q10 Map 维护版接线
 
 `run_kalypso_sembench_query.py` 的 Movie Map unit 共用 `movie_map.MapDriver`，题目映射只在

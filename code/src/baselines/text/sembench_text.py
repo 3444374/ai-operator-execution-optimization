@@ -220,6 +220,23 @@ class _Captured(BaseException):
     pass
 
 
+def capture_first_operator(execute_query):
+    """Inspect the original source frontier without inventing an operator result."""
+    selected = []
+
+    def capture(kind, frame, args, kwargs, _invoke):
+        selected.append((kind, frame, args, kwargs))
+        raise _Captured()
+
+    with _operators(capture):
+        try:
+            execute_query()
+        except _Captured:
+            pass
+    frontier, = selected
+    return frontier
+
+
 class SemBenchTextQuery:
     """A finite frozen input snapshot and the unchanged original query/evaluator."""
 

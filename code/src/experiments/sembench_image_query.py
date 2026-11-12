@@ -9,8 +9,10 @@ from src.infrastructure.private_artifacts import new_private_directory, write_pr
 from src.infrastructure.redact import redact_text
 
 
-def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_digest=None):
+def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_digest=None, scale_factor=None):
     """Inspect actual inputs; do not allocate a framework, model or call budget."""
+    if scale_factor is not None and scenario != 'cars':
+        raise ValueError('visual scale_factor selects only the authored Cars CSV paths')
     if scenario == "animals":
         if manifest is None or manifest_digest is None or data_dir is not None:
             raise ValueError("Animals requires manifest and manifest_digest, without data_dir")
@@ -27,8 +29,14 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
             raise ValueError("E-Commerce requires data_dir, without Animals manifest arguments")
         from src.baselines.text.sembench_ecomm import describe_visual_inputs
         inputs = describe_visual_inputs(checkout, data_dir, query)
+    elif scenario == 'cars':
+        if data_dir is None or manifest is not None or manifest_digest is not None:
+            raise ValueError('Cars requires data_dir, without Animals manifest arguments')
+        from src.baselines.text.sembench_cars import describe_visual_inputs, FULL_SCALE_FACTOR
+        inputs = describe_visual_inputs(checkout, data_dir, query,
+            scale_factor=FULL_SCALE_FACTOR if scale_factor is None else scale_factor)
     else:
-        raise ValueError("visual preparation supports animals, mmqa and ecomm")
+        raise ValueError("visual preparation supports animals, mmqa, ecomm and cars")
     return dict(schema="semloom.sembench_image_query_check.v1", status="prepared_cpu_only",
         scenario=scenario, query=inputs["query"], inputs=inputs,
         execution_enabled=False, model_calls=0, requests_reserved=0, requests_claimed=0,
@@ -49,16 +57,18 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sembench-checkout", required=True)
-    parser.add_argument("--scenario", choices=("animals", "mmqa", "ecomm"), required=True)
+    parser.add_argument("--scenario", choices=("animals", "mmqa", "ecomm", "cars"), required=True)
     parser.add_argument("--query", required=True)
     parser.add_argument("--data-dir")
+    parser.add_argument("--scale-factor", type=int)
     parser.add_argument("--manifest")
     parser.add_argument("--manifest-digest")
     parser.add_argument("--output-dir", required=True)
     args = parser.parse_args(argv)
     try:
         report = check(args.sembench_checkout, args.scenario, args.query,
-            data_dir=args.data_dir, manifest=args.manifest, manifest_digest=args.manifest_digest)
+            data_dir=args.data_dir, manifest=args.manifest, manifest_digest=args.manifest_digest,
+            scale_factor=args.scale_factor)
         output = Path(args.output_dir).resolve()
         new_private_directory(output)
         write_private_json(output / "check.json", report)

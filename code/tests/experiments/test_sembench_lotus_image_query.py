@@ -128,6 +128,9 @@ class NativeHTTPReplies:
             keep = pixel in ((0, 0, 255), (255, 255, 0)) if "impala" in instruction else \
                 pixel in ((255, 0, 0), (0, 128, 0))
             text = "True" if keep else "False"
+        elif self.scenario == 'cars':
+            keep = pixels[0] == ((255,0,0) if self.query == 'Q3' else (0,128,0))
+            text = 'True' if keep else 'False'
         else:
             text = ("Reasoning:\nThe word True is in this software reasoning, not the decision.\n\nAnswer: False"
                 if self.mode == "distracting_reasoning" else
@@ -250,6 +253,32 @@ class NativeLotusImageQueryTests(unittest.TestCase):
         pd.DataFrame(rows).to_parquet(directory / 'styles_details.parquet', index=False)
         pd.DataFrame(dict(id=['1','1','2','3','4'], filename=['1.png','1.png','2.png','3.png','4.png'])).to_parquet(
             directory / 'image_mapping.parquet', index=False)
+        return dict(data_dir=directory)
+
+    def cars_inputs(self, scale=7):
+        import pandas as pd
+        from src.baselines.text.sembench_cars import visual_files
+
+        directory = self.new_directory('cars')
+        cars, images, full_cars, full_images = visual_files(scale)
+        for name in (cars, images, full_cars, full_images):
+            (directory / name).parent.mkdir(parents=True,exist_ok=True)
+        paths=[]
+        for color in ('red','green','blue'):
+            path=directory/(color+'.png')
+            self.Image.new('RGB',(3,2),color).save(path)
+            paths.append(str(path))
+        frame=pd.DataFrame(dict(car_id=[1,2,3],vin=['vin-1','vin-2','vin-3'],
+                                transmission=['Manual','Manual','Automatic']))
+        frame.to_csv(directory/cars,index=False)
+        pd.concat([frame,pd.DataFrame(dict(car_id=[4],vin=['REFERENCE_ONLY_OUTSIDE'],
+                    transmission=['Manual']))]).to_csv(directory/full_cars,index=False)
+        records=pd.DataFrame(dict(car_id=[1]*12+[2,2,3],image_id=list(range(15)),
+                                 image_path=[paths[0]]*12+[paths[1],paths[1],paths[2]]))
+        records.to_csv(directory/images,index=False)
+        records['damage_status']=['no_damage']*12+['puncture;paint_scratches']*2+['dented']
+        pd.concat([records,pd.DataFrame(dict(car_id=[4],image_id=[99],image_path=[paths[0]],
+                    damage_status=['no_damage']))]).to_csv(directory/full_images,index=False)
         return dict(data_dir=directory)
 
     def config(self, scenario="animals", query="Q1", **changes):
@@ -593,6 +622,57 @@ class NativeLotusImageQueryTests(unittest.TestCase):
         self.assertEqual(report['model_calls'],5)
         self.assertEqual(report['status'],'failed')
         self.assertIsNone(report['sink_ready_ns'])
+        self.assertNotIn('quality',report)
+
+    def test_cars_image_queries_keep_all_occurrences_before_original_limits_and_gold(self):
+        for query, count, expected in (('Q3',14,['vin-1']*10),('Q8',15,[2,2])):
+            inputs=self.cars_inputs()
+            config,_=self.config('cars',query,scale_factor=7)
+            replies=NativeHTTPReplies(self,'cars',query=query)
+            with self.subTest(query=query):
+                report,directory,claim=self.invoke(config,inputs,replies,allowance=count)
+                self.assertEqual(report['inputs']['expected_model_calls'],count)
+                self.assertEqual(len(report['inputs']['images']),count)
+                self.assertEqual(claim.attempts,count)
+                result=self.result_rows(report)
+                column='vin' if query == 'Q3' else 'car_id'
+                self.assertEqual([row[column] for row in result],expected)
+                self.assertEqual(report['quality']['original_metric']['f1_score'],1)
+                self.assertEqual(len(report['inputs']['files']),2)
+                self.assertEqual(len(report['inputs']['evaluation_files']),2)
+                self.assert_audit(report,directory,replies)
+
+    def test_cars_missing_images_stop_before_service_and_scale_only_selects_paths(self):
+        from src.baselines.text.sembench_cars import visual_files
+        import pandas as pd
+
+        inputs=self.cars_inputs(scale=29)
+        config,_=self.config('cars','Q3',scale_factor=29)
+        checked=self.entry.check(config,self.checkout,**inputs)
+        self.assertEqual(checked['inputs']['expected_model_calls'],14)
+        self.assertIn('data/sf_29/car_data_29.csv',checked['inputs']['files'])
+        name=visual_files(29)[1]
+        path=Path(inputs['data_dir'])/name
+        frame=pd.read_csv(path)
+        Path(frame.iloc[0]['image_path']).unlink()
+        with self.assertRaises(FileNotFoundError):self.entry.check(config,self.checkout,**inputs)
+
+    def test_cars_gold_mutation_after_sink_retains_complete_native_relation(self):
+        from src.baselines.text.sembench_cars import verify_visual_inputs, visual_files
+
+        inputs=self.cars_inputs()
+        config,_=self.config('cars','Q8',scale_factor=7)
+        replies=NativeHTTPReplies(self,'cars',query='Q8')
+        def changed(value):
+            path=Path(inputs['data_dir'])/visual_files(7)[3]
+            path.write_text(path.read_text()+'\n')
+            verify_visual_inputs(value)
+        with patch('src.baselines.text.sembench_cars.verify_visual_inputs',changed),self.assertRaises(ValueError) as caught:
+            self.invoke(config,inputs,replies,allowance=15)
+        report=caught.exception.query_report
+        self.assertEqual(report['model_calls'],15)
+        self.assertIsNotNone(report['sink_ready_ns'])
+        self.assertEqual([row['car_id'] for row in self.result_rows(report)],[2,2])
         self.assertNotIn('quality',report)
 
     def test_mmqa_native_parser_uses_final_answer_without_rewriting_reasoning(self):

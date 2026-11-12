@@ -32,6 +32,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 原 quick TopK；Movie Q9 TopK profile | 显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
+| 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线，保留实际中间关系；软件检查与旧目标证据分列 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 原分层 Aggregate；MMQA Q5 | 独立原 SDK 查询已接线，真实 sf25 软件回放通过 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -173,6 +174,9 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 Cars Q1／Q4／Q10 也已绑定原 CSV、原函数及原评分，共用同一 Filter／Extract 和后端接点；
 full_data 标签只供评价，既有 sample 的尺度只选择原路径，不充当模型调用数。
 软件对照保留重复投诉及原 Q4 加权查询／去重车辆金标的差异，真实 Cars 资产与目标环境待验。
+Cars Q3／Q8 也复用原生视觉服务，保留完整图像发生项及最后 LIMIT；原 car_id／image_id 标签筛选与
+评分独立于计时，原图像路径不在执行时改写。固定 LOTUS tree 缺 Q2/Q5/Q6/Q7/Q9 查询文件，
+该官方实现缺口不等于其他系统不支持；不补造音频查询来宣称覆盖。
 共享原生 Join 接收多列 `:left/:right` 引用及 positional／keyword 指令，E-Commerce Q7 复用
 同一 resident、原价格选择、N×N self-join、ID 拼接与 F1，没有单独执行器或候选预筛。
 已核当前 LOTUS1.2.4 accessor 实际每侧只选一个 Series；此前多列软件检查证明与原 SDK 一致，
