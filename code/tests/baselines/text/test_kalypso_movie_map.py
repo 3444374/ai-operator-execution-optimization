@@ -2,6 +2,7 @@
 import asyncio
 import copy
 import json
+import os
 from pathlib import Path
 import tempfile
 from types import ModuleType, SimpleNamespace as NS
@@ -12,9 +13,9 @@ from src.baselines.text.frameworks.kalypso_native import adapter, movie_map, nat
 from src.experiments.kalypso_query_lifecycle import query_driver_type
 
 
-def unit():
-    return dict(call_cap=1024,queries=[dict(query_id=q,task='movie-q9',phase='measured',
-        expected_calls=256,max_native_calls=512) for q in ('cold','warm')])
+def unit(count=256):
+    return dict(call_cap=4*count,queries=[dict(query_id=q,task='movie-q9',phase='measured',
+        expected_calls=count,max_native_calls=2*count) for q in ('cold','warm')])
 
 
 def trace(count=2,retry=False):
@@ -47,13 +48,21 @@ class MovieMapContracts(unittest.TestCase):
         with self.assertRaises(ValueError):query_driver_type(mixed)
 
     def test_logical_and_physical_budgets_stay_distinct(self):
-        original=unit();before=copy.deepcopy(original)
-        self.assertEqual(native_server.physical_call_caps(original),dict(cold=512,warm=512))
-        self.assertEqual(original,before)
+        for count in (1,7,13,256):
+            original=unit(count);before=copy.deepcopy(original)
+            self.assertEqual(native_server.physical_call_caps(original),dict(cold=2*count,warm=2*count))
+            self.assertEqual(original,before)
         for key,value in (('expected_calls',255),('max_native_calls',256),('max_native_calls',513)):
             changed=unit();changed['queries'][0][key]=value
             with self.assertRaises(ValueError):native_server.physical_call_caps(changed)
         with self.assertRaises(ValueError):native_server.physical_call_caps(dict(unit(),call_cap=float('inf')))
+        for count in (0,-1,True,7.0,float('inf')):
+            with self.subTest(count=count),self.assertRaises(ValueError):
+                native_server.physical_call_caps(unit(count))
+        filtered=dict(call_cap=7,queries=[dict(query_id='q',task='movie-q4',expected_calls=7)])
+        self.assertEqual(native_server.physical_call_caps(filtered),dict(q=7))
+        filtered['queries'][0]['max_native_calls']=14
+        with self.assertRaises(ValueError):native_server.physical_call_caps(filtered)
 
     def test_original_length_retry_at_8192_is_final_even_if_still_length(self):
         response,events=trace(retry=True)
@@ -97,19 +106,19 @@ class MovieMapContracts(unittest.TestCase):
                     return NS(request_id=str(self.calls),finish_reason='length')
             class Filter:
                 async def _run_single(self,*args,**kwargs):return True
-            bound=unit();before=copy.deepcopy(bound)
+            bound=unit(7);before=copy.deepcopy(bound)
             counts=native_server.install_hooks({},bound,root,Executor,Filter);executor=Executor()
             async def calls():
                 for qid in ('cold','warm'):
                     raw=NS(headers={'X-Kalypso-Observation':qid})
-                    for _ in range(512):await executor.chatcomplete(raw,[],8192)
+                    for _ in range(14):await executor.chatcomplete(raw,[],8192)
                     with self.assertRaisesRegex(RuntimeError,'budget'):
                         await executor.chatcomplete(raw,[],8192)
                 with self.assertRaises(RuntimeError):
                     await executor.chatcomplete(NS(headers={'X-Kalypso-Observation':'foreign'}),[],8192)
             asyncio.run(calls())
-            self.assertEqual(executor.calls,1024);self.assertEqual(counts['reserved_calls'],1024)
-            self.assertEqual(counts['query_calls'],dict(cold=512,warm=512));self.assertEqual(bound,before)
+            self.assertEqual(executor.calls,28);self.assertEqual(counts['reserved_calls'],28)
+            self.assertEqual(counts['query_calls'],dict(cold=14,warm=14));self.assertEqual(bound,before)
 
     def test_CPU_Map_preflight_binds_headers_before_plan_and_checks_retry_context(self):
         from src.baselines.text.frameworks.kalypso_native import movie_map_cpu
@@ -125,7 +134,7 @@ class MovieMapContracts(unittest.TestCase):
                 self_test.assertEqual(ops,[dict(op='sem_map',args=dict(prompt='original instruction'))])
                 return [Map()]
             def build(self,contexts,ops):
-                self_test.assertEqual(len(contexts),256)
+                self_test.assertEqual(len(contexts),count)
                 self_test.assertTrue(all(ctx.state.raw_request.headers['X-Kalypso-Observation'] in ('cold','warm') for ctx in contexts))
                 return [ops]
         self_test=self
@@ -133,24 +142,28 @@ class MovieMapContracts(unittest.TestCase):
         manager=NS(reset_stages=lambda:None,tokenizer=tokenizer)
         executor=NS(_build_chat_request=lambda prompt,cap,pin,priority:NS(messages=prompt,max_tokens=cap,
             add_generation_prompt=True,add_special_tokens=False))
-        data=NS(_data_source=lambda *a:[NS(state=NS(idx=i)) for i in range(256)])
-        inputs=[dict(spec=spec,table=dict(instruction='original instruction',
-            rows=[dict(row_id=str(i),source_position=i,source_index=i,reviewId='duplicate') for i in range(256)]),
-            paths=dict(csv=Path('fixture.csv'),prompt=Path('prompts')/(spec['query_id']+'.json')))
-            for spec in unit()['queries']]
-        cfg=dict(units=[unit()],native_cpu_inputs=dict(sha256='CPU-fixture'))
-        with patch.dict('sys.modules',{module.__name__:module,estimator.__name__:estimator}), \
-                patch.object(movie_map_cpu,'install'), \
-                patch.object(movie_map_cpu,'load_inputs',return_value=(dict(binding={}),inputs)):
-            for limit in (8222,8221):
-                with tempfile.TemporaryDirectory() as raw:
-                    if limit==8221:
-                        with self.assertRaisesRegex(ValueError,'retry cap'):
-                            movie_map_cpu.check(cfg,Path(raw),executor,manager,Plan,data,limit)
-                    else:
-                        result=movie_map_cpu.check(cfg,Path(raw),executor,manager,Plan,data,limit)
-                        self.assertEqual([p['logical_occurrences'] for p in result['plans']],[256,256])
-                        self.assertTrue((Path(raw)/'cold-native-prompts.json').is_file())
+        for count in (1,7,13):
+            data=NS(_data_source=lambda *a:[NS(state=NS(idx=i)) for i in range(count)])
+            inputs=[dict(spec=spec,table=dict(instruction='original instruction',
+                rows=[dict(row_id=str(i),source_position=i,source_index=i,reviewId='duplicate') for i in range(count)]),
+                paths=dict(csv=Path('fixture.csv'),prompt=Path('prompts')/(spec['query_id']+'.json')))
+                for spec in unit(count)['queries']]
+            cfg=dict(units=[unit(count)],native_cpu_inputs=dict(sha256='CPU-fixture'))
+            with patch.dict('sys.modules',{module.__name__:module,estimator.__name__:estimator}), \
+                    patch.object(movie_map_cpu,'install'), \
+                    patch.object(movie_map_cpu,'load_inputs',return_value=(dict(binding={}),inputs)):
+                for limit in (8222,8221):
+                    with self.subTest(count=count,limit=limit),tempfile.TemporaryDirectory() as raw:
+                        if limit==8221:
+                            with self.assertRaisesRegex(ValueError,'retry cap'):
+                                movie_map_cpu.check(cfg,Path(raw),executor,manager,Plan,data,limit)
+                        else:
+                            result=movie_map_cpu.check(cfg,Path(raw),executor,manager,Plan,data,limit)
+                            self.assertEqual([p['logical_occurrences'] for p in result['plans']],[count,count])
+                            self.assertEqual([p['physical_call_cap'] for p in result['plans']],[2*count,2*count])
+                            saved=json.loads((Path(raw)/'cold-native-prompts.json').read_text())
+                            self.assertEqual([row['source_position'] for row in saved],list(range(count)))
+                            self.assertTrue(all(row['token_ids']==list(range(30)) for row in saved))
 
     def test_response_observer_does_not_replace_original_outcome_on_setup_or_write_failure(self):
         from src.baselines.text.frameworks.kalypso_native import map_observation
@@ -181,6 +194,96 @@ class MovieMapContracts(unittest.TestCase):
             for hashes in ({},{'Reviews.csv':'wrong'}):
                 with self.assertRaises(ValueError):
                     movie_map.make_query(dict(data_dir=raw,source_data_sha256=hashes),'q')
+
+
+@unittest.skipUnless(os.environ.get('SEMLOOM_NATIVE_TEST_CHECKOUT'),
+    'requires the pinned public SemBench checkout and existing driver dependencies')
+class OriginalMapSizeContracts(unittest.TestCase):
+    def test_small_sources_keep_original_parser_relation_evaluator_and_memory_sink(self):
+        """Real original query/parser/evaluator; only native HTTP/clock are fixtures."""
+        import pandas as pd
+        from lotus.sem_ops import postprocessors
+        from src.baselines.text.frameworks.kalypso_native import movie_map_inputs
+        from tests.baselines.text.test_kalypso_memory_sink import ControlledClock
+        from tests.experiments.test_sembench_text_original import OriginalSemBenchTextTests
+
+        helper=OriginalSemBenchTextTests();helper.setUp();self.addCleanup(helper.doCleanups)
+        seed=pd.read_csv(helper.data/'Reviews.csv')
+        selected=seed[seed['id']=='ant_man_and_the_wasp_quantumania']
+        excluded=seed[seed['id']=='taken_3'].head(1)
+        for count in (1,7,13):
+            with self.subTest(count=count):
+                # Explicit software input: include an ineligible row and repeated
+                # business IDs while keeping every selected occurrence distinct.
+                sample=selected.iloc[[i%len(selected) for i in range(count)]]
+                pd.concat([excluded,sample],ignore_index=True).to_csv(helper.data/'Reviews.csv',index=False)
+                cfg=dict(data_dir=str(helper.data),sembench=os.environ['SEMLOOM_NATIVE_TEST_CHECKOUT'],
+                    model='m',model_name='openai/local-fixture',native_trace=str(helper.data/'trace.jsonl'),
+                    source_data_sha256={'Reviews.csv':adapter.sha(helper.data/'Reviews.csv')},
+                    map_prompt_root=str(helper.data/f'prompts-{count}'),
+                    execution_enabled=False,CPU_fixture_only=True)
+                spec=dict(query_id='q',task='movie-q9',expected_calls=count,max_native_calls=2*count)
+                bound=dict(call_cap=2*count,queries=[spec]);cfg['units']=[bound]
+                query=movie_map.make_query(cfg,'q')
+                answers=[('5','1','not numeric','6','nan','Answer: 2','3')[i%7] for i in range(count)]
+                expected,_=helper._reference(query,answers)
+                expected_quality=query.evaluate(expected)
+                self.assertEqual(len(expected),count)
+                self.assertEqual(expected.reviewId.tolist(),sample.reviewId.tolist())
+                with patch.object(movie_map_inputs,'binding',return_value={'CPU_fixture':True}):
+                    frozen=movie_map_inputs.prepare_inputs(cfg,bound,helper.data/f'freeze-{count}')
+                    cfg['native_cpu_inputs']={key:frozen[key] for key in ('manifest','sha256')}
+                    _,loaded=movie_map_inputs.load_inputs(cfg)
+                self.assertEqual([r['source_index'] for r in loaded[0]['table']['rows']],list(range(1,count+1)))
+                self.assertEqual([r['reviewId'] for r in loaded[0]['table']['rows']],sample.reviewId.tolist())
+                response,events=trace(count)
+                response['latency_sec']=3
+                for row in response['results']:row['outputs'][0]['value']=answers[row['idx']]
+                for event in events:
+                    if event['event']=='map_result':event['text']=answers[event['idx']]
+                clock=ControlledClock();actions=[]
+                def emit(name):actions.append((name,clock()));return clock()
+                def transport(payload,qid,directory):
+                    self.assertEqual(qid,'q')
+                    self.assertEqual(payload['ops'],[dict(op='sem_map',args=dict(prompt=query.operation.stage.method.instruction))])
+                    self.assertFalse(payload['blocking'])
+                    self.assertEqual(pd.read_csv(payload['data_path'])['data'].tolist(),sample.reviewText.tolist())
+                    clock.advance(3);return response
+                original_prepare=movie_map.prepare
+                original_parse=postprocessors.map_postprocess
+                original_execute=movie_map.SemBenchTextQuery.execute
+                original_evaluate=movie_map.SemBenchTextQuery.evaluate
+                def prepare(*args):clock.advance(2);return original_prepare(*args)
+                def parse(*args):clock.advance(5);return original_parse(*args)
+                def execute(owner,*args):
+                    result=original_execute(owner,*args);clock.advance(4);return result
+                def read_trace(path,qid):
+                    emit('trace');clock.advance(7)
+                    return [] if Path(path).name=='map-trace.jsonl' else events
+                def evaluate(owner,frame):
+                    emit('evaluate');clock.advance(11);return original_evaluate(owner,frame)
+                def save(path,value):
+                    emit('persist');clock.advance(13);path.write_text(json.dumps(value))
+                with patch.object(adapter,'load_dependencies',return_value=save), \
+                        patch.object(movie_map.time,'monotonic_ns',clock), \
+                        patch.object(movie_map,'prepare',prepare), \
+                        patch.object(postprocessors,'map_postprocess',parse), \
+                        patch.object(movie_map.SemBenchTextQuery,'execute',execute), \
+                        patch.object(movie_map.SemBenchTextQuery,'evaluate',evaluate), \
+                        patch.object(adapter,'read_trace',read_trace):
+                    driver=movie_map.MapDriver(cfg,bound,helper.data/f'query-{count}',transport)
+                    driver.model_uid='u'
+                    report=driver.query(spec,emit)
+                self.assertEqual(report['result'],expected.to_dict(orient='split'))
+                self.assertEqual(json.dumps(report['quality'],sort_keys=True),json.dumps(expected_quality,sort_keys=True))
+                self.assertEqual(report['physical_native_calls'],count)
+                self.assertEqual(report['physical_call_cap'],2*count)
+                timing=report['memory_sink_timing']
+                self.assertEqual(timing['memory_sink_ready_ns'],14_000_000_000)
+                self.assertEqual(timing['phases']['original_query']['elapsed_s'],14)
+                self.assertEqual(actions[0],('memory_sink_ready',14_000_000_000))
+                self.assertTrue(all(at>=14_000_000_000 for name,at in actions if name in ('trace','evaluate','persist')))
+                self.assertEqual(timing['trace_audit_status'],'passed')
 
 
 if __name__=='__main__':unittest.main()

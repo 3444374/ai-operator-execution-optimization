@@ -13,7 +13,7 @@ def check(cfg,output,executor,manager,planner_class,data,max_model_len):
     if len(cfg['units'])!=1 or any(q['task']!='movie-q9' for q in cfg['units'][0]['queries']):
         raise ValueError('Q9 CPU preflight requires one dedicated Map unit')
     unit=cfg['units'][0]
-    native_server.physical_call_caps(unit)
+    caps=native_server.physical_call_caps(unit)
     manifest,inputs=load_inputs(cfg)
     prompt_roots={item['paths']['prompt'].parent for item in inputs}
     if len(prompt_roots)!=1:raise ValueError('Q9 CPU prompt tables require one frozen directory')
@@ -24,7 +24,7 @@ def check(cfg,output,executor,manager,planner_class,data,max_model_len):
         spec=item['spec'];rows=item['table']['rows'];path=item['paths']['csv']
         manager.reset_stages()
         contexts=list(data._data_source(None,path,executor))
-        if [ctx.state.idx for ctx in contexts]!=list(range(256)):
+        if [ctx.state.idx for ctx in contexts]!=list(range(len(rows))):
             raise ValueError('Native CPU data source changed the frozen occurrence order')
         planner=planner_class(executor,virtual_pinning=True,blocking=False)
         ops=planner.parse_ops([dict(op='sem_map',args=dict(prompt=item['table']['instruction']))])
@@ -48,7 +48,7 @@ def check(cfg,output,executor,manager,planner_class,data,max_model_len):
                 source_index=rows[idx]['source_index'],reviewId=rows[idx]['reviewId'],messages=prompt,messages_sha256=digest(prompt),
                 prompt_tokens=len(ids),token_ids=ids,first_max_tokens=chat.max_tokens))
         (output/(spec['query_id']+'-native-prompts.json')).write_text(json.dumps(previews,indent=2)+'\n')
-        plans.append(dict(query_id=spec['query_id'],logical_occurrences=len(rows),physical_call_cap=512,
+        plans.append(dict(query_id=spec['query_id'],logical_occurrences=len(rows),physical_call_cap=caps[spec['query_id']],
             plan_segments=len(plan),max_prompt_tokens=max(r['prompt_tokens'] for r in previews)))
     return dict(status='passed_real_native_CPU_Q9_planning_no_model_execution',plans=plans,
         frozen_input_binding=manifest['binding'],frozen_input_manifest_sha256=cfg['native_cpu_inputs']['sha256'],
