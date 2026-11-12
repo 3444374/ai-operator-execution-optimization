@@ -1,5 +1,14 @@
 # 实验与机制证据台账
 
+## 2026-11-12：KV 实际 TCP 分片的协议诊断
+
+[固定来源的协议与分片对照](diagnostics/native_stage_handoff_20261110/README.md#kv-tcp-fragment-20261112)
+保留独立 480／960 次物理调用预算、原始日志和 CUDA 区间。实际 lane 为 TCP AM；
+同时放宽 UCP 与 TCP 发送段后，单轮两方向复制／同步由 20160 降为 6720，52.5 MiB／方向及严格输出保持。
+这是分片机制证据，新增的带观察器单会话不证明稳定／完整查询加速，不修改生产默认。
+原离线 lease 拒绝、UCX 结束诊断和 profiler 覆盖限制保留。
+
+
 ## 2026-11-12：七个优化代码 PR 的实现与方案复核
 
 [固定来源的两轴审查](diagnostics/semloom_execution_candidates_20261110/README.md#implementation-review-20261112)

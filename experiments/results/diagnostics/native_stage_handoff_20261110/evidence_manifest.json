@@ -12888,5 +12888,638 @@
     ],
     "redaction": "Project redactor plus private host, IP, user and path substitutions.",
     "scope": "All measured round receipts and CUDA intervals retained. Warmup trace expansion and opaque profiler/SQLite binaries retained privately; duplicate round JSON recoverable from report.rounds."
+  },
+  "kv_tcp_fragment_20261112": {
+    "archive": "kv-tcp-fragment-evidence-20261112.tar.gz",
+    "archive_bytes": 4579283,
+    "archive_sha256": "1543eedbb6766ebf71d31a399dbe6890cb0124ab9d0b792dbc47b565c39ee566",
+    "private_archive_sha256": "b78eb2df7940a225640e0a324e6eef597490b548c60c35e31993acb7621cfd9f",
+    "files": [
+      {
+        "member": "server/semloom-kv-protocol-20261112/PLAN.md",
+        "original_bytes": 1005,
+        "original_sha256": "060adfe17164090c3e5d6aeee8c53377d003189e1f96b8df4adb93878a6ab1af",
+        "public_bytes": 1005,
+        "public_sha256": "060adfe17164090c3e5d6aeee8c53377d003189e1f96b8df4adb93878a6ab1af"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/budget-final.json",
+        "original_bytes": 311,
+        "original_sha256": "a2f0d3d5695cd6ab3beedaec26fffb0f349b001339387bb8c9c5975b5db976d3",
+        "public_bytes": 311,
+        "public_sha256": "a2f0d3d5695cd6ab3beedaec26fffb0f349b001339387bb8c9c5975b5db976d3"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/budget-snapshot.json",
+        "original_bytes": 311,
+        "original_sha256": "a2f0d3d5695cd6ab3beedaec26fffb0f349b001339387bb8c9c5975b5db976d3",
+        "public_bytes": 311,
+        "public_sha256": "a2f0d3d5695cd6ab3beedaec26fffb0f349b001339387bb8c9c5975b5db976d3"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/controller.log",
+        "original_bytes": 373,
+        "original_sha256": "8368cc9cedbc274e85865605124bce61fbcc2bf2c6c54fcc6df559454f9a0f06",
+        "public_bytes": 373,
+        "public_sha256": "8368cc9cedbc274e85865605124bce61fbcc2bf2c6c54fcc6df559454f9a0f06"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/final-inventory.json",
+        "original_bytes": 9262,
+        "original_sha256": "8bcf4aa77cd81cd0ef97254c26c1b64b965de92175c79022ef498e83b0f26f97",
+        "public_bytes": 9270,
+        "public_sha256": "eefa3395f937cb6bad63c714b10df8c4c745f97e4062662dfc5ef82304c5d9ff"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/preflight-driver.json",
+        "original_bytes": 4564,
+        "original_sha256": "e2082b0af0650661c8ed0a5ed050263c86d289771b7cebf6b085e79ac0382659",
+        "public_bytes": 4529,
+        "public_sha256": "915f13525483d891ff70a08355a24ed8552df1751eb78cb1f23e365bd4184327"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/preflight-driver.log",
+        "original_bytes": 4564,
+        "original_sha256": "e2082b0af0650661c8ed0a5ed050263c86d289771b7cebf6b085e79ac0382659",
+        "public_bytes": 4529,
+        "public_sha256": "915f13525483d891ff70a08355a24ed8552df1751eb78cb1f23e365bd4184327"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/preflight-model.json",
+        "original_bytes": 3981,
+        "original_sha256": "e07d230e7c2d1d93ef72f1fadf45bac4117c2320b8578dd946e20be91335ceee",
+        "public_bytes": 3946,
+        "public_sha256": "e59aa41b4125f25a525684e4d70c1ae0b2e54707387a98db2df326e20b441ff1"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/preflight-model.log",
+        "original_bytes": 3981,
+        "original_sha256": "e07d230e7c2d1d93ef72f1fadf45bac4117c2320b8578dd946e20be91335ceee",
+        "public_bytes": 3946,
+        "public_sha256": "e59aa41b4125f25a525684e4d70c1ae0b2e54707387a98db2df326e20b441ff1"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/captured-prompt-parity.json",
+        "original_bytes": 42,
+        "original_sha256": "93f0fbf474e1f3a259285353739163a420d1e0d99dda637c1e4fc0821e5dbcbb",
+        "public_bytes": 42,
+        "public_sha256": "93f0fbf474e1f3a259285353739163a420d1e0d99dda637c1e4fc0821e5dbcbb"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/config.json",
+        "original_bytes": 127753,
+        "original_sha256": "50175cda209bcd5d1ca509d8eee1cd51795a905c7bfeecc550cb9083d75d7551",
+        "public_bytes": 127733,
+        "public_sha256": "8568f12f4ad26571a341ff6a0b44f807bb992d7c4c06a7dd6ebc781a8f294b81"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/gpu-after.json",
+        "original_bytes": 133,
+        "original_sha256": "825e0e87ce2ff30c441b807cdd349557ac2edbb28f66b47cdf0a8195e3fe967f",
+        "public_bytes": 133,
+        "public_sha256": "825e0e87ce2ff30c441b807cdd349557ac2edbb28f66b47cdf0a8195e3fe967f"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/gpu-before.json",
+        "original_bytes": 116,
+        "original_sha256": "00cafb1b50f8c6cee518c57e6b848ef59add93d2bdbb005d1d38481795b32c68",
+        "public_bytes": 116,
+        "public_sha256": "00cafb1b50f8c6cee518c57e6b848ef59add93d2bdbb005d1d38481795b32c68"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/gpu-samples.json",
+        "original_bytes": 25747,
+        "original_sha256": "c70209a84faf996b6f9c9d2dd446358bcbb824ab4eac4b6895cd7280c67f0ce3",
+        "public_bytes": 25747,
+        "public_sha256": "c70209a84faf996b6f9c9d2dd446358bcbb824ab4eac4b6895cd7280c67f0ce3"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/resources.json",
+        "original_bytes": 48489,
+        "original_sha256": "0bb8cfaa87bb6dec0d4f06a86068968a6a5897809319d3db44a644987b0b5a49",
+        "public_bytes": 48489,
+        "public_sha256": "0bb8cfaa87bb6dec0d4f06a86068968a6a5897809319d3db44a644987b0b5a49"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/source.json",
+        "original_bytes": 1057,
+        "original_sha256": "d8059e267514ec7108e616fa00017e43f219816944a6086125903952470aaffb",
+        "public_bytes": 1057,
+        "public_sha256": "d8059e267514ec7108e616fa00017e43f219816944a6086125903952470aaffb"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/supervision/supervisor.json",
+        "original_bytes": 4205,
+        "original_sha256": "df4bf76b5054ca6b4d6ed47080e1bb46553dc2ab4d1423743ce3ea1d3de30e81",
+        "public_bytes": 4190,
+        "public_sha256": "1b5d34463f31eb127c27c519cddfcb61a84510422289b432d035800a1dcb88b2"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/supervision/worker.log",
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/control/decode.log",
+        "original_bytes": 907984,
+        "original_sha256": "2869283175b19ee5836f35bf3185bcd24e2e9d3aa542c0ad549fc111d36a9f77",
+        "public_bytes": 907450,
+        "public_sha256": "a55d96c6f1975e728252693b863cc56646ef9499b01cc0b5f71c43e440edaada"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/control/driver-cleanup.json",
+        "original_bytes": 6069,
+        "original_sha256": "95b2f35255f491c2cfb5345f9fb1054523022fc038d821c7108483d76bebd28f",
+        "public_bytes": 6069,
+        "public_sha256": "95b2f35255f491c2cfb5345f9fb1054523022fc038d821c7108483d76bebd28f"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/control/engine-decode.json",
+        "original_bytes": 2674,
+        "original_sha256": "a088c56d3ad13c64d8e63f8ebf92de514e1435d5b9a017dde324839517a79aac",
+        "public_bytes": 2674,
+        "public_sha256": "a088c56d3ad13c64d8e63f8ebf92de514e1435d5b9a017dde324839517a79aac"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/control/engine-prefill.json",
+        "original_bytes": 2643,
+        "original_sha256": "2e87b70dc66d67d91523ab6080421d4b245bf5bf823966acd1e40c8c56ac3b52",
+        "public_bytes": 2643,
+        "public_sha256": "2e87b70dc66d67d91523ab6080421d4b245bf5bf823966acd1e40c8c56ac3b52"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/control/prefill.log",
+        "original_bytes": 362151,
+        "original_sha256": "93ebca03f874073ea44e388c95e06095cb9edcb6abfe5f35b6efb6966811da9b",
+        "public_bytes": 361617,
+        "public_sha256": "1cc517af0b077b2368361402529642b8473e23f5b12ce27d42ae3f31e18bc61d"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/first-results.json",
+        "original_bytes": 829943,
+        "original_sha256": "0119b7f31e508c5aeaf97d544320ddc6ebaa605f5ff3c0df1ce4075a8b414a06",
+        "public_bytes": 829943,
+        "public_sha256": "0119b7f31e508c5aeaf97d544320ddc6ebaa605f5ff3c0df1ce4075a8b414a06"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/report.json",
+        "original_bytes": 27288,
+        "original_sha256": "6f49e3363d199f445fca65572e46a6992c609c412229748ea769912e53be8ea1",
+        "public_bytes": 27278,
+        "public_sha256": "2d5b3407384ec35f993a3f22169a88b90a4c0f15152bba1a4976c6faee5437e8"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/round-0.json",
+        "original_bytes": 1004,
+        "original_sha256": "bea8cc518ece098f880cab5633189dc41d9115350a580cf553eb1286d376f2cb",
+        "public_bytes": 1004,
+        "public_sha256": "bea8cc518ece098f880cab5633189dc41d9115350a580cf553eb1286d376f2cb"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/round-1.json",
+        "original_bytes": 940,
+        "original_sha256": "214fa0233fca9315d324e5c9d65a94369da62c57e8b242167291a22083367f40",
+        "public_bytes": 940,
+        "public_sha256": "214fa0233fca9315d324e5c9d65a94369da62c57e8b242167291a22083367f40"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol_campaign.py",
+        "original_bytes": 9625,
+        "original_sha256": "84980feb6456708c1d941462363b6a58a7514e95c8c3a482a7442b8c88410e93",
+        "public_bytes": 9580,
+        "public_sha256": "e07d71d1291444ba8bff2c34810fe0eec2feb1e64b0d8284f237612a070df5f7"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/PLAN.md",
+        "original_bytes": 1378,
+        "original_sha256": "097a3c9e5a1962c105438261fc0a00226993f4da056700b5537232a6223602fa",
+        "public_bytes": 1378,
+        "public_sha256": "097a3c9e5a1962c105438261fc0a00226993f4da056700b5537232a6223602fa"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/analyze_trace.py",
+        "original_bytes": 4514,
+        "original_sha256": "09a767446705b49b14fd1ba17fed407fc2a10518ae0f84800e05bf570db744bf",
+        "public_bytes": 4514,
+        "public_sha256": "09a767446705b49b14fd1ba17fed407fc2a10518ae0f84800e05bf570db744bf"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/budget-final.json",
+        "original_bytes": 314,
+        "original_sha256": "76abc26a2fa05f300c6fee1847092278119d2c4e316fd46f1a9874a842a885f6",
+        "public_bytes": 314,
+        "public_sha256": "76abc26a2fa05f300c6fee1847092278119d2c4e316fd46f1a9874a842a885f6"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/budget-snapshot.json",
+        "original_bytes": 314,
+        "original_sha256": "76abc26a2fa05f300c6fee1847092278119d2c4e316fd46f1a9874a842a885f6",
+        "public_bytes": 314,
+        "public_sha256": "76abc26a2fa05f300c6fee1847092278119d2c4e316fd46f1a9874a842a885f6"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/campaign.py",
+        "original_bytes": 9648,
+        "original_sha256": "2f63b5d2ef220897732ccb2f899832307f7eca0d3516688f2ff50dc3a120bbc9",
+        "public_bytes": 9603,
+        "public_sha256": "728bdb3af98632d9aeeaf33f73a8f50287fec8b8c50a50515bbcb53588e78be1"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/controller.log",
+        "original_bytes": 376,
+        "original_sha256": "012c0c2bcf3a6b3a29133b14096934ce721f04da9b90dda33d85b5c23a76d714",
+        "public_bytes": 376,
+        "public_sha256": "012c0c2bcf3a6b3a29133b14096934ce721f04da9b90dda33d85b5c23a76d714"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/diagnosis_worker.py",
+        "original_bytes": 4504,
+        "original_sha256": "aae4abb991aa537560d8d62a26c7c29b4b6bceec627cd0a2b3d0e588ae244097",
+        "public_bytes": 4504,
+        "public_sha256": "aae4abb991aa537560d8d62a26c7c29b4b6bceec627cd0a2b3d0e588ae244097"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/final-inventory.json",
+        "original_bytes": 10011,
+        "original_sha256": "41815b27938f6f97eaa08924f3c431f59b89dbeae04e48e3d56146c5b038438b",
+        "public_bytes": 10019,
+        "public_sha256": "0784a519841094ee3809e43aea3a8b59f7ba3e53c27520d604400b273929dc8a"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/inventory-protocol.log",
+        "original_bytes": 199,
+        "original_sha256": "8c9cdd853c6cf60edc3d07d27cf63b56655098b6baa7bd08f299c46eb98f01b0",
+        "public_bytes": 199,
+        "public_sha256": "8c9cdd853c6cf60edc3d07d27cf63b56655098b6baa7bd08f299c46eb98f01b0"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/inventory-protocol.py",
+        "original_bytes": 4857,
+        "original_sha256": "5a89a101f2aef847ecbcfe3fbd92479b087e9ee31b5b9f0c8fd1a23b0003a9f9",
+        "public_bytes": 4830,
+        "public_sha256": "b6817cf6f08c57eb63385f4ef91689c6ef886d55a63cc50634c4611fb4bc0e3c"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/inventory-tcp-fragment.log",
+        "original_bytes": 199,
+        "original_sha256": "73a30a7effe88fe112895dba6cf47e0b2226c16fefaf8ae8594fdaf0cf8ab684",
+        "public_bytes": 199,
+        "public_sha256": "73a30a7effe88fe112895dba6cf47e0b2226c16fefaf8ae8594fdaf0cf8ab684"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/inventory-tcp-fragment.py",
+        "original_bytes": 4930,
+        "original_sha256": "b3b2549ad1b5b4bef2751c5cc408bd5b720fb706be1ecc671d84ba647e3f1abf",
+        "public_bytes": 4903,
+        "public_sha256": "4a8638a2868e28d8f322a20e7a57ac89f7b4314bdb4eff4ce819f109d680bf5a"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/nvtx_marker.c",
+        "original_bytes": 113,
+        "original_sha256": "a4bceacfab2a8ca828c821a0d36144df2172ce89761108aa0efbb963707ba0e1",
+        "public_bytes": 113,
+        "public_sha256": "a4bceacfab2a8ca828c821a0d36144df2172ce89761108aa0efbb963707ba0e1"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/postprocess-closure.json",
+        "original_bytes": 166,
+        "original_sha256": "df2815cd60af4d088a1b3a1d2d6a7b60329474072a401ad722e213ba074ba07c",
+        "public_bytes": 166,
+        "public_sha256": "df2815cd60af4d088a1b3a1d2d6a7b60329474072a401ad722e213ba074ba07c"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/postprocess-r2.log",
+        "original_bytes": 17,
+        "original_sha256": "9e8ff6292646ee7a09ad0a43a41c4bf05fbb6dda9f0d6431ea6a19130b49594e",
+        "public_bytes": 17,
+        "public_sha256": "9e8ff6292646ee7a09ad0a43a41c4bf05fbb6dda9f0d6431ea6a19130b49594e"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/postprocess-r2.py",
+        "original_bytes": 1481,
+        "original_sha256": "7dddd3d157469a8c162a04bac9fa485ac868842ffc4dfe3d3af883db6e870ffd",
+        "public_bytes": 1466,
+        "public_sha256": "3f7d0a84e9815cbf029f2345cebb0eb8e2444c5a77d13f97d5dc8dc2dfc458bb"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/postprocess.log",
+        "original_bytes": 990,
+        "original_sha256": "75dd2be72e5e34e6382470f74922fcf50586bb0c863ec76928b2eb984427de46",
+        "public_bytes": 947,
+        "public_sha256": "d21d456141e0de937476ad6007d16e533ff76f0a8cf64e52acd7eef5158ea016"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/postprocess.py",
+        "original_bytes": 1330,
+        "original_sha256": "ee28e6fc330bc76c9eb1533d6e7cc5a3bdf78b12a8cd7ccd2c0e3011a37f8be8",
+        "public_bytes": 1315,
+        "public_sha256": "529437e983993e98267ad7b0449906a4b6cb6eafd2b065d84b28c4ea751252f0"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/preflight-driver.json",
+        "original_bytes": 4572,
+        "original_sha256": "ecd703f6bb7ac53aeadeaed4e0263e98d6c58d11de4c759aeb030d18cf931934",
+        "public_bytes": 4537,
+        "public_sha256": "c7a4c4c44d74b097ecdb65df62042e6ecf8d688c2ec27f5e707c9fee7d6535ee"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/preflight-driver.log",
+        "original_bytes": 4572,
+        "original_sha256": "ecd703f6bb7ac53aeadeaed4e0263e98d6c58d11de4c759aeb030d18cf931934",
+        "public_bytes": 4537,
+        "public_sha256": "c7a4c4c44d74b097ecdb65df62042e6ecf8d688c2ec27f5e707c9fee7d6535ee"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/preflight-model.json",
+        "original_bytes": 3989,
+        "original_sha256": "03de9375cdca1cf762d8f02ef4dba5c30047e22ea413cd7bef4f1cdfebe7f800",
+        "public_bytes": 3954,
+        "public_sha256": "dc2da49fac2c977fd7de8ffeed6de42c8c4f5f2e333ebcecc454d4f0689b851f"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/preflight-model.log",
+        "original_bytes": 3989,
+        "original_sha256": "03de9375cdca1cf762d8f02ef4dba5c30047e22ea413cd7bef4f1cdfebe7f800",
+        "public_bytes": 3954,
+        "public_sha256": "dc2da49fac2c977fd7de8ffeed6de42c8c4f5f2e333ebcecc454d4f0689b851f"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/captured-prompt-parity.json",
+        "original_bytes": 42,
+        "original_sha256": "93f0fbf474e1f3a259285353739163a420d1e0d99dda637c1e4fc0821e5dbcbb",
+        "public_bytes": 42,
+        "public_sha256": "93f0fbf474e1f3a259285353739163a420d1e0d99dda637c1e4fc0821e5dbcbb"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/config.json",
+        "original_bytes": 127756,
+        "original_sha256": "066c0a92a8c6e45f93c06c42ef925aea59d7c5ed6297381389a9c13374e19870",
+        "public_bytes": 127736,
+        "public_sha256": "cddc9502b17ac47e6f040ab27940be33f8e4fa62d26823e19499355a93f09e50"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/gpu-after.json",
+        "original_bytes": 133,
+        "original_sha256": "825e0e87ce2ff30c441b807cdd349557ac2edbb28f66b47cdf0a8195e3fe967f",
+        "public_bytes": 133,
+        "public_sha256": "825e0e87ce2ff30c441b807cdd349557ac2edbb28f66b47cdf0a8195e3fe967f"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/gpu-before.json",
+        "original_bytes": 116,
+        "original_sha256": "00cafb1b50f8c6cee518c57e6b848ef59add93d2bdbb005d1d38481795b32c68",
+        "public_bytes": 116,
+        "public_sha256": "00cafb1b50f8c6cee518c57e6b848ef59add93d2bdbb005d1d38481795b32c68"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/gpu-samples.json",
+        "original_bytes": 27589,
+        "original_sha256": "1293d591fc008fc8d21e0f0a5bcd702a0406dfad9c5978bf11c72e6466797225",
+        "public_bytes": 27589,
+        "public_sha256": "1293d591fc008fc8d21e0f0a5bcd702a0406dfad9c5978bf11c72e6466797225"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/resources.json",
+        "original_bytes": 54332,
+        "original_sha256": "349eacbd27653c974e330f2c24a7220e8a177aa3eab6ad95004b0bdb66b35c76",
+        "public_bytes": 54332,
+        "public_sha256": "349eacbd27653c974e330f2c24a7220e8a177aa3eab6ad95004b0bdb66b35c76"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/source.json",
+        "original_bytes": 1094,
+        "original_sha256": "2088da484f1d102a823a1a1460389da8cbd4396783b5696f88a61a0f4e0ec571",
+        "public_bytes": 1094,
+        "public_sha256": "2088da484f1d102a823a1a1460389da8cbd4396783b5696f88a61a0f4e0ec571"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/supervision/supervisor.json",
+        "original_bytes": 6896,
+        "original_sha256": "e9d3c6bfb263c9edeb83a48d5c7a600e9c8f67ebbd3fb1b580a4594ea7f23493",
+        "public_bytes": 6871,
+        "public_sha256": "c67fb148a6e4fdae18892ba77e0a5f7bb61300bad619fad1d5545805a1bc0485"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/supervision/worker.log",
+        "original_bytes": 4037,
+        "original_sha256": "a0ee3da601103ab7ccc2eb2cd9a6504ee91553a100625d8c909cd81ee7bd21f1",
+        "public_bytes": 4027,
+        "public_sha256": "91d7b86660388e2a097f7c98475c2d3d56034e3b0923810c640457ca3dcea011"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/trace-intervals.json",
+        "original_bytes": 64261092,
+        "original_sha256": "871032822476581fcca4b7207fefd808901b299f0b1fba9e5cda2a756ccba24e",
+        "public_bytes": 64261087,
+        "public_sha256": "2e954dc2acd1e3d884bababd65c8c1b5537293959918ed7e956f1161015ed396"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/control/decode.log",
+        "original_bytes": 15791,
+        "original_sha256": "da9e6f64b0b9a9597c0a70d63dc29425c87aaef9b3c6e14a90e31362a1192392",
+        "public_bytes": 15290,
+        "public_sha256": "0bdade33f3f156ca1d7fc278eb360e9f50f546485595bc14472bf0429a16ea48"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/control/driver-cleanup.json",
+        "original_bytes": 6110,
+        "original_sha256": "131e81add9dde1384d79967602e0e0e0c07d52ff1bfca111ad03d20eae23c623",
+        "public_bytes": 6110,
+        "public_sha256": "131e81add9dde1384d79967602e0e0e0c07d52ff1bfca111ad03d20eae23c623"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/control/engine-decode.json",
+        "original_bytes": 2714,
+        "original_sha256": "93814dda95e65d02e9f8495405882064c96b1ab22d082501becc0ce80521aab2",
+        "public_bytes": 2714,
+        "public_sha256": "93814dda95e65d02e9f8495405882064c96b1ab22d082501becc0ce80521aab2"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/control/engine-prefill.json",
+        "original_bytes": 2644,
+        "original_sha256": "82020719d266197f18247b4a312c1fe0a5e169a0b7e0c0f93e12c66270b180dc",
+        "public_bytes": 2644,
+        "public_sha256": "82020719d266197f18247b4a312c1fe0a5e169a0b7e0c0f93e12c66270b180dc"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/control/prefill.log",
+        "original_bytes": 15424,
+        "original_sha256": "67e74071652f17c58fca7da2228918ae3afcb025c05b1fc885542a3ad82d152c",
+        "public_bytes": 14923,
+        "public_sha256": "6fc916a84038ee74f88861e1f8b9244396c60b49f46cc424a763608e8768af82"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/first-results.json",
+        "original_bytes": 829949,
+        "original_sha256": "55a023782b59502f3fb66bbe0df628161347d342b56760d0b1dc6030861a5001",
+        "public_bytes": 829949,
+        "public_sha256": "55a023782b59502f3fb66bbe0df628161347d342b56760d0b1dc6030861a5001"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/receipts-0.json",
+        "original_bytes": 208161,
+        "original_sha256": "81bf073faaa38dff56099d27be82382b7d1512291ea6c2ec7122afc3988c74a8",
+        "public_bytes": 208161,
+        "public_sha256": "81bf073faaa38dff56099d27be82382b7d1512291ea6c2ec7122afc3988c74a8"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/receipts-1.json",
+        "original_bytes": 208785,
+        "original_sha256": "1b4d7d706b1a535d218b2cfdc9509c826415d8f3765dfa9459ff17c05952f83e",
+        "public_bytes": 208785,
+        "public_sha256": "1b4d7d706b1a535d218b2cfdc9509c826415d8f3765dfa9459ff17c05952f83e"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/receipts-2.json",
+        "original_bytes": 208800,
+        "original_sha256": "c51e7a79fe605f40e9cc1aa9db799dbd6acf5081e35920133325d94b6fd68714",
+        "public_bytes": 208800,
+        "public_sha256": "c51e7a79fe605f40e9cc1aa9db799dbd6acf5081e35920133325d94b6fd68714"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/receipts-3.json",
+        "original_bytes": 208860,
+        "original_sha256": "fd39a28abf9e90feb410b6785cf7e09ca36088e55eac36cc3ff6cc8d2e163f47",
+        "public_bytes": 208860,
+        "public_sha256": "fd39a28abf9e90feb410b6785cf7e09ca36088e55eac36cc3ff6cc8d2e163f47"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/report.json",
+        "original_bytes": 29763,
+        "original_sha256": "5a9dfa73d2b4bafa24143f9ffdb0f56c4e0bf7f7b3f3af7023ae99796ac99750",
+        "public_bytes": 29753,
+        "public_sha256": "b3265b5b13902fa8061bed9a6b55cec0e9a3da33c12180c7535a2ce9d0fbb008"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/round-0.json",
+        "original_bytes": 1054,
+        "original_sha256": "a02a03d94768a34b3c2268201d2b4db0dd860fdca63ea4ee48fff5af7db12357",
+        "public_bytes": 1054,
+        "public_sha256": "a02a03d94768a34b3c2268201d2b4db0dd860fdca63ea4ee48fff5af7db12357"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/round-1.json",
+        "original_bytes": 943,
+        "original_sha256": "d038e811389f30b46d2dca5afb0ecec2326172271a66f88f2b20e39a794eb611",
+        "public_bytes": 943,
+        "public_sha256": "d038e811389f30b46d2dca5afb0ecec2326172271a66f88f2b20e39a794eb611"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/round-2.json",
+        "original_bytes": 959,
+        "original_sha256": "8a6efd7b1dac944a7c63fcc0f555a042c66e3c1e3b8fc40c31fb2cb22934a073",
+        "public_bytes": 959,
+        "public_sha256": "8a6efd7b1dac944a7c63fcc0f555a042c66e3c1e3b8fc40c31fb2cb22934a073"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/round-3.json",
+        "original_bytes": 991,
+        "original_sha256": "eff531487a3fa47385aca1bfa97c698e9578f1216519ae8226e2fd48045cda3d",
+        "public_bytes": 991,
+        "public_sha256": "eff531487a3fa47385aca1bfa97c698e9578f1216519ae8226e2fd48045cda3d"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/round-windows.json",
+        "original_bytes": 426,
+        "original_sha256": "0f00af12e9b616ea28722c15564944bd97be1bd9c74d91ac90e3fccb491bd622",
+        "public_bytes": 426,
+        "public_sha256": "0f00af12e9b616ea28722c15564944bd97be1bd9c74d91ac90e3fccb491bd622"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/trace-analysis.log",
+        "original_bytes": 2243,
+        "original_sha256": "b88b538b087dee46fcad2a5abdd2d5c543fb10a9daee225b0af3ce054678f86d",
+        "public_bytes": 2243,
+        "public_sha256": "b88b538b087dee46fcad2a5abdd2d5c543fb10a9daee225b0af3ce054678f86d"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/trace-export.log",
+        "original_bytes": 8101,
+        "original_sha256": "35e6df287f9e0fc5163f2e36e6c14dc039072a324e4b600d4796b138d7f4a5f5",
+        "public_bytes": 8101,
+        "public_sha256": "35e6df287f9e0fc5163f2e36e6c14dc039072a324e4b600d4796b138d7f4a5f5"
+      },
+      {
+        "member": "local/summarize_kv_followup.py",
+        "original_bytes": 5828,
+        "original_sha256": "3995abf31947d88471c63fd53eabe68553a7352cc72172863a7df2d191857834",
+        "public_bytes": 5828,
+        "public_sha256": "3995abf31947d88471c63fd53eabe68553a7352cc72172863a7df2d191857834"
+      },
+      {
+        "member": "local/analyze_trace.py",
+        "original_bytes": 4514,
+        "original_sha256": "09a767446705b49b14fd1ba17fed407fc2a10518ae0f84800e05bf570db744bf",
+        "public_bytes": 4514,
+        "public_sha256": "09a767446705b49b14fd1ba17fed407fc2a10518ae0f84800e05bf570db744bf"
+      },
+      {
+        "member": "local/baseline-trace-reference.json",
+        "original_bytes": 22552,
+        "original_sha256": "c77d4cad4c950976b2d857bf26a529ed5ce07a377a61e0519934c06fa97f7d44",
+        "public_bytes": 22552,
+        "public_sha256": "c77d4cad4c950976b2d857bf26a529ed5ce07a377a61e0519934c06fa97f7d44"
+      },
+      {
+        "member": "local/model-shape.json",
+        "original_bytes": 253,
+        "original_sha256": "b49a7d602232491bd3c53349dbd02f288c7cc6822f077dfbc935caeed85b3087",
+        "public_bytes": 253,
+        "public_sha256": "b49a7d602232491bd3c53349dbd02f288c7cc6822f077dfbc935caeed85b3087"
+      },
+      {
+        "member": "local/config-comparison.json",
+        "original_bytes": 765,
+        "original_sha256": "0485fb211cff99be488d9ceda6ae5c5be1082013b1b6b88cc0eda935f2351fba",
+        "public_bytes": 755,
+        "public_sha256": "5797eb67f7f47a443b846ccccb4e2a772b84f63380231084fe84eab916add47f"
+      }
+    ],
+    "private_binary_files": [
+      {
+        "member": "server/semloom-kv-protocol-20261112/budget.sqlite",
+        "bytes": 16384,
+        "sha256": "fe2dcb0cd281656676afd5a4653023f10f27272dd9e2d7484419ee90732ea893"
+      },
+      {
+        "member": "server/semloom-kv-protocol-20261112/protocol01-q8-pipeline/worker/control/stop",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/budget.sqlite",
+        "bytes": 16384,
+        "sha256": "3d907252176f4c7dc64bc07fbcc4a223a0f26c471187638a7280eb7969cd3e2a"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/controller.pid",
+        "bytes": 4,
+        "sha256": "f5475c3cab1c59e829fd81d331a3ff08de1565a847a44954679010dc431af451"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/nvtx_marker.so",
+        "bytes": 38800,
+        "sha256": "f96bb195c2dff1ea534a22d3084cd4af7136ec1233dcb35c81b2aa4e87bc925c"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/trace.nsys-rep",
+        "bytes": 18692200,
+        "sha256": "c7759315095e52fa3aefaa1a91fa0fcea65bccf3b7166171ddfe6240e96f8cf2"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/trace.sqlite",
+        "bytes": 42246144,
+        "sha256": "2e23721792a5520884c0fe86494d5bd1e0682c85d82528bd995e9c202db1b3bf"
+      },
+      {
+        "member": "server/semloom-kv-tcp-fragment-20261112/tcp64-trace01-q8-pipeline/worker/control/stop",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "redaction": "Project redactor plus private host, IP, user and path substitutions.",
+    "scope": "All text protocol/controller/trace evidence, including warmup intervals and original failed offline lease acquisition. Opaque Nsight/SQLite/native library originals remain in verified private archive. No new source/model performance qualification."
   }
 }

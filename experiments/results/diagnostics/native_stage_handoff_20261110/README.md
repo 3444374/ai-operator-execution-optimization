@@ -379,7 +379,7 @@ NIXL的累计时长由[原生统计](https://github.com/vllm-project/vllm/blob/v
 [NIXL 1.3.0](https://github.com/ai-dynamo/nixl/blob/v1.3.0/src/core/nixl_agent.cpp)在检查发现传输完成时记录从提交起的时长，
 因此该时长包含完成被检查到之前的等待，不等于CUDA memcpy持续时间。
 
-### 64KiB分片消融
+### 仅调整 UCP 段上限的 64KiB 探针
 
 实际加载UCX1.21.0；其[配置源码](https://github.com/openucx/ucx/blob/v1.21.0/src/ucp/core/ucp_context.c)默认`SEG_SIZE=8192`。
 在上述观察后，先补充计划，再仅为两个新诊断进程设置`UCX_SEG_SIZE=65536`，其余输入、语义和资源保持。
@@ -389,6 +389,7 @@ NIXL的累计时长由[原生统计](https://github.com/vllm-project/vllm/blob/v
 观察轮复制调用次数中位数从20160变为20160，主机复制／同步区间并集从166.081变为159.627ms。
 实际8176／32字节复制形状与20160次复制／同步保持，未观察到目标分片减少或端到端改善。
 因此本次配置探针没有改变待验证的物理变量，不能用它估算减少小拷贝的收益，也不能据此否定小拷贝开销假设。
+后续[实际 TCP 上限诊断](#kv-tcp-fragment-20261112)定位了另一个约束，并实证改变了分片；原探针结果不覆盖。
 参数在模型父进程及一个原生GPU进程初始环境中被观察到；其他`/proc`初始环境快照保留缺项，
 未通过UCX内部配置查询证明两个阶段的运行时解析值。请求配置、进程环境和实际传输形状分别保存。
 完整输出逐token一致；NIXL物理调用、传输字节和资源门禁另行核对。分片消融仅一次独立无观察器会话，
@@ -408,3 +409,86 @@ Nsight2025.3.1提示CUDA13.2驱动采用13.0跟踪库；实际模型进程有CUD
 [公开证据包](cost-diagnosis-evidence-20261112.tar.gz)由[清单](evidence_manifest.json)的`cost_diagnosis_20261112`绑定。
 公开包保留全部测量轮回执与CUDA区间；首次预热的展开轨迹和原Nsight／SQLite二进制在私有完整归档，清单记录摘要。
 解包后运行`python local/summarize.py server <输出>`与`python local/aggregate_trace.py server <输出>`复算两份汇总。
+
+<a id="kv-tcp-fragment-20261112"></a>
+## 2026-11-12：两万次复制的来源与实际分片对照
+
+此处是对上述归因的后续检查，生产源码仍为准确 `14c6c5e03b849947621b714949532c2a95728790`。
+先运行 480 次物理调用的协议日志单元，再运行独立 960 次额度的单个 TCP 分片对照；
+两项各有执行前计划、600 s 上限、host lease 与 driver／model preflight，没有重置旧 17744 次诊断预算。
+模型权重、原生文件、加载的 UCX 库与旧记录核对一致。均为同 RTX4090、8 个 CPU 槽、
+原 Q8 的 120 请求、BF16／eager、C128／P64／B64、总显存声明 0.6、总批 token 4096；
+实际每阶段 9005 个 KV blocks、每块 16 token，与原分片对照一致。
+
+### 实际路径和为何产生三倍碎片
+
+**原始日志：** P／D 两端均记录 `rma_am(tcp/eth0)`；`device(cuda_ipc/cuda)` 同时出现，
+但它不证明本次 RMA 数据走了 CUDA IPC。日志另保留无 RDMA 设备的提示。
+设置 `UCX_PROTO_INFO=used` 后未取得完整的按尺寸协议表；为什么该构建选择 TCP 而非其他 lane，仍未唯一归因。
+
+**固定源码：** [NIXL 1.3.0 的 UCX READ](https://github.com/ai-dynamo/nixl/blob/v1.3.0/src/plugins/ucx/ucx_utils.cpp)
+进入 `ucp_get_nbx`。[UCX 1.21.0 TCP](https://github.com/openucx/ucx/blob/v1.21.0/src/uct/tcp/tcp_iface.c)
+发送 copy-out buffer 默认 8 KiB；[endpoint](https://github.com/openucx/ucx/blob/v1.21.0/src/ucp/core/ucp_ep.c)
+的 AM 上限同时受 transport cap 和 UCP segment 约束。
+[软件 GET reply](https://github.com/openucx/ucx/blob/v1.21.0/src/ucp/rma/rma_sw.c)
+按上限减协议头打包，实测有效分片为 8176 字节。
+[CUDA copy short 路径](https://github.com/openucx/ucx/blob/v1.21.0/src/uct/cuda/cuda_copy/cuda_copy_ep.c)
+每次 `cuMemcpyAsync` 后调用 `cuStreamSynchronize`。这些源码解释与日志／CUDA 轨迹一致；本次没有取得每次调用的 CPU 栈。
+
+完整消息仍是一个逻辑请求，原生 P／D 各记一次物理调用。这里的 20160 是两个主机中转方向的复制总数，
+不是每个方向 20160 次，也不是模型执行了 20160 个请求。计算如下：
+
+```text
+每层一个 KV 块 = K/V 两份 × 16 token × 2 KV heads × 128 head_dim × BF16 两字节
+                 = 16384 bytes
+每个方向数据量 = 120 请求 × 28 层 × 16384 = 55050240 bytes = 52.5 MiB
+每个层块的碎片 = 8176 + 8176 + 32 = 16384 bytes
+两方向复制次数 = 120 × 28 × 3 × 2 = 20160；同步次数同为 20160
+```
+
+原生分配日志的稳态 120 项每项需外部 1–16 token，按 16-token 块对应 120 个块；
+首轮预热对应 942 块，不能用首轮量替代稳态。原生 `start_load_kv` 日志里的 `len(block_ids)=1`
+实际上是外层 cache-group 数，**不是块数**；复算用带请求序号的正 `num_external_tokens` 分配。
+[vLLM pull scheduler](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/distributed/kv_transfer/kv_connector/v1/nixl/pull_scheduler.py)
+只申请已有本地工作之外的外部 token，[pull worker](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/distributed/kv_transfer/kv_connector/v1/nixl/pull_worker.py)
+继续应用 prefix-caching 过滤；没有证据表明稳态每次重传了整个历史 prompt。
+
+### 改变真正约束后的观察
+
+原 `segment-trace01-q8-pipeline` 已设置 `UCX_SEG_SIZE=65536`，TCP 发送上限仍为默认。
+新 `tcp64-trace01-q8-pipeline` 同时设置 `UCX_TCP_TX_SEG_SIZE=65536`；
+两者完整 engine／消息／生成／额度／预热／轮数配置相同，仅诊断库路径与剩余期限随新运行变化。
+新单元增加 UCX INFO 日志以核对 lane；未改后端源码或生产默认。
+仍为 TCP AM 和 GPU→主机→GPU，但每层 16 KiB 现在一次复制即可完成。
+
+| 每轮观察量 | 原 TCP 上限：三轮 | TCP 上限 64 KiB：三轮 |
+|---|---|---|
+| 固定 KV 字节／方向 | 各 52.5 MiB | 各 52.5 MiB |
+| cuMemcpyAsync／轮 | 20160 / 20160 / 20160 | 6720 / 6720 / 6720 |
+| cuStreamSynchronize／轮 | 20160 / 20160 / 20160 | 6720 / 6720 / 6720 |
+| GPU memcpy 区间并集，ms | 20.134791 / 21.106101 / 20.345349 | 11.857820 / 11.414839 / 11.893567 |
+| 两类主机 API 区间并集，ms | 132.767116 / 167.057137 / 159.627192 | 88.655619 / 75.832023 / 75.598403 |
+| 带观察器整轮墙钟，s | 0.586624 / 0.557821 / 0.570487 | 0.545846 / 0.500197 / 0.450686 |
+
+复制／同步各减少三分之二，传输字节不变；新三轮各有每方向 3360 次 16384-byte KV 复制。
+全部请求 token、结果摘要、原生正常完成与监督资源检查通过。
+这确认之前仅改 UCP segment 未改变物理分片的原因，并证明此配置存在可减少的传输碎片。
+新探针只有一次带 Nsight 的会话，且增加 INFO 日志；保留 tracing library 13.0／driver 13.2 与覆盖警告，
+不据表内时间宣称稳定加速或完整 LOTUS 查询净收益，不能把不同重叠区间相加。
+
+### 调整边界与证据
+
+没有通过删除 `cuStreamSynchronize` 绕开问题：该 short／打包路径马上消费缓冲区，去掉完成等待会改变缓冲区寿命语义。
+也没有把 64 KiB 写成全局默认：当前只确认这台机器、模型、UCX 构建和 TCP 路径的物理变化。
+继续优化需要区分减少分片、选择可用的直接传输路径、合并跨层交接以及双引擎调度；
+共置默认与此前单卡流水负结果保持，其他场景需自己的完整任务和生命周期对照。
+
+两项正常关闭的进程／SHM／GPU 检查通过；UCX 内部结束日志仍有 async handler table／thread use 诊断，原文保留，
+不宣称所有 UCX 内部状态已证明为空。离线导出第一次因其他任务持有 lease 拒绝，零模型调用；
+随后在释放后取得独占 lease 完成，保留两次日志。最终 inventory 在离线 lease 内采集，
+其中 `lease_absent=false` 不表示本任务泄漏；后续 closure 确认 lease 不再属于本任务，机器另有独立任务继续使用。
+
+[复算汇总](kv-fragment-summary.json)与[公开证据包](kv-tcp-fragment-evidence-20261112.tar.gz)
+由[清单](evidence_manifest.json)的 `kv_tcp_fragment_20261112` 绑定：83 份公开文本成员，
+包括完整原生日志、全部预热／测量 CUDA 区间、计划／预算／失败与配置对照；8 份不透明二进制保留于已核验的私有归档。
+解包后运行 `python local/summarize_kv_followup.py server local/baseline-trace-reference.json <输出>` 可复算汇总。

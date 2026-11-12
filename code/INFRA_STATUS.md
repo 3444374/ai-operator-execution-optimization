@@ -9,6 +9,10 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 区分各 PR 的窄实现与未完成项：完整查询候选接线、实际未缓存工作／成本输入、动态消费者与多层表示、
 真实位置路由及 #101 短期限具名资源回收仍未完成；负结果候选按停止条件处理。
 
+[实际 KV TCP 路径诊断](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#kv-tcp-fragment-20261112)
+在固定机器／构建上把每轮复制和同步从 20160 降到 6720，传输量与输出保持；
+该单会话机制证据不授予默认调参、直接 CUDA IPC 或完整查询加速资格。
+
 <a id="native-gpu-decision-observation"></a>
 本分支继续增加显式就绪工作选择、排队／传输／重建成本路由、有界提前准备与原生引擎可选参数。
 [执行候选报告](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)记录 Q8／Q9 布局、

@@ -12,6 +12,9 @@ AutoDL、文本或图像专项 runbook，也不假设所有机器已经下载模
 安装前预览实际依赖，不升级已有 torch／vLLM。通过导入检查后仍须执行
 [阶段交接功能验证](../../experiments/plans/数据组织.md#native-stage-handoff)，
 导入成功不证明跨 GPU 传输已经通过。
+原生日志列出 CUDA IPC capability 也不证明 RMA payload 使用它。
+[固定 UCX 1.21.0 的 TCP 分片诊断](../../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#kv-tcp-fragment-20261112)
+记录实际 lane、CUDA 复制和 UCP／TCP 两级上限；该配置只在独立诊断进程使用，不作为 runtime 默认。
 
 ## 四层合同
 
