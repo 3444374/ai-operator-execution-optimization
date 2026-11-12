@@ -400,15 +400,20 @@ Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 �
 
 ### E-Commerce 原文本查询
 
-[E-Commerce 绑定](text/sembench_ecomm.py)直接调用官方 Q3／Q5 的 `run(data_dir)`：Q3 对完整
+[E-Commerce 绑定](text/sembench_ecomm.py)直接调用官方 Q3／Q5／Q7 的 `run(data_dir)`：Q3 对完整
 `styles_details.parquet` 做品牌 Extract，Q5 由原普通谓词筛选 Apparel 后做命名列 Map。
 嵌套描述字段按原 DEFAULT formatter 完整呈现，不摘取子字段或自行改写提示；模型消息只使用
 原题声明的 `productDisplayName` 与 `productDescriptors`，标签不进入消息。
-两题复用上述普通 Extract／Map、prepared、原生 LOTUS 和既有后端接点，没有独立执行器。
+Q3／Q5 复用上述普通 Extract／Map、prepared、原生 LOTUS 和既有后端接点，没有独立执行器。
 源固定检查也覆盖 `files/ecomm/queries`；查询真实重读 Parquet，不以预检快照替代。
+Q7 则由同一个原生 LOTUS resident Join 接点运行：保留原 `price <= 500` 选择、两侧各两列描述、
+全部 N×N 有序候选对及原 `id` 拼接，包含自身和对称项；不套用 Movie 的后置 ID 排除。
+Join 的 positional／keyword 参数共用普通绑定，不再只准许每侧一列。此入口仍显式选择 exact，
+官方 runner 的 approximate 不被声称为已复现；Ray／Daft prepared 仍明确不接 Join。
 
 评价直接执行原 TOML 的 gold SQL，再调用官方 EcommEvaluator 所用的 `GenericEvaluator`，
-保留 adjusted Rand index 的分组评分语义；不把它改成品牌名称精确匹配，也不向上游树写 gold 缓存。
+Q3／Q5 保留 adjusted Rand index 的分组评分语义，Q7 保留原 F1；不把分组评分改成品牌名称
+精确匹配，也不向上游树写 gold 缓存。Q7 原 Series 在评价处按官方 CSV 读取形状转为同名 DataFrame。
 本地临时 Parquet 的原 SDK／记录链／prepared 差分覆盖完整消息、普通选择、原投影、乱序答复、
 空输入和文件变化；这些是零模型软件检查。真实 E-Commerce 数据、目标 SDK 和模型运行仍待验证，
 IMLane 的 VARCHAR 限制及 Kalypso 未由此 CLI 接入的边界继续适用。

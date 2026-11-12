@@ -92,7 +92,7 @@ class JoinOperation:
     generation: object
     instruction: str
     records: tuple[RecordOccurrence, ...]
-    columns: tuple[str, str]
+    columns: tuple[str, ...]
 
     def describe(self):
         left_count, right_count = len(self.frame), len(self.right_frame)
@@ -127,28 +127,29 @@ def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
         raise ValueError('this record bridge uses original LOTUS DEFAULT text serialization')
     if kind == 'join':
         import pandas as pd
-        if len(args) != 1 or not isinstance(args[0], pd.DataFrame) or set(kwargs) != {'join_instruction'}:
+        values = _operator_arguments(args, kwargs, ('other', 'join_instruction'))
+        if not isinstance(values['other'], pd.DataFrame):
             raise ValueError('ordinary exact Join requires one right frame and its original instruction')
-        right_frame = args[0]
-        columns = lotus.nl_expression.parse_cols(kwargs['join_instruction'])
+        right_frame = values['other']
+        columns = lotus.nl_expression.parse_cols(values['join_instruction'])
         left = [column for column in columns if column.endswith(':left')]
         right = [column for column in columns if column.endswith(':right')]
-        if (len(columns) != 2 or len(left) != 1 or len(right) != 1
-                or left[0][:-5] not in frame.columns or right[0][:-6] not in right_frame.columns):
-            raise ValueError('ordinary exact Join requires one explicit :left and :right source column')
-        left_column, right_column = left[0], right[0]
+        if (not columns or len(left) + len(right) != len(columns)
+                or any(column[:-5] not in frame.columns for column in left)
+                or any(column[:-6] not in right_frame.columns for column in right)):
+            raise ValueError('ordinary exact Join requires explicit :left/:right references to present source columns')
         if generation.response_format is not None or generation.logprobs is not None:
             raise ValueError('ordinary Join uses the original Boolean answers without helper sampling')
         records = []
-        right_rows = list(right_frame[[right_column[:-6]]].iterrows())
-        for left, (left_index, left_row) in enumerate(frame[[left_column[:-5]]].iterrows()):
-            for right, (right_index, right_row) in enumerate(right_rows):
-                records.append(RecordOccurrence(query_id + f'-pair-{left}-{right}', len(records),
+        right_rows = list(right_frame[[column[:-6] for column in right]].iterrows())
+        for left_position, (left_index, left_row) in enumerate(frame[[column[:-5] for column in left]].iterrows()):
+            for right_position, (right_index, right_row) in enumerate(right_rows):
+                records.append(RecordOccurrence(query_id + f'-pair-{left_position}-{right_position}', len(records),
                     f'{left_index}:{right_index}',
-                    {left_column: str(left_row[left_column[:-5]]),
-                     right_column: str(right_row[right_column[:-6]])}))
+                    {**{column: str(left_row[column[:-5]]) for column in left},
+                     **{column: str(right_row[column[:-6]]) for column in right}}))
         return JoinOperation(frame.copy(deep=True), right_frame.copy(deep=True), model_name, generation,
-                             kwargs['join_instruction'], tuple(records), (left_column, right_column))
+                             values['join_instruction'], tuple(records), tuple(left + right))
     if kind == 'topk':
         if len(args) != 1 or kwargs != dict(K=len(frame), method='quick', return_stats=True):
             raise ValueError('ordinary quick TopK with K=N and original statistics is required')
@@ -233,7 +234,7 @@ class SemBenchTextQuery:
                 or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)
                 or (scenario == 'ecomm' and query in ECOMM_QUERY_IDS)):
             raise ValueError('this entry supports Movie Q1-Q10 (Q5-Q7 native Join, Q9 Map or TopK), twelve ordinary MMQA text queries '
-                             'plus Medical Q1/Q4/Q10 and E-Commerce Q3/Q5')
+                             'plus Medical Q1/Q4/Q10 and E-Commerce Q3/Q5/Q7')
         if scenario != 'medical' and scale_factor is not None:
             raise ValueError('scale_factor applies only to the Medical authored CSV filenames')
         if ranking is not None and (scenario != 'movie' or query != '9' or ranking not in ('map', 'topk')):

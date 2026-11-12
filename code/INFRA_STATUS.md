@@ -19,6 +19,35 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 <a id="refactor-completion-checklist"></a>
 ## 当前能力与待处理项
 
+### SemBench 原生接入覆盖口径
+
+下表随本页 Git 提交版本化，固定 SemBench `c814e380`。LOTUS 方法接点使用1.2.4，
+官方论文的1.1.3及默认 approximate 另记；其他系统版本、模型和参数以各冻结运行回执为准。
+“已接线”表示存在完整原查询通路；“软件检查”不等于目标模型通过；目标已验只属于对应
+提交／输入／环境。不能把旧来源的目标证据授予当前组合，也不据这些格子计算性能覆盖率。
+
+| 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
+|---|---|---|---|---|---|
+| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical 及 E-Commerce Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | Filter、Movie 数字 Map 已接；原版 VARCHAR 返回阻塞其余字符串输出 | Movie Filter/Map 已接；MMQA/Medical 有具名私有 Filter；原版结构化输出未透传，E-Commerce 未接线 |
+| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线；多列、N×M、完整原关系软件检查 | 未接线 | 未接线 | 未接线 | 未接线 |
+| 原 quick TopK；Movie Q9 TopK profile | 显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 未接线 |
+| 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
+| 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线，保留实际中间关系；软件检查与旧目标证据分列 | 未接线 | 未接线 | 未接线 | 未接线 |
+| 原分层 Aggregate；MMQA Q5 | 独立原 SDK 查询已接线，真实 sf25 软件回放通过 | 未接线 | 未接线 | 未接线 | 未接线 |
+| 更长的多模态查询；E-Commerce Q10/Q11/Q12/Q14 等 | 本地完整接线待做；官方查询源码存在 | 未接线 | 未接线 | 未接线 | 未接线 |
+
+数据状态独立记录：Movie／MMQA／Medical／Animals 已有具名冻结输入和运行证据，具体运行仍须
+重绑实际文件；E-Commerce 当前只有临时 Parquet 软件差分，真实资产／目标运行待核。
+未设置可选真实资产环境变量导致的测试 skip 只记“本次未验证”，不能据此记“缺数据”。
+“原版阻塞”限于已固定接口或失败证据；“未接线”不能改记成整个原生系统不支持。
+表外题目仍按官方实现和实际接点核定，不能因为原题文件可读就算已经接入。
+
+剩余工作按共同边界闭合：先复用原查询处理真实中间关系，随后统一额外预检之外的完整查询
+起止事件，再核旧 Q3 调用的原生图／重试／owner 差异并迁移实际调用方。每类用实际代表查询
+端到端验收，其他已就绪项并行排队；不为每个格子另写执行器，不只积累软件通过数。
+已核对的普通文本题主要是单个语义调用；E-Commerce Q12 的后续 Extract 明确包含图像，
+不能为了放开“第二个文本算子”就将其当纯文本或假定所有后端已能执行它。
+
 宿主资源边界不再仅凭 Python 进程存在判定冲突：原生任务、GPU 使用及不完整清单仍拒绝，
 未分类 Python 保留观测，且阻止仅凭时间窗口归属残留信号量并清理。
 `933157666` 已通过目标 22 项 CPU 检查和实际零模型 stage，外层与阶段边界使用同一策略，
@@ -135,6 +164,9 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 覆盖命名列、嵌套对象、重复 index 及碰撞字段。E-Commerce Q3／Q5 现补齐原 Parquet 读取、原查询
 及 TOML gold SQL／官方 adjusted Rand index 评价，继续使用相同后端接点；本地临时数据的原 SDK、
 记录链与 prepared 差分已覆盖完整关系和失败边界，真实资产／目标模型未验。Cars 的数据／评价仍待接入。
+共享原生 Join 另支持实际文本题所需的多列 `:left/:right` 引用及 positional／keyword 指令，
+E-Commerce Q7 复用该 resident 接点、原价格选择、N×N self-join、ID 拼接与 F1；
+没有单独 Q7 执行器或预筛候选算法。真实目标环境与模型尚未验证。
 Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两者及未逐题核实的论文策略不混同。
 四个文本场景现于任务准备阶段绑定官方函数，实际查询仍重新扫描数据；源码 Git 校验和模块加载
 不再每次嵌入执行区间。原题、原参数及已有独立调用入口保持，原 SDK／prepared／resident 软件回归通过；

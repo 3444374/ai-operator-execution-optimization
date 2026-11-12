@@ -19,6 +19,7 @@ import tempfile
 import threading
 import time
 from contextlib import redirect_stdout
+from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
@@ -182,6 +183,9 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                 ['Apparel', 'Apparel', 'Apparel', 'Accessories', 'Apparel', 'Apparel']],
             subCategory=[{'typeName': value} for value in
                 ['Topwear', 'Topwear', 'Socks', 'Watches', 'Saree', 'Loungewear and Nightwear']],
+            articleType=[{'typeName': value} for value in
+                ['Shirts', 'Shirts', 'Socks', 'Watches', 'Sarees', 'Nightwear']],
+            price=[300, 300, 200, 700, 1000, 600],
             brandName=['Acme', 'Acme', 'Zen', 'Zen', 'Acme', 'Zen']))
         frame.to_parquet(self.data / 'styles_details.parquet', index=False)
         return frame
@@ -262,6 +266,70 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                     result, _ = query.execute(execute)
                 self.assertGreater(read.call_count, 0)
                 self._assert_result_equal(result, expected)
+
+    def test_ecomm_original_multi_column_join_reuses_native_owner_and_evaluator(self):
+        import lotus
+        from lotus.types import LMOutput
+        from contextlib import contextmanager
+        from src.baselines.text.frameworks.lotus_native_join import (
+            audit, execute_native_join, finish_accounting, make_lm,
+        )
+        from src.infrastructure.private_artifacts import content_digest
+
+        self._write_ecomm_inputs()
+        query = self._query('ecomm', '7')
+        operation = query.operation
+        self.assertEqual(operation.describe()['expected_model_calls'], 9)
+        self.assertEqual(operation.frame.id.tolist(), [11, 22, 33])
+        self.assertEqual(set(operation.columns), {column + ':' + side for side in ('left', 'right')
+            for column in ('productDisplayName', 'productDescriptors')})
+        self.assertTrue(all(set(record.values) == set(operation.columns) for record in operation.records))
+        replies = ['True', 'True', 'False', 'True', 'True', 'False', 'False', 'False', 'True']
+        batches, captured, relations = [], [], []
+
+        def answer(current, messages, **kwargs):
+            batches.append(deepcopy(messages))
+            self.assertEqual(len(messages), 9)
+            self.assertNotIn('brandName', json.dumps(messages))
+            self.assertNotIn('articleType', json.dumps(messages))
+            return LMOutput(outputs=replies)
+
+        lm = make_lm(operation, 2)
+        with lotus.settings.context(lm=lm, enable_cache=False), patch.object(type(lm), '__call__', answer):
+            expected = query._original()
+
+        def accounting():
+            return dict(calls=dict(counts=dict(succeeded=9, missing=0), records=[dict(
+                row_id=prompt['row_id'], status='succeeded', text=text,
+                messages_sha256=content_digest(prompt['messages']))
+                for prompt, text in zip(captured, replies, strict=True)]))
+
+        @contextmanager
+        def owner_query(current_lm, expected_calls, budget, *, query_id):
+            self.assertEqual(len(expected_calls), 9)
+            yield SimpleNamespace(capture_prompts=lambda prompts: captured.extend(deepcopy(prompts)),
+                                  report=accounting)
+
+        owner = SimpleNamespace(generation=operation.generation, concurrency=2, query=owner_query)
+
+        def execute(current, invoke):
+            report = execute_native_join(current, invoke=invoke, shared_owner=owner,
+                query_id=query.query_id, budget=SimpleNamespace(remaining=9))
+            # Match the resident owner: the original query subsequently mutates
+            # its returned Join frame when it constructs the final id column.
+            relations.append(report['frame'].copy(deep=True))
+            return report
+
+        with patch.object(type(lm), '__call__', answer):
+            result, report = query.execute(execute)
+            finish_accounting(report)
+            audit(query, report, result, relations[0])
+        pd.testing.assert_series_equal(result, expected)
+        self.assertEqual(result.tolist(), ['11-11', '11-22', '22-11', '22-22', '33-33'])
+        self.assertEqual(batches[0], batches[1])
+        quality = query.evaluate(result)['original_metric']
+        self.assertEqual(quality['metric_type'], 'f1-score')
+        self.assertEqual(quality['accuracy'], 1)
 
     def _reference(self, query, answers):
         """Run the complete original query and original accessor with no provider."""

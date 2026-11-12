@@ -31,6 +31,23 @@ class NativeJoinTests(unittest.TestCase):
         self.frame = pd.DataFrame(dict(reviewId=[1, 1, 2, 2, 3, 3, 4, 4],
             id=['movie'] * 8, reviewText=['duplicate text'] * 8), index=range(8, 16))
 
+    def test_multi_column_join_binds_native_positional_and_keyword_arguments(self):
+        left = pd.DataFrame(dict(title=['same', 'same'], text=[{'description': 'one'}, {'description': 'two'}]),
+                            index=[7, 7])
+        right = pd.DataFrame(dict(title=['right', 'right', 'right'], text=['a', 'b', 'c']), index=[9, 9, 10])
+        instruction = 'Same product: {title:left} {text:left}, {title:right} {text:right}'
+        for args, kwargs in (((right, instruction), {}), ((right,), dict(join_instruction=instruction)),
+                             ((), dict(other=right, join_instruction=instruction))):
+            with self.subTest(args=len(args)), lotus.settings.context(enable_cache=False):
+                op = _operation('join', left, args, kwargs, model_name='openai/local-fixture',
+                                generation=GenerationSpec(), query_id='multi-column')
+                self.assertEqual(len(op.records), 6)
+                self.assertEqual(op.describe()['expected_model_calls'], 6)
+                self.assertEqual([r.values['text:right'] for r in op.records], ['a', 'b', 'c'] * 2)
+                self.assertEqual([r.values['text:left'] for r in op.records],
+                    [str({'description': 'one'})] * 3 + [str({'description': 'two'})] * 3)
+                self.assertEqual(len({r.row_id for r in op.records}), 6)
+
     def test_original_join_compares_all64_ordered_occurrences_before_id_exclusion(self):
         op = operation(self.frame)
         seen = []
@@ -65,7 +82,8 @@ class NativeJoinTests(unittest.TestCase):
                 ((self.frame,), dict(join_instruction='Same {reviewText:left} and {missing:right}')),
                 ((self.frame,), dict(join_instruction='Same {reviewText}')),
                 ((None,), dict(join_instruction=INSTRUCTION))):
-            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, 'ordinary exact Join'):
+            reason = 'unsupported semantic operator argument: cascade_args' if 'cascade_args' in kwargs else 'ordinary exact Join'
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, reason):
                 _operation('join', self.frame, args, kwargs, model_name='openai/local',
                            generation=GenerationSpec(), query_id='cpu')
 
