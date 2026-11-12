@@ -18,13 +18,13 @@ class CPUInputContracts(unittest.TestCase):
         self.addCleanup(patch.stopall)
         patch.object(inputs,'binding',side_effect=lambda *args:self.binding).start()
 
-    def prepare(self,count):
+    def prepare(self,count,task='movie-q9'):
         directory=tempfile.TemporaryDirectory();self.addCleanup(directory.cleanup)
         self.root=Path(directory.name)
-        self.cfg=dict(units=[unit(count)])
-        self.binding=dict(source='verified-test-source',unit=unit(count))
+        self.cfg=dict(units=[unit(count,task)])
+        self.binding=dict(source='verified-test-source',unit=unit(count,task))
         self.manifest=dict(schema=inputs.SCHEMA,binding=self.binding,model_calls=0,queries=[])
-        for spec in unit(count)['queries']:
+        for spec in unit(count,task)['queries']:
             root=self.root/spec['query_id'];root.mkdir()
             rows=[dict(idx=i,row_id=spec['query_id']+'-row-'+str(i),source_position=i,
                 source_index=i*7,reviewId='duplicate',reviewText='review '+str(i)) for i in range(count)]
@@ -32,9 +32,11 @@ class CPUInputContracts(unittest.TestCase):
             with (root/'input.csv').open('w',newline='') as stream:
                 writer=csv.DictWriter(stream,fieldnames=['data']);writer.writeheader()
                 writer.writerows(dict(data=r['reviewText']) for r in rows)
-            description=dict(scenario='movie',query='Q9',ranking='map',query_id=spec['query_id'],
+            query=inputs.MOVIE_MAP_QUERIES[task]
+            description=dict(scenario='movie',query='Q'+query,query_id=spec['query_id'],
                 sembench_commit='c814e3807e72d4cf876b852b17e77f3cc94575c2',expected_model_calls=count,
                 operation=dict(stage=dict(method=dict(instruction='original'))))
+            if query=='9':description['ranking']='map'
             (root/'source.json').write_text(json.dumps(description))
             self.manifest['queries'].append(dict(query_id=spec['query_id'],logical_occurrences=count,
                 files={role:dict(path=str(path.relative_to(self.root)),sha256=inputs.sha(path))
@@ -46,14 +48,26 @@ class CPUInputContracts(unittest.TestCase):
         self.cfg['native_cpu_inputs']=dict(manifest=str(path),sha256=inputs.sha(path))
 
     def test_complete_frozen_inputs_preserve_duplicate_business_ID_and_source_occurrences(self):
-        for count in (1,7,13):
-            self.prepare(count)
-            manifest,loaded=inputs.load_inputs(self.cfg)
-            self.assertEqual([len(q['table']['rows']) for q in loaded],[count,count])
-            rows=loaded[0]['table']['rows']
-            self.assertEqual({r['reviewId'] for r in rows},{'duplicate'})
-            self.assertEqual([r['source_index'] for r in rows],[i*7 for i in range(count)])
-            self.assertEqual(len({r['row_id'] for r in rows}),count)
+        for task in inputs.MOVIE_MAP_QUERIES:
+            for count in (1,7,13):
+                self.prepare(count,task)
+                manifest,loaded=inputs.load_inputs(self.cfg)
+                self.assertEqual([len(q['table']['rows']) for q in loaded],[count,count])
+                rows=loaded[0]['table']['rows']
+                self.assertEqual({r['reviewId'] for r in rows},{'duplicate'})
+                self.assertEqual([r['source_index'] for r in rows],[i*7 for i in range(count)])
+                self.assertEqual(len({r['row_id'] for r in rows}),count)
+
+    def test_frozen_query_number_and_ranking_must_match_the_declared_map_task(self):
+        self.prepare(7,'movie-q10')
+        item=self.manifest['queries'][0]
+        path=self.root/item['files']['source']['path']
+        original=json.loads(path.read_text())
+        for change in (dict(query='Q9'),dict(ranking='topk'),dict(ranking='map')):
+            path.write_text(json.dumps(dict(original,**change)))
+            item['files']['source']['sha256']=inputs.sha(path);self.publish()
+            with self.subTest(change=change),self.assertRaisesRegex(ValueError,'original Map task'):
+                inputs.load_inputs(self.cfg)
 
     def test_source_and_manifest_counts_must_match_the_bound_query_not_history(self):
         item=self.manifest['queries'][0]

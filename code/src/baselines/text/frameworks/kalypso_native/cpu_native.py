@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from .native_server import check_author_source, native_launch_report, server_argv
+from .native_server import MOVIE_MAP_QUERIES, check_author_source, native_launch_report, server_argv
 
 
 def main():
@@ -40,7 +40,7 @@ def main():
     tokenizer_template=manager.tokenizer.chat_template
     template_sha=hashlib.sha256(tokenizer_template.encode()).hexdigest()
     assert template_sha==cfg['expected_template_sha256']
-    if any(q.get('task')=='movie-q9' for u in cfg.get('units',[]) for q in u['queries']):
+    if any(q.get('task') in MOVIE_MAP_QUERIES for u in cfg.get('units',[]) for q in u['queries']):
         from .movie_map_cpu import check
         report=check(cfg,a.output,executor,manager,SemanticPlan,data,max_model_len)
         report.update(native_launch=launch,template_sha256=template_sha,

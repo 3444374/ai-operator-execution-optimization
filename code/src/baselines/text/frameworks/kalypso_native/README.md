@@ -25,7 +25,7 @@ trace 完整发生项、request ID 和 model UID 核对在 sink 后执行，审�
 现有私有 Map／MMQA 查询重载 `query()` 并继承 `post()`，后者默认仍同步保存 HTTP 证据。
 这些入口未迁移时不能使用本次内存 sink 资格；只在迁移的 query 内开启延迟持久化。退役该兼容
 行为的条件是所有实际调用者都采用显式内存 sink，并在新私有副本完成回归，不能修改冻结包。
-此目录的 Filter／Q9 Map 绑定不是 Kalypso 已完成题目的全集；既有 Movie Map 和 MMQA 私有运行另外保留
+此目录的 Filter／Movie Q8–Q10 Map 绑定不是 Kalypso 已完成题目的全集；既有 Movie Map 和 MMQA 私有运行另外保留
 其原生入口与历史结果。本次[受控时钟测试](../../../../../tests/baselines/text/test_kalypso_memory_sink.py)
 仅验证本地顺序、输出和失败证据，不授予新的作者环境或 GPU 资格。
 
@@ -105,31 +105,43 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 记录观察器构造失败和两个会话交错退出的CPU反例；它们不代表真实作者服务并发或模型资格。
 
 
-## Movie Q9 Map 维护版接线
+## Movie Q8–Q10 Map 维护版接线
 
-`run_kalypso_sembench_query.py` 的专属 `movie-q9` unit 现在选择 `movie_map.MapDriver`；
-其余已支持的 Movie Q1–Q4 仍走原 Filter driver。Q9 使用原 SemBench c814 的
-`ranking="map"` 数字评分、完整排序关系和原评价器，不调用 TopK，也不宣布支持其他私有题。
-私有 `map_query.py`、`map_server.py` 不再作为新 Q9 运行入口；历史副本及原结果保持不变。
+`run_kalypso_sembench_query.py` 的 Movie Map unit 共用 `movie_map.MapDriver`，题目映射只在
+`native_server.MOVIE_MAP_QUERIES` 定义；Movie Q1–Q4 仍走原 Filter driver。原 SemBench c814
+负责 Q8 的 `taken_3` 原标签计数、Q9 显式 `ranking="map"` 的逐评数字评分，以及 Q10 的全评
+分数按电影平均并保留两位小数。Q9/Q10 非法或越界分数仍由原题回落到 3，Q8 不额外归一化
+模型标签。三题均使用原 `sem_map` 普通参数、parser 和 evaluator，不调用 TopK。
+
+本次在现有 Map 文件中替换 Q9 专用路由，没有第二套执行器。私有 `map_query.py`、
+`map_server.py` 不再作为新 Q9 运行入口；旧 Q10 控制器待正式入口目标资格及调用引用迁移完成
+后退出。其冻结原件、两轮各自答复及成功/失败证据保留，不把历史成绩转授给新源码。
 
 新配置除了现有 owner／模型／输入绑定，还必须有：
 
-- 每题 `task="movie-q9"`，`expected_calls=N` 必须等于该份冻结输入经原 Q9 选择后的
+- 每题 `task` 为 `movie-q8`、`movie-q9` 或 `movie-q10`，`expected_calls=N` 必须等于该份冻结输入经原题选择后的
   非零发生项数，`max_native_calls=2*N`。unit 的 `call_cap` 仍显式声明有限总预算，
   外层 owner 验证它与逐题预算之和；不得按历史样本量猜测 N 或静默扩大预算。
 - `sembench` 指向固定 c814 原查询／评价器，`data_dir` 指向完整 Movie CSV；
-  `source_data_sha256` 至少绑定完整 `Reviews.csv`，可同时记录 `Movies.csv`。
-- `map_prompt_root` 指向新私有空目录。每次查询重新扫描原输入，选出全部 N 个 Ant-Man
-  发生项，写入作者实际消费的 CSV 和逐发生项 prompt 表。重复业务 ID 不去重。
+  `source_data_sha256` 绑定完整 `Reviews.csv`；Q10 还必须绑定原评价所需 `Movies.csv`，
+  Q8/Q9 可同时记录该文件。电影评价标签不进入模型输入。
+- `map_prompt_root` 指向新私有空目录。每次查询重新扫描原输入：Q8 选择全部 `taken_3`
+  发生项，Q9 选择全部 Ant-Man 发生项，Q10 保留全部 Reviews 发生项。作者实际消费相应
+  CSV 和逐发生项 prompt 表；重复业务 ID、重复文本均不去重。
 - `native_launch="author_defaults"` 且没有 `engine`；保持原作者 05024 checkout、同一 maintained
   source、依赖 SHA、worker 观察模块、新 CPU evidence 和新 owner 的时限／账本绑定。
 
-`map_observation.py` 迁入已经验证的 Q9 字段格式化和被动观察：精确 rubric／review 嵌入原作者
+同一 Map unit 可以显式列出不同题的顺序查询，但后续不同题只是复用 owner，不能称为前一题
+的暖轮。比较同题冷暖时必须保持同一任务、完整输入和模型 owner，并使用各轮自己的实际答复。
+
+`map_observation.py` 复用已经验证的字段格式化和被动观察：精确原题指令／review 嵌入原作者
 Map prompt，原 `_planned_max_tokens`、`estimate_tokens`、ratio update/reset、pin/KV、采样和执行器
 不改写。作者首请求输出额度动态估计；仅 `finish_reason=length` 且额度小于 8192 时，原算法
 重入一次并使用 8192。第二次仍为 length 也不会再重试。因此 N 是逻辑发生项，2N 是物理
 上界；HTTP 和外层 lifecycle 都不自动重试。历史 256／512 仅属于原冻结配置，不是原查询
-或新输入的规模限制。通用 SemBench 的无重试元数据不代表禁用此作者分支。
+或新输入的规模限制。原生 `seed=42`、frequency penalty 0.5、repetition penalty 1.3 和
+作者模板均保留；它们与 LOTUS 消息及采样的差异明示。通用 SemBench 的无重试元数据不代表
+禁用此作者分支。
 
 完整原查询关系返回即记录 memory sink，随后才执行 API start/sampling/end 身份审计、source
 快照、原评价器、编码、持久化和客户端 close。逐请求序号、请求 ID、idx、model UID、采样与
@@ -137,7 +149,7 @@ Map prompt，原 `_planned_max_tokens`、`estimate_tokens`、ratio update/reset�
 `source_to_sink_seconds` 是 ready 服务后的新鲜逐题查询时间；`startup_inclusive_cold_seconds`
 在没有本次外部 owner 启动事件时留空，不把 attach 当模型加载，也不拆分／减算旧批次时钟。
 
-标准 CPU 入口对专属 Q9 unit 调用 `movie_map_cpu.check`，仅消费 driver 已冻结的输入，使用原
+标准 CPU 入口对 Map unit 调用 `movie_map_cpu.check`，仅消费 driver 已冻结的输入，使用原
 tokenizer／planner／request 对象核对完整 prompt 和重试 cap 的 context 长度，保存每发生项完整
 消息、token IDs、row_id、source_position、source_index 和 reviewId；不创建引擎。
 该入口仍需要**已经存在的作者隔离环境**，不能用本机 source-method fixture 代替目标运行资格。
@@ -184,7 +196,7 @@ LOTUS／pandas／DuckDB driver 环境；未配置时明确跳过，不以跳过�
 来源与组合 CPU 的区别见[隔离组合报告](../../../../../../experiments/results/diagnostics/baseline_validated_integration_20261111/README.md)，不复用旧 LAUNCH、期限或模型成绩。
 
 
-### Q9 CPU 预检的双 Python 边界
+### Map CPU 预检的双 Python 边界
 
 204faa 的目标零模型检查在作者 Python 调用 `SemBenchTextQuery` 时因缺 pandas 失败。
 作者环境没有 pandas 是正常隔离边界，不安装新依赖，也不将 driver 的 site-packages 混入作者环境。
@@ -195,6 +207,9 @@ LOTUS／pandas／DuckDB driver 环境；未配置时明确跳过，不以跳过�
 2. 把输出路径和摘要作为 `native_cpu_inputs={"manifest": ".../CPU-INPUTS.json", "sha256": "..."}`
    写入新的私有配置并按既有 owner 重封配置摘要。作者 Python 只验证／消费冻结输入，运行原生
    plan、tokenizer 和 request 检查；不导入或执行 SemBench、pandas、LOTUS 或评价器。
+
+原 `semloom.kalypso_q9_cpu_inputs.v1` 名称保留以维持现有协议；manifest 中每题的 task、原题号、
+仅 Q9 有效的 ranking、指令及 occurrence 必须一致。Q8/Q10 不使用 Q9 答案或历史预算。
 
 ```sh
 CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 \

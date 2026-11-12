@@ -1,4 +1,4 @@
-"""Two complete original Q9 queries using the existing native owner session."""
+"""Original Movie Map queries using the existing native owner session."""
 import csv
 from dataclasses import replace
 from numbers import Integral
@@ -9,25 +9,32 @@ import time
 from src.baselines.text.frameworks.kalypso_native import adapter as native
 from src.baselines.text.sembench_text import SemBenchTextQuery
 from src.serving.backends.vllm_protocol import GenerationSpec
+from .native_server import MOVIE_MAP_QUERIES
 
 
-def make_query(cfg,qid):
+def make_query(cfg,qid,task='movie-q9'):
+    if task not in MOVIE_MAP_QUERIES:
+        raise ValueError('A supported original Movie Map task is required; not TopK')
+    query_id=MOVIE_MAP_QUERIES[task]
     hashes=cfg['source_data_sha256']
-    if 'Reviews.csv' not in hashes or set(hashes)-{'Reviews.csv','Movies.csv'}:
-        raise ValueError('Q9 requires the exact full Reviews.csv source hash')
+    required={'Reviews.csv','Movies.csv'} if query_id=='10' else {'Reviews.csv'}
+    if not required<=set(hashes) or set(hashes)-{'Reviews.csv','Movies.csv'}:
+        raise ValueError('Map requires the complete original source and evaluation file hashes')
     for name, expected in hashes.items():
         if native.sha(Path(cfg['data_dir'])/name) != expected:
-            raise ValueError('Bound Q9 source data changed: '+name)
+            raise ValueError('Bound Map source data changed: '+name)
     # These stage metadata fields do not set author first-request SamplingParams.
-    return SemBenchTextQuery(cfg['sembench'],cfg['data_dir'],'movie','9',execution_id=qid,
-        model_name=cfg['model_name'],generation=GenerationSpec(max_tokens=8192),ranking="map")
+    return SemBenchTextQuery(cfg['sembench'],cfg['data_dir'],'movie',query_id,execution_id=qid,
+        model_name=cfg['model_name'],generation=GenerationSpec(max_tokens=8192),
+        **({'ranking':'map'} if query_id=='9' else {}))
 
 
 def prepare(cfg,spec,directory,operation):
+    if (operation is None or operation.stage.kind != 'map'
+            or len(operation.records) != spec['expected_calls']):
+        raise ValueError('Original Map selection differs from the bound complete input')
     frame = operation.frame
     records = operation.records
-    if len(records) != spec['expected_calls'] or operation.stage.kind != 'map':
-        raise ValueError('Original Q9 selection differs from the bound complete input')
     values = [dict(idx=i,row_id=r.row_id,source_position=r.source_position,source_index=r.source_index,
         reviewId=(int(frame.iloc[i]['reviewId']) if isinstance(frame.iloc[i]['reviewId'],Integral)
                   else frame.iloc[i]['reviewId']),reviewText=r.values['reviewText']) for i,r in enumerate(records)]
@@ -124,7 +131,7 @@ class MapDriver(native.NativeQueryDriver):
                     native_report.update(rows=values,raw_outputs=texts,latency_s=response['latency_sec'])
                     return dict(frame=operation.result_frame(completed),calls=[])
             with native.query_phase(timing,'original_query'):
-                query=make_query(self.cfg,spec['query_id'])
+                query=make_query(self.cfg,spec['query_id'],spec['task'])
                 frame,_=query.execute(execute)
                 if len(responses)!=1:raise ValueError('Binding requires one original native Map query')
             timing['memory_sink_ready_ns']=time.monotonic_ns()
@@ -143,7 +150,7 @@ class MapDriver(native.NativeQueryDriver):
                 timing['trace_audit_status']='passed'
             with native.query_phase(timing,'source_snapshot'):
                 source=query.describe()
-                source['policy']='original Q9 relation; cache disabled; no implicit warmup or transport retry'
+                source['policy']='original Movie Map relation; cache disabled; no implicit warmup or transport retry'
                 source['native_retry_policy']='author SemMap length branch: at most once at 8192'
                 artifacts['source.json']=source
             emit('result_ready')
@@ -153,13 +160,14 @@ class MapDriver(native.NativeQueryDriver):
             with native.query_phase(timing,'result_encoding'):
                 result=frame.to_dict(orient='split');artifacts['result.json']=result
             report.update(status='completed',query_id=spec['query_id'],backend='kalypso-native',
-                baseline_name='Kalypso author SemMap with SemBench Q9 instruction-field binding',semantic_operator='SemMap, original Q9 numeric scoring and rank evaluation',
+                baseline_name='Kalypso author SemMap with original SemBench instruction-field binding',
+                semantic_operator='SemMap, original Movie '+source['query']+' parser, relation and evaluator',
                 execution_backend='author Kalypso controller/KV/ratio estimator and native vLLM persistent service',
                 logical_occurrences=spec['expected_calls'],physical_call_cap=spec['max_native_calls'],
                 native_retry_policy='one length-triggered retry at 8192; no transport retry',physical_native_calls=len(native_report['native_API_units']),
                 native_API_units=native_report['native_API_units'],result=result,quality=quality,
                 evaluation_seconds=(evaluated-evaluation_started)/1e9,native_server_latency_s=native_report['latency_s'],
                 generation='author dynamic first max_tokens, native length-to8192 retry, seed42/frequency.5/repetition1.3',
-                prompt_scope='exact Q9 rubrics/review substituted into original author Map prompt template, different from LOTUS messages')
+                prompt_scope='exact original Movie instruction/review substituted into author Map prompt template, different from LOTUS messages')
         return report
 
