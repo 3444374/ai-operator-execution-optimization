@@ -244,6 +244,25 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         self.assertEqual(result.columns.tolist(), ['id', 'category'])
         self.assertTrue(result.empty)
 
+    def test_bound_original_queries_scan_real_data_without_reloading_source_modules(self):
+        from src.baselines.text import sembench_source
+
+        self._write_ecomm_inputs()
+        for scenario, key, text in (('movie', '8', 'POSITIVE'), ('mmqa', '6a', 'True'),
+                ('medical', '10', '{"text_diagnosis":"ALLERGY"}'), ('ecomm', '5', 'Topwear')):
+            with self.subTest(scenario=scenario):
+                query = self._query(scenario, key)
+                answers = [text] * len(query.operation.records)
+                expected, _ = self._reference(query, answers)
+                execute, _, _ = self._chain(query, answers)
+                reader_name = 'read_parquet' if scenario == 'ecomm' else 'read_csv'
+                with patch.object(sembench_source, 'verify_checkout', side_effect=AssertionError(
+                        'source validation belongs to query binding, before execution')), \
+                        patch.object(pd, reader_name, wraps=getattr(pd, reader_name)) as read:
+                    result, _ = query.execute(execute)
+                self.assertGreater(read.call_count, 0)
+                self._assert_result_equal(result, expected)
+
     def _reference(self, query, answers):
         """Run the complete original query and original accessor with no provider."""
         import lotus

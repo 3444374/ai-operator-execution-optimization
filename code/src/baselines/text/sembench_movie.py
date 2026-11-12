@@ -13,7 +13,11 @@ from .sembench_source import (
 )
 
 def run_original_lotus_query(checkout, query_id, load_reviews, *, ranking=None):
-    """Invoke the unchanged exact query without constructor setup or warmup.
+    return bind_original_lotus_query(checkout, query_id, load_reviews, ranking=ranking)()
+
+
+def bind_original_lotus_query(checkout, query_id, load_reviews, *, ranking=None):
+    """Bind the unchanged exact query without constructor setup or warmup.
 
     Q9 must explicitly select its Map or native TopK algorithm. Opening the
     original source entry does not qualify a Join/TopK execution backend.
@@ -37,7 +41,7 @@ def run_original_lotus_query(checkout, query_id, load_reviews, *, ranking=None):
     owner.load_data, owner.policy = load_data, 'exact'
     if query_id == 9:
         owner.ranking = ranking
-    return getattr(module.LotusRunner,f'_execute_q{query_id}')(owner)
+    return getattr(owner, f'_execute_q{query_id}')
 
 
 def evaluate_original(checkout, query_id, system_results, labeled_reviews, *, labeled_movies=None):

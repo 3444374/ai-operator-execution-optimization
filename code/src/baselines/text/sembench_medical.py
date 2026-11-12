@@ -6,6 +6,7 @@ This adapter binds existing text CSVs without the multimodal setup or downloads.
 
 import csv
 from dataclasses import asdict
+from functools import partial
 from pathlib import Path
 import shutil
 import tempfile
@@ -75,6 +76,13 @@ def prepare_text_inputs(checkout, source_dir, output_dir, scale_factor=FULL_SCAL
 def run_original_query(checkout, query_id, load_data, *, data_dir,
                        scale_factor=FULL_SCALE_FACTOR):
     """Call the original standalone script with only its CSV reader rebound."""
+    return bind_original_query(checkout, query_id, load_data, data_dir=data_dir,
+                               scale_factor=scale_factor)()
+
+
+def bind_original_query(checkout, query_id, load_data, *, data_dir,
+                        scale_factor=FULL_SCALE_FACTOR):
+    """Bind the unchanged script and reader once, outside query execution."""
     import pandas as pd
 
     query = _text_query_id(query_id)
@@ -90,7 +98,7 @@ def run_original_query(checkout, query_id, load_data, *, data_dir,
     # Each source module has its own binding; pandas and its native accessors
     # remain untouched outside the existing single-query operator scope.
     module.pd = SimpleNamespace(read_csv=read_csv, DataFrame=pd.DataFrame)
-    return module.run(str(root), scale_factor=scale_factor)
+    return partial(module.run, str(root), scale_factor=scale_factor)
 
 
 def evaluate_original(checkout, query_id, result, labeled_patients, symptoms_text, *,

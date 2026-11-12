@@ -297,6 +297,9 @@ TopK 原消息含文本列表，不能直接把 Qwen tokenizer 的 TypeError 用
 [既有原生记录图](text/frameworks/sembench_text.py)或[原生 LOTUS](text/frameworks/lotus_native_stage.py)。
 不运行上游构造器的隐含暖机、下载或近似策略。入口及配置见
 [脚本说明](../../scripts/README.md#additional-sembench-text-entry)。
+原查询函数在任务准备阶段校验并绑定一次，执行阶段继续读取实际源文件；不把重复 Git 校验、
+模块加载算作原查询工作，也不以预检 DataFrame 替代真实查询扫描。Movie／MMQA／Medical 的
+已有独立调用入口继续复用同一个绑定函数，保留其现有调用方和行为。
 
 原生 LOTUS 保留 accessor、LM、LiteLLM 原批调用与解析，provider 复用现有本地模型 IPC。
 它观察原 LM 的真实消息，不额外格式化预遍。旧 ledger 的 `lotus-filter-v1` 是保留的身份协议，

@@ -81,11 +81,17 @@ def prepare_text_inputs(checkout, source_dir, output_dir, scale_factor=25):
 
 def run_original_query(checkout, query_id, load_data):
     """Execute the unchanged finite text query without benchmark setup or warmup."""
+    return bind_original_query(checkout, query_id, load_data)()
+
+
+def bind_original_query(checkout, query_id, load_data):
+    """Load and bind the native method before the measured source scan."""
     query = _text_query_id(query_id)
     module = load_module(checkout, "sembench_mmqa_lotus",
                          "src/scenario/mmqa/runner/lotus_runner/lotus_runner.py")
     owner = SimpleNamespace(load_data=load_data)
-    return getattr(module.LotusRunner, "_execute_q" + query)(owner)
+    method = getattr(module.LotusRunner, "_execute_q" + query)
+    return lambda: method(owner)
 
 
 def evaluate_original(checkout, query_id, result):

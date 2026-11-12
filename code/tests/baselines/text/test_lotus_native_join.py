@@ -1,8 +1,6 @@
 """Original exact Join bounds, duplicate occurrences and failure ownership."""
 from contextlib import contextmanager
 from copy import deepcopy
-import json
-from pathlib import Path
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -136,23 +134,16 @@ class NativeJoinTests(unittest.TestCase):
             query.execute(lambda *args: self.fail('native operator ran with changed right input'))
 
     def test_join_cannot_enter_prepared_fme_backends(self):
-        with self.assertRaisesRegex(ValueError, 'original LOTUS resident'):
+        with self.assertRaisesRegex(ValueError, 'Filter/Map/Extract, not join'):
             prepare(SimpleNamespace(operation=operation(self.frame)))
 
-    def test_query_configuration_requires_explicit_lotus_resident_join(self):
+    def test_captured_join_requires_explicit_lotus_resident_for_each_backend(self):
         from src.experiments import sembench_text_query as entry
-        template = json.loads((Path(__file__).resolve().parents[3] /
-                               'configs/sembench_lotus_native.example.json').read_text())
+        query = SimpleNamespace(operation=operation(self.frame))
         for backend, lifecycle in (('lotus-native', 'isolated'), ('ray-data', 'resident'),
                                    ('daft', 'resident'), ('imlane', 'resident')):
-            value = deepcopy(template)
-            value.update(scenario='movie', query='5', backend=backend, lifecycle=lifecycle)
-            value['resources']['max_active_batches'] = 1
-            if backend != 'lotus-native':
-                value['profile'] = {}
-            with self.subTest(backend=backend), patch.object(entry, 'read_json', return_value=value), \
-                    self.assertRaisesRegex(ValueError, 'author Movie Join requires'):
-                entry.configuration('software fixture')
+            with self.subTest(backend=backend), self.assertRaisesRegex(ValueError, 'explicit native LOTUS resident'):
+                entry.check(dict(backend=backend, lifecycle=lifecycle), query, None)
 
     def test_incomplete_pair_allowance_stops_before_native_owner(self):
         op = operation(self.frame)

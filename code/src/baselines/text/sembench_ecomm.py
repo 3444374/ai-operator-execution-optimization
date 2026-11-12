@@ -5,6 +5,7 @@ ordinary selection and projection; existing native operator adapters execute it.
 """
 
 from dataclasses import asdict
+from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
 import tomllib
@@ -24,8 +25,8 @@ def _text_query_id(query_id):
     return query
 
 
-def run_original_query(checkout, query_id, load_data, *, data_dir):
-    """Call the unchanged run(data_dir), without setup, sampling or downloads."""
+def bind_original_query(checkout, query_id, load_data, *, data_dir):
+    """Bind the author's function without executing any data or semantic work."""
     query = _text_query_id(query_id)
     module = load_module(checkout, 'sembench_ecomm_q' + query,
                          'files/ecomm/queries/dialects/lotus/q' + query + '.py')
@@ -35,7 +36,7 @@ def run_original_query(checkout, query_id, load_data, *, data_dir):
         return load_data(Path(path).resolve().relative_to(root).as_posix(), **kwargs)
 
     module.pd = SimpleNamespace(read_parquet=read_parquet)
-    return module.run(str(root))
+    return partial(module.run, str(root))
 
 
 def evaluate_original(checkout, query_id, result, *, data_dir, source_identity):

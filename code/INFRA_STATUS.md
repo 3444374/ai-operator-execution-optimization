@@ -136,6 +136,9 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 及 TOML gold SQL／官方 adjusted Rand index 评价，继续使用相同后端接点；本地临时数据的原 SDK、
 记录链与 prepared 差分已覆盖完整关系和失败边界，真实资产／目标模型未验。Cars 的数据／评价仍待接入。
 Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两者及未逐题核实的论文策略不混同。
+四个文本场景现于任务准备阶段绑定官方函数，实际查询仍重新扫描数据；源码 Git 校验和模块加载
+不再每次嵌入执行区间。原题、原参数及已有独立调用入口保持，原 SDK／prepared／resident 软件回归通过；
+这不扩展单算子桥的多算子能力，也不转授新的目标模型或完整公平计时资格。
 
 LOTUS resident、Ray／Daft prepared、LOTUS 图像和 MMQA 聚合新增
 `query_clock_version=sembench.source_to_sink.v2`：起点在各自额外预检和配置准备之后，

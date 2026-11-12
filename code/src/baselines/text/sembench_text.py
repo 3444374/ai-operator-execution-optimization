@@ -273,6 +273,7 @@ class SemBenchTextQuery:
                 raise ValueError('SemBench input changed while its snapshot was read')
             self.files[name] = dict(before, rows=len(self.frames[name]),
                                     columns=list(self.frames[name].columns))
+        self._run_original = self._bind_original()
         self.operation = None
 
         def capture(kind, frame, args, kwargs, invoke):
@@ -301,21 +302,24 @@ class SemBenchTextQuery:
             frame = frame[['reviewId', 'id', 'reviewText']]
         return frame
 
-    def _original(self):
+    def _bind_original(self):
         if self.scenario == 'movie':
-            from .sembench_movie import run_original_lotus_query
+            from .sembench_movie import bind_original_lotus_query
             ranking = dict(ranking=self.ranking) if self.query == '9' else {}
-            return run_original_lotus_query(self.checkout, int(self.query),
+            return bind_original_lotus_query(self.checkout, int(self.query),
                 lambda: self._load('Reviews.csv'), **ranking)
         if self.scenario == 'medical':
-            from .sembench_medical import run_original_query
-            return run_original_query(self.checkout, self.query, self._load,
+            from .sembench_medical import bind_original_query
+            return bind_original_query(self.checkout, self.query, self._load,
                 data_dir=self.data_dir, scale_factor=self.scale_factor)
         if self.scenario == 'ecomm':
-            from .sembench_ecomm import run_original_query
-            return run_original_query(self.checkout, self.query, self._load, data_dir=self.data_dir)
-        from .sembench_mmqa import run_original_query
-        return run_original_query(self.checkout, self.query, self._load)
+            from .sembench_ecomm import bind_original_query
+            return bind_original_query(self.checkout, self.query, self._load, data_dir=self.data_dir)
+        from .sembench_mmqa import bind_original_query
+        return bind_original_query(self.checkout, self.query, self._load)
+
+    def _original(self):
+        return self._run_original()
 
     def describe(self):
         operation = None if self.operation is None else self.operation.describe()
