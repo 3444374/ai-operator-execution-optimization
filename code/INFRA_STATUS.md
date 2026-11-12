@@ -28,10 +28,11 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 
 | 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
 |---|---|---|---|---|---|
-| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 具名 Filter、Movie 数字 Map 已接；Cars 原版 SQL 未接，VARCHAR 返回阻塞字符串输出 | Movie Filter/Map 已接；MMQA/Medical 有具名私有 Filter；原版结构化输出未透传，E-Commerce/Cars 未接线 |
+| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 具名 Filter、Movie 数字 Map 已接；Cars 原版 SQL 未接，VARCHAR 返回阻塞字符串输出 | Movie Filter/Map 已接；MMQA/Medical 有具名私有 Filter；原版结构化输出未透传，E-Commerce/Cars 未接线 |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 原 quick TopK；Movie Q9 TopK profile | 显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
+| 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线，保留实际中间关系；软件检查与旧目标证据分列 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 原分层 Aggregate；MMQA Q5 | 独立原 SDK 查询已接线，真实 sf25 软件回放通过 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 文本 Filter 后对实际保留行作图像 Extract；E-Commerce Q12 | 原函数及原生服务完整接线；临时数据软件验证，真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -166,8 +167,8 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 原项目的查询／系统职责及与本地执行比较的区别见[接入职责](src/baselines/README.md#sembench-原项目与本地接入职责)。
 共享普通算子绑定新增 Map `suffix`、Filter／Map 的 instruction keyword 及 Extract 的
 `input_cols/output_cols` keyword，保留同一准备、parser 和关系恢复；真实 SDK 的消息与结果差分
-覆盖命名列、嵌套对象、重复 index 及碰撞字段。E-Commerce Q3／Q5 现补齐原 Parquet 读取、原查询
-及 TOML gold SQL／官方 adjusted Rand index 评价，继续使用相同后端接点；本地临时数据的原 SDK、
+覆盖命名列、嵌套对象、重复 index 及碰撞字段。E-Commerce Q1／Q3／Q5 现补齐原 Parquet 读取、原查询
+及 TOML gold SQL／官方 F1 或 adjusted Rand index 评价，继续使用相同后端接点；本地临时数据的原 SDK、
 记录链与 prepared 差分已覆盖完整关系和失败边界，真实资产／目标模型未验。
 Cars Q1／Q4／Q10 也已绑定原 CSV、原函数及原评分，共用同一 Filter／Extract 和后端接点；
 full_data 标签只供评价，既有 sample 的尺度只选择原路径，不充当模型调用数。

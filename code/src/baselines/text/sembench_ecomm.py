@@ -15,15 +15,15 @@ from .sembench_evaluation import csv_result_frame
 from src.infrastructure.private_artifacts import file_identity
 
 
-TEXT_QUERY_IDS = ('3', '5', '7')
-VISUAL_QUERY_IDS = ('10', '11', '12', '14')
+TEXT_QUERY_IDS = ('1', '3', '5', '7')
+VISUAL_QUERY_IDS = ('2', '4', '6', '8', '9', '10', '11', '12', '13', '14')
 TEXT_FILE = 'styles_details.parquet'
 
 
 def _query_id(query_id):
     query = str(query_id).lower().removeprefix('q')
     if query not in (*TEXT_QUERY_IDS, *VISUAL_QUERY_IDS):
-        raise ValueError('supported E-Commerce bindings are text Q3/Q5/Q7 and multimodal Q10/Q11/Q12/Q14')
+        raise ValueError('supported E-Commerce bindings are original Q1-Q14')
     return query
 
 
@@ -79,13 +79,14 @@ class _SourcePrepared(BaseException):
 
 
 def describe_visual_inputs(checkout, data_dir, query_id):
-    """Bind the first real Filter frontier without simulating downstream results.
+    """Bind the first native operator frontier without simulating its output.
 
     The original function performs its own Parquet selection/merge. Capture only
     that first frontier; the real query later runs all native operators using
     actual intermediate relations. Only Q12 has the simple two-pass upper bound.
     """
     import pandas as pd
+    from lotus.dtype_extensions import ImageDtype
     from src.baselines.image.sembench_animals import image_identity
     from .sembench_text import _operators
 
@@ -105,10 +106,11 @@ def describe_visual_inputs(checkout, data_dir, query_id):
         source_rows[name] = len(frame)
         return frame
 
-    def capture(kind, frame, _args, _kwargs, _invoke):
-        if kind != 'filter':
-            raise ValueError('the original multimodal source must precede its Filter')
-        selected.append(frame)
+    def capture(kind, frame, args, kwargs, _invoke):
+        if kind not in ('filter', 'map', 'extract', 'join'):
+            raise ValueError('unsupported first E-Commerce native operator: ' + kind)
+        right = (args[0] if args else kwargs['other']) if kind == 'join' else None
+        selected.append((kind, frame, right))
         raise _SourcePrepared()
 
     execute = bind_original_query(checkout, query, load, data_dir=data)
@@ -117,17 +119,26 @@ def describe_visual_inputs(checkout, data_dir, query_id):
             execute()
         except _SourcePrepared:
             pass
-    frame, = selected
-    images = [dict(path=str(data / 'images' / name), **image_identity(data / 'images' / name))
-              for name in frame['filename']]
+    (kind, frame, right), = selected
+    first_calls = len(frame) * (len(right) if right is not None else 1)
+    images = []
+    for side in (frame,) if right is None else (frame, right):
+        if any(isinstance(dtype, ImageDtype) for dtype in side.dtypes):
+            images.extend(dict(path=str(data / 'images' / name), **image_identity(data / 'images' / name))
+                          for name in side['filename'])
+    gold_identity = files[TEXT_FILE] if TEXT_FILE in files else file_identity(data / TEXT_FILE)
     return dict(schema='semloom.sembench_ecomm_visual_inputs.v1', query='Q' + query,
         sembench_commit=SEMBENCH_COMMIT, data_dir=str(data), files=files, source_rows=source_rows, images=images,
-        filter_occurrences=len(frame), maximum_followup_extracts=len(frame) if query == '12' else 0,
-        minimum_model_calls=len(frame), maximum_model_calls=2 * len(frame) if query == '12' else None,
+        gold_source_identity=gold_identity,
+        first_operator=dict(kind=kind, left_rows=len(frame), right_rows=None if right is None else len(right),
+                            expected_model_calls=first_calls),
+        **(dict(filter_occurrences=len(frame)) if kind == 'filter' else {}),
+        maximum_followup_extracts=len(frame) if query == '12' else 0,
+        minimum_model_calls=first_calls, maximum_model_calls=2 * len(frame) if query == '12' else None,
         actual_followup_extracts=None if query == '12' else 0,
-        source_indices=frame.index.tolist(), policy='unchanged complete native LOTUS query',
+        source_indices=frame.index.tolist(), policy='original full query with explicit exact profile; not official approximate default',
         budget_scope=('Filter over N original occurrences; Extract over actual M survivors, at most 2N'
-                      if query == '12' else 'first Filter is a lower bound; later native branches/Join/TopK '
+                      if query == '12' else 'first native operator is a lower bound; later native stages '
                       'depend on actual intermediate results; caller budget bounds all attempts'),
         model_calls=0, warmup_calls=0, retries=0)
 

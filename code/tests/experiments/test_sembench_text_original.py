@@ -352,6 +352,27 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         self.assertEqual(quality['metric_type'], 'f1-score')
         self.assertEqual(quality['accuracy'], 1)
 
+    def test_ecomm_text_filter_uses_the_same_task_and_original_score(self):
+        from src.baselines.text.sembench_prepared import prepare,finish
+
+        pd.DataFrame(dict(id=[1,2,3],productDisplayName=['Reebok backpack','other bag','other shoe'],
+            productDescriptors=[{'description':{'value':text}} for text in ('Reebok backpack','other bag','other shoe')],
+            articleType=[{'typeName':text} for text in ('Backpacks','Backpacks','Shoes')],
+            brandName=['Reebok','Other','Other'])).to_parquet(self.data/'styles_details.parquet',index=False)
+        query=self._query('ecomm','1')
+        answers=['True','False','False']
+        reference,messages=self._reference(query,answers)
+        execute,_,_=self._chain(query,answers)
+        result,_=query.execute(execute)
+        method,prepared,_=prepare(query)
+        restored,_=finish(query,method,prepared,[dict(call_id=row['call_id'],generated_text=text)
+            for row,text in zip(prepared,answers,strict=True)])
+        pd.testing.assert_series_equal(result,reference)
+        pd.testing.assert_series_equal(restored,reference)
+        self.assertEqual([json.loads(row['messages_json']) for row in prepared],messages[0][0])
+        self.assertEqual(result.tolist(),[1])
+        self.assertEqual(query.evaluate(result)['original_metric']['accuracy'],1)
+
     def _write_cars_inputs(self, scale=7):
         from src.baselines.text.sembench_cars import text_files
 

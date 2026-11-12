@@ -92,7 +92,16 @@ class NativeHTTPReplies:
             content = '\n'.join(text_parts)
             if self.query != 'Q12':
                 claim = content.rsplit('Claim:', 1)[-1].lower()
-                if 'Document 1' in content and 'Document 2' in content:
+                if self.query == 'Q4':
+                    text = '{"category":"Black"}'
+                elif self.query == 'Q6':
+                    text = 'Bottomwear' if pixels[0] == (0,128,0) else 'Topwear'
+                elif self.query in ('Q2','Q8','Q13'):
+                    target = (0,0,255) if self.query == 'Q13' else (255,0,0)
+                    text = 'True' if pixels[0] == target else 'False'
+                elif self.query == 'Q9':
+                    text = 'True' if pixels[0] == pixels[1] else 'False'
+                elif 'Document 1' in content and 'Document 2' in content:
                     text = 'Document 1'
                 elif native_join or len(uris) > 1:
                     text = 'True'
@@ -270,6 +279,8 @@ class NativeLotusImageQueryTests(unittest.TestCase):
             self.Image.new('RGB', (3,2), color).save(directory / 'images' / (str(product)+'.png'))
             rows.append(dict(id=product, masterCategory={'typeName':master}, subCategory={'typeName':sub},
                 articleType={'typeName':kind}, baseColour='White' if query == 'Q14' else 'Black', price=80,
+                colour1='', colour2='', gender='Men', usage='Sports', season='Summer',
+                articleAttributes={'Sleeve Length':['Short Sleeves'],'Neck':['Round Neck'],'Pattern':['Striped']},
                 brandName='ADIDAS', productDisplayName='adidas '+kind,
                 productDescriptors={'description':{'value':'adidas '+kind}}, gold='REFERENCE_ONLY_'))
         pd.DataFrame(rows).to_parquet(directory / 'styles_details.parquet', index=False)
@@ -467,7 +478,7 @@ class NativeLotusImageQueryTests(unittest.TestCase):
                 self.assertRaises(FileNotFoundError):
             self.entry.check(config, self.checkout, data_dir=self.new_directory('missing-ecomm'))
         with self.assertRaisesRegex(ValueError, 'supported E-Commerce bindings'):
-            self.entry.check(dict(config, query='Q13'), self.checkout, data_dir='unused')
+            self.entry.check(dict(config, query='Q15'), self.checkout, data_dir='unused')
 
     def test_ecomm_post_sink_source_change_keeps_full_result_and_fails_the_audit(self):
         inputs = self.ecomm_inputs()
@@ -509,6 +520,66 @@ class NativeLotusImageQueryTests(unittest.TestCase):
                                     for item in report['native_join_inputs']))
                 self.assertTrue(all(len(item['selected_columns']) == 2 for item in report['native_join_inputs']))
                 self.assert_audit(report,directory,replies)
+
+    def test_ecomm_single_visual_operators_and_join_frontiers_share_the_service_entry(self):
+        import pandas as pd
+
+        for query, kind, count in (('Q2','filter',5), ('Q4','extract',4), ('Q6','map',2),
+                                   ('Q8','join',5), ('Q9','join',25), ('Q13','filter',5)):
+            inputs=self.ecomm_outfit_inputs(query)
+            root=Path(inputs['data_dir'])
+            styles=pd.read_parquet(root/'styles_details.parquet')
+            if query == 'Q2':
+                styles.at[0,'articleType']={'typeName':'Sports Shoes'}
+                styles.at[0,'baseColour']='Yellow'
+                styles.at[0,'colour1']='Silver'
+            elif query == 'Q4':
+                mapping=pd.read_parquet(root/'image_mapping.parquet').iloc[[0,2,3,4]]
+                mapping.to_parquet(root/'image_mapping.parquet',index=False)
+            elif query == 'Q8':
+                styles.at[0,'productDescriptors']={'description':{'value':'long description '*200}}
+            elif query == 'Q13':
+                styles.at[2,'articleType']={'typeName':'Tshirts'}
+            styles.to_parquet(root/'styles_details.parquet',index=False)
+            config,_=self.config('ecomm',query)
+            replies=NativeHTTPReplies(self,'ecomm',query=query)
+            with self.subTest(query=query):
+                report,directory,claim=self.invoke(config,inputs,replies,allowance=32)
+                self.assertEqual(report['inputs']['first_operator']['kind'],kind)
+                self.assertEqual(report['inputs']['minimum_model_calls'],count)
+                self.assertEqual(claim.attempts,count)
+                self.assertEqual(report['quality']['original_metric']['accuracy'],1)
+                if query == 'Q2':
+                    self.assertNotIn('styles_details.parquet',report['inputs']['files'])
+                    self.assertTrue(report['inputs']['gold_source_identity']['sha256'])
+                if query == 'Q8':self.assertEqual([row['id'] for row in self.result_rows(report)],['1-1','1-1'])
+                self.assert_audit(report,directory,replies)
+
+    def test_ecomm_empty_join_frontier_keeps_native_empty_relation_without_requests(self):
+        import pandas as pd
+
+        inputs=self.ecomm_outfit_inputs('Q9')
+        path=Path(inputs['data_dir'])/'styles_details.parquet'
+        frame=pd.read_parquet(path);frame['price']=900;frame.to_parquet(path,index=False)
+        config,_=self.config('ecomm','Q9')
+        replies=NativeHTTPReplies(self,'ecomm',query='Q9')
+        report,_,claim=self.invoke(config,inputs,replies,allowance=1)
+        self.assertEqual(report['inputs']['minimum_model_calls'],0)
+        self.assertEqual(report['model_calls'],0)
+        self.assertEqual(claim.attempts,0)
+        self.assertEqual(report['result']['data'],[])
+        self.assertEqual(report['quality']['original_metric']['accuracy'],1)
+
+    def test_ecomm_duplicate_ids_keep_the_original_classification_metric_failure(self):
+        config,_=self.config('ecomm','Q4')
+        replies=NativeHTTPReplies(self,'ecomm',query='Q4')
+        with self.assertRaises(ValueError) as caught:
+            self.invoke(config,self.ecomm_outfit_inputs('Q4'),replies,allowance=5)
+        report=caught.exception.query_report
+        self.assertEqual(report['model_calls'],5)
+        self.assertIsNotNone(report['sink_ready_ns'])
+        self.assertEqual([row['id'] for row in self.result_rows(report)],[1,1,2,3,4])
+        self.assertNotIn('quality',report)
 
     def test_ecomm_data_dependent_query_stops_at_the_actual_attempt_cap(self):
         config, _ = self.config('ecomm','Q10')
@@ -598,7 +669,7 @@ class NativeLotusImageQueryTests(unittest.TestCase):
         ledger, value = self.ledger(config, 7)
         config, _ = self.config(query="Q7", budget=value)
         replies = NativeHTTPReplies(self, "animals")
-        with self.assertRaisesRegex(ValueError, "complete visual query"):
+        with self.assertRaisesRegex(ValueError, "below this query's preflight requirement"):
             self.invoke(config, inputs, replies, worker=True)
         self.assertFalse(replies.requests)
         snapshot = ledger.snapshot()

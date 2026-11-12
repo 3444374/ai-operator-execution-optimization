@@ -425,11 +425,11 @@ Q10 继续用作者 macro precision／recall／F1，不做类别修正、答案�
 
 ### E-Commerce 原文本查询
 
-[E-Commerce 绑定](text/sembench_ecomm.py)直接调用官方 Q3／Q5／Q7 的 `run(data_dir)`：Q3 对完整
+[E-Commerce 绑定](text/sembench_ecomm.py)直接调用官方 Q1／Q3／Q5／Q7 的 `run(data_dir)`：Q1 保留原 Filter，Q3 对完整
 `styles_details.parquet` 做品牌 Extract，Q5 由原普通谓词筛选 Apparel 后做命名列 Map。
 嵌套描述字段按原 DEFAULT formatter 完整呈现，不摘取子字段或自行改写提示；模型消息只使用
 原题声明的 `productDisplayName` 与 `productDescriptors`，标签不进入消息。
-Q3／Q5 复用上述普通 Extract／Map、prepared、原生 LOTUS 和既有后端接点，没有独立执行器。
+Q1／Q3／Q5 复用上述普通 Filter／Extract／Map、prepared、原生 LOTUS 和既有后端接点，没有独立执行器。
 源固定检查也覆盖 `files/ecomm/queries`；查询真实重读 Parquet，不以预检快照替代。
 Q7 则由同一个原生 LOTUS resident Join 接点运行：保留原 `price <= 500` 选择、两侧各两列描述、
 全部 N×N 有序候选对及原 `id` 拼接，包含自身和对称项；不套用 Movie 的后置 ID 排除。
@@ -440,7 +440,7 @@ Join 的 positional／keyword 参数共用普通绑定，任务可声明多列�
 官方 runner 的 approximate 不被声称为已复现；Ray／Daft prepared 仍明确不接 Join。
 
 评价直接执行原 TOML 的 gold SQL，再调用官方 EcommEvaluator 所用的 `GenericEvaluator`，
-Q3／Q5 保留 adjusted Rand index 的分组评分语义，Q7 保留原 F1；不把分组评分改成品牌名称
+Q3／Q5 保留 adjusted Rand index 的分组评分语义，Q1／Q7 保留原 F1；不把分组评分改成品牌名称
 精确匹配，也不向上游树写 gold 缓存。评价在内存中执行原 `to_csv(index=False) → read_csv`，
 保留 Series 形状和 dtype／NA 推断；例如 Q14 的字符串 ID 会像官方评分输入一样读回整数，原查询输出不变。
 本地临时 Parquet 的原 SDK／记录链／prepared 差分覆盖完整消息、普通选择、原投影、乱序答复、
@@ -449,20 +449,25 @@ IMLane 的 VARCHAR 限制及 Kalypso 未由此 CLI 接入的边界继续适用�
 
 ### E-Commerce 原完整多模态查询
 
-同一[E-Commerce 任务绑定](text/sembench_ecomm.py)也绑定官方 Q10／Q11／Q12／Q14，使用现有
+同一[E-Commerce 任务绑定](text/sembench_ecomm.py)也绑定官方 Q2／Q4／Q6／Q8–Q14，使用现有
 [LOTUS 视觉服务入口](../experiments/sembench_lotus_image_query.py)，设置 `scenario=ecomm` 和所选 `query`
 并提供作者数据目录。Q12 原函数继续拥有 Parquet 读取、普通选择／合并、文本 Filter、对实际保留行的
 图像 Extract，以及最终 JSON Series；没有复制题目执行器，也不通过单算子 prepared 桥执行。
-原生 LM、HTTP 观测、永久预算、完整 sink 和原 TOML gold SQL／F1 评价共用已有实现。
+Q2／Q13 的图像 Filter、Q4 的 Extract、Q6 的 Map、Q8 的描述／图像 Join 和 Q9 的图像 self-join
+使用相同入口；原选择、重复项、自身排除和投影均留在官方函数中。
+原生 LM、HTTP 观测、永久预算、完整 sink 和原 TOML gold SQL／评分共用已有实现。
 
-预检调用原函数到首个语义边界即停止，保留所有发生项（包括重复商品／图像映射），不模拟 Filter
-结果或后续 Extract。Q12 首阶段 N 项，后续只处理实际保留的 M 项；预算按最多2N预留，实际收费N+M，
+预检调用原函数到首个语义边界即停止，记录算子及左右输入规模，保留所有发生项（包括重复商品／图像映射），
+不模拟中间结果。首个 Join 的下界为真实左右规模之积，其他首算子为其输入规模。
+Q12 首阶段 N 项，后续只处理实际保留的 M 项；预算按最多2N预留，实际收费N+M，
 不把上界当成真实调用量。运行时重新读取两份 Parquet，真实图像由原 ImageArray 读取／编码；
 源码绑定及文件／像素身份校验位于 v3 查询区间外。原题在空结果或缺失 `generated_json` 时的 KeyError
-保留，不补造输出列或金标。临时数据软件检查与原始数据／真实 VLM 资格分列。
+保留，不补造输出列或金标。Q2 的 styles 标签文件仅供评价，不加入查询读取或模型消息。
+Q4 重复 ID 导致的原 adjusted Rand index 长度错误同样保留，不去重改写原结果来修评分。
+临时数据软件检查与原始数据／真实 VLM 资格分列。
 
 Q10／Q11 的多分支 Filter／Join、Q14 的分组 TopK 也直接运行原函数；真实中间关系决定下游调用量，
-预检只提供首个 Filter 的下界，不强制按最坏笛卡尔积预留。调用方须给明确的永久尝试额度，
+预检只提供首个算子的下界，不强制按后续最坏笛卡尔积预留。调用方须给明确的永久尝试额度，
 耗尽后停止并保留失败；没有把未知总量记为零或预检样本量。多列 Join 的实际选列限制同上，
 不能把完整原函数可运行称为全部声明输入语义已满足。
 分组 TopK 使用官方 `settings.configure` 让原生线程池取得当前 LM，查询结束恢复全局设置；
@@ -521,7 +526,8 @@ Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求�
 | MMQA Q2a | 原生成切片25图＋13行表，精确 Join325候选对 | 原生 Join／评价 CPU 接通；原生 SDK 服务入口已接，模型服务待实机验证 |
 | MMQA Q2b | 同一切片，Join325次，后续 Extract 为实际匹配行数，最多再325次 | CPU 完整 Join→Extract 及零行 schema 通过；d061实测的空结果返回失败与离线评价单列，preset 单次 Extract 不构成完整模型资格 |
 | MMQA Q7 | sf25 机场25行与原25图，组合后625候选对 | 原源码无自然问题的欧洲预筛，保留并单列该差异；原生服务入口已接，实际服务待绑定／验证 |
-| E-Commerce／Cars 图像 | 原实现存在；此前已查目录未定位成套数据 | 数据缺口与视觉 provider 缺口分别记录，不能记零分 |
+| E-Commerce 图像／多模态 | 首算子真实发生项及图像身份按原函数计算；原件待准备 | 原生服务入口已有软件检查，真实资产／VLM待验，不能记零分 |
+| Cars 图像／音频 | 原实现存在；此前已查目录未定位成套数据 | 本接入尚未接线，数据缺口另列，不能记原生不支持或零分 |
 
 上述预算不含暖机、重试或重复；Animals 四题与 MMQA Q2a/Q2b 共970到1295次，Q2b 的匹配数由真正的 Join 决定。
 Q7 需把已由原 generator 准备的机场表与同一图像切片绑定到一份输入目录，额外625次；

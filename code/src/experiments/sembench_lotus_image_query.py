@@ -121,7 +121,7 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         if maximum is None:
             maximum = inputs['minimum_model_calls']
         if budget.remaining < maximum:
-            raise ValueError("the already-reserved request unit cannot cover this complete visual query")
+            raise ValueError("the reserved request unit is below this query's preflight requirement")
         writer = BufferedEvents(Path(directory) / "native-http.jsonl")
         audit = _NativeCalls(writer, config["model_name"])
         lm = _make_lm(config)
@@ -160,8 +160,10 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             else:
                 verify_visual_inputs(inputs)
                 expected_stages = [inputs["filter_occurrences"], len(result)] if inputs['query'] == 'Q12' else None
-                if not audit.lm_calls or audit.lm_calls[0]['input_occurrences'] != inputs['filter_occurrences']:
-                    raise RuntimeError('native query first Filter differs from the original source frontier')
+                first = inputs['first_operator']['expected_model_calls']
+                if (audit.lm_calls and audit.lm_calls[0]['input_occurrences'] != first
+                        or not audit.lm_calls and first):
+                    raise RuntimeError('native query first operator differs from the original source frontier')
             if (expected_stages is not None and [stage["input_occurrences"] for stage in audit.lm_calls] != expected_stages
                     or any(stage["post_attempts"] is not None and stage["post_attempts"] != stage["input_occurrences"]
                            for stage in audit.lm_calls)):
@@ -180,9 +182,8 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             if config["scenario"] == "animals":
                 quality = evaluate_original(checkout, result, source.frame(references=True), inputs["query_id"])
             elif config["scenario"] == "ecomm":
-                from src.baselines.text.sembench_ecomm import TEXT_FILE
                 quality = evaluate_original(checkout, config["query"], result, data_dir=data_dir,
-                    source_identity=inputs['files'][TEXT_FILE])
+                    source_identity=inputs['gold_source_identity'])
             else:
                 quality = evaluate_original(checkout, config["query"], result)
             report["quality"] = json_metric(quality)

@@ -237,7 +237,7 @@ class SemBenchTextQuery:
                 or (scenario == 'ecomm' and query in ECOMM_QUERY_IDS)
                 or (scenario == 'cars' and query in CARS_QUERY_IDS)):
             raise ValueError('this entry supports Movie Q1-Q10 (Q5-Q7 native Join, Q9 Map or TopK), twelve ordinary MMQA text queries '
-                             'plus Medical/Cars Q1/Q4/Q10 and E-Commerce Q3/Q5/Q7')
+                             'plus Medical/Cars Q1/Q4/Q10 and E-Commerce Q1/Q3/Q5/Q7')
         if scenario not in ('medical', 'cars') and scale_factor is not None:
             raise ValueError('scale_factor applies only to the Medical/Cars authored CSV filenames')
         if ranking is not None and (scenario != 'movie' or query != '9' or ranking not in ('map', 'topk')):
