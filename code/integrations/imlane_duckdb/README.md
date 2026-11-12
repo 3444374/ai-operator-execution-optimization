@@ -234,11 +234,35 @@ Filter 成员由 native 决定，原输入 occurrence 顺序决定恢复顺序�
 排序或去重。服务 `check()` 只检查存活与期限，逐请求 terminal／receipt 遍历放到 `audit()`。
 联合 Q3b–g 的150行执行只产生整批时钟，不能当作六个独立逐题延迟；逐题运行使用单题 binding。
 
+### 共享 Filter 配置草稿
+
+[唯一配置模板](../../configs/sembench_imlane_filter.example.json) 是 `freeze-config` 的输入草稿，
+不能直接用于 `check` 或 `run`。填写本次原源码、数据、模型和执行身份，选择原题；模型原生参数
+与时限继续显式配置，不从历史的 25／120／1200 等规模推导执行能力。
+
+| 任务场景 | `schema` | `query_id` 示例 | 额外字段 |
+|---|---|---|---|
+| MMQA | `semloom.imlane.mmqa_filter.v1` | `3a`、`6a` | 无 |
+| Movie | `semloom.imlane.movie_filter.v1` | `1`–`4` | 无 |
+| Medical | `semloom.imlane.medical_filter.v1` | `1`、`4` | `scale_factor` 按原数据文件命名填写 |
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" -B -m src.experiments.native_imlane_filters freeze-config \
+  --config "$DRAFT_CONFIG" --output "$RUN_DIR/frozen"
+CONFIG="$RUN_DIR/frozen/CONFIG.json"
+```
+
+`freeze-config` 从原题准备生成本次 `input_sha256`、实际 `prompt_columns` 和 occurrence 数
+`max_model_calls`；它不启动模型、不授予运行额度。不要把这些观察值写回通用模板。第一次观察的
+原 formatter 列序可能与旧实验不同；新冻结配置须单独核对消息／token，不能继承旧成绩。
+四份逐题 Filter 示例已删除，原字节可从 `958c57866636c9bd713a533b079196fdaadb3662` 恢复；
+私有历史冻结配置和原件保持不变。
+
 ### MMQA 原版 Filter 的单题入口
 
-[配置模板](../../configs/sembench_imlane_mmqa_filter.example.json)的 `query_id` 只选一道
-`3a`–`3g` 或 `6a`–`6c`，每次完整保留 25 个 occurrence。`prompt_columns` 显式冻结原 LOTUS
-实际列顺序，经过已有 `resolved_input_columns` 接口序列化；不随 Python hash seed 改变提示，
+同一配置草稿的 `query_id` 选择一道原 Filter 题，例如 `3a`–`3g` 或 `6a`–`6c`。
+历史批次为 25 个 occurrence，当前预算由实际原输入确定。`prompt_columns` 冻结原 LOTUS
+实际列顺序，经过已有 `resolved_input_columns` 接口序列化；冻结后不随 Python hash seed 改变提示，
 不改谓词、parser 或原完整关系。Q3 的 `title/text` 与 Q6 的 `Airlines/Destinations` 仅在 native
 传输列中使用共同别名。无额外预热、无自动重试，本入口一次冷查询，不将重启称为暖轮。
 
@@ -297,7 +321,8 @@ ACK用独立新私有路径，已存在ACK不能作为新完成。正常 sink �
 
 ## Medical Q1 原版 Filter 接线
 
-[Q1 配置](../../configs/sembench_imlane_medical_q1.example.json)选择完整 1200 条原 symptoms，
+[共享配置草稿](../../configs/sembench_imlane_filter.example.json) 选择 Medical schema、`query_id="1"`
+和实际 `scale_factor`，冻结后运行。历史批次使用完整 1200 条原 symptoms，
 沿用同一原版 TINYINT Filter。原 allergy prompt、true-before-false/default-true parser、
 patient_id Series（原索引、顺序、重复值与 dtype）及原 evaluator 不变；原标签只用于评价。
 审计按原结果类型比较 Series，不为通过测试改成 DataFrame。
@@ -329,7 +354,8 @@ cold1200/hardcap1200、warmup0、retry0；1200条实际完整消息/token逐条�
 ## Medical Q4 原版 Filter 接线
 
 同一 [单题入口](../../src/experiments/native_imlane_filters.py) 以
-[Medical 配置](../../configs/sembench_imlane_medical_filter.example.json) 显式选择 Q4，
+[共享配置草稿](../../configs/sembench_imlane_filter.example.json) 选择 Medical schema、`query_id="4"`
+和实际 `scale_factor`，由 `freeze-config` 生成运行配置。
 历史完整批次使用患者 source scale 11112、原 join 后 1200 个发生项和 1200 次物理调用上限。
 当前 scale 由原 Medical 文件命名协议选择，实际 join 后的发生项数决定本次预算，不等于 scale 数值。
 原 SemBench c814 的 patients INNER JOIN symptoms、Filter、age.mean() 和单行
@@ -360,7 +386,8 @@ ACK、回执审计、评价、持久化和最后 owner close，后置失败仍�
 
 [单题入口](../../src/experiments/native_imlane_filters.py)的 Movie schema 复用现有 TINYINT
 Arrow kernel、ModelService、provider、原版 DSO、物理预算和完整 sink ACK，不新增 controller
-或修改作者 runtime／算法。使用[Q2 配置模板](../../configs/sembench_imlane_movie_filter.example.json)。
+或修改作者 runtime／算法。[共享配置草稿](../../configs/sembench_imlane_filter.example.json) 选择
+Movie schema 和本次 `query_id`，由 `freeze-config` 生成运行配置。
 原 SemBench `c814e380` 拥有 CSV 输入、普通选择、逐题 prompt/parser、最终关系和 evaluator：
 Q1 全 2000 个发生项后取前 5；Q2 对 taken_3 的 120 个发生项后取前 5；Q3 同 120 个计数；
 Q4 同 120 个计算比例。Q2 引号、Q3 无末尾句点、Q4 有末尾句点保持原文。

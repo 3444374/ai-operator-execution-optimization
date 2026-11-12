@@ -96,10 +96,10 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         from src.infrastructure.private_artifacts import file_identity
         from transformers import AutoTokenizer
 
-        value = json.loads((entry.CODE / 'configs/sembench_imlane_movie_filter.example.json').read_text())
-        value.update(sembench_checkout=CHECKOUT, data_dir=str(self.data),
+        value = json.loads((entry.CODE / 'configs/sembench_imlane_filter.example.json').read_text())
+        value.update(schema=entry.MOVIE_SCHEMA, sembench_checkout=CHECKOUT, data_dir=str(self.data),
             input_sha256={'Reviews.csv': file_identity(self.data / 'Reviews.csv')['sha256']},
-            query_id='1', max_model_calls=11)
+            query_id='1', max_model_calls=11, prompt_columns=['reviewText'])
         # Only tokenization is synthetic. Original source loading, query capture,
         # LOTUS formatting and occurrence-budget validation execute unchanged.
         tokenizer = Mock()

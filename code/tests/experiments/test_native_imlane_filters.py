@@ -19,8 +19,12 @@ from tests.baselines.text.test_imlane_sembench_udf import PreparedDriverBuildTes
 
 
 def config():
-    return json.loads((Path(__file__).resolve().parents[2] /
-        'configs/sembench_imlane_mmqa_filter.example.json').read_text())
+    # Frozen software observations belong to this fixture, not the input template.
+    value = json.loads((Path(__file__).resolve().parents[2] /
+        'configs/sembench_imlane_filter.example.json').read_text())
+    value.update(input_sha256={'tampa_international_airport.csv': '0' * 64},
+                 max_model_calls=25, prompt_columns=['Airlines', 'Destinations'])
+    return value
 
 
 class FilterBindingTests(unittest.TestCase):
