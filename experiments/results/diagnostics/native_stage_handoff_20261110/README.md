@@ -545,3 +545,9 @@ C64 未出现正向变化，因此不能将下面的收益推广到所有并发�
 逐项相等，公开包只保存后者；完整原件已下载并核验 SHA，保持独立私有备份。
 最终 inventory 的 `lease_absent=false` 是只读采样当时持有的独立租约，随后已释放；
 实际模型 campaign 的 closure 明确记录 GPU为空与租约释放。
+
+
+父PR #100 的实测成本入口与显式worker状态回读已接入当前叠加分支；合并保留本PR原生
+`native_engine_kwargs`／NIXL配置转换和原context IPC容量约束。受影响观测、上下文、原生阶段进程及
+就绪比较共[27项CPU检查通过](raw/stack-integration-20261112.log.gz)，准确文件摘要在上述清单的
+`stack_integration_20261112`。这些CPU检查不转授原14c6c5e03的真实GPU结果给整个新叠加树。

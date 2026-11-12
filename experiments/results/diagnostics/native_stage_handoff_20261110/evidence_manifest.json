@@ -15521,5 +15521,17 @@
       "count": 4632,
       "recovery": "Each round JSON value is exactly present in its sibling worker/report.json rounds; every duplicate was checked before omission. Exact original byte representations remain in the hash-bound private archive."
     }
+  },
+  "stack_integration_20261112": {
+    "scope": "27 CPU tests after incorporating parent PR100; GPU results remain bound to their original commits",
+    "test_log": "raw/stack-integration-20261112.log.gz",
+    "log_sha256": "2d6231363a103565bf19d8cbc8c8318f7c68f9f395dc195b21bb8cd66c15035d",
+    "source_sha256": {
+      "code/src/serving/backends/vllm_async_engine.py": "d047396d01f2232a9d385ff9d56f37cd10d10d9b640fcbd42bdcfa38184bddde",
+      "code/src/observability/metrics/vllm.py": "9ff7a29530fb370dd67eb7dee7ccb039a18123c9ce920c013e57a9c31d538fc2",
+      "code/src/experiments/record_chain_validation.py": "f4027ac7dbf0cbcdf5080f4c1bbb6a5d58379273527397d5dc27ffeb5275d8d2",
+      "code/src/experiments/record_chain_validation_run.py": "ddb854483fae5bd571fb60865156c1ccef52a8b9948cc5b5187887e64849b959",
+      "code/src/experiments/ready_work_validation.py": "501236dbd88d2ea401bd4b6ced2cefb5f590881d75afa95d13485bf79780eef4"
+    }
   }
 }

@@ -36,6 +36,26 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 新原生 LOTUS 本地 IPC 已有 CPU 检查，官方完整 Q123 因本地缺 `overrides/cdlib/duckdb` 尚未通过，
 没有将 Core 替身当作原生执行资格。
 
+The finite-chain helper records `timing.full_relation_ready_ns` after complete
+result consumption and before automatic owner close. `caller_to_full_relation_ready_s`
+includes owner construction, evaluation and lazy model startup; it is not a warm
+query metric. The existing iterator completion and close clocks remain unchanged.
+
+<a id="record-chain-ready-work"></a>
+## 有限链的就绪成本对照
+
+`validate_record_chain_options.py` 的 `ready-work-calibration` suite 运行单个
+`ready-fifo`；随后 `ready-work` suite 比较 `ready-fifo`、`ready-shortest`、
+`ready-longest`、`ready-progress`。沿用同 C4/B1、16 行 MMF、原提示和生成上限。
+外部 owner 仍负责租约、物理资源、总预算与最终清理。两种 suite 都先以 `--count-only` 资格检查。
+
+用 `src.experiments.ready_work_validation.calibrate` 从独立 FIFO 回执生成逐阶段
+原生 API 耗时中位数，冻结到私有 JSON；测量配置以 `ready_work_profile.path/sha256`
+绑定它。画像绑定准确代码、输入、模型、生成和资源；剩余路径成本只累加后继阶段中位数。
+这是包含原生排队的 API 耗时估计，不是纯 GPU 时间或未缓存 token 数。
+`ready_work_selection` 记录完整合法候选、选中项和实际 Core 接收，区分尝试选择与已接收的顺序变化。
+没有发生实际顺序变化的候选不能报告策略收益；严格输出比较失败时 CLI 非零退出。
+
 <a id="native-daft-q3-worker"></a>
 ## 直接原生Daft Q3的worker与监督
 

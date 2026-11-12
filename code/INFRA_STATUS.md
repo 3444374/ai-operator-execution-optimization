@@ -93,6 +93,7 @@ v1 另有 cascade 接点，当前 v2 没有该分支。[代码与 CPU 验证](..
 C／R／work 与存储预算的具体取值和支持组合由[容量类型](src/execution_provider/adapters/records_capacity.py)及
 [配置总览](../docs/执行配置与优化开关.md)维护。未消费结果、unknown 和晚到请求继续占据其实际资源责任。
 模型 ready 返回的真实上下文用于长度核对，不能以配置省略推断上下文无限。
+显式声明原生 batch-invariant 配置时，ready 另外回读 worker 的请求值与实际初始化状态；回读失败保留 unavailable，默认执行不增加该 RPC。
 宿主内存与 cgroup 指标是观测，不等于资源授予。
 
 <a id="prepared-request-batching"></a>
@@ -162,3 +163,10 @@ records resident 的顺序复用不能直接解释为共享 owner 上完整查�
 [关闭 profiler 后的独立重复](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#kv-unprofiled-20261112)
 确认固定机器／构建／C128下 TCP 分片配置的流水内部收益；共置仍更快，未改变默认值，
 未授予完整查询、其他并发或取消清理资格。
+
+有限链实验入口可用独立原生 API 阶段计时冻结就绪策略成本，绑定源码／模型／输入／资源，并记录实际 Core 接收的顺序变化；该入口的真实结果见对应执行候选报告。它不提供原生未缓存工作量或动态成本闭环。
+
+[真实就绪选择检查](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#ready-work-real-20261112)
+已将冻结的实测阶段API成本接入既有Core选择器，四臂完整请求／输出和正常资源通过。
+当前C4/R4每次只有1个候选，未触发优先级竞争；独立扩大准备窗口与滚动选择集成仍未完成，
+不据此次功能通过宣称策略性能收益。

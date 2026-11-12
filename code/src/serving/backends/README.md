@@ -112,6 +112,13 @@ same control allowance; an oversized error report does not confirm work or close
 
 ## Async close timing
 
+When `VLLM_BATCH_INVARIANT` is explicitly present, startup makes one bounded,
+named worker RPC to report both the requested flag and the initialized native
+batch-invariant mode in `native_execution_profile`. Missing or failed readback
+is `unavailable`, not disabled. This does not enable the mode, add generation
+calls, or change the default path's RPCs. The observation uses the pinned
+vLLM 0.25.1 worker state; it is separate from periodic feedback.
+
 `AsyncEngineProcess.close(timeout=...)` keeps its existing total caller allowance
 and direct-child cleanup reserve. Its `close` control frame now carries the actual
 API-wait deadline, using the same local monotonic clock as request deadlines.

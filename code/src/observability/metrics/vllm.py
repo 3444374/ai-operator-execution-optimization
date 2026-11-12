@@ -11,6 +11,28 @@ from urllib import error, request
 _LE_LABEL = re.compile(r'(?:^|,)le="([^"]+)"(?:,|$)')
 
 
+def worker_execution_profile():
+    """Read the initialized vLLM worker, not its caller's requested environment."""
+    import os
+    from vllm import envs
+    from vllm.model_executor.layers import batch_invariant
+
+    return dict(status='observed_worker_execution_profile', pid=os.getpid(),
+        batch_invariant_requested=envs.VLLM_BATCH_INVARIANT,
+        batch_invariant_active=batch_invariant._batch_invariant_MODE,
+        source='initialized vLLM worker environment and installed batch-invariant mode')
+
+
+from src.infrastructure.gpu_allocation import SemLoomGpuIdentityWorkerExtension
+
+
+class VllmObservationWorkerExtension(SemLoomGpuIdentityWorkerExtension):
+    """Named native RPC avoids serializing arbitrary callables across the engine."""
+
+    def semloom_execution_profile(self):
+        return worker_execution_profile()
+
+
 def effective_capacity_snapshot(config, *, source=None):
     """Read the constructed engine's config, never fill from launch requests.
 

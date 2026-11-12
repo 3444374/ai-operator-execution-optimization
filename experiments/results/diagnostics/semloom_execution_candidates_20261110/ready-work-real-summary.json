@@ -1,0 +1,388 @@
+{
+  "schema": "semloom.ready_work_real.v1",
+  "source": "6d281376d4b7a0354856921be3fd1a45439a1f78",
+  "status": "passed",
+  "failure": null,
+  "stop_reason": "candidate did not change an accepted choice; stop further timing cycles",
+  "lease_released": true,
+  "SHM_unchanged": true,
+  "GPU": {
+    "index": 0,
+    "name": "NVIDIA GeForce RTX 4090",
+    "uuid": "GPU-ae66eec2-3dd6-abcb-1666-a3e964a50634",
+    "total_mib": 24564,
+    "used_mib": 1,
+    "compute": [],
+    "compute_inventory_complete": true
+  },
+  "calibration": {
+    "schema": "semloom.ready_work_calibration.v1",
+    "signature": {
+      "public_git_commit": "6d281376d4b7a0354856921be3fd1a45439a1f78",
+      "input_sha256": "df231cfb189c9e169aa6afe415e4fa24533b04499179bbd61416c4c6af28ca21",
+      "engine": {
+        "model_path": "<data-root>/models/Qwen2.5-7B-Instruct",
+        "model_python": "<data-root>/venvs/vllm-4090/bin/python",
+        "driver_python": "<data-root>/venvs/sembench-query-0910/bin/python",
+        "tokenizer_path": "<data-root>/models/Qwen2.5-7B-Instruct",
+        "dtype": "bfloat16",
+        "max_model_len": 4096,
+        "max_num_seqs": 4,
+        "max_num_batched_tokens": 4096,
+        "gpu_memory_utilization": 0.8,
+        "seed": 0,
+        "chat_template": null,
+        "max_model_calls": 48,
+        "enable_mfu_metrics": false,
+        "enable_prefix_caching": null,
+        "enable_chunked_prefill": null,
+        "disable_cascade_attn": null,
+        "cudagraph_mode": null,
+        "cudagraph_capture_sizes": null
+      },
+      "generation": {
+        "max_tokens": 8,
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "seed": 0,
+        "stop": [
+          "\n"
+        ],
+        "presence_penalty": 0.0,
+        "frequency_penalty": 0.0,
+        "repetition_penalty": 1.0,
+        "logprobs": null,
+        "response_format": null
+      },
+      "resources": {
+        "cpu_workers": 1,
+        "gpu_workers": 1,
+        "prepare_batch_rows": 1,
+        "model_batch_rows": 1,
+        "max_active_batches": 4,
+        "query_timeout_s": 180,
+        "startup_timeout_s": 180,
+        "model_rpc_workers": null
+      }
+    },
+    "source_case_sha256": "3d2636bae7f5856cea43c2d726833fd1842b306d421ad0a2edff7d56caafc274",
+    "service_ns": {
+      "map0": 303783142,
+      "map1": 280402987,
+      "keep": 185741920
+    },
+    "cost_scope": "median native API interval including queueing; not exclusive GPU time",
+    "remaining_path": "sum of subsequent stage medians; no future outputs",
+    "max_wait_s": 1.0
+  },
+  "comparison": {
+    "status": "captured_receipts_compared",
+    "public_git_commit": "6d281376d4b7a0354856921be3fd1a45439a1f78",
+    "cases": [
+      {
+        "case_id": "ready-fifo",
+        "calls": 48,
+        "function": "passed",
+        "W_exercised": null,
+        "successor_contention_exercised": null,
+        "full_owner_call_s": 68.359921537,
+        "worker_wall_s": 89.626523498,
+        "timing_scope": "owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded",
+        "physical_cleanup": "separate external supervisor receipt required"
+      },
+      {
+        "case_id": "ready-shortest",
+        "calls": 48,
+        "function": "passed",
+        "W_exercised": null,
+        "successor_contention_exercised": null,
+        "full_owner_call_s": 67.515533607,
+        "worker_wall_s": 88.652712091,
+        "timing_scope": "owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded",
+        "physical_cleanup": "separate external supervisor receipt required"
+      },
+      {
+        "case_id": "ready-longest",
+        "calls": 48,
+        "function": "passed",
+        "W_exercised": null,
+        "successor_contention_exercised": null,
+        "full_owner_call_s": 69.021821028,
+        "worker_wall_s": 90.78256763,
+        "timing_scope": "owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded",
+        "physical_cleanup": "separate external supervisor receipt required"
+      },
+      {
+        "case_id": "ready-progress",
+        "calls": 48,
+        "function": "passed",
+        "W_exercised": null,
+        "successor_contention_exercised": null,
+        "full_owner_call_s": 68.718721156,
+        "worker_wall_s": 90.653981308,
+        "timing_scope": "owner vs worker including imports/input/CPU tokenizer/Ray/replay/close; final report write excluded",
+        "physical_cleanup": "separate external supervisor receipt required"
+      }
+    ],
+    "outputs_strictly_comparable": true,
+    "differences": [
+      {
+        "case_id": "ready-fifo",
+        "changed_calls": [],
+        "final_outputs_identical": true
+      },
+      {
+        "case_id": "ready-shortest",
+        "changed_calls": [],
+        "final_outputs_identical": true
+      },
+      {
+        "case_id": "ready-longest",
+        "changed_calls": [],
+        "final_outputs_identical": true
+      },
+      {
+        "case_id": "ready-progress",
+        "changed_calls": [],
+        "final_outputs_identical": true
+      }
+    ],
+    "performance_qualification": "not established: n1 small functional smoke even if outputs identical",
+    "mechanism_gate": "each candidate needs contended accepted choices that differ from FIFO before any benefit claim",
+    "suite": "ready-work",
+    "comparison_scope": "same C4/B1 and frozen measured API costs; fresh models"
+  },
+  "all_calls_and_outputs_equal_including_calibration": true,
+  "cases": [
+    {
+      "phase": "pair-0",
+      "case": "ready-fifo",
+      "calls": 48,
+      "status": "completed",
+      "source": "6d281376d4b7a0354856921be3fd1a45439a1f78",
+      "accepted": 48,
+      "contended_accepted": 0,
+      "changed_accepted": 0,
+      "all_candidate_count_histogram": {
+        "1": 48
+      },
+      "full_relation_s": 62.107244868,
+      "worker_to_full_relation_s": 80.825945969,
+      "worker_wall_s": 87.614615353,
+      "model_api_span_s": 4.374532642774284,
+      "strict_fields_sha256": "2cd336fc438a7537938be52ae28a0ebb54143e41dc7d440257aeedbc4075e5ce",
+      "native_profile": {
+        "status": "observed_worker_execution_profile",
+        "pid": 54888,
+        "batch_invariant_requested": true,
+        "batch_invariant_active": true,
+        "source": "initialized vLLM worker environment and installed batch-invariant mode"
+      },
+      "capacity": {
+        "active_request_limit": 4,
+        "held_task_limit": 4,
+        "retained_rows": 4,
+        "retained_bytes": 218106880,
+        "row_reservation_bytes": 54526720
+      },
+      "peak_usage": {
+        "held_tasks": 4,
+        "input_bytes": 4449,
+        "result_bytes": 8388608,
+        "active_requests": 4,
+        "active_work": 4
+      }
+    },
+    {
+      "phase": "pair-1",
+      "case": "ready-fifo",
+      "calls": 48,
+      "status": "completed",
+      "source": "6d281376d4b7a0354856921be3fd1a45439a1f78",
+      "accepted": 48,
+      "contended_accepted": 0,
+      "changed_accepted": 0,
+      "all_candidate_count_histogram": {
+        "1": 48
+      },
+      "full_relation_s": 63.05722637,
+      "worker_to_full_relation_s": 82.784612953,
+      "worker_wall_s": 89.626523498,
+      "model_api_span_s": 4.448755340650678,
+      "strict_fields_sha256": "2cd336fc438a7537938be52ae28a0ebb54143e41dc7d440257aeedbc4075e5ce",
+      "native_profile": {
+        "status": "observed_worker_execution_profile",
+        "pid": 56127,
+        "batch_invariant_requested": true,
+        "batch_invariant_active": true,
+        "source": "initialized vLLM worker environment and installed batch-invariant mode"
+      },
+      "capacity": {
+        "active_request_limit": 4,
+        "held_task_limit": 4,
+        "retained_rows": 4,
+        "retained_bytes": 218106880,
+        "row_reservation_bytes": 54526720
+      },
+      "peak_usage": {
+        "held_tasks": 4,
+        "input_bytes": 4449,
+        "result_bytes": 8388608,
+        "active_requests": 4,
+        "active_work": 4
+      }
+    },
+    {
+      "phase": "pair-1",
+      "case": "ready-longest",
+      "calls": 48,
+      "status": "completed",
+      "source": "6d281376d4b7a0354856921be3fd1a45439a1f78",
+      "accepted": 48,
+      "contended_accepted": 0,
+      "changed_accepted": 0,
+      "all_candidate_count_histogram": {
+        "1": 48
+      },
+      "full_relation_s": 63.625789874,
+      "worker_to_full_relation_s": 83.847646111,
+      "worker_wall_s": 90.78256763,
+      "model_api_span_s": 4.637744316831231,
+      "strict_fields_sha256": "2cd336fc438a7537938be52ae28a0ebb54143e41dc7d440257aeedbc4075e5ce",
+      "native_profile": {
+        "status": "observed_worker_execution_profile",
+        "pid": 58474,
+        "batch_invariant_requested": true,
+        "batch_invariant_active": true,
+        "source": "initialized vLLM worker environment and installed batch-invariant mode"
+      },
+      "capacity": {
+        "active_request_limit": 4,
+        "held_task_limit": 4,
+        "retained_rows": 4,
+        "retained_bytes": 218106880,
+        "row_reservation_bytes": 54526720
+      },
+      "peak_usage": {
+        "held_tasks": 4,
+        "input_bytes": 4449,
+        "result_bytes": 8388608,
+        "active_requests": 4,
+        "active_work": 4
+      }
+    },
+    {
+      "phase": "pair-1",
+      "case": "ready-progress",
+      "calls": 48,
+      "status": "completed",
+      "source": "6d281376d4b7a0354856921be3fd1a45439a1f78",
+      "accepted": 48,
+      "contended_accepted": 0,
+      "changed_accepted": 0,
+      "all_candidate_count_histogram": {
+        "1": 48
+      },
+      "full_relation_s": 63.254156102,
+      "worker_to_full_relation_s": 83.652406814,
+      "worker_wall_s": 90.653981308,
+      "model_api_span_s": 4.348770122043788,
+      "strict_fields_sha256": "2cd336fc438a7537938be52ae28a0ebb54143e41dc7d440257aeedbc4075e5ce",
+      "native_profile": {
+        "status": "observed_worker_execution_profile",
+        "pid": 59657,
+        "batch_invariant_requested": true,
+        "batch_invariant_active": true,
+        "source": "initialized vLLM worker environment and installed batch-invariant mode"
+      },
+      "capacity": {
+        "active_request_limit": 4,
+        "held_task_limit": 4,
+        "retained_rows": 4,
+        "retained_bytes": 218106880,
+        "row_reservation_bytes": 54526720
+      },
+      "peak_usage": {
+        "held_tasks": 4,
+        "input_bytes": 4449,
+        "result_bytes": 8388608,
+        "active_requests": 4,
+        "active_work": 4
+      }
+    },
+    {
+      "phase": "pair-1",
+      "case": "ready-shortest",
+      "calls": 48,
+      "status": "completed",
+      "source": "6d281376d4b7a0354856921be3fd1a45439a1f78",
+      "accepted": 48,
+      "contended_accepted": 0,
+      "changed_accepted": 0,
+      "all_candidate_count_histogram": {
+        "1": 48
+      },
+      "full_relation_s": 62.040867871,
+      "worker_to_full_relation_s": 81.653833145,
+      "worker_wall_s": 88.652712091,
+      "model_api_span_s": 4.388403683900833,
+      "strict_fields_sha256": "2cd336fc438a7537938be52ae28a0ebb54143e41dc7d440257aeedbc4075e5ce",
+      "native_profile": {
+        "status": "observed_worker_execution_profile",
+        "pid": 57294,
+        "batch_invariant_requested": true,
+        "batch_invariant_active": true,
+        "source": "initialized vLLM worker environment and installed batch-invariant mode"
+      },
+      "capacity": {
+        "active_request_limit": 4,
+        "held_task_limit": 4,
+        "retained_rows": 4,
+        "retained_bytes": 218106880,
+        "row_reservation_bytes": 54526720
+      },
+      "peak_usage": {
+        "held_tasks": 4,
+        "input_bytes": 4449,
+        "result_bytes": 8388608,
+        "active_requests": 4,
+        "active_work": 4
+      }
+    }
+  ],
+  "physical_calls": 240,
+  "budget": {
+    "schema": "semloom.cell_budget.v1",
+    "budget_id": "pr100-ready-work-20261112",
+    "limit": 624,
+    "allocated_requests": 624,
+    "deadline_utc": 1794472151.1007023,
+    "units": [
+      {
+        "unit_id": "pair-0",
+        "first_attempt": 1,
+        "requests": 48,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pair-1",
+        "first_attempt": 49,
+        "requests": 192,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pair-2",
+        "first_attempt": 241,
+        "requests": 192,
+        "claimed": 0
+      },
+      {
+        "unit_id": "pair-3",
+        "first_attempt": 433,
+        "requests": 192,
+        "claimed": 0
+      }
+    ]
+  },
+  "conclusion": "Strict functional comparison passed; no contended accepted choices, so no priority-policy performance effect was exercised."
+}

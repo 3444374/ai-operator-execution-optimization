@@ -30,6 +30,7 @@ from src.experiments.record_chain_validation import (
 CASES = (('fifo-count', False, False), ('fifo-token', True, False),
          ('successor-count', False, True), ('successor-token', True, True))
 EXECUTION_CASES = (('fused-count', False, False), ('record-local-count', False, False))
+READY_WORK_CASES = ('ready-fifo', 'ready-shortest', 'ready-longest', 'ready-progress')
 PROGRESSION_CASES = ('record-count', 'batch-stage-count')
 REPO = Path(__file__).resolve().parents[3]
 ENTRY = REPO / 'code/scripts/experiments/validate_record_chain_options.py'
@@ -41,7 +42,7 @@ def read(path):
 
 def make_resources(config):
     suite = config.get('suite', 'options')
-    if suite not in ('options', 'matched-execution', 'progression'):
+    if suite not in ('options', 'matched-execution', 'progression', 'ready-work', 'ready-work-calibration'):
         raise ValueError('unknown validation suite')
     resources = RecordsResources(**config['resources'])
     resources.request_capacity()
@@ -83,7 +84,12 @@ def configuration(path):
         require_outside_git(Path(config[name]))
     require_outside_git(Path(config['input']['existing_csv']))
     matched = config.get('suite', 'options') == 'matched-execution'
-    if config.get('suite') == 'progression':
+    if config.get('suite') in ('ready-work', 'ready-work-calibration'):
+        config['cases'] = [dict(case_id=name, token=False, successor=False) for name in
+            (READY_WORK_CASES[:1] if config['suite'] == 'ready-work-calibration' else READY_WORK_CASES)]
+        from src.experiments.ready_work_validation import load_profile
+        load_profile(config)
+    elif config.get('suite') == 'progression':
         config['cases'] = [dict(case_id=name, token=False, successor=False,
             progression='record' if name == 'record-count' else 'batch_stage',
             progression_batch_rows=None if name == 'record-count' else config['progression_batch_rows'])
@@ -137,7 +143,7 @@ def qualify(path, output, *, require_token_budget=True):
     config, engine, resources, generation = configuration(path)
     if config.get('suite') == 'matched-execution' and require_token_budget:
         raise ValueError('matched-execution requires --count-only qualification')
-    if config.get('suite') == 'progression' and require_token_budget:
+    if config.get('suite') in ('progression', 'ready-work', 'ready-work-calibration') and require_token_budget:
         raise ValueError('progression requires --count-only qualification')
     if (Path(config['artifact_root']) / 'budget.sqlite').exists():
         raise FileExistsError('never requalify an existing model budget')
@@ -227,9 +233,16 @@ def execute_worker(path, ready_path, case_id, *, process_started_ns=None):
         control = out / 'control'
         if execution == 'fused':
             control.mkdir(mode=0o700)
+        selector = None
+        if config.get('suite') in ('ready-work', 'ready-work-calibration'):
+            from src.experiments.ready_work_validation import load_profile, ObservedReadySelector
+            selector = ObservedReadySelector(case_id, load_profile(config))
         result = run_case(records, chain, engine, resources, control_dir=control,
                           token_budget=budget if case['token'] else None, priority=case['successor'],
+                          **({} if selector is None else dict(ready_selector=selector, on_ready_event=selector.observe_event)),
                           **{k:case[k] for k in ('execution', 'progression', 'progression_batch_rows') if k in case})
+        if selector is not None:
+            report['ready_work_selection'] = selector.report()
         report.update({k:v for k,v in result.items() if k != 'records'})
         report['actual_calls'] = len(result['calls'])
         replay_started = time.monotonic_ns()
@@ -292,7 +305,7 @@ def main(argv=None, *, process_started_ns=None):
     parser.add_argument('--config', required=True, type=Path)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--ready', type=Path)
-    parser.add_argument('--case', choices=[name for name, _, _ in CASES + EXECUTION_CASES] + list(PROGRESSION_CASES))
+    parser.add_argument('--case', choices=[name for name, _, _ in CASES + EXECUTION_CASES] + list(PROGRESSION_CASES) + list(READY_WORK_CASES))
     parser.add_argument('--execute-model', action='store_true')
     parser.add_argument('--count-only', action='store_true', help='qualify count cases without a token budget')
     args = parser.parse_args(argv)
@@ -317,5 +330,5 @@ def main(argv=None, *, process_started_ns=None):
         else:
             result = supervised_case(args.config, args.ready, args.case)
     print(json.dumps({k:result[k] for k in ('status', 'models', 'claims', 'max_requests',
-        'suite', 'progression_cases') if k in result}))
-    return 0
+        'suite', 'progression_cases', 'outputs_strictly_comparable') if k in result}))
+    return int(result.get('outputs_strictly_comparable') is False)
