@@ -201,7 +201,10 @@ Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两
 原始11列样本的 Join 中间关系恢复22列，未引用元数据不再丢失。受影响131项软件检查为128通过、
 3跳过；Daft／Ray 各64条历史真实答复经原完整 CSV 回放，消息、本地冻结 token 数组、完整中间关系、
 最终 sink／评价相同，新增模型调用0。旧 `c39d96347` 模型运行仍属于三列投影来源，耗时不回填到
-修正路径；该修正的目标环境／模型资格仍待验。
+修正路径。冻结 `4f12b556e` 随后通过 Linux 完整源关系门及原作者 Movie Q5 样本8×8的64次
+真实请求、完整22列中间关系／原 sink／评价重放和物理清理／租约释放；原件已恢复并核验。
+原生8 token Filter与判定保持；实际消息摘要、CPU完整token数组已核，GPU实际token数组、usage、
+价格与kernel计数未观测。资格只属于该来源／样本，不转授全量、其他后端或后续TopK组合树。
 
 LOTUS resident／视觉／MMQA 聚合、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 使用
 `query_clock_version=sembench.source_to_sink.v3`：共享文本输入身份校验在起点前和 sink 后执行，
