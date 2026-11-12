@@ -28,7 +28,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 
 | 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
 |---|---|---|---|---|---|
-| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 具名 Filter、Movie 数字 Map 已接；Cars 原版 SQL 未接，VARCHAR 返回阻塞字符串输出 | Movie Filter/Map 已接；MMQA/Medical 有具名私有 Filter；原版结构化输出未透传，E-Commerce/Cars 未接线 |
+| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；Cars/E-Commerce Filter 有软件检查，真实数据/SQL待验；原版字符串输出受限 | Movie Filter/Map 已接；MMQA/Medical 有具名私有 Filter；原版结构化输出未透传，E-Commerce/Cars 未接线 |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 未接线 | 未接线 |
 | 原 quick TopK；Movie Q9 TopK profile | 显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
@@ -175,6 +175,9 @@ exact Join 按各入口分列；prepared 请求入口对 TopK／Aggregate 等不
 Cars Q1／Q4／Q10 也已绑定原 CSV、原函数及原评分，共用同一 Filter／Extract 和后端接点；
 full_data 标签只供评价，既有 sample 的尺度只选择原路径，不充当模型调用数。
 软件对照保留重复投诉及原 Q4 加权查询／去重车辆金标的差异，真实 Cars 资产与目标环境待验。
+IMLane Cars Q1/Q4、E-Commerce Q1 复用同一原版 TINYINT Filter、owner 和完整 sink ACK，
+仅增加原场景文件绑定；原 formatter/tokenizer/Arrow kernel、重复发生项和空结果软件检查通过。
+Cars scale 只选原 CSV，不等于模型行数；Extract/Map/Join 的尚未接线状态不由 Filter 扩展而改变。
 Cars Q3／Q8 也复用原生视觉服务，保留完整图像发生项及最后 LIMIT；原 car_id／image_id 标签筛选与
 评分独立于计时，原图像路径不在执行时改写。固定 LOTUS tree 缺 Q2/Q5/Q6/Q7/Q9 查询文件，
 该官方实现缺口不等于其他系统不支持；不补造音频查询来宣称覆盖。

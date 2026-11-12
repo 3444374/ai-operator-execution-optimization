@@ -73,6 +73,7 @@ class FilterBuildSourceIdentityTests(unittest.TestCase):
                 path = root/name; path.write_text(name)
                 record[name+'_path'] = str(path); record[name] = file_identity(path)
             record['driver_source'] = file_identity(SOURCE)
+            record['relation_handoff'] = file_identity(SOURCE.with_name('relation_handoff.hpp'))
             path = root/'build.json'; path.write_text(json.dumps(record))
             def files(p):
                 if Path(p) == binding.CODE/'integrations/imlane_duckdb/mmqa_filter_udf.py': return record['kernel']

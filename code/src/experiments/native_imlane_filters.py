@@ -35,6 +35,8 @@ from src.serving.backends.vllm_protocol import GenerationSpec
 SCHEMA = 'semloom.imlane.mmqa_filter.v1'
 MEDICAL_SCHEMA = 'semloom.imlane.medical_filter.v1'
 MOVIE_SCHEMA = 'semloom.imlane.movie_filter.v1'
+CARS_SCHEMA = 'semloom.imlane.cars_filter.v1'
+ECOMM_SCHEMA = 'semloom.imlane.ecomm_filter.v1'
 DSO_SHA256 = '52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf'
 CODE = Path(__file__).resolve().parents[2]
 
@@ -45,14 +47,17 @@ def configuration(value, *, frozen=True):
               'query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'}
     if not frozen:
         fields -= {'input_sha256', 'prompt_columns', 'max_model_calls'}
-    medical = type(value) is dict and value.get('schema') == MEDICAL_SCHEMA
-    if medical:
+    schema = value.get('schema') if type(value) is dict else None
+    if schema in (MEDICAL_SCHEMA, CARS_SCHEMA):
         fields.add('scale_factor')
     if (type(value) is not dict or set(value) != fields
-            or value['schema'] not in (SCHEMA, MEDICAL_SCHEMA, MOVIE_SCHEMA)):
-        raise ValueError('use a Movie, MMQA or Medical Filter configuration')
-    if medical:
+            or schema not in (SCHEMA, MEDICAL_SCHEMA, MOVIE_SCHEMA, CARS_SCHEMA, ECOMM_SCHEMA)):
+        raise ValueError('use a Movie, MMQA, Medical, Cars or E-Commerce Filter configuration')
+    if schema == MEDICAL_SCHEMA:
         from src.baselines.text.sembench_medical import text_files
+        text_files(value['scale_factor'])
+    elif schema == CARS_SCHEMA:
+        from src.baselines.text.sembench_cars import text_files
         text_files(value['scale_factor'])
     generation = GenerationSpec.from_dict(value['generation'])
     if generation.response_format is not None:
@@ -65,10 +70,11 @@ def configuration(value, *, frozen=True):
 
 
 def _source_query(config, generation, *, frozen=True):
-    scenario = {SCHEMA: 'mmqa', MEDICAL_SCHEMA: 'medical', MOVIE_SCHEMA: 'movie'}[config['schema']]
+    scenario = {SCHEMA: 'mmqa', MEDICAL_SCHEMA: 'medical', MOVIE_SCHEMA: 'movie',
+                CARS_SCHEMA: 'cars', ECOMM_SCHEMA: 'ecomm'}[config['schema']]
     query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], scenario,
         config['query_id'], execution_id=config['execution_id'], model_name=config['model_name'],
-        generation=generation, **(dict(scale_factor=config['scale_factor']) if scenario == 'medical' else {}))
+        generation=generation, **(dict(scale_factor=config['scale_factor']) if scenario in ('medical', 'cars') else {}))
     if query.operation is None or query.operation.describe()['kind'] != 'filter':
         raise ValueError('this native entry requires one original Filter operation')
     if not query.operation.records:

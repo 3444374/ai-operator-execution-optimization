@@ -181,6 +181,39 @@ print(json.dumps(dict(columns=m.columns,requests=r,tokens=t)))'''
         self.assertNotEqual(rows[0]['occurrence_id'], rows[1]['occurrence_id'])
         self.assertNotIn('gold', json.loads(rows[0]['text']))
 
+    def test_cars_filters_reuse_native_membership_with_original_scale_and_full_sink(self):
+        for scale in (7,29):
+            sample=self.root/f'data/sf_{scale}'
+            full=self.root/'data/full_data'
+            sample.mkdir(parents=True);full.mkdir(parents=True,exist_ok=True)
+            cars=pd.DataFrame(dict(car_id=[1,2],year=[2010,2020]))
+            text=pd.DataFrame(dict(car_id=[1,1,2],complaint_id=[10,11,12],summary=['same','same','other']))
+            cars.to_csv(sample/f'car_data_{scale}.csv',index=False)
+            text.to_csv(sample/f'text_complaints_data_{scale}.csv',index=False)
+            cars.to_csv(full/'car_data_full.csv',index=False)
+            text.assign(crash=[True,False,False],component_class=['ENGINE','ENGINE','STEERING']).to_csv(
+                full/'text_complaints_data_full.csv',index=False)
+            for query_id in ('1','4'):
+                query,rows=self.assert_native_filter(dict(self.seed,schema=entry.CARS_SCHEMA,
+                    query_id=query_id,scale_factor=scale))
+                self.assertEqual(len(rows),3)
+                self.assertEqual(set(query.operation.records[0].values),{'summary'})
+        with self.assertRaisesRegex(ValueError,'one original Filter'):
+            entry.freeze_config(dict(self.seed,schema=entry.CARS_SCHEMA,query_id='10',scale_factor=29))
+
+    def test_ecomm_text_filter_reuses_native_messages_and_original_relation(self):
+        pd.DataFrame(dict(id=[1,2,3],productDisplayName=['same','same','other'],
+            productDescriptors=[{'description':{'value':text}} for text in ['same','same','other']],
+            masterCategory=[{'typeName':'Apparel'}]*3,subCategory=[{'typeName':'Topwear'}]*3,price=[100]*3,
+            brandName=['REFERENCE_ONLY_']*3,articleType=[{'typeName':'Backpacks'}]*3)).to_parquet(
+                self.root/'styles_details.parquet',index=False)
+        _,rows=self.assert_native_filter(dict(self.seed,schema=entry.ECOMM_SCHEMA,query_id='1'))
+        self.assertEqual(len(rows),3)
+        self.assertNotIn('REFERENCE_ONLY_',json.dumps(rows))
+        for query_id in ('3','5','7'):
+            with self.subTest(query_id=query_id),self.assertRaisesRegex(ValueError,'one original Filter'):
+                entry.freeze_config(dict(self.seed,schema=entry.ECOMM_SCHEMA,query_id=query_id))
+
     def test_original_nonfilter_and_empty_inputs_rejected_during_freeze(self):
         pd.DataFrame({'reviewId':['x'], 'id':['taken_3'], 'reviewText':['same']}).to_csv(
             self.root / 'Reviews.csv', index=False)

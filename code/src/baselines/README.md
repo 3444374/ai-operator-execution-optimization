@@ -422,6 +422,9 @@ Q1 保留 `car_id` Series，Q4 保留原 `2026 - joined.year.mean()`，Q10 保�
 Q4 查询按投诉连接后的行加权，而作者 gold 按车辆选择求平均；该差异保留，不能为了得分去重查询行。
 Q10 继续用作者 macro precision／recall／F1，不做类别修正、答案截断或按车辆 ID 合并模型调用。
 原 SDK、记录链、原生 LM 接点及 prepared 软件对照覆盖三题；真实资产和模型资格仍待验证。
+IMLane 原版 TINYINT Filter 也复用同一任务绑定接 Cars Q1/Q4；现有 native SQL、owner、预算及 sink ACK
+不变，配置见[Filter 源规模与构建身份](../../integrations/imlane_duckdb/README.md#filter-源规模与构建身份)。
+Q10 的字符串 Extract 仍不属于该原版 TINYINT 接点，不借用工程版 VARCHAR 的资格。
 文本入口不处理图音；Q3／Q8 使用下述同一原生视觉服务。
 
 ### Cars 原图像查询
@@ -465,7 +468,8 @@ Q3／Q5 保留 adjusted Rand index 的分组评分语义，Q1／Q7 保留原 F1�
 保留 Series 形状和 dtype／NA 推断；例如 Q14 的字符串 ID 会像官方评分输入一样读回整数，原查询输出不变。
 本地临时 Parquet 的原 SDK／记录链／prepared 差分覆盖完整消息、普通选择、原投影、乱序答复、
 空输入和文件变化；这些是零模型软件检查。真实 E-Commerce 数据、目标 SDK 和模型运行仍待验证，
-IMLane 的 VARCHAR 限制及 Kalypso 未由此 CLI 接入的边界继续适用。
+IMLane Q1 已接同一原版 TINYINT Filter；Q3/Q5 的字符串输出仍未由该接点接线，原版 VARCHAR
+限制及 Kalypso 未由此 CLI 接入的边界继续适用。
 
 ### E-Commerce 原完整多模态查询
 

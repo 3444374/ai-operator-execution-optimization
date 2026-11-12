@@ -613,11 +613,17 @@ Q9构建记录绑定当前q9.cpp、q9_udf.py、relation_handoff.hpp以及实际b
 执行能力白名单。显式 `max_model_calls` 仍由现有 `AttemptBudget` 验证为正整数；
 `prepare_query` 必须从冻结 SHA 对应的原题源码读取完整 occurrence，并验证数量等于该预算，
 不截断、不补行、不重试。题号与原操作由 `SemBenchTextQuery` 负责，后端不再维护题号白名单；
-只接收该任务层捕获的单 Filter。Medical scale 按原作者文件命名规则解析；生成上限来自本次
+只接收该任务层捕获的单 Filter。Medical/Cars scale 按原作者文件命名规则解析；生成上限来自本次
 `generation.max_tokens`，context 检查与实际回执审计使用同一值，8192 仍是现有比较配置的选择。
-接受其他输入规模不授权额外运行，目标运行仍只使用已批准的冻结配置和持久预算。
+其他输入规模仍需绑定本次具体计划、资源和持久预算，不继承历史运行额度或成绩。
 
-现有三个场景 schema 与 CLI 保留，均调用同一执行器。三字符串 native ABI 不变：occurrence ID
+五个场景 schema 与 CLI 均调用同一执行器。新增 `semloom.imlane.cars_filter.v1` 绑定 Cars Q1/Q4，
+须给 `scale_factor` 选择原 `data/sf_N/` 及完整金标；`semloom.imlane.ecomm_filter.v1` 绑定 E-Commerce Q1，
+读取原 Parquet，不给 scale。两者仍使用现有模板的运行字段、`freeze-config/check/run`、原版 DSO、
+TINYINT kernel 和完整 sink ACK。原 Filter 的存在由任务层捕获判断，不为每题添加 native SQL 或执行器。
+Cars Extract、E-Commerce Map/Extract 和 Join 不从此接点取得支持。真实数据／Linux／模型按对应来源另验。
+
+三字符串 native ABI 不变：occurrence ID
 关联原完整 messages；原 `title/text` 运输字段现在携带 source index 与模型输入列的 JSON，
 不再按题号猜 reviewId/patient_id/title 等字段。JSON 仅为原输入 cell 的确定性运输表示，
 不是模型 prompt；评价列不进入它。完整关系按 occurrence 与源序恢复，再由原题做 head/count/
