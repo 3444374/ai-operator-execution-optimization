@@ -1,0 +1,184 @@
+{
+  "schema": "semloom.rolling_ready_cpu.v1",
+  "base_commit": "7a7a92b6bb4bed31d1412429febe5f4ffd451b75",
+  "scope": "Original Core/methods and private CPU IPC; fixture Ray/inference; no GPU/model/server jobs",
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_record_chain_core.py": "e9f39be8faf21e5473c0cfb52abc66123f590f1fa36a785973656451d5238fae",
+    "code/tests/execution_provider/test_rolling_ready_selection.py": "9abf0c22a7aff860ef0dc0078dba707afe593b2413e6cc2f8a8e54707f719c1b"
+  },
+  "archive": "rolling-ready-cpu-20261113.tar.gz",
+  "archive_sha256": "f83b7b19b8b4dc87f69c5a1558c6327be464bea77abde453a4b5aa40d975b246",
+  "files": [
+    {
+      "member": "PLAN.md",
+      "original_sha256": "8dc36ca28eb71f54b8bd0d55a7f2acc638f35021d0d7176f4f0b4551bbe3defb",
+      "public_sha256": "8dc36ca28eb71f54b8bd0d55a7f2acc638f35021d0d7176f4f0b4551bbe3defb",
+      "bytes": 1437
+    },
+    {
+      "member": "baseline-late-close-five.json",
+      "original_sha256": "f4722d9364e4a94ae5cc3894d6cfb71f378e33438515071f060f3e33dc7ba287",
+      "public_sha256": "f4722d9364e4a94ae5cc3894d6cfb71f378e33438515071f060f3e33dc7ba287",
+      "bytes": 67197
+    },
+    {
+      "member": "baseline-late-close-five.log",
+      "original_sha256": "23b50290ae0771aded2199945274d2eeba85a6b5e18e91b21b89260c5be8e73c",
+      "public_sha256": "6e742198cc6ae810acffbf3d2c2d3f5364939982815ea8f6a41d11f3d967f097",
+      "bytes": 2739
+    },
+    {
+      "member": "baseline-late-close.log",
+      "original_sha256": "727c68daa3c72a34f13ffe52f977ad12aa69443e351e0584f9d248961eecaaa0",
+      "public_sha256": "b669c91c071e4fc8bfb4242df42341cef30517b2edba34e1481fa311324d5d5d",
+      "bytes": 715
+    },
+    {
+      "member": "baseline-regression-60.log",
+      "original_sha256": "13cc76ee0c1e6961396e76e95269abb982d3e07ba2dd678acbad537c20af2d15",
+      "public_sha256": "7a45e919b446f9774b2c78aba2161f1d00e566edb5c5f463773ddecd8abba9bb",
+      "bytes": 123694
+    },
+    {
+      "member": "candidate-late-close-five.json",
+      "original_sha256": "e770b314374de7fa6eda1175fc2b6c185b17cb43965e415eac9f53839099e8a5",
+      "public_sha256": "e770b314374de7fa6eda1175fc2b6c185b17cb43965e415eac9f53839099e8a5",
+      "bytes": 67187
+    },
+    {
+      "member": "candidate-late-close-five.log",
+      "original_sha256": "82a242b78efd3905401edac90fe72632571ea76af4815208982e34173723a237",
+      "public_sha256": "77f22f0f5357522e41a9ee6c06a945a03396abb2dd9946f3d7a32bfdc8b8accf",
+      "bytes": 2745
+    },
+    {
+      "member": "candidate-matched-regression-60.log",
+      "original_sha256": "ba4097bcc35f81f3b8b967117911ab484ee13985eae7681c5510a878d0ddb870",
+      "public_sha256": "6fc6c9efdc823dc7452ac1da12719658931380dc12d1f21218f4d7b3beb37a5c",
+      "bytes": 125632
+    },
+    {
+      "member": "cpu-regression-01.log",
+      "original_sha256": "e6f0707151415f87c262f618112ec61080f907dfeeb8329ace386fbf0e1efdee",
+      "public_sha256": "48ab21a482fd336ddfe2e44ab24bde38458050648f613a3889fcc383269b8752",
+      "bytes": 156934
+    },
+    {
+      "member": "green-rolling-ready-01.log",
+      "original_sha256": "b7a125c946ae9e8fca9b63efdbeaa6883db3fb1db21afd092175129f09eb1189",
+      "public_sha256": "c97cf1bbf9f6eee989f114333a1ea08daea3fb29f53c7cc4249cad21c9c02837",
+      "bytes": 9679
+    },
+    {
+      "member": "probe_late_close.py",
+      "original_sha256": "6948c9a5371447685d15876e2d2da3ba2711e3823f51e7cf3903c2719368ec5b",
+      "public_sha256": "6948c9a5371447685d15876e2d2da3ba2711e3823f51e7cf3903c2719368ec5b",
+      "bytes": 1187
+    },
+    {
+      "member": "red-default-actor-limits.log",
+      "original_sha256": "b1cc51ba602d12a1ca2bf655e33f9b170f6d9d1283da38cdd0a81fd47493701c",
+      "public_sha256": "ae089fb2778436a065ebcb453ffab3b9face2f5905049fcb3462a66b3e4b7101",
+      "bytes": 2912
+    },
+    {
+      "member": "red-rolling-ready-valid-limits.log",
+      "original_sha256": "2b8d77006f50518af463515087b3b0a7da7ac24b2bee720a79e1fb44c01b742b",
+      "public_sha256": "c80d18812748db08feb3f816b3fcd393203716c2cf74a903bd46bf6736e33c15",
+      "bytes": 7566
+    },
+    {
+      "member": "red-rolling-ready.log",
+      "original_sha256": "236ff239689ccd7155043a29d58e3b43bc57ef7b53a96aca71528d56d50c2dae",
+      "public_sha256": "206f11ad3341e394b82a63c3800f6b998d3318b852702f70d8ee120324b009e6",
+      "bytes": 7238
+    },
+    {
+      "member": "rolling-ready-integration-02.log",
+      "original_sha256": "c899b009a3999a066c7c81739ea8b68e02c689bb03f9512fe00f6aa4168f7731",
+      "public_sha256": "6692e8c2091b4161fd886f31ce6b105bf7784e27e4e91d2cecc59064eafa0743",
+      "bytes": 31658
+    },
+    {
+      "member": "rolling-ready-integration-03.log",
+      "original_sha256": "566015e1c6d904b316ce62f86276e1c9553207211d45f39d39d445b6c7ac5be0",
+      "public_sha256": "9fbc405beb7f50a67b385f13559ab3c64cbe7afda5d0f373bb36434d29cf7abb",
+      "bytes": 41036
+    },
+    {
+      "member": "unchanged-close-paths.json",
+      "original_sha256": "2534644c1e842ae72e346e891fd50b5ec9cd7f39b42d4a9f98517a8a6e7e6ff1",
+      "public_sha256": "2534644c1e842ae72e346e891fd50b5ec9cd7f39b42d4a9f98517a8a6e7e6ff1",
+      "bytes": 781
+    },
+    {
+      "member": "runtime-identity.json",
+      "original_sha256": "7d2c829a5185b288461c47b9305a822adb63109c2df86abc39e57f97f909856a",
+      "public_sha256": "7d2c829a5185b288461c47b9305a822adb63109c2df86abc39e57f97f909856a",
+      "bytes": 1612
+    },
+    {
+      "member": "commands.json",
+      "original_sha256": "51546416851d680afebaf0ef43609ca5d453b16e572f08c1c7a777e12d86280e",
+      "public_sha256": "51546416851d680afebaf0ef43609ca5d453b16e572f08c1c7a777e12d86280e",
+      "bytes": 12603
+    },
+    {
+      "member": "standards-review.md",
+      "original_sha256": "c207e220687f6f883177c0135225d516cc4ffaaa189fb5e0c3aad27919b12034",
+      "public_sha256": "c207e220687f6f883177c0135225d516cc4ffaaa189fb5e0c3aad27919b12034",
+      "bytes": 2217
+    },
+    {
+      "member": "spec-review.md",
+      "original_sha256": "329b0944543c60a944dd6df34255738214f039ee61e7c7d337a2ae59beb37b4f",
+      "public_sha256": "54e9d65fa6c022252cb7479d03b225d716d06b0cbcd773d78f333667698d8176",
+      "bytes": 2253
+    },
+    {
+      "member": "standards-followup.md",
+      "original_sha256": "b92efee0c6c759e42e34c86ff24f1e43be3f617e8049826cae913caf0d95bd79",
+      "public_sha256": "b92efee0c6c759e42e34c86ff24f1e43be3f617e8049826cae913caf0d95bd79",
+      "bytes": 1808
+    }
+  ],
+  "results": {
+    "new_tests": 9,
+    "new_tests_passed": 9,
+    "expanded": {
+      "run": 69,
+      "passed": 68,
+      "failed": 1
+    },
+    "matched_baseline": {
+      "run": 60,
+      "passed": 60
+    },
+    "matched_candidate": {
+      "run": 60,
+      "passed": 59,
+      "failed": 1
+    },
+    "late_close_diagnostic": {
+      "baseline_runs": 5,
+      "baseline_failures": 2,
+      "candidate_runs": 5,
+      "candidate_failures": 2
+    },
+    "remaining_failure": "Existing late-known-receipt close remains unknown intermittently; neither new branch applies. Original assertions unchanged."
+  },
+  "performance_qualification": false,
+  "invocations_member": "commands.json",
+  "runtime_identity_member": "runtime-identity.json",
+  "runtime_observation_scope": "Captured after the tests; this task made no dependency or environment changes. Explicit invocation environment overrides are recorded separately.",
+  "independent_review": {
+    "base": "7a7a92b6bb4bed31d1412429febe5f4ffd451b75",
+    "reviewed_commit": "6ddad4583338a1351a415b9c2b3138ce32bd3f9f",
+    "standards_initial_findings": 1,
+    "spec_findings": 0,
+    "correction": "Exact invocation metadata and post-test CPU runtime identity added; independent follow-up verified all 12 invocations and original 21 members. Production/test code unchanged.",
+    "followup_reviewed_commit": "db61d178c64f30759f0ac5a07d27cdc5dfae0a2d",
+    "standards_remaining_findings": 0,
+    "spec_remaining_findings": 0
+  }
+}

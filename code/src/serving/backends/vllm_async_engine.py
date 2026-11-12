@@ -73,8 +73,10 @@ class VllmAsyncEngine:
             generation_config="vllm", max_logprobs=common.MAX_LOGPROBS,
             logprobs_mode="raw_logprobs", enable_log_requests=False, disable_log_stats=True,
             **self.spec.optional_kwargs(),
-            **({"worker_extension_cls": VLLM_GPU_IDENTITY_EXTENSION}
-               if self._feedback is not None else {}),
+            **({"worker_extension_cls": (
+                "src.observability.metrics.vllm.VllmObservationWorkerExtension"
+                if 'VLLM_BATCH_INVARIANT' in os.environ else VLLM_GPU_IDENTITY_EXTENSION)}
+               if self._feedback is not None or 'VLLM_BATCH_INVARIANT' in os.environ else {}),
             **({"enable_mfu_metrics": True} if self.spec.enable_mfu_metrics else {}),
         ), **({"stat_loggers": [lambda config, engine_index=0: self._feedback]}
               if self._feedback is not None else {}))
@@ -97,6 +99,18 @@ class VllmAsyncEngine:
     async def observe_gpu_identity(self):
         """One startup observation; the client timeout does not stop worker code."""
         self._control()
+        self._execution_profile = dict(status='unavailable:not_requested')
+        if 'VLLM_BATCH_INVARIANT' in os.environ:
+            try:
+                replies = await asyncio.wait_for(self._llm.collective_rpc(
+                    'semloom_execution_profile', timeout=1.0), timeout=1.5)
+                if (not isinstance(replies, (tuple, list)) or len(replies) != 1
+                        or not isinstance(replies[0], dict)
+                        or replies[0].get('status') != 'observed_worker_execution_profile'):
+                    raise ValueError('native execution profile unavailable')
+                self._execution_profile = dict(replies[0])
+            except Exception as error:
+                self._execution_profile = dict(status='unavailable:' + type(error).__name__)
         if self._feedback is None:
             self._gpu_identity = dict(status="unavailable:not_requested", gpu_uuids=None)
             return
@@ -132,6 +146,7 @@ class VllmAsyncEngine:
         context = self._context_report()
         return dict(engine_uid=self.engine_uid, model_context=context, pid=os.getpid(), python=sys.executable,
                     native_gpu_identity=dict(getattr(self, "_gpu_identity", dict(status="unavailable:not_observed", gpu_uuids=None))),
+                    native_execution_profile=dict(getattr(self, '_execution_profile', dict(status='unavailable:not_observed'))),
                     vllm_version=common.VLLM_VERSION, batch_mode="independent_final_results",
                     constructor_parameters=self.spec.optional_kwargs(),
                     resource_owner=dict(schema='semloom.model_resource_owner.v1', engine_uid=self.engine_uid,

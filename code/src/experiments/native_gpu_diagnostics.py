@@ -80,12 +80,22 @@ def _iteration(key, events):
     if (not _counts(encoder_counts) or not _count(graph.get("num_encoder_reqs"))
             or graph.get("num_encoder_reqs") != len(encoder_counts)):
         issues.append("encoder_input_counts_unavailable")
+    cascade_supported=metadata.get('cascade_supported')
+    if (cascade_supported is None and graph
+            and launch.get('actual_runner_module')=='vllm.v1.worker.gpu.model_runner'
+            and metadata.get('cascade_enabled') is False):
+        # The qualified 0.25.1 v2 capture predates this optional sink field.
+        cascade_supported=False
     return dict(
         run_id=key[0], observer_session_id=key[1], pid=key[2], observer_execute_id=key[3],
         status="unknown" if issues else "observed", reasons=issues,
-        actual_members=members, common_prefix_blocks=blocks,
+        actual_members=members, scheduled_members=launch.get('scheduled_tokens'),
+        runner_module=launch.get('actual_runner_module'), common_prefix_blocks=blocks,
         computed_tokens=cascade.get("computed_tokens"),
+        prompt_token_counts=graph.get('prompt_token_counts'), computed_before=graph.get('computed_before'),
+        new_request_computed_tokens=metadata.get('new_request_computed_tokens'),
         cascade_selected=selected, cascade_call_observed=bool(cascade),
+        cascade_supported=cascade_supported,
         cascade_prefix_lengths=cascade.get("cascade_prefix_lengths"),
         cudagraph_mode=mode, raw_tokens=raw, padded_tokens=padded,
         padding_tokens=padded - raw if _count(raw) and _count(padded) and padded >= raw else None,
@@ -112,7 +122,8 @@ def diagnose(events, *, capture_issues=None):
     rows = [_iteration(key, value) for key, value in sorted(groups.items())]
     observed = [row for row in rows if row["status"] == "observed"]
     findings = []
-    shared_not_selected = [row for row in observed if any(row["common_prefix_blocks"]) and not row["cascade_selected"]]
+    shared_not_selected = [row for row in observed if any(row["common_prefix_blocks"])
+                           and not row["cascade_selected"] and row['cascade_supported'] is not False]
     padded_rows = [row for row in observed if row["padding_tokens"] > 0]
     if shared_not_selected:
         findings.append(dict(
@@ -138,6 +149,7 @@ def diagnose(events, *, capture_issues=None):
                      unknown_iterations=len(rows) - len(observed),
                      graph_modes=dict(Counter(row["cudagraph_mode"] for row in observed)),
                      cascade_selected_iterations=sum(row["cascade_selected"] for row in observed),
+                     cascade_unsupported_iterations=sum(row['cascade_supported'] is False for row in observed),
                      shared_blocks_without_cascade=len(shared_not_selected),
                      raw_token_slots=raw_total, padding_token_slots=padding_total,
                      padding_over_raw_ratio=padding_total / raw_total if raw_total else None),

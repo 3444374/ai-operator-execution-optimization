@@ -21,12 +21,12 @@ class LotusChainFIFO(MethodDriver):
 
     def __init__(self, session, chain, limits, budget, *, token_budget=None,
                  ready_order="fifo", successor_first=None, clock=None, on_ready_event=None,
-                 completion_batch_rows=None):
+                 completion_batch_rows=None, ready_selector=None):
         if completion_batch_rows is not None:
             retained = min(budget.capacity.runs, budget.capacity.bytes // row_reservation(limits))
             if type(completion_batch_rows) is not int or not 1 <= completion_batch_rows <= retained:
                 raise ValueError("completion batch must fit the retained row and byte grant")
-            if token_budget is not None or ready_order != "fifo":
+            if token_budget is not None or ready_order != "fifo" or ready_selector is not None:
                 raise ValueError("batch-stage progression currently requires count admission and FIFO")
         self.completion_batch_rows = completion_batch_rows
         self._completion_groups, self._completion_open = {}, None
@@ -45,7 +45,8 @@ class LotusChainFIFO(MethodDriver):
             estimate_tokens=None if token_budget is None else token_budget.estimate)
         super().__init__(session, self.program, limits, budget, ready_order=ready_order,
                          describe_work=None if token_budget is None else token_budget.describe_work,
-                         successor_first=successor_first, clock=clock, on_ready_event=on_ready_event)
+                         successor_first=successor_first, clock=clock, on_ready_event=on_ready_event,
+                         ready_selector=ready_selector)
 
     def offer_row(self, row, value):
         accepted = super().offer_row(row, value)

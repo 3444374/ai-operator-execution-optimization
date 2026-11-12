@@ -151,6 +151,12 @@ def record_chain(config,ledger):
 def dispatch(config,ledger,*,movie_entry=None,movie_checker=None,chain_entry=None):
     if config['workload']['kind']=='movie_session':return movie_session(config,ledger,entry=movie_entry,checker=movie_checker)
     if config['workload']['kind']=='record_chain':return (chain_entry or record_chain)(config,ledger)
+    if config['workload']['kind']=='request_capture':
+        from src.experiments.request_capture_run import run_capture
+        if config['observation']['mode']=='on':
+            from record_ipc_observer import ObservedAsyncEngineProcess
+            return run_capture(config,ledger,process_type=ObservedAsyncEngineProcess)
+        return run_capture(config,ledger)
     raise ValueError('explicit existing public workload entry required')
 
 
@@ -190,7 +196,7 @@ def main(root):
         calls=call_records(root) if config['workload']['kind']=='movie_session' else result.get('calls',[])
         report.update(status=result['status'],actual_calls=len(calls),calls=safe_calls(calls),
                       public_result_path='session/session.json' if config['workload']['kind']=='movie_session' else None)
-        if config['workload']['kind']=='record_chain':report.update(result)
+        if config['workload']['kind'] in ('record_chain','request_capture'):report.update(result)
         if config['workload'].get('qualification') is not None:
             report['cancellation_qualification']=result.get('cancellation_qualification')
         if result['status']=='completed' and len(calls)!=cap:raise RuntimeError('actual whole-workload call count differs from frozen budget')
@@ -212,7 +218,7 @@ def main(root):
         if config['workload'].get('qualification') is not None:
             report['call_accounting_complete']=report['actual_call_count_complete']
             report['actual_call_count_complete']=report['actual_call_count_complete'] and all(c['status']=='succeeded' for c in report.get('calls',[]))
-        report['actual_calls_scope']='known ledger records; incomplete on failure'
+        report.setdefault('actual_calls_scope','known ledger records; incomplete on failure')
         write_private_json(root/'WORKER-RESULT.json',report)
     print(json.dumps({key:report[key] for key in ('status','actual_calls','worker_wall_s')}),flush=True)
     if report['status']!='completed':raise SystemExit(1)

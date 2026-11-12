@@ -15,6 +15,7 @@ from src.serving.backends import vllm_async_engine as kernel
 from src.serving.backends.async_engine_process import AsyncEngineProcess
 from src.serving.backends.model_context import checked_model_context, model_context_identity, model_context_limit, model_context_record
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+from src.serving.backends.vllm_protocol import AsyncEngineLimits
 from tests.serving.test_async_engine_process import row
 
 
@@ -168,7 +169,9 @@ class ContextIPCTests(unittest.TestCase):
 
     def test_real_open_ready_and_submit_keep_model_resolved_context(self):
         with patch.object(EngineSpec,'validate_driver_environment',return_value={}):
-            process = CPUProcess(spec(), GenerationSpec(), startup_timeout_s=5)
+            process = CPUProcess(spec(), GenerationSpec(), limits=AsyncEngineLimits(
+                max_inflight=2, result_slots=2, item_result_bytes=4096, result_bytes=8192),
+                startup_timeout_s=5)
         try:
             self.assertIsNone(process.spec.max_model_len)
             self.assertEqual(checked_model_context(process.spec,process.ready_report)['max_model_len'],32768)

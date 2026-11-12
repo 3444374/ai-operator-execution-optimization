@@ -5,16 +5,32 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及所属报告。
 CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释，不把旧版本通过数累加为当前整树结果。
 
+[2026-11-12 实现与方案核查](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#implementation-review-20261112)
+区分各 PR 的窄实现与未完成项：完整查询候选接线、实际未缓存工作／成本输入、动态消费者与多层表示、
+真实位置路由及 #101 短期限具名资源回收仍未完成；负结果候选按停止条件处理。
+
 <a id="native-gpu-decision-observation"></a>
-本分支增加 vLLM 0.25.1 v1 的被动批决策观察与离线诊断，支持实际成员、前缀／cascade、
-graph／padding 及采集缺项核对；[代码与 CPU 验证](../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)
-说明原 CPU 范围；[后续准确来源 GPU 回执](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md#server-qualification-20261111)
-保留模块化 runner 的缺项、trace 覆盖限制与严格 token 未全等，尚不支持优化收益。
+本分支继续增加显式就绪工作选择、排队／传输／重建成本路由、有界提前准备与原生引擎可选参数。
+[执行候选报告](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)记录 Q8／Q9 布局、
+真实照片 CPU 传输、竞争留存和提前准备；原生 encoder 提示仍为 CPU 状态机探针。
+Q8 已完成 960 次实机请求与原评价；该提示变体减少本次请求耗时但质量更差，不作为默认采用。
+GPU 阶段关联、实际配置和未完成项以该报告为准。
+后续修正了提前准备取消顺序、CPU 传输超时收尾和布局原对照的重复格式化；
+第二轮审查补齐失败后关闭期间到达的回执，提交／接收／确认／未接收分别记账，见
+[审查和验证](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#second-code-review-20261111)。
+[固定 PR 审查收尾](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#pr100-review-closeout)
+记录 CPU 验证范围、历史计时偏差及仍不支持的结论。
+
+本分支增加 vLLM 0.25.1 v1／v2 的被动批决策观察与离线诊断，支持实际成员、graph／padding 及采集缺项核对；
+v1 另有 cascade 接点，当前 v2 没有该分支。[代码与 CPU 验证](../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)
+说明初始范围；Q8 的实机 off/on、业务请求别名关联与采集到的 kernel 费用见上述执行候选报告。
+完整语义链、其他模型／任务及稳定优化收益尚未验证。
 
 本分支另有默认关闭的完整请求排序、图片 URI 留存选择，以及表示寿命／供给等待诊断。
 [实现与本地证据](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
-区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备、CPU 检查及准确 b1d965f 的 MMF GPU 对照。
-该对照返回文本一致、严格 token 46/48；完整查询收益、encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
+区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备、CPU 检查与准确 b1d965f 的 MMF GPU 对照。
+[原配置服务器回执](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md#server-qualification-20261111)
+保留严格 token 46/48 与该 head 的 v1 决策缺项，不转授后继配置资格。完整查询收益、encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 
 <a id="current-refactor-status"></a>
 <a id="refactor-completion-checklist"></a>
@@ -54,6 +70,7 @@ graph／padding 及采集缺项核对；[代码与 CPU 验证](../experiments/re
 C／R／work 与存储预算的具体取值和支持组合由[容量类型](src/execution_provider/adapters/records_capacity.py)及
 [配置总览](../docs/执行配置与优化开关.md)维护。未消费结果、unknown 和晚到请求继续占据其实际资源责任。
 模型 ready 返回的真实上下文用于长度核对，不能以配置省略推断上下文无限。
+显式声明原生 batch-invariant 配置时，ready 另外回读 worker 的请求值与实际初始化状态；回读失败保留 unavailable，默认执行不增加该 RPC。
 宿主内存与 cgroup 指标是观测，不等于资源授予。
 
 <a id="prepared-request-batching"></a>
@@ -119,3 +136,13 @@ records resident 的顺序复用不能直接解释为共享 owner 上完整查�
 | 旧关闭故障与负结果 | 原 1596 第二项关闭失败及模型 unknown 等仍按主报告保存；后来检查通过不解释旧故障原因 |
 
 没有运行回执的能力保留为 pending。正式模型比较使用对应计划、实际环境和准确版本，不能从本页推断已运行。
+
+有限链实验入口可用独立原生 API 阶段计时冻结就绪策略成本，绑定源码／模型／输入／资源，并记录实际 Core 接收的顺序变化；该入口的真实结果见对应执行候选报告。它不提供原生未缓存工作量或动态成本闭环。
+
+[真实就绪选择检查](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#ready-work-real-20261112)
+已将冻结的实测阶段API成本接入既有Core选择器，四臂完整请求／输出和正常资源通过。
+该次C4/R4每次只有1个候选，未触发优先级竞争，不据该结果宣称策略性能收益。
+[滚动就绪接线](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#rolling-ready-cpu-20261113)
+已让 Python 单查询 owner 在既有独立 Method 准备预算与 rolling refill 下使用原选择器，
+默认创建 actor 的 IPC 额度也由原容量解析器传递；CPU 检查验证真实多个合法候选的选择与结果关联。
+没有新增队列、调度器或物理容量推断；新源码／配置的 GPU 正确性、完整查询净收益和成本校准仍待统一排队验证。

@@ -40,6 +40,7 @@ class _RecordLocalRows:
         self._prepared = {}
         self._extract_results = []
         self._output = None
+        self.full_relation_ready_ns = None
         self._output_exhausted = self._root_failed = False
         self._source_errors = []
         self.error = self.last_close_report = None
@@ -402,6 +403,7 @@ class _RecordLocalRows:
                         return next(self._output)
                     except StopIteration:
                         self._output_exhausted = True
+                        self.full_relation_ready_ns = time.monotonic_ns()
                         report = self.owner.finish_query()
                         if report["status"] != "closed":
                             error = RuntimeError("record-local query cleanup remains unconfirmed")

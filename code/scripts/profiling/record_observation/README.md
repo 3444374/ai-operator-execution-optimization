@@ -26,6 +26,8 @@ submit/audit/transfer/feedback hooks retain their existing owners.
 
 在原 `mode=on`、worker／runner 源码摘要核对通过且 vLLM 为 0.25.1 v1 时，
 `record_gpu_observer.py` 为单次 execute 临时安装被动观察；其他版本保留原有成员观察，新增决策不推测。
+v2 runner 另在原 `prepare_inputs` 返回处读取实际 CPU 输入与 graph descriptor；其路径没有 cascade dispatch，
+报告单列不支持。v2 的 encoder 表示缓存尚未接线。初始化内部 warmup 与业务请求按实际原生请求身份分开。
 辅助模块从工具 checkout 的 `code/src/observability/native_gpu_decisions.py` 加载，由准确工具 tree 绑定，
 不要求被测旧源码拥有此模块。更换工具后按下方流程重新资格检查。
 
@@ -112,6 +114,26 @@ FIFO 对照令 `order` 为 `null`，候选使用下例对象，其他容量与�
 保留负结果、原始重复值和未验证范围。
 
 ## 同步、资格和最小 on/off 配置
+
+`workload.kind="request_capture"` 支持保存下来的完整请求，复用下述资格、租约与监督流程。
+输入使用 `workload.input.capture/sha256`，`expected_calls` 必须等于文件中请求数；`units` 使用一个完整工作单元。
+`engine.max_model_calls` 与之相同，`generation` 必须与捕获值相同。`ipc_limits` 传入 `AsyncEngineLimits`，
+`request_group_rows` 不大于 `max_inflight`；每组交给原 AsyncEngineProcess，收齐后继续下一组。
+`resources.startup_timeout_s/query_timeout_s` 和 `limits.owner_close_s` 明确给出各自时限。
+输出 `REQUEST-RESULTS.json` 保留完整结果、实际 prompt token、组时间和关闭回执；本入口不运行原查询解析或评价。
+若返回页内含失败，先保存这一页所有已返回成员，再停止后续请求组；缺失终态保持未知。
+关闭后再读取一整结果槽页，保存关闭期间到达的同组终态。`submitted_requests` 表示已接纳请求数，
+`received_terminal_events/confirmed_terminal_events` 分别计接收和已确认终态，`unreceived_request_ids`
+保留尚未收到终态的身份；`actual_calls` 只计已保存结果记录，不代替物理模型提交次数。
+它是请求层实验，不是完整查询或新增 baseline。full profile 使用原 GPU 观察器，off/on 必须匹配其他配置。
+[本轮协议与证据](../../../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)记录有限工作量与质量缺项。
+
+`analyze_native_stage_work.py --events-dir "$PRIVATE_RUN/events" --output "$NEW_PRIVATE_REPORT"`
+复用现有事件读取，区分实际 prompt 位置、其他位置和 encoder 表示观察；缺字段保持未知。
+已计算 prompt 位置不自动表示缓存命中，其他位置不等于接受的生成 token，逻辑 encoder 字节不等于唯一显存分配。
+可增加 `--request-results "$PRIVATE_RUN/REQUEST-RESULTS.json"`：使用原生 add 返回的 collector 与当时存活的别名表，
+将完整成功回执关联到实际批成员。重复／缺失别名或未闭合业务轮次保持未知，不按 ID 字符后缀或相近时间猜配。
+其他轮次保留在总报告中，`request_work` 单列业务请求；已知 v2 采集的实际 runner 模块与原元数据也用于解释旧回执缺少的 cascade 能力字段。
 
 在独立、干净的工具 checkout 同步已经审查的提交；命令不会自行联网、安装或连接服务器：
 

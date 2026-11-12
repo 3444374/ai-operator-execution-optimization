@@ -30,6 +30,31 @@ def resolved_config(model, options):
 
 
 class NativeOptionalParameterTests(unittest.TestCase):
+    def test_mechanism_options_reach_both_native_constructors_with_false_preserved(self):
+        options = dict(enable_prefix_caching=False, enable_chunked_prefill=True,
+                       disable_cascade_attn=True, cudagraph_mode='PIECEWISE',
+                       cudagraph_capture_sizes=[1, 4, 8])
+        configured = sync.EngineSpec.from_dict(json.loads(json.dumps(asdict(spec(**options)))))
+        expected = dict(enable_prefix_caching=False, enable_chunked_prefill=True,
+                        disable_cascade_attn=True, compilation_config=dict(
+                            cudagraph_mode='PIECEWISE', cudagraph_capture_sizes=[1, 4, 8]))
+        self.assertEqual(spec().optional_kwargs(), {})
+        with native_api() as (calls, _):
+            owner = sync.VllmEngine(configured, sync.GenerationSpec())
+            try:
+                self.assertEqual({key:calls[0][key] for key in expected}, expected)
+            finally:
+                owner.close(timeout=1)
+        with native_stub(8192) as captured:
+            async def run():
+                owner = asynchronous.VllmAsyncEngine(configured, sync.GenerationSpec(),
+                    limits=asynchronous.AsyncEngineLimits(max_inflight=8))
+                try:
+                    self.assertEqual({key:captured['constructors'][0][key] for key in expected}, expected)
+                finally:
+                    await owner.close(timeout=1)
+            asyncio.run(run())
+
     def test_missing_null_explicit_and_invalid_options_survive_config_roundtrip(self):
         for options in OPTIONS:
             with self.subTest(options=options):

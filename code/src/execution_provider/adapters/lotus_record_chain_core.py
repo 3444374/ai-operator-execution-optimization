@@ -44,7 +44,7 @@ from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S
 
 from .lotus_chain_actor_backend import _SectionTransport
 from .lotus_chain_fused_runtime import _ChainTransport, _CoreChainRows
-from .records_capacity import CoreChainCapacity, CoreRecordsCapacity
+from .records_capacity import CoreChainCapacity, CoreRecordsCapacity, resolve_records_async_limits
 from .records_query_runtime import _check, _RecordLocalRows
 from .records_transport import close_prepared_core
 
@@ -70,7 +70,7 @@ class SemLoomRecordChainCore:
                  ready_clock=None, on_ready_event=None, progression="record", progression_batch_rows=None,
                  prepared_batching=None, batch_concurrency=None, batching_tokenizer=None,
                  batch_feedback=None, rolling_refill=False, request_feedback=None, resident=False,
-                 request_window=None, prepared_order=None):
+                 request_window=None, prepared_order=None, ready_selector=None):
         if type(release_completed_audit) is not bool:
             raise TypeError("release_completed_audit must be a boolean")
         if release_completed_audit and execution != "fused":
@@ -110,6 +110,9 @@ class SemLoomRecordChainCore:
                                   and self.prepared_batching.policy == 'token_budget' and execution == 'fused')
         self._async_token_batches = ((self.prepared_batching is not None or rolling_refill)
                                      and execution == 'record_local_sections')
+        if ready_selector is not None and (not callable(ready_selector) or ready_order != 'fifo'
+                or (self._async_token_batches and not rolling_refill) or progression != 'record'):
+            raise ValueError('ready-work selection requires FIFO record progression, unpacked or rolling')
         if prepared_order is not None:
             from src.scheduling.organization.prepared_order import PreparedRequestOrder
             if type(prepared_order) is not PreparedRequestOrder or not self._async_token_batches:
@@ -185,11 +188,13 @@ class SemLoomRecordChainCore:
             raise TypeError("ready observer must be callable")
         self._ready_options = {}
         if ready_order != "fifo" or any(value is not None for value in
-                                      (successor_first, ready_clock, on_ready_event)):
+                                      (successor_first, ready_clock, on_ready_event, ready_selector)):
             if execution != "record_local_sections":
                 raise ValueError("ready selection options require record_local_sections")
             self._ready_options = dict(ready_order=ready_order, successor_first=successor_first,
                                        clock=ready_clock, on_ready_event=on_ready_event)
+            if ready_selector is not None:
+                self._ready_options['ready_selector'] = ready_selector
         if execution == "fused":
             if resources.cpu_workers != 1 or resources.max_active_batches != 1:
                 raise ValueError("Core fused chain requires cpu_workers=max_active_batches=1")
@@ -729,7 +734,8 @@ class SemLoomRecordChainCore:
         if self._actors is None:
             self._actors = AsyncRecordsActorOwner.for_prepared(
                 self.engine, chain.stages[0].generation, self.resources,
-                **({} if self.capacity.budget is None else dict(capacity=self.capacity)))
+                **({} if self.capacity.budget is None else dict(capacity=self.capacity,
+                    limits=resolve_records_async_limits(self.resources, self.capacity))))
         elif self._actors.generation != chain.stages[0].generation:
             raise ValueError("prepared owner's default generation differs from the initial stage")
         self._actors.close_deadline = None
@@ -943,6 +949,8 @@ class SemLoomRecordChainCore:
                 successor_first=None if policy is None else asdict(policy),
                 caller_clock=self._ready_options["clock"] is not None,
                 observer_configured=self._ready_options["on_ready_event"] is not None,
+                **(dict(selector=type(self._ready_options['ready_selector']).__name__)
+                   if 'ready_selector' in self._ready_options else {}),
                 scope="local method-ready to Core offer; no native preemption")
         if stream is not None:
             stream.last_close_report = self.last_close_report
