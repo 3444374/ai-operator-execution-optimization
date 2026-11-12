@@ -26,6 +26,16 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 保留旧失败、不声明 CPU 无干扰或新 Ray Q7 模型资格。仍须显式迁移活动外层 owner 的 loader，
 不能只更新 stage。已冻结 helper 仍拥有租约和清理职责，不按旧文件名删除。
 
+共享题目准备层的原生 exact Join 现在绑定各自左右表和原指令字段，预算为 L×R；
+quick TopK 绑定原指令引用列，保持 K=N、原 pivot 和 N(N−1)/2 比较上界。
+`4e1f8a44` 已通过目标 26 项软件／原 SDK 检查，不授予新题目或模型性能资格。
+Ray Q7 `d8308aac` 从冻结源读取 N、使用 2N 预算，保持两次原生生命周期和第一阶段必要释放；
+目标原关系 N=1/7/13、capture、128 项 token/pixel 及 hook 门通过，模型为 0。
+[同轮原件恢复说明](src/baselines/image/ray_animals_q7/README.md#evidence-and-timing)
+保留收尾复制 socket／跟随链接造成的旧 failed；独立恢复不把它改成通过。
+三候选的实际组合另通过 69 项受影响本机 CPU 回归，0 跳过、0 失败、0 模型调用；
+执行和测试文件保留各已验候选的准确字节，不将组合检查改记成新的 Linux／GPU 成绩。
+
 IMLane Filter 不再用历史输入行数作为配置白名单；完整原 occurrence 数仍须等于显式冻结预算。
 现有 `freeze-config` 零模型入口从原题准备生成同 schema 的 SHA、实际 occurrence 数和首次观察的
 原始列顺序；正式 Filter 复用共享 prepare 消费冻结顺序，不再重复 formatter 接线。

@@ -494,6 +494,13 @@ LM/LiteLLM batching、Boolean parser 和关系构造；现有 owner/预算/监�
 pair 按左右 source position 关联，原 SDK 有序返回绑定相同消息的不同 occurrence，不能去重。
 完整原查询返回后才转移逐对 receipt 报告，再做原 Join/最终 sink 重放、评价与持久化。
 
+共享准备层不再把自 Join 或 `reviewText` 写成后端能力限制：普通 exact inner Join
+按原指令绑定各自左右表及显式字段，完整预算为 L×R，并在执行前核对右表未变；
+quick TopK 使用原指令引用列，保持原 K=N、pivot 和比较算法。
+`4e1f8a44` 的目标 26 项零模型检查通过，包括矩形 Join、重复 occurrence、完整关系及原任务回归。
+这不开放新的任务题号、Join 策略或任意 DAG，也不继承旧题的 GPU／性能资格；
+同轮原件及归档失败恢复见[记录](image/ray_animals_q7/README.md#evidence-and-timing)。
+
 首份 [CPU 资格](../../../experiments/results/diagnostics/lotus_movie_join_native_20261111/README.md)
 只用原 Ant-Man 顺序前 8 条：每题 64 对，Q5/Q6/Q7 分别完成软件 IPC 回放。
 配置复用 [resident 模板](../../configs/sembench_lotus_native.example.json)，单冷设置 `resident.repetitions=1`，

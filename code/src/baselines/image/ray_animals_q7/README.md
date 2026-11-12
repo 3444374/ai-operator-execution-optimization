@@ -215,6 +215,22 @@ Qualification scope:
   idle-memory ceiling and complete compute inventory.
   The later unknown Python PID in the a535 source check remains unattributed and
   failed under its original policy. New snapshot semantics do not rewrite it.
+- Source-size candidate `d8308aac96707093b6d877d8781d9af8acba557c` passed the
+  target's original full-query N=1/7/13 software test, native capture, 128-row
+  token/pixel processor gate and actual Ray CPU worker-hook gate. The source
+  fixtures retain their software identity; official sf64 remains 64 images.
+  Model and constructor calls were zero. Twelve outer/stage resource boundaries
+  used the qualified `933157666` policy; resource and lease cleanup passed.
+  The outer `FINAL.json` still says failed: its archive `copytree` tried to copy
+  two exited plasma-store sockets and followed two `session_latest` links.
+  Independent recovery verified 405 ordinary files, retaining both socket and
+  both absolute-link metadata without deleting nodes or rerunning any gate.
+  Recovery is separate evidence, not a change to that failed status. Run identity
+  `baseline-join-ray-zero-1112-r1`, archive SHA256
+  `e18451aceace8ab8ac081421575411e8a17494a586724107b45ff19f9a522fd1`,
+  and recovery-summary SHA256
+  `0a2bb2dd6bec473225a0ab846bc21e7a21587e228927d3f6102b1f9591b56ebe`
+  locate the preserved originals. No new candidate model/GPU result is claimed.
 
 The former persistent remote `python3 -u -B -c` status loop is replaced by the
 frozen, one-shot `observe_q7_status.sh` operational artifact. Bind its verified
