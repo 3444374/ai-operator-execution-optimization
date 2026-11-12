@@ -7,7 +7,7 @@
     "code/tests/execution_provider/test_rolling_ready_selection.py": "9abf0c22a7aff860ef0dc0078dba707afe593b2413e6cc2f8a8e54707f719c1b"
   },
   "archive": "rolling-ready-cpu-20261113.tar.gz",
-  "archive_sha256": "48477c6ea7348f335c6c7535ce3a1fb9ee8088aa4602a919d5ed1b07a9ab0e32",
+  "archive_sha256": "e649078dc83663626c2556ca2ecc9a659641b01569e37846ebdcce60ac8177a4",
   "files": [
     {
       "member": "PLAN.md",
@@ -110,6 +110,30 @@
       "original_sha256": "2534644c1e842ae72e346e891fd50b5ec9cd7f39b42d4a9f98517a8a6e7e6ff1",
       "public_sha256": "2534644c1e842ae72e346e891fd50b5ec9cd7f39b42d4a9f98517a8a6e7e6ff1",
       "bytes": 781
+    },
+    {
+      "member": "runtime-identity.json",
+      "original_sha256": "7d2c829a5185b288461c47b9305a822adb63109c2df86abc39e57f97f909856a",
+      "public_sha256": "7d2c829a5185b288461c47b9305a822adb63109c2df86abc39e57f97f909856a",
+      "bytes": 1612
+    },
+    {
+      "member": "commands.json",
+      "original_sha256": "51546416851d680afebaf0ef43609ca5d453b16e572f08c1c7a777e12d86280e",
+      "public_sha256": "51546416851d680afebaf0ef43609ca5d453b16e572f08c1c7a777e12d86280e",
+      "bytes": 12603
+    },
+    {
+      "member": "standards-review.md",
+      "original_sha256": "c207e220687f6f883177c0135225d516cc4ffaaa189fb5e0c3aad27919b12034",
+      "public_sha256": "c207e220687f6f883177c0135225d516cc4ffaaa189fb5e0c3aad27919b12034",
+      "bytes": 2217
+    },
+    {
+      "member": "spec-review.md",
+      "original_sha256": "329b0944543c60a944dd6df34255738214f039ee61e7c7d337a2ae59beb37b4f",
+      "public_sha256": "54e9d65fa6c022252cb7479d03b225d716d06b0cbcd773d78f333667698d8176",
+      "bytes": 2253
     }
   ],
   "results": {
@@ -137,5 +161,15 @@
     },
     "remaining_failure": "Existing late-known-receipt close remains unknown intermittently; neither new branch applies. Original assertions unchanged."
   },
-  "performance_qualification": false
+  "performance_qualification": false,
+  "invocations_member": "commands.json",
+  "runtime_identity_member": "runtime-identity.json",
+  "runtime_observation_scope": "Captured after the tests; this task made no dependency or environment changes. Explicit invocation environment overrides are recorded separately.",
+  "independent_review": {
+    "base": "7a7a92b6bb4bed31d1412429febe5f4ffd451b75",
+    "reviewed_commit": "6ddad4583338a1351a415b9c2b3138ce32bd3f9f",
+    "standards_initial_findings": 1,
+    "spec_findings": 0,
+    "correction": "Added exact invocation metadata and post-test CPU runtime identity; production and test code unchanged. Follow-up review pending."
+  }
 }
