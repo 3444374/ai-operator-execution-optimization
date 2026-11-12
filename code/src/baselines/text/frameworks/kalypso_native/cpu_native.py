@@ -45,6 +45,9 @@ def main():
         if tasks=={'sembench-join'}:
             from .join_cpu import check
             report=check(cfg,a.output,executor,manager,SemanticPlan,data,max_model_len)
+        elif tasks=={'sembench-topk'}:
+            from .topk_cpu import check
+            report=check(cfg,a.output,executor,manager,SemanticPlan,data,max_model_len)
         else:
             from .movie_map_cpu import check
             kind='filter' if cfg['units'][0]['queries'][0]['task']=='sembench-filter' else 'map'

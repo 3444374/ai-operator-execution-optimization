@@ -37,12 +37,12 @@ def trace(count=2,retry=False):
 
 
 class MovieMapContracts(unittest.TestCase):
-    def test_standard_query_selection_is_Map_and_does_not_accept_TopK_or_other_tasks(self):
+    def test_movie_map_aliases_keep_map_and_other_tasks_need_explicit_bindings(self):
         for task in native_server.MOVIE_MAP_QUERIES:
             self.assertIs(query_driver_type(unit(task=task)),movie_map.MapDriver)
         self.assertIs(query_driver_type(dict(queries=[dict(task='movie-q4')])),adapter.NativeQueryDriver)
         for task in ('movie-q9-topk','movie-q7','medical-q4','fixture'):
-            with self.assertRaisesRegex(ValueError,'not TopK'):
+            with self.assertRaisesRegex(ValueError,'supports'):
                 query_driver_type(dict(queries=[dict(task=task)]))
         with self.assertRaises(ValueError):query_driver_type(dict(queries=[]))
         mixed=unit();mixed['queries'][1]['task']='movie-q1'
@@ -201,7 +201,7 @@ class MovieMapContracts(unittest.TestCase):
         with patch.object(sembench_inputs,'SemBenchTextQuery') as query:
             with self.assertRaisesRegex(ValueError,'evaluation file hashes'):
                 movie_map.make_query(dict(source_data_sha256={'Reviews.csv':'hash'}),'q','movie-q10')
-            with self.assertRaisesRegex(ValueError,'not TopK'):
+            with self.assertRaisesRegex(ValueError,'supported original text'):
                 movie_map.make_query({},'q','movie-q9-topk')
         query.assert_not_called()
 

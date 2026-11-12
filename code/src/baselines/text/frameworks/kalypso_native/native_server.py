@@ -19,7 +19,7 @@ CALL = contextvars.ContextVar('observed_native_call',default=None)
 AUTHOR_SOURCE_COMMIT = '05024f027f932c0e398852e38302be30b9015481'
 MOVIE_MAP_QUERIES = {'movie-q8': '8', 'movie-q9': '9', 'movie-q10': '10'}
 MAP_TASKS = (*MOVIE_MAP_QUERIES, 'sembench-map')
-TEXT_TASKS = (*MAP_TASKS, 'sembench-filter')
+TEXT_TASKS = (*MAP_TASKS, 'sembench-filter', 'sembench-topk')
 
 
 def query_task(spec):
@@ -29,12 +29,12 @@ def query_task(spec):
         query = MOVIE_MAP_QUERIES[task]
         return dict(scenario='movie', query_id=query,
                     **(dict(ranking='map') if query == '9' else {}))
-    if task not in ('sembench-map','sembench-filter','sembench-join'):
-        raise ValueError('A supported original text Filter/Map/Join task is required; not TopK')
+    if task not in ('sembench-map','sembench-filter','sembench-join','sembench-topk'):
+        raise ValueError('A supported original text Filter/Map/Join/TopK task is required')
     binding=dict(scenario=spec['scenario'], query_id=str(spec['query']).lower().removeprefix('q'),
                  **{name: spec[name] for name in ('scale_factor', 'ranking') if name in spec})
     if binding['scenario']=='movie' and binding['query_id']=='9' and binding.get('ranking') is None:
-        binding['ranking']='map'
+        binding['ranking']='topk' if task=='sembench-topk' else 'map'
     return binding
 
 
@@ -152,11 +152,20 @@ def __getattr__(name):
 
 
 def physical_call_caps(unit):
-    """Keep logical occurrences separate from the author's finite Map retry cap."""
+    """Bind exact calls, native Map retries or full-ranking comparison bounds."""
     queries=unit['queries']
     caps={}
     for query in queries:
         logical=query['expected_calls']
+        if query.get('task')=='sembench-topk':
+            rows=query['expected_rows']
+            cap=query['max_native_calls']
+            if (type(rows) is not int or rows<0 or type(logical) is not int
+                    or logical!=rows*(rows-1)//2 or type(cap) is not int or cap!=logical
+                    or query['query_id'] in caps):
+                raise ValueError('TopK requires its full finite comparison upper bound, not one call per row')
+            caps[query['query_id']]=cap
+            continue
         if type(logical) is not int or logical<=0:
             raise ValueError('Native query needs a finite positive logical occurrence count')
         cap=query.get('max_native_calls',logical)
@@ -255,6 +264,14 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         binding=install(cfg,unit,directory,sys.modules[__name__],SemMap,MapRatioEstimator)
         counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
         counters['map_binding']=binding
+    elif any(q.get('task')=='sembench-topk' for q in unit['queries']):
+        if any(q.get('task')!='sembench-topk' for q in unit['queries']):
+            raise ValueError('Native TopK requires its own finite owner unit')
+        from vllm.kalypso.sem_ops.reducers import SemTopK
+        from src.baselines.text.frameworks.kalypso_native.topk_binding import install
+        from src.baselines.text.frameworks.kalypso_native.map_observation import install_response_observation
+        counters['topk_observation_errors']=install(cfg,unit,directory,sys.modules[__name__],SemTopK)
+        counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
     elif any(q.get('task')=='sembench-join' for q in unit['queries']):
         if any(q.get('task')!='sembench-join' for q in unit['queries']):
             raise ValueError('Native Join requires its own finite owner unit')

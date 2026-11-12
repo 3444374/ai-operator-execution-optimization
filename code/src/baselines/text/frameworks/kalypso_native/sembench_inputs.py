@@ -22,21 +22,25 @@ def make_query(cfg,qid,task='movie-q9',*,kind='map'):
             raise ValueError('Bound native source data changed: '+name)
     # These stage metadata fields do not set author first-request SamplingParams.
     query=SemBenchTextQuery(cfg['sembench'],cfg['data_dir'],**binding,execution_id=qid,
-        model_name=cfg['model_name'],generation=GenerationSpec(max_tokens=8192 if kind=='map' else 8),
+        model_name=cfg['model_name'],generation=GenerationSpec(max_tokens={'map':8192,'topk':5}.get(kind,8)),
     )
     if not set(query.files)<=set(hashes):
         raise ValueError('Native query requires the complete original source and evaluation file hashes')
+    if query.operation is None and kind=='topk':
+        return query  # The original empty query returns before its accessor.
     if query.operation is None or query.operation.describe()['kind']!=kind:
         raise ValueError('The original query must use an ordinary text '+kind.title()+', not another semantic operator')
     return query
 
 
 def prepare(cfg,spec,directory,operation,*,kind='map'):
-    if (operation is None or operation.stage.kind != kind
-            or len(operation.records) != spec['expected_calls']):
+    count=spec['expected_rows'] if kind=='topk' else spec['expected_calls']
+    empty_topk=kind=='topk' and count==0 and operation is None
+    if not empty_topk and (operation is None or operation.describe()['kind'] != kind
+            or len(operation.records) != count):
         raise ValueError('Original native selection differs from the bound complete input')
-    frame = operation.frame
-    records = operation.records
+    frame = None if empty_topk else operation.frame
+    records = () if empty_topk else operation.records
     values = []
     for i,r in enumerate(records):
         fields=dict(r.values)
@@ -58,5 +62,10 @@ def prepare(cfg,spec,directory,operation,*,kind='map'):
     with path.open('x',newline='') as out:
         w=csv.DictWriter(out,fieldnames=['data']);w.writeheader();w.writerows({'data':v['data']} for v in values)
     table=Path(cfg['map_prompt_root'])/(spec['query_id']+'.json');table.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
-    with table.open('x') as out:json.dump(dict(query_id=spec['query_id'],instruction=operation.stage.method.instruction,rows=values),out,ensure_ascii=False)
+    instruction=(None if empty_topk else operation.instruction) if kind=='topk' else operation.stage.method.instruction
+    extra={}
+    if kind=='topk':
+        from .topk_binding import criterion
+        extra['native_instruction']=None if empty_topk else criterion(instruction,operation.columns)
+    with table.open('x') as out:json.dump(dict(query_id=spec['query_id'],instruction=instruction,rows=values,**extra),out,ensure_ascii=False)
     return values,path

@@ -353,3 +353,31 @@ author Python 仍只读 CSV／JSON，不导入 pandas／LOTUS。新清单绑定�
 既有请求预算、query timeout、外部 owner 资源监督和延迟证据保存继续生效。原32MiB版本及其失败
 不改写；新33MiB本地响应先复现旧拒绝，再通过完整接收，HTTP/JSON/关闭/失败时钟回归一并通过。
 连同上述原题及原方法软件检查共69项不同检查最终通过，0真实模型；不是大型模型查询的性能证据。
+
+### 原生完整排名 TopK
+
+维护 CLI 的 `task="sembench-topk"` 仍指定原 `scenario`／`query`；Movie Q9 默认选择原题的
+TopK 分支。`expected_rows=N` 是原筛选后的全部 occurrence，`expected_calls` 和
+`max_native_calls` 均为比较上界 `N*(N-1)/2`，实际请求数单独记录，不能写成每行一次。
+沿用现有正数 unit `call_cap`；零／单行查询的逐查询 cap 为0，正数 owner 额度不产生请求。
+单独 unit 复用现有服务、字段 CSV／JSON、源码绑定与 CPU 交接，不为 Q9 新建执行器。
+
+[`TopKDriver`](sembench_topk.py)把全部 source context 一次交给作者 `sem_topk(k=N)`，保留
+[`SemTopK`](https://github.com/goodluck-hojae/kalypso/blob/05024f027f932c0e398852e38302be30b9015481/vllm/kalypso/sem_ops/reducers.py)
+的原生方法：少于8行用 insertion，其余递归 merge；每次比较5 token、原 A/B 判定、无 retry。
+指令字段引用转为字段名，两个文档的完整实际字段值进入作者模板；原生默认 concurrency=20、
+模型 owner、采样、blocking plan 和排序方法不改写。它与 LOTUS quick TopK 是不同算法。
+原题继续拥有筛选、排名到分数的转换和原 evaluator，单行仍为原中性3分。
+
+[`topk_binding`](topk_binding.py)仅绑定比较发生项／观察 metadata，原 `_compare` 的方法体执行；
+响应顺序恢复全部关系列，完整原 sink 后再核实际 comparison、request ID、owner、预算及排名。
+不预先构造模型答复或把软件排名冒充模型结果。原 source、必需 CSV／字段表、HTTP、关系恢复和
+原后处理包含在 v3 source→sink，额外预检／审计／评价／保存另计。
+
+[`topk_cpu`](topk_cpu.py)通过原 parser/build 核对一个 blocking TopK，并检查所有可能的比较
+方向、完整消息／本地 token IDs 和5 token context 上限。这些预览不是实际模型请求，也不改变
+原生算法选择的比较子集。[软件检查](../../../../../tests/baselines/text/test_kalypso_sembench_topk.py)
+覆盖空／单行、重复文本、7／8行算法边界、完整原 sink／评分、缺行和模型失败；原方法体运行于
+显式软件 API／KV 下。新接点的整个作者环境与真实模型仍 pending，不借用 Q9 Map 的资格。
+与受影响的 Map／Filter／Join、owner、HTTP／时钟和原题共114项不同本机检查为111通过、
+3跳过（独立Daft SDK及未设置的MMQA／Medical可选资产变量），0真实模型。

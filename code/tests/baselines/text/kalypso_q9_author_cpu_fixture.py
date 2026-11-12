@@ -106,12 +106,15 @@ module('vllm.engine.arg_utils',AsyncEngineArgs=Args)
 module('vllm.utils.argparse_utils',FlexibleArgumentParser=argparse.ArgumentParser)
 native_methods=ExitStack()
 cfg=json.loads(args.config.read_text())
-if {q['task'] for u in cfg['units'] for q in u['queries']}=={'sembench-join'}:
+native_tasks={q['task'] for u in cfg['units'] for q in u['queries']}
+if native_tasks in ({'sembench-join'},{'sembench-topk'}):
     from tests.baselines.text.kalypso_join_author import methods
-    author=native_methods.enter_context(methods(os.environ['SEMLOOM_NATIVE_TEST_KALYPSO_CHECKOUT'],Manager.get_instance(),planning=True))
+    author=native_methods.enter_context(methods(os.environ['SEMLOOM_NATIVE_TEST_KALYPSO_CHECKOUT'],Manager.get_instance(),
+        planning=True,ranking=native_tasks=={'sembench-topk'}))
     module('vllm.kalypso.controller',SemanticPlan=author.SemanticPlan)
     module('vllm.kalypso.sem_ops.joins',CartesianProduct=author.CartesianProduct)
     module('vllm.kalypso.sem_ops.filters',SemFilter=author.SemFilter)
+    if native_tasks=={'sembench-topk'}:module('vllm.kalypso.sem_ops.reducers',SemTopK=author.SemTopK)
     module('vllm.kalypso.sem_ops.base',OpName=author.OpName)
     module('vllm.kalypso.sem_ops.prompt_utils',get_data_prompt=author.get_data_prompt,get_prompt=author.get_prompt)
     module('vllm.kalypso.data',data=NS(_data_source=author._data_source))

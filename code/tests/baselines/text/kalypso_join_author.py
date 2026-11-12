@@ -18,7 +18,7 @@ import uuid
 
 
 @contextmanager
-def methods(checkout,manager,*,planning=False):
+def methods(checkout,manager,*,planning=False,ranking=False):
     name='_semloom_kalypso05024_'+uuid.uuid4().hex
     module=ModuleType(name);sys.modules[name]=module;scope=module.__dict__
     scope.update(asyncio=asyncio,csv=csv,os=os,math=math,random=random,count=count,Path=Path,dataclass=dataclass,field=field,replace=replace,
@@ -35,10 +35,12 @@ def methods(checkout,manager,*,planning=False):
     try:
         load('sem_ops/base.py');load('sem_ops/prompt_utils.py');load('context/context.py')
         load('sem_ops/joins.py',{'CartesianProduct'});load('sem_ops/filters.py',{'SemFilter'})
+        if ranking:load('sem_ops/reducers.py',{'SemTopK'})
         load('data/data.py')
         if planning:
             scope.update(ops=SimpleNamespace(CartesianProduct=scope['CartesianProduct'],SemFilter=scope['SemFilter']),
                 data=SimpleNamespace(_data_source=scope['_data_source']),PlanExecutor=type('NoModelPlanExecutor',(),{}))
+            if ranking:scope['ops'].SemTopK=scope['SemTopK']
             load('controller/stage.py');load('controller/plan.py')
         yield module
     finally:sys.modules.pop(name,None)
