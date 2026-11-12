@@ -311,6 +311,11 @@ TopK 原消息含文本列表，不能直接把 Qwen tokenizer 的 TypeError 用
 模块加载算作原查询工作，也不以预检 DataFrame 替代真实查询扫描。Movie／MMQA／Medical 的
 已有独立调用入口继续复用同一个绑定函数，保留其现有调用方和行为。
 
+共享 Movie source 保留原 `Reviews.csv` 的全部关系列，与官方 `load_data` 一致；只由原算子声明的
+字段进入模型消息。评价标签留在关系中不表示发送给模型，Join 的中间关系也保留未引用列。
+旧三列投影会改变完整中间关系及其物化成本，现已移除。原查询／后端受影响软件检查及保存的
+Daft／Ray 各64条真实答复回放用于核对完整关系，不重用旧投影路径的耗时。
+
 原生 LOTUS 保留 accessor、LM、LiteLLM 原批调用与解析，provider 复用现有本地模型 IPC。
 它观察原 LM 的真实消息，不额外格式化预遍。旧 ledger 的 `lotus-filter-v1` 是保留的身份协议，
 Map／Extract 的真实类型另由 stage 和有限阶段 ID 映射记录，不把它们当 Filter 算法。

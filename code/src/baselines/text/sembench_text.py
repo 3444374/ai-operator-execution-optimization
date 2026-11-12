@@ -325,11 +325,7 @@ class SemBenchTextQuery:
     def _load(self, name, **kwargs):
         if name not in self.frames or kwargs not in ({}, {'sep': ',', 'quotechar': '"'}):
             raise ValueError('unexpected input requested by the selected original query')
-        frame = self.frames[name].copy(deep=True)
-        if self.scenario == 'movie' and name == 'Reviews.csv':
-            # Evaluation labels never enter the operator's input relation.
-            frame = frame[['reviewId', 'id', 'reviewText']]
-        return frame
+        return self.frames[name].copy(deep=True)
 
     def _bind_original(self):
         if self.scenario == 'movie':
@@ -373,7 +369,7 @@ class SemBenchTextQuery:
                          if self.scenario == 'cars' else
                          'original Parquet retained; only authored text columns enter model messages'
                          if self.scenario == 'ecomm' else
-                         'original evaluation only; Movie labels excluded from execution input'),
+                         'original CSV relation retained; only operator-declared fields enter model messages'),
             original_selection_and_postprocessing=True)
 
     def execute(self, execute_operator):

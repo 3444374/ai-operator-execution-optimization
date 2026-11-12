@@ -367,6 +367,30 @@ class OriginalSemBenchTextTests(unittest.TestCase):
             result=query._original()
         return result,batches[0]
 
+    def test_movie_join_retains_raw_source_columns_without_leaking_into_messages(self):
+        from types import SimpleNamespace
+        from src.baselines.text.sembench_movie import bind_original_lotus_query
+        from src.baselines.text.sembench_prepared import prepare,finish_relation,result_value
+
+        path=self.data/'Reviews.csv';raw=pd.read_csv(path)
+        raw['unused_source_note']=['NOT_MODEL_METADATA_'+str(i) for i in range(len(raw))]
+        raw.to_csv(path,index=False)
+        query=self._query('movie','5');answers=['True']*len(query.operation.records)
+        original=bind_original_lotus_query(CHECKOUT,5,lambda:pd.read_csv(path))
+        accessor=type(pd.DataFrame().sem_join);original_join=accessor.__call__;relations=[]
+        def capture(current,*args,**kwargs):
+            frame=original_join(current,*args,**kwargs);relations.append(frame.copy(deep=True));return frame
+        with patch.object(accessor,'__call__',capture):
+            expected,messages=self._join_reference(SimpleNamespace(operation=query.operation,_original=original),answers)
+        method,prepared,requests=prepare(query)
+        self.assertEqual([row['messages'] for row in requests],messages)
+        self.assertNotIn('NOT_MODEL_METADATA_',json.dumps(messages))
+        result,relation=finish_relation(query,method,prepared,[dict(call_id=row['call_id'],generated_text=text)
+            for row,text in zip(prepared,answers,strict=True)])
+        self._assert_result_equal(result,expected)
+        self.assertEqual(result_value(relation['operator']['frame']),result_value(relations[0]))
+        self.assertIn('unused_source_note:left',relation['operator']['frame'].columns)
+
     def test_prepared_joins_reuse_native_messages_parser_and_complete_original_queries(self):
         from src.baselines.text.sembench_prepared import prepare,finish
 
@@ -937,9 +961,9 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                         if query.operation.stage.kind == "filter":
                             instructions[(scenario, key)] = query.operation.stage.method.instruction
                         if scenario == "movie":
-                            self.assertNotIn("scoreSentiment", query.operation.frame.columns)
-                            self.assertNotIn("score", query.operation.frame.columns)
-                            self.assertNotIn("originalScore", query.operation.frame.columns)
+                            labels={"scoreSentiment","score","originalScore"}
+                            self.assertTrue(labels<=set(query.operation.frame.columns))
+                            self.assertTrue(labels.isdisjoint(query.operation.describe()['model_columns']))
                         if (scenario, key) == ("movie", "4"):
                             self.assertAlmostEqual(result["positivity_ratio"].iloc[0], 2 / 3)
                         elif (scenario, key) == ("movie", "8"):

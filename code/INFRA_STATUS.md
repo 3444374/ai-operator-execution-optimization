@@ -197,6 +197,12 @@ Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两
 不再每次嵌入执行区间。原题、原参数及已有独立调用入口保持，原 SDK／prepared／resident 软件回归通过；
 这不扩展单算子桥的多算子能力，也不转授新的目标模型或完整公平计时资格。
 
+共享 Movie source 已移除三列投影，完整保留官方读取的 CSV 关系；只有算子引用字段进入模型消息。
+原始11列样本的 Join 中间关系恢复22列，未引用元数据不再丢失。受影响131项软件检查为128通过、
+3跳过；Daft／Ray 各64条历史真实答复经原完整 CSV 回放，消息、本地冻结 token 数组、完整中间关系、
+最终 sink／评价相同，新增模型调用0。旧 `c39d96347` 模型运行仍属于三列投影来源，耗时不回填到
+修正路径；该修正的目标环境／模型资格仍待验。
+
 LOTUS resident／视觉／MMQA 聚合、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 使用
 `query_clock_version=sembench.source_to_sink.v3`：共享文本输入身份校验在起点前和 sink 后执行，
 完整查询真实读取及最终关系处理仍计入；旧宽时钟和 v2 不回填。LOTUS 可显式
