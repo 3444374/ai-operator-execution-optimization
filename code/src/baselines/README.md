@@ -376,7 +376,7 @@ sf25 机场关系含一个缺失 `Destinations`：输入 CSV／原 DataFrame 仍
 | Ray Data | 上述十九题的有限记录图；显式原生 processor 另见上文 | 旧图无独立 sink 边界；原生 processor 不继承旧图时长 |
 | Daft | 上述十九题的有限记录图；原生 AI 另见上文 | 旧图无独立 sink 边界；原生 AI 不继承旧图时长 |
 | IMLane | 有限记录链的语义合同与独立 DuckDB 作者入口分别核验；原生 TINYINT Filter／DOUBLE Map 已有具名真实运行 | 原 `072f8257` 的 VARCHAR 返回通路存在根／子 Arrow schema 错配；不把十九题合同 fixture 或 `398ba063` 工程补丁算作作者原版全部支持 |
-| Kalypso | 正式目录含 Movie Filter 和按原字段复用的普通 Map 接点（Movie Q8/Q9/Q10、E-Commerce Q5）；另有 MMQA Q3a–g／Q6a–c 和 Medical Q1/Q4 的具名私有原生运行 | 本统一文本 CLI 未暴露作者服务；专门作者 CLI 的多字段 Map 有软件检查，真实资产／作者模型待验。旧结果不自动取得新内存 sink 口径。原 `05024f02` 未透传结构化输出，MMQA Q1／Q4 Extract 留空 |
+| Kalypso | 专门作者 CLI 含旧 Movie Filter 及五场景原题文本 Filter、普通 Map（Movie Q8/Q9/Q10、E-Commerce Q5）；另有具名私有原生运行 | 本统一文本 CLI 未暴露作者服务；新字段绑定及完整关系有软件检查，作者环境／模型另验。旧结果不自动取得新内存 sink 口径。原 `05024f02` 未透传结构化输出，MMQA Q1／Q4 Extract 留空 |
 
 这些是 CPU 接线范围，不是模型质量或性能成绩。原查询／原 accessor、共享链和 NativeStage 的
 软件回复差分与原十六题 CLI fixture 均运行；真实模型逐行一致性按对应源码和运行回执判断。

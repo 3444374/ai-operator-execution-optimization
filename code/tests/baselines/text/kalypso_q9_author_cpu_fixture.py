@@ -52,11 +52,17 @@ class Map:
     def _build_prompt(self,ctx):return ctx.input.data,ctx.input.data
     def _planned_max_tokens(self,ctx):return 75
     async def _run_single(self,*a,**kw):raise AssertionError('CPU planner executed a model task')
+class Filter:
+    pin=False;unpin=False;max_tokens=8
+    def __init__(self,instruction):self.instruction=instruction
+    def _build_prompts(self,ctx):return ctx.input.data,ctx.input.data
 class Estimator:
     def reset(self):pass
 class Plan:
     def __init__(self,*a,**kw):pass
-    def parse_ops(self,ops):return [Map(ops[0]['args']['prompt'])]
+    def parse_ops(self,ops):
+        cls=Filter if ops[0]['op']=='sem_filter' else Map
+        return [cls(ops[0]['args']['prompt'])]
     def build(self,contexts,ops):
         assert all(ctx.state.raw_request.headers['X-Kalypso-Observation'] for ctx in contexts)
         return [ops]
@@ -85,7 +91,8 @@ module('vllm.kalypso.execution.vllm_executor',VLLMExecutor=Executor)
 module('vllm.kalypso.controller',SemanticPlan=Plan)
 module('vllm.kalypso.controller.map_estimator',MapRatioEstimator=Estimator)
 module('vllm.kalypso.sem_ops.map',SemMap=Map)
-module('vllm.kalypso.sem_ops.base',OpName=NS(SEM_MAP='sem_map'))
+module('vllm.kalypso.sem_ops.filters',SemFilter=Filter)
+module('vllm.kalypso.sem_ops.base',OpName=NS(SEM_MAP='sem_map',SEM_FILTER='sem_filter'))
 module('vllm.kalypso.sem_ops.prompt_utils',get_data_prompt=get_data_prompt,get_prompt=get_prompt)
 module('vllm.kalypso.context',RETRY_TASK=object())
 module('vllm.kalypso.data',data=NS(_data_source=data_source))

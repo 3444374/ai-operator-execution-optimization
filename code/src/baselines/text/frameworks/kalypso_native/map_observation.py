@@ -1,8 +1,10 @@
-"""SemBench field binding and passive receipts; native Map/KV/sampling unchanged."""
+"""SemBench field binding and passive receipts; native text/KV/sampling unchanged."""
 import hashlib
 import json
 from pathlib import Path
 import time
+
+from src.baselines.text.frameworks.kalypso_native.field_binding import install_prompt
 
 
 def digest(value):
@@ -10,13 +12,10 @@ def digest(value):
 
 
 def install(cfg, unit, directory, native, map_class, estimator_class):
-    from vllm.kalypso.sem_ops.prompt_utils import get_prompt, get_data_prompt
     from vllm.kalypso.sem_ops.base import OpName
     from vllm.kalypso.context import RETRY_TASK
     directory = Path(directory)
-    allowed = {q['query_id']:q for q in unit['queries']}
-    tables = {}
-    current_query = [None]
+    current_query=install_prompt(cfg,unit,map_class,'_build_prompt',OpName.SEM_MAP)
     errors = []
     def event(kind, **fields):
         try:
@@ -24,35 +23,8 @@ def install(cfg, unit, directory, native, map_class, estimator_class):
                 out.write(json.dumps(dict(event=kind,monotonic_ns=time.monotonic_ns(),**fields),ensure_ascii=False)+'\n')
         except Exception as error:
             errors.append(type(error).__name__)
-    def table(qid):
-        if qid not in allowed:
-            raise ValueError('Map query is outside this finite binding')
-        if qid not in tables:
-            value = json.loads((Path(cfg['map_prompt_root'])/(qid+'.json')).read_text())
-            if value['query_id'] != qid or len(value['rows']) != allowed[qid]['expected_calls']:
-                raise ValueError('Map occurrence table differs from the declared query')
-            if ([r['idx'] for r in value['rows']] != list(range(len(value['rows'])))
-                    or len({r['row_id'] for r in value['rows']}) != len(value['rows'])):
-                raise ValueError('Duplicate or reordered Map occurrence identity')
-            tables[qid] = value
-        return tables[qid]
-    original_prompt = map_class._build_prompt
     original_run = map_class._run_single
     original_reset = estimator_class.reset
-    def prompt(self, ctx):
-        qid = ctx.state.raw_request.headers.get('X-Kalypso-Observation')
-        current_query[0] = qid
-        value = table(qid)
-        if type(ctx.state.idx) is not int or not 0 <= ctx.state.idx < len(value['rows']):
-            raise ValueError('Invalid native Map occurrence index')
-        row = value['rows'][ctx.state.idx]
-        if (ctx.input.right_data or ctx.input.data != get_data_prompt(row['data'].strip())
-                or self.instruction != value['instruction']):
-            raise ValueError('Native Map context/instruction differs from its source occurrence')
-        data_prompt, _ = original_prompt(self,ctx)
-        # Preserve all original referenced fields inside the author's Map template.
-        formatted = self.instruction.format_map(row['fields'])
-        return data_prompt, get_prompt(formatted,ctx.input.data,op=OpName.SEM_MAP)
     async def run(self,ctx,priority=0):
         qid = ctx.state.raw_request.headers.get('X-Kalypso-Observation')
         token = native.ROW.set(ctx.state.idx)
@@ -79,7 +51,6 @@ def install(cfg, unit, directory, native, map_class, estimator_class):
         result = original_reset(self)
         event('estimator_after_native_reset',query_id=current_query[0],estimator_id=id(self),samples={str(k):len(v) for k,v in self.data.items()})
         return result
-    map_class._build_prompt = prompt
     map_class._run_single = run
     estimator_class.reset = reset
     return dict(errors=errors,semantic_binding='SemBench exact formatted Map instruction inside original author Map prompt template',

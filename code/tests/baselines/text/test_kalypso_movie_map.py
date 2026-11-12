@@ -9,7 +9,7 @@ from types import ModuleType, SimpleNamespace as NS
 import unittest
 from unittest.mock import patch
 
-from src.baselines.text.frameworks.kalypso_native import adapter, movie_map, native_server
+from src.baselines.text.frameworks.kalypso_native import adapter, movie_map, native_server, sembench_inputs
 from src.experiments.kalypso_query_lifecycle import query_driver_type
 
 
@@ -198,7 +198,7 @@ class MovieMapContracts(unittest.TestCase):
                     movie_map.make_query(dict(data_dir=raw,source_data_sha256=hashes),'q')
 
     def test_q10_requires_frozen_movie_labels_before_original_query(self):
-        with patch.object(movie_map,'SemBenchTextQuery') as query:
+        with patch.object(sembench_inputs,'SemBenchTextQuery') as query:
             with self.assertRaisesRegex(ValueError,'evaluation file hashes'):
                 movie_map.make_query(dict(source_data_sha256={'Reviews.csv':'hash'}),'q','movie-q10')
             with self.assertRaisesRegex(ValueError,'not TopK'):
@@ -267,8 +267,8 @@ class OriginalMapSizeContracts(unittest.TestCase):
                 original_prepare=movie_map.prepare
                 original_make_query=movie_map.make_query
                 original_parse=postprocessors.map_postprocess
-                original_query=movie_map.SemBenchTextQuery._original
-                original_evaluate=movie_map.SemBenchTextQuery.evaluate
+                original_query=sembench_inputs.SemBenchTextQuery._original
+                original_evaluate=sembench_inputs.SemBenchTextQuery.evaluate
                 def prepare(*args):clock.advance(2);return original_prepare(*args)
                 def make_query(*args):clock.advance(17);return original_make_query(*args)
                 def parse(*args):clock.advance(5);return original_parse(*args)
@@ -286,8 +286,8 @@ class OriginalMapSizeContracts(unittest.TestCase):
                         patch.object(movie_map,'prepare',prepare), \
                         patch.object(movie_map,'make_query',make_query), \
                         patch.object(postprocessors,'map_postprocess',parse), \
-                        patch.object(movie_map.SemBenchTextQuery,'_original',original), \
-                        patch.object(movie_map.SemBenchTextQuery,'evaluate',evaluate), \
+                        patch.object(sembench_inputs.SemBenchTextQuery,'_original',original), \
+                        patch.object(sembench_inputs.SemBenchTextQuery,'evaluate',evaluate), \
                         patch.object(adapter,'read_trace',read_trace):
                     driver=movie_map.MapDriver(cfg,bound,helper.data/f'query-{task}-{count}',transport)
                     driver.model_uid='u'

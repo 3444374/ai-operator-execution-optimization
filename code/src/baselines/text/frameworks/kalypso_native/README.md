@@ -258,7 +258,7 @@ PYTHONPATH="$VERIFIED_REPO/code" "$AUTHOR_PYTHON" -B \
 普通 Map 才允许准备，Filter、Extract、Join、TopK 不改名冒用此入口，后续第二语义算子仍未接线。
 Movie Q9 在此入口默认显式 Map；它不替代官方 runner 的策略身份。
 
-字段来自原指令实际引用列的 DEFAULT 单元格文字，单字段上下文保持原样；多字段把全部字段名及
+字段来自原指令实际引用列的 DEFAULT 单元格文字，单字段上下文保持原样；多字段按字段名稳定排序，把全部字段名及
 完整文字写入一个 JSON 文本上下文，并把原指令中的字段引用逐一替换。源表、原 Map parser、
 完整关系与评价器不变，类别标签／业务 ID 不进入未被原指令引用的模型字段。上下文和提示仍由
 作者 `get_data_prompt`／`get_prompt(..., SEM_MAP)` 生成，与 LOTUS 消息模板不同。
@@ -275,3 +275,38 @@ pin/KV、采样和服务调度保持。原文件名保留实际 owner／CPU 调�
 加载原模板函数核对全部字段。与既有 50 项回归共 56 项不同本机软件检查通过，0 跳过、0 模型。
 初次断言误把原 DEFAULT 字典文字中的 `\\n` 当真实换行，已修正测试，失败记录保留；没有改变
 原单元格表达。真实 E-Commerce 资产尚未齐备，新多字段作者环境／planner／模型资格仍待验证。
+
+### 按原题字段复用 Filter
+
+同一维护 CLI 新增 `task="sembench-filter"`，每个 spec 指定原 `scenario`、`query` 和需要的
+原 `scale_factor`。`expected_calls=N`／`max_native_calls=N` 绑定原题实际全部 occurrence，
+unit 的 `call_cap` 继续显式给出；没有 Map 的 2N 重试额度。模型／源码／原文件 SHA、就绪证明、
+独立空 `map_prompt_root` 和单独 owner 单元按既有绑定提供；这个历史目录键用于两种字段表。
+Filter 和 Map unit 分别准备，不自动扩成多算子查询。
+
+[`sembench_inputs.py`](sembench_inputs.py) 拥有原题输入和字段表，
+[`field_binding.py`](field_binding.py) 仅用标准库把字段接到原模板；它们由 Map 与 Filter 共用。
+[`sembench_filter.FilterDriver`](sembench_filter.py) 复用原生 HTTP 客户端、计时和证据生命周期，
+作者完整返回的 membership 交回原查询完成投影、LIMIT、连接或统计，再记录完整内存 sink。
+没有为每道题复制执行器，也没有把 LOTUS Filter parser 注入作者系统。
+
+工程依据是原 `05024f02` 的
+[`SemFilter._build_prompts/_run_single`](https://github.com/goodluck-hojae/kalypso/blob/05024f027f932c0e398852e38302be30b9015481/vllm/kalypso/sem_ops/filters.py)
+和 [`BaseOp.predicate_passed/handle_output`](https://github.com/goodluck-hojae/kalypso/blob/05024f027f932c0e398852e38302be30b9015481/vllm/kalypso/sem_ops/base.py)。
+保留默认 8 个输出 token、完整答复不含 false 即通过、无 Filter 重试、原生默认／采样／调度；
+这与 LOTUS 的原始答复判定存在合理差异。新字段 hook 只改模板绑定，不改原 `_run_single`。
+
+[五场景检查](../../../../../tests/baselines/text/test_kalypso_sembench_filter.py)使用临时原 schema，
+核对 Movie Q1/Q4、MMQA Q3a/Q6a、Medical Q1/Q4、Cars Q1/Q4、E-Commerce Q1 的原完整关系与
+评分，以及全否、预算前拒绝和 sink 后审计失败。作者 Git 方法体直接执行于显式软件 API 下，
+包括 `false and true`／非字面答复；软件答复不是模型质量证据。现有 Movie 入口、原私有来源与
+已验模型结果分别保留；新接点作者环境／模型仍待验，Cars/E-Commerce 还受真实资产缺口限制。
+与受影响 Map、owner、源绑定和计时共 63 项不同本机检查通过，0 skip、0 模型调用。
+
+两个原 CPU CLI 也复用上述字段表；author Python 仍只读冻结 CSV／JSON，不引入 pandas／LOTUS。
+Map 核对原动态 cap 和8192重试上界，Filter 核对原8 token cap，均逐条检查完整消息和 tokenizer IDs。
+旧 CPU manifest 与精确源码绑定，不能转授新字段接点的目标资格。
+
+多字段顺序回归先复现了同一字段映射在反向遍历时产生不同 context 的失败；现统一 JSON 字段顺序，
+避免 driver CPU 准备与 fresh source 所在 Python 进程的列集合迭代顺序改变 prompt/token。
+保留完整单元格文字、原指令及单字段上下文；这是输入绑定修复，不是后端调度或模型性能成绩。

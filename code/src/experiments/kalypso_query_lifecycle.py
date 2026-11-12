@@ -31,9 +31,14 @@ def query_driver_type(unit):
         from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
         physical_call_caps(unit)
         return MapDriver
+    if tasks=={'sembench-filter'}:
+        from src.baselines.text.frameworks.kalypso_native.sembench_filter import FilterDriver
+        from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
+        physical_call_caps(unit)
+        return FilterDriver
     if tasks and tasks <= {'movie-q1','movie-q2','movie-q3','movie-q4'}:
         return native.NativeQueryDriver
-    raise ValueError('Maintained Kalypso CLI supports Movie Filter or original text Map units; not TopK')
+    raise ValueError('Maintained Kalypso CLI supports Movie Filter or original text Filter/Map units; not TopK')
 
 
 def run_attached(cfg,unit,output,observer=None):
@@ -69,7 +74,7 @@ def main():
     parser.add_argument('--unit',required=True)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--prepare-native-cpu',action='store_true',
-        help='prepare frozen original Map inputs in driver Python; no model or native runtime')
+        help='prepare frozen original text Filter/Map inputs in driver Python; no model or native runtime')
     args=parser.parse_args()
     cfg=json.loads(args.config.read_text())
     server_argv(cfg)  # Reject legacy engine overrides before client/service attachment.

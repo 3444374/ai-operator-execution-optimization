@@ -19,16 +19,17 @@ CALL = contextvars.ContextVar('observed_native_call',default=None)
 AUTHOR_SOURCE_COMMIT = '05024f027f932c0e398852e38302be30b9015481'
 MOVIE_MAP_QUERIES = {'movie-q8': '8', 'movie-q9': '9', 'movie-q10': '10'}
 MAP_TASKS = (*MOVIE_MAP_QUERIES, 'sembench-map')
+TEXT_TASKS = (*MAP_TASKS, 'sembench-filter')
 
 
-def map_task(spec):
-    """Bind the original query; its captured accessor must still be Map."""
+def query_task(spec):
+    """Bind an original query; the caller checks its captured operator kind."""
     task = spec['task']
     if task in MOVIE_MAP_QUERIES:
         query = MOVIE_MAP_QUERIES[task]
         return dict(scenario='movie', query_id=query,
                     **(dict(ranking='map') if query == '9' else {}))
-    if task != 'sembench-map':
+    if task not in ('sembench-map','sembench-filter'):
         raise ValueError('A supported original Map task is required; not TopK')
     binding=dict(scenario=spec['scenario'], query_id=str(spec['query']).lower().removeprefix('q'),
                  **{name: spec[name] for name in ('scale_factor', 'ranking') if name in spec})
@@ -254,6 +255,15 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         binding=install(cfg,unit,directory,sys.modules[__name__],SemMap,MapRatioEstimator)
         counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
         counters['map_binding']=binding
+    elif any(q.get('task')=='sembench-filter' for q in unit['queries']):
+        if any(q.get('task')!='sembench-filter' for q in unit['queries']):
+            raise ValueError('Field-bound Filter requires its own finite owner unit')
+        from vllm.kalypso.sem_ops.base import OpName
+        from src.baselines.text.frameworks.kalypso_native.field_binding import install_prompt
+        from src.baselines.text.frameworks.kalypso_native.map_observation import install_response_observation
+        install_prompt(cfg,unit,filter_class,'_build_prompts',OpName.SEM_FILTER)
+        counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
+        counters['filter_binding']='original SemBench referenced fields in author Filter template'
     executor_class.chatcomplete=chat
     filter_class._run_single=filtered
     if hasattr(executor_class,'_build_chat_request'):

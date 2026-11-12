@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-from .native_server import MAP_TASKS, check_author_source, native_launch_report, server_argv
+from .native_server import TEXT_TASKS, check_author_source, native_launch_report, server_argv
 
 
 def main():
@@ -40,9 +40,10 @@ def main():
     tokenizer_template=manager.tokenizer.chat_template
     template_sha=hashlib.sha256(tokenizer_template.encode()).hexdigest()
     assert template_sha==cfg['expected_template_sha256']
-    if any(q.get('task') in MAP_TASKS for u in cfg.get('units',[]) for q in u['queries']):
+    if any(q.get('task') in TEXT_TASKS for u in cfg.get('units',[]) for q in u['queries']):
         from .movie_map_cpu import check
-        report=check(cfg,a.output,executor,manager,SemanticPlan,data,max_model_len)
+        kind='filter' if cfg['units'][0]['queries'][0]['task']=='sembench-filter' else 'map'
+        report=check(cfg,a.output,executor,manager,SemanticPlan,data,max_model_len,kind=kind)
         report.update(native_launch=launch,template_sha256=template_sha,
             cuda_initialized=torch.cuda.is_initialized(),model_calls=0,model_weights_loaded=False,
             native_model_config=dict(max_model_len=max_model_len,dtype=str(model_config.dtype)))

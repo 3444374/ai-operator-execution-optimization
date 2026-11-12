@@ -26,7 +26,7 @@ class MapTaskContracts(unittest.TestCase):
             spec=map_spec(count)
             unit=dict(call_cap=2*count, queries=[spec])
             self.assertIs(query_driver_type(unit), movie_map.MapDriver)
-            self.assertEqual(native_server.map_task(spec), dict(scenario='ecomm',query_id='5'))
+            self.assertEqual(native_server.query_task(spec), dict(scenario='ecomm',query_id='5'))
             self.assertEqual(native_server.physical_call_caps(unit),dict(q=2*count))
             spec['max_native_calls']=count
             with self.assertRaisesRegex(ValueError,'twice'):
@@ -116,6 +116,15 @@ class OriginalMapContracts(unittest.TestCase):
         self.assertEqual(query.operation.describe()['kind'],'map')
         with self.assertRaisesRegex(ValueError,'ordinary text Map'):
             movie_map.make_query(cfg,'q',dict(spec,ranking='topk'))
+
+    def test_multifield_context_is_stable_across_equivalent_column_iteration_orders(self):
+        from dataclasses import replace
+        query=movie_map.make_query(self.cfg,'q',map_spec())
+        left,_=movie_map.prepare(self.cfg,map_spec(),self.helper.data/'left',query.operation)
+        records=tuple(replace(row,values=dict(reversed(list(row.values.items())))) for row in query.operation.records)
+        cfg=dict(self.cfg,map_prompt_root=str(self.helper.data/'right-prompts'))
+        right,_=movie_map.prepare(cfg,map_spec(),self.helper.data/'right',replace(query.operation,records=records))
+        self.assertEqual([row['data'] for row in left],[row['data'] for row in right])
 
     def test_full_parquet_identity_is_required_before_model_submission(self):
         with self.assertRaisesRegex(ValueError,'file hashes'):
