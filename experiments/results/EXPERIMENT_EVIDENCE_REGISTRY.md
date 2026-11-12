@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+## 2026-11-13：rolling准备窗口与就绪选择的CPU接入
+
+[执行候选主报告](diagnostics/semloom_execution_candidates_20261110/README.md#rolling-ready-cpu-20261113)
+记录既有Method队列／独立准备预算与rolling选择器的接线、默认actor的IPC额度传递修复。
+真实多个合法候选的Core接纳／CPU子进程启动、补位、结果关联和失败传播已检查；旧迟到回执关闭问题仍保留，
+不将CPU行为解释为GPU收益。源码、失败及对照检查由同一报告的清单绑定；本批零真实模型／GPU／服务器任务。
+
+
 ## 2026-11-12：四种就绪策略的实机画像与机制检查
 
 [执行候选主报告](diagnostics/semloom_execution_candidates_20261110/README.md#ready-work-real-20261112)

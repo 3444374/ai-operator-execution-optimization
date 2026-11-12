@@ -141,5 +141,8 @@ records resident 的顺序复用不能直接解释为共享 owner 上完整查�
 
 [真实就绪选择检查](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#ready-work-real-20261112)
 已将冻结的实测阶段API成本接入既有Core选择器，四臂完整请求／输出和正常资源通过。
-当前C4/R4每次只有1个候选，未触发优先级竞争；独立扩大准备窗口与滚动选择集成仍未完成，
-不据此次功能通过宣称策略性能收益。
+该次C4/R4每次只有1个候选，未触发优先级竞争，不据该结果宣称策略性能收益。
+[滚动就绪接线](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#rolling-ready-cpu-20261113)
+已让 Python 单查询 owner 在既有独立 Method 准备预算与 rolling refill 下使用原选择器，
+默认创建 actor 的 IPC 额度也由原容量解析器传递；CPU 检查验证真实多个合法候选的选择与结果关联。
+没有新增队列、调度器或物理容量推断；新源码／配置的 GPU 正确性、完整查询净收益和成本校准仍待统一排队验证。

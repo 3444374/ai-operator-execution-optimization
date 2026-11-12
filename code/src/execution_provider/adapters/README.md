@@ -14,10 +14,24 @@ its actual encoder and the distinct v3/v4 implementations remain.
 
 ## Python consumer
 
-`LotusChainFIFO` 与 `SemLoomRecordChainCore` 的未组批逐记录路径可显式传入 `ready_selector`。
+`LotusChainFIFO` 与 `SemLoomRecordChainCore` 的未组批逐记录路径，以及
+`rolling_refill=True` 的逐请求补位路径，可显式传入 `ready_selector`。
 方法只提供已合法就绪的 `ReadyRequest`，包含 stage、profile、work 单位与等待时间；策略返回成员序号和理由。
 Core 继续拥有接纳和容量。调用方可使用 [WorkProgressPriority](../../scheduling/organization/ready_work.py)，
-但须提供有来源的成本估计；该接点不覆盖 token batching、rolling 或阶段整批推进。
+但须提供有来源的成本估计。rolling 可省略 token B 或使用既有 `PreparedBatching`；
+选择仍发生在 Core 接纳之前，已接纳的包、在途请求和原消息不会被重新选择。
+固定批槽的非 rolling 组批、阶段整批推进与 Extract 不属于这个选择器的接入范围。
+
+准备窗口沿用 `CoreRecordsCapacity.budget` 的 `method_runs`／`method_bytes` 和真实 continuation
+大小；Core 的 `held_tasks`／输入与结果字节、硬请求额度与 `request_window` 保持各自约束。
+例如 Method 可以保留多于模型在途额度的合法请求，选择器从原 MethodDriver 队列中选择；
+不存在第二份候选队列或新的预读／等待阈值。只有未持有行的完整预算可用时才补充新记录，
+未被接纳的候选保留原就绪时间，结果仍按发生项关联并恢复原关系顺序。
+owner 自建 actor 时复用既有 IPC 容量解析；外部提供的 actor 和显式 IPC 额度不被覆盖。
+省略选择器保持原 FIFO／准备行为；成本缺失按策略回退 FIFO，策略异常沿原查询失败与回收路径传播。
+[CPU 接线检查](../../../tests/execution_provider/test_rolling_ready_selection.py)覆盖多个候选、
+补充／消耗、逐阶段依赖、token B、现有交错／事件驱动协调、背压老化、失败与取消。
+这些是单查询 Core／真实本地 CPU IPC 检查，不代表 GPU 性能或跨查询调度收益。
 [完成时间路由](../../scheduling/endpoint_routing/completion_cost.py)只消费已有 endpoint 的成本描述，不迁移缓存。
 实际验证与未覆盖项见[候选报告](../../../../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)。
 

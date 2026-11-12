@@ -44,7 +44,7 @@ from src.serving.backends.vllm_sync_process import DEFAULT_CLOSE_TIMEOUT_S
 
 from .lotus_chain_actor_backend import _SectionTransport
 from .lotus_chain_fused_runtime import _ChainTransport, _CoreChainRows
-from .records_capacity import CoreChainCapacity, CoreRecordsCapacity
+from .records_capacity import CoreChainCapacity, CoreRecordsCapacity, resolve_records_async_limits
 from .records_query_runtime import _check, _RecordLocalRows
 from .records_transport import close_prepared_core
 
@@ -111,8 +111,8 @@ class SemLoomRecordChainCore:
         self._async_token_batches = ((self.prepared_batching is not None or rolling_refill)
                                      and execution == 'record_local_sections')
         if ready_selector is not None and (not callable(ready_selector) or ready_order != 'fifo'
-                or self._async_token_batches or progression != 'record'):
-            raise ValueError('ready-work selection requires unpacked record progression')
+                or (self._async_token_batches and not rolling_refill) or progression != 'record'):
+            raise ValueError('ready-work selection requires FIFO record progression, unpacked or rolling')
         if prepared_order is not None:
             from src.scheduling.organization.prepared_order import PreparedRequestOrder
             if type(prepared_order) is not PreparedRequestOrder or not self._async_token_batches:
@@ -734,7 +734,8 @@ class SemLoomRecordChainCore:
         if self._actors is None:
             self._actors = AsyncRecordsActorOwner.for_prepared(
                 self.engine, chain.stages[0].generation, self.resources,
-                **({} if self.capacity.budget is None else dict(capacity=self.capacity)))
+                **({} if self.capacity.budget is None else dict(capacity=self.capacity,
+                    limits=resolve_records_async_limits(self.resources, self.capacity))))
         elif self._actors.generation != chain.stages[0].generation:
             raise ValueError("prepared owner's default generation differs from the initial stage")
         self._actors.close_deadline = None
