@@ -10,7 +10,13 @@ def native_observer_setup():
     from src.experiments.attempt_ledger import AttemptBudget
     from src.experiments.shared_request_budget import SharedClaimedUnit
     from src.infrastructure.private_artifacts import publish_private_json
-    ledger = SharedClaimedUnit(root / 'logical-unit.sqlite', AttemptBudget(budget_id, 128), budget_id)
+    from .binding import rows_per_pass
+    bound = json.loads((root / 'RUN-BOUND.json').read_text())
+    cap = bound['physical_attempt_limit']
+    rows_per_pass(cap)
+    if bound['budget_id'] != budget_id:
+        raise ValueError('Q7 actor budget identity differs from the frozen owner binding')
+    ledger = SharedClaimedUnit(root / 'logical-unit.sqlite', AttemptBudget(budget_id, cap), budget_id)
 
     def event(kind, **data):
         entry = dict(event=kind, monotonic_ns=time.monotonic_ns(), epoch_ns=time.time_ns(), pid=os.getpid(), **data)
@@ -64,4 +70,4 @@ def native_observer_setup():
                 event('native_generate_unconfirmed', attempt=attempt, request_id=rid)
     AsyncLLM.__init__ = observed_init
     AsyncLLM.generate = observed_generate
-    event('native_observer_installed', physical_attempt_limit=128, unseen_attempts_not_refunded=True, requested_config=json.loads(Path(os.environ['Q7_CONFIG']).read_text()) if 'Q7_CONFIG' in os.environ else 'unavailable')
+    event('native_observer_installed', physical_attempt_limit=cap, unseen_attempts_not_refunded=True, requested_config=json.loads(Path(os.environ['Q7_CONFIG']).read_text()) if 'Q7_CONFIG' in os.environ else 'unavailable')

@@ -19,12 +19,13 @@ def main():
     manifest = Path(os.environ['Q7_MANIFEST'])
     value = json.loads(manifest.read_text())
     dataset = AnimalsDataset(Path(os.environ['Q7_CHECKOUT']), manifest, value['sha256'])
+    count = len(value['rows'])
     messages = []
     occurrences = []
     masks = []
 
     def execute(rows):
-        stage = len(messages) // 64
+        stage = len(masks)
         assert stage in (0, 1)
         for item, source in zip(rows, value['rows'], strict=True):
             message = deepcopy(item['messages'])
@@ -43,8 +44,8 @@ def main():
         answers = ['True', 'False', 'no verdict', 'False then True']
         from lotus.models import LM
         from lotus.sem_ops.postprocessors import filter_postprocess
-        mask = filter_postprocess([answers[(i + stage) % 4] for i in range(64)], LM('openai/CPU-parser', cache={}), default=True).outputs
-        assert len(mask) == 64 and all((type(x) is bool for x in mask))
+        mask = filter_postprocess([answers[(i + stage) % 4] for i in range(count)], LM('openai/CPU-parser', cache={}), default=True).outputs
+        assert len(mask) == count and all((type(x) is bool for x in mask))
         masks.append(mask)
         return [dict(call_id=row['call_id'], generated_text=answers[(i + stage) % 4]) for i, row in reversed(list(enumerate(rows)))]
 
@@ -52,13 +53,13 @@ def main():
         raise AssertionError('HTTP forbidden in CPU capture')
     with patch.object(httpx.Client, 'request', forbidden), patch.object(httpx.AsyncClient, 'request', forbidden):
         result, quality, passes, timing = run(dataset, execute)
-    assert len(messages) == 128 and len(passes) == 2
+    assert len(messages) == 2 * count and len(passes) == 2
     cities = [{row['City'] for row, kept in zip(value['rows'], mask, strict=True) if kept} for mask in masks]
     assert set(result.iloc[:, 0]) == cities[0].intersection(cities[1])
     with gzip.open(root / 'MESSAGES-PRIVATE.json.gz', 'wt') as out:
         json.dump(messages, out)
     (root / 'OCCURRENCES.json').write_text(json.dumps(occurrences, indent=2) + '\n')
-    (root / 'CPU-NATIVE-CAPTURE.json').write_text(json.dumps(dict(status='passed', scope='software fixture only', preflight=dataset.preflight(7), passes=passes, masks=masks, ordinary_city_intersection_match=True, timing=timing, result=result.to_dict(orient='split'), quality=quality, actual_model_calls=0, images=128), indent=2) + '\n')
+    (root / 'CPU-NATIVE-CAPTURE.json').write_text(json.dumps(dict(status='passed', scope='software fixture only', preflight=dataset.preflight(7), passes=passes, masks=masks, ordinary_city_intersection_match=True, timing=timing, result=result.to_dict(orient='split'), quality=quality, actual_model_calls=0, images=2 * count), indent=2) + '\n')
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Zero-model Q7 qualification. Required environment and config schema: adjacent README.md and config.example.json')

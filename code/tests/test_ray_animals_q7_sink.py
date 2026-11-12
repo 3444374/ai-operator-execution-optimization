@@ -20,9 +20,10 @@ class Q7SinkTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory(prefix='ray-q7-sink-cpu-')
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
+        self.count = 64
         self.bound = dict(manifest='unused-fixture', checkout='unused-fixture', manifest_digest='fixture',
             native_python='not-executed', num_cpus=1, num_gpus=1, object_store_memory=1, model='not-loaded',
-            host_adapter=dict(stage_timeout_s=2))
+            physical_attempt_limit=128,host_adapter=dict(stage_timeout_s=2))
         self.actions, self.active, self.stage = [], set(), None
         self.native_failure = self.close_failure = self.after_sink_failure = self.parse_failure = None
         self.invalid_receipt = None
@@ -48,7 +49,7 @@ class Q7SinkTests(unittest.TestCase):
             if self.stage == 1 and self.native_failure is not None:
                 raise self.native_failure
             self.assertEqual(model, 'not-loaded')
-            self.assertEqual(len(rows), 64)
+            self.assertEqual(len(rows), self.count)
             return [dict(call_id=row['call_id'], generated_text='True') for row in rows[::-1]]
 
         fake_ray.init, fake_ray.shutdown, fake_ray.is_initialized = initialize, shutdown, lambda: bool(self.active)
@@ -66,11 +67,12 @@ class Q7SinkTests(unittest.TestCase):
         ):
             stack.enter_context(scope)
 
-    def original_query_fixture(self, dataset, execute, *, on_result_ready):
-        two = binding.TwoPassBinding(execute)
-        two(['fixture-image'] * 64)
+    def original_query_fixture(self, dataset, execute, *, on_result_ready, physical_attempt_limit):
+        self.assertEqual(physical_attempt_limit,2*self.count)
+        two = binding.TwoPassBinding(execute,self.count)
+        two(['fixture-image'] * self.count)
         self.assertEqual(self.active, set())
-        two(['fixture-image'] * 64)
+        two(['fixture-image'] * self.count)
         self.assertEqual(self.active, {1})
         if self.parse_failure is not None:
             raise self.parse_failure
@@ -217,8 +219,9 @@ publish_private_json(root/f'native-close-{stage}.json',dict(started_monotonic_ns
                 resource_passed=True, owned_processes_exited=True, private_sockets_clear=True,
                 GPU_and_Ray_fixture_only=True)
 
-        def query(dataset, execute, *, on_result_ready):
-            two = binding.TwoPassBinding(execute)
+        def query(dataset, execute, *, on_result_ready, physical_attempt_limit):
+            self.assertEqual(physical_attempt_limit,128)
+            two = binding.TwoPassBinding(execute,64)
             two(['CPU-image'] * 64)
             self.assertEqual(len(processes), 1)
             two(['CPU-image'] * 64)
@@ -243,7 +246,7 @@ class OriginalBindingBoundaryTests(unittest.TestCase):
         from src.baselines.image import sembench_animals
         actions = []
         frame = pd.DataFrame({'city': []})
-        dataset = SimpleNamespace(checkout='software-fixture', preflight=lambda query: None,
+        dataset = SimpleNamespace(checkout='software-fixture', preflight=lambda query: dict(rows=64),
                                   frame=lambda **kwargs: None)
         digest = binding.message_digest
 

@@ -1,8 +1,12 @@
 # Ray Animals Q7
 
 This entry runs the original Animals Q7 zebra and impala Filters and their City
-intersection. Each Filter uses a fresh native Ray processor/runtime for 64
-occurrences: two sequential native lifecycles and 128 model calls in total.
+intersection. Each Filter uses a fresh native Ray processor/runtime for all N
+frozen source occurrences: two sequential native lifecycles and 2N model calls.
+The existing official sf64 manifest remains exactly 64 images / 128 calls; the
+same entry also accepts the existing explicitly labeled finite software samples.
+It does not relabel a sample as the complete official source or broaden the
+manifest's supported input roles and size range.
 The original prompts, parser (including its no-verdict default) and evaluator
 remain responsible for semantics. A shared runtime or same-model warm run is
 not claimed.
@@ -26,13 +30,17 @@ model, tokenizer and processor identities. The package installs nothing.
 
 The outer host controller owns preflight, the single host/GPU lease, the complete
 query deadline and its cleanup allowance. Before launching, it creates a fresh
-private output directory, reserves an `AttemptBudget(budget_id, 128)`, and uses
+private output directory, reserves an `AttemptBudget(budget_id, 2*N)`, and uses
 `CellBudgetLedger` to reserve/claim a shared unit whose ID is `budget_id` in
 `output/logical-unit.sqlite`. No warmup or retry is added.
 
 Freeze `output/RUN-BOUND.json` with the fields below. Resource numbers are an
 example allocation; the controller must bind the agreed actual values and the
 SHA256 of each supplied helper/configuration file.
+The following example is for the unchanged complete sf64 source. For another
+accepted manifest, `physical_attempt_limit` must be exactly twice its verified
+row count. The driver checks that count before either native stage is dispatched;
+each actor uses that same frozen cap and the existing shared ledger.
 
 ```json
 {
@@ -102,7 +110,7 @@ primary if finalization also fails; evidence-write failures are attached to it.
 ## Evidence and timing
 
 The outer controller reconciles both predictions files, native events and the
-shared ledger: exactly 128 charged/start/confirmed-terminal occurrences, with no
+shared ledger: exactly 2N charged/start/confirmed-terminal occurrences, with no
 missing, duplicate, error or unconfirmed request. Request IDs are local to an
 owner; correlate PID/request ID and ledger attempt. `QUERY.json` completion alone
 does not establish final physical resource acceptance.
@@ -193,9 +201,12 @@ and `PYTHONPATH="$Q7_SOURCE/code"` explicitly.
 
 Capture checks the original parser and complete City intersection with synthetic
 answers. Processor checks native message/token/pixel identity and the shared
-128/129 boundary. Hook checks export/install in an actual Ray CPU worker without
+2N / (2N+1) boundary. Hook checks export/install in an actual Ray CPU worker without
 engine construction or CUDA initialization. Outputs and native SDK provenance
 are qualification evidence, not model results. Host cleanup is checked separately.
+The variable-size processor receipt reports `software_guard_next_attempt_rejected`
+and numeric `actual_shared_ledger_CPU_boundary`; older 128/129-named receipt fields
+remain only in their frozen historical evidence.
 
 For the handoff and failure checks, run from the maintained checkout with the
 existing driver environment. This starts only a local CPU child; process-tree
@@ -204,7 +215,8 @@ inspection permission is required by the unchanged supervisor.
 ```sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code LITELLM_LOCAL_MODEL_COST_MAP=True \
   HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-  "$DRIVER_PYTHON" -B -m unittest tests.test_ray_animals_q7 tests.test_ray_animals_q7_sink -v
+  "$DRIVER_PYTHON" -B -m unittest tests.test_ray_animals_q7 tests.test_ray_animals_q7_sink \
+  tests.test_ray_animals_q7_sizes -v
 ```
 
 The tests use software Ray/host receipts and cover the original binding callback,

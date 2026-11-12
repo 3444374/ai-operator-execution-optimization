@@ -15,13 +15,13 @@ class BindingTests(unittest.TestCase):
     def test_budget_and_complete(self):
         def execute(rows):
             return [dict(call_id=r['call_id'],generated_text='False') for r in rows[::-1]]
-        binding=TwoPassBinding(execute)
+        binding=TwoPassBinding(execute,64)
         with self.assertRaises(ValueError): binding.require_complete()
         for _ in range(2): self.assertEqual(binding(['image']*64),['False']*64)
         binding.require_complete()
         with self.assertRaises(ValueError): binding(['image']*64)
     def test_failure_is_spent(self):
-        binding=TwoPassBinding(lambda rows: [])
+        binding=TwoPassBinding(lambda rows: [],64)
         with self.assertRaises(ValueError): binding(['image']*64)
         self.assertEqual(len(binding.passes),1)
         with self.assertRaises(ValueError): binding.require_complete()
@@ -29,8 +29,9 @@ class BindingTests(unittest.TestCase):
 
 
 class NativeGuardTests(unittest.TestCase):
-    def test_actual_hook_rejects_129_before_native_call(self):
+    def test_actual_hook_rejects_next_attempt_for_frozen_source_size(self):
         import asyncio
+        import json
         import os
         import sys
         import tempfile
@@ -41,30 +42,33 @@ class NativeGuardTests(unittest.TestCase):
         from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
         from src.experiments.cell_budget import CellBudgetLedger
         from src.baselines.image.ray_animals_q7.native_probe import native_observer_setup
-        calls=[]
-        class FakeAsyncLLM:
-            def __init__(self):
-                raise AssertionError('constructor forbidden')
-            async def generate(self, prompt, sampling_params, request_id):
-                calls.append(request_id)
-                yield types.SimpleNamespace(finished=True,request_id=request_id,outputs=[],prompt_token_ids=[])
-        module=types.ModuleType('vllm.v1.engine.async_llm');module.AsyncLLM=FakeAsyncLLM
-        with tempfile.TemporaryDirectory() as tmp:
-            root=Path(tmp);budget=AttemptBudget('q7-hook-fixture',128)
-            ledger=CellBudgetLedger.create(root/'logical-unit.sqlite',budget,deadline_utc=time.time()+600)
-            ledger.reserve_unit(budget.budget_id,128);ledger.claim_shared_unit(budget.budget_id)
-            env={'Q7_SOURCE':str(Path(__file__).resolve().parents[2]),'Q7_OUTPUT':tmp,'Q7_BUDGET_ID':budget.budget_id}
-            with patch.dict(os.environ,env),patch.dict(sys.modules,{'vllm.v1.engine.async_llm':module}):
-                native_observer_setup()
-                engine=object.__new__(FakeAsyncLLM)
-                async def exercise():
-                    for index in range(128):
-                        async for _ in engine.generate({},None,str(index)): pass
-                    with self.assertRaises(BudgetExhausted):
-                        async for _ in engine.generate({},None,'129'): pass
-                asyncio.run(exercise())
-            self.assertEqual(len(calls),128)
-            self.assertEqual(len(list(root.glob('native-output-*.json'))),128)
+        for count in (1,7,64):
+            cap=2*count
+            calls=[]
+            class FakeAsyncLLM:
+                def __init__(self):
+                    raise AssertionError('constructor forbidden')
+                async def generate(self, prompt, sampling_params, request_id):
+                    calls.append(request_id)
+                    yield types.SimpleNamespace(finished=True,request_id=request_id,outputs=[],prompt_token_ids=[])
+            module=types.ModuleType('vllm.v1.engine.async_llm');module.AsyncLLM=FakeAsyncLLM
+            with tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);budget=AttemptBudget('q7-hook-fixture',cap)
+                (root/'RUN-BOUND.json').write_text(json.dumps(dict(budget_id=budget.budget_id,physical_attempt_limit=cap)))
+                ledger=CellBudgetLedger.create(root/'logical-unit.sqlite',budget,deadline_utc=time.time()+600)
+                ledger.reserve_unit(budget.budget_id,cap);ledger.claim_shared_unit(budget.budget_id)
+                env={'Q7_SOURCE':str(Path(__file__).resolve().parents[2]),'Q7_OUTPUT':tmp,'Q7_BUDGET_ID':budget.budget_id}
+                with patch.dict(os.environ,env),patch.dict(sys.modules,{'vllm.v1.engine.async_llm':module}):
+                    native_observer_setup()
+                    engine=object.__new__(FakeAsyncLLM)
+                    async def exercise():
+                        for index in range(cap):
+                            async for _ in engine.generate({},None,str(index)): pass
+                        with self.assertRaises(BudgetExhausted):
+                            async for _ in engine.generate({},None,'over-budget'): pass
+                    asyncio.run(exercise())
+                self.assertEqual(len(calls),cap)
+                self.assertEqual(len(list(root.glob('native-output-*.json'))),cap)
 
 class HostAdapterTests(unittest.TestCase):
     def test_existing_cleanup_helpers_and_residual_process_gate(self):
