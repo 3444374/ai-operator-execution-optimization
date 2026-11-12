@@ -28,7 +28,7 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 ## 查询路径
 
 - 默认 fused 与可选 `record_local_sections` 使用不同编排；后者可显式选择同一异步后端上的完成推进。
-- [有限链验证入口](scripts/README.md#record-chain-step-actions)可在同一 C4 下比较已有 Core 步骤预算，保留 ready／Core offer 与容量回执；比较命令已将输出差异映射为失败退出，见[行为与验证](../experiments/results/diagnostics/record_chain_comparison_20261111/README.md)。这是项目自定义 MMF 的功能对照，该步骤预算的真实模型和性能验证仍待完成。
+- [有限链验证入口](scripts/README.md#record-chain-step-actions)可在同一 C4 下比较已有 Core 步骤预算，保留 ready／Core offer、完整关系就绪及旧关闭时钟；比较命令将输出差异映射为失败退出。[真实两臂结果](../experiments/results/diagnostics/record_chain_comparison_20261111/README.md#server-step-actions-20261112)已各完成 48 次调用，最终关系相同但一项输出 token 不同，严格比较失败。它是项目自定义 MMF、每臂 n=1；没有性能或机制收益资格，不是 SemBench 原题验证。
 - 原生 baseline 不能注入 Core 调度；完整查询保留原关系处理、评价与工作量。
 - 容量、结果关联及逐行方法的接口见[执行适配](src/execution_provider/adapters/README.md)、
   [LOTUS 方法](src/semantic_methods/lotus/README.md)与[原生对照](src/baselines/README.md)。

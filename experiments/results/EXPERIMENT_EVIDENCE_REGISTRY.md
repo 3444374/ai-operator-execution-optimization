@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-12：Core 步骤预算的真实两臂比较未通过严格 token 验收
+
+[同一报告的服务器结果](diagnostics/record_chain_comparison_20261111/README.md#server-step-actions-20261112)
+绑定 `122e6f383` 与独立资源支持 `933157666`：自定义 16 行 MMF 两臂各 48 次确认终态，
+最终关系及文本相同，但一项输出 token 不同，比较退出 1；原失败、完整时钟和资源清理结果保留。
+每臂 n=1，不授予性能收益、机制因果或原 SemBench 资格，PR #99 保持独立 Draft。
+
 ## 2026-11-11：有限链回执比较的退出状态
 
 [原反例和修复检查](diagnostics/record_chain_comparison_20261111/README.md)证明旧比较命令在输出不一致时仍返回0，
