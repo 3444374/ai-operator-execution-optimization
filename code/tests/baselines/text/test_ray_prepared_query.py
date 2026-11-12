@@ -19,7 +19,7 @@ from tests.baselines.text.ray_native_fixtures import recorded_processor
 
 class RayPreparedTests(unittest.TestCase):
     def run_query(self, root, now, *, kind='map', transform=lambda rows: rows, close_error=None,
-                  empty=False, duplicate=False):
+                  empty=False, duplicate=False, preflight_seconds=0):
         query = test_sembench_prepared.PreparedSemanticsTests().query(kind)
         if duplicate:
             query.operation.frame['text'] = 'same'
@@ -49,11 +49,22 @@ class RayPreparedTests(unittest.TestCase):
         engine = EngineSpec(model_path='unused', model_python='unused', driver_python='unused')
         def advance(phase):
             now[0] += (5 if phase == 'close' else 2)*1_000_000_000
+        def preflight(*args, **kwargs):
+            now[0] += preflight_seconds * 1_000_000_000
+            return query
         with recorded_processor(replies, transform=transform, close_error=close_error, advance=advance) as sdk, \
-                patch.object(driver, 'SemBenchTextQuery', return_value=query), \
+                patch.object(driver, 'SemBenchTextQuery', side_effect=preflight), \
                 patch.object(driver.time, 'monotonic_ns', side_effect=lambda: now[0]):
             report = driver.run_query(config, query, engine, None, root)
         return report, sdk
+
+    def test_source_preflight_is_excluded_without_subtracting_from_old_clock(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report, _ = self.run_query(Path(directory), [1_000_000_000], preflight_seconds=17)
+        self.assertEqual(report['source_to_sink_seconds'], 5)
+        self.assertEqual(report['preflight_finished_ns'] - report['worker_entry_ns'], 17_000_000_000)
+        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v2')
+        self.assertGreater(report['query_seconds'], report['source_to_sink_seconds'] + 17)
 
     def test_sink_excludes_audit_serialization_and_close(self):
         now = [1_000_000_000]

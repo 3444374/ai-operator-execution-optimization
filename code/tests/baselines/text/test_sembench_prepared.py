@@ -82,7 +82,7 @@ class PreparedSemanticsTests(unittest.TestCase):
                 finish(query, method, calls, predictions, on_result_ready=ready)
             ready.assert_not_called()
 
-    def run_driver(self, root, now):
+    def run_driver(self, root, now, *, preflight_seconds=0):
         from src.experiments import native_daft_sembench as driver
         from src.infrastructure.private_artifacts import publish_private_json
 
@@ -109,11 +109,21 @@ class PreparedSemanticsTests(unittest.TestCase):
             publish_private_json(directory/'worker.json',dict(status='completed',native_api={},
                 model_close_receipt={'status':'closed'}))
             return {'status':'CPU fixture'}
-        with patch.object(driver,'SemBenchTextQuery',return_value=query), \
+        def preflight(*args, **kwargs):
+            now[0] += preflight_seconds * 1_000_000_000
+            return query
+        with patch.object(driver,'SemBenchTextQuery',side_effect=preflight), \
                 patch.object(driver,'prepare',return_value=(method,calls,requests)), \
                 patch.object(driver.time,'monotonic_ns',side_effect=lambda:now[0]), \
                 patch.object(driver.time,'monotonic',side_effect=lambda:now[0]/1e9):
             return driver.run_query(config,root,model_python='CPU-only',tokenizer=object(),supervise=supervised)
+
+    def test_source_preflight_is_excluded_and_original_relational_work_is_timed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = self.run_driver(Path(directory)/'run', [1_000_000_000], preflight_seconds=17)
+        self.assertEqual(report['source_to_sink_seconds'], 3)
+        self.assertEqual(report['preflight_finished_ns'] - report['worker_entry_ns'], 17_000_000_000)
+        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v2')
 
     def test_message_digests_and_relation_serialization_advance_only_post_sink_clock(self):
         from src.baselines.text import sembench_prepared as semantics

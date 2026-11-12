@@ -168,6 +168,29 @@ class ResidentReportTests(unittest.TestCase):
 
 
 class ResidentClockTests(unittest.TestCase):
+    def test_source_and_budget_preflight_precede_the_fresh_query_clock(self):
+        from src.serving.backends.vllm_protocol import GenerationSpec
+        now = [1_000_000_000]
+        def prepare(*args):
+            now[0] += 17_000_000_000
+            return query
+        def execute(handler):
+            now[0] += 3_000_000_000
+            return 0, None
+        query = SimpleNamespace(operation=None, describe=lambda: {'expected_model_calls': 0},
+            execute=execute, evaluate=lambda result: {'count': result})
+        ledger = SimpleNamespace(claim_shared_unit=lambda unit: SimpleNamespace(attempts=0, remaining=1),
+                                 close_shared_unit=lambda unit: None)
+        driver = resident.ResidentDriver({}, 'unused', 'unused', None, GenerationSpec(), None, ledger)
+        with patch.object(entry, 'query_from_config', side_effect=prepare), \
+                patch.object(resident, 'verify_inputs'), \
+                patch.object(resident.time, 'monotonic_ns', side_effect=lambda: now[0]):
+            report = driver.query(dict(query_id='empty', temperature='cold', unit_id='unit'), lambda event: now[0])
+        self.assertEqual(report['preflight_finished_ns'] - report['worker_entry_ns'], 17_000_000_000)
+        self.assertEqual(report['source_to_sink_seconds'], 3)
+        self.assertEqual(report['result'], 0)
+        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v2')
+
     def test_IPC_observer_restores_hooks_and_rejects_unconfirmed_or_duplicate_terminals(self):
         transport = SimpleNamespace(submit=lambda row,**kw:SimpleNamespace(status='queued',request_id='a'),
             poll=lambda:[SimpleNamespace(request_id='a',engine_terminal_confirmed=True)])

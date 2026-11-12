@@ -166,6 +166,7 @@ Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON �
 
 原始预测发布后，监督器立即调用原 parser/完整查询 sink；driver 不先等待 worker 关闭。
 `source_start_ns → sink_ready_ns` 含 fresh CSV、prepare、模型启动、原生执行及完整原查询，
+`sembench.source_to_sink.v2` 将原输入预检、tokenizer 加载和预算创建放到起点前，
 实际 IPC/polling 包含在内；原 sink 后才记录持久化、评价，模型 close/进程退出另列，
 close 可能与 driver 后处理重叠。严格 host controller 入口仍未知，不能把该区间追认为
 包含 host 导入、预检和租约的统一 cold 总时钟。native generate/add/final 为 API 证据，
@@ -193,6 +194,8 @@ Ray Data LLM processor 拥有图、chat template、tokenization、batching、模
 `materialize().take_all()` 后，在 `ray.shutdown()` 前执行原 parser 和完整关系查询；
 原查询返回的内存结果立即标记 `sink_ready_ns`。`source_to_sink_seconds` 包含本轮新鲜 source/prepare、
 Ray/模型启动及原关系计算；消息摘要、关系序列化、评价、持久化和关闭在 sink 后另记事件。
+`sembench.source_to_sink.v2` 的起点位于输入身份／配置核对、预算领取之后；准备的是已绑定输入，
+原查询在完成 parser／关系计算时仍重新读取并核对 CSV，没有通过缓存结果跳过实际查询读取。
 `query_seconds` 仍是包含审计和 runtime close 的较宽区间，不能代替 sink 指标。
 最早 host/controller 入口未在此 worker 观察，保持空值；AsyncLLM 首提交、末确认终态与构造返回事件
 保存在 `native-events-*.jsonl` 并在查询报告汇总，不能称为引擎接受或 GPU kernel 时间。
@@ -404,7 +407,8 @@ Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求�
 预检使用本地 tokenizer JSON 和原 LM 计数，记录声明的服务上下文、完整首层消息和计数来源，零模型／零额度消耗；
 本地 tokenizer 身份不代替服务端验证。运行使用既有持久预算逐 POST 消费，保留原分层归并、失败尝试和原 JSON 评价。
 该路径计时基于已就绪的外部服务，模型启动／退出另由宿主核查，不能与普通文本冷启动成绩混算。
-`source_to_sink_seconds` 从本地 LM／tokenizer 准备前到完整原聚合结果返回，排除 observer 收尾、评价、
+`sembench.source_to_sink.v2` 的 `source_to_sink_seconds` 从预检、LM／tokenizer 准备完成后、
+实际原查询读取前到完整聚合结果返回，排除 observer 收尾、评价、
 结果编码和持久化；旧 `query_seconds` 保持原边界。原 sf25 保存输入的软件 SDK 回放不证明目标 tokenizer
 的首层划分，真实调用上限仍需上述目标预检，不能直接使用软件 fixture 的单请求数。
 当前仅原生 LOTUS 聚合已接线，另外四种 baseline 的聚合项留空，不增加替代算法。
@@ -544,6 +548,22 @@ LOTUS／Palimpzest 的逐题方法或脚本定义查询，ThalamusDB／BigQuery 
 文本入口现按捕获到的算子检查能力：普通 Filter／Map／Extract 使用既有接点，Join／TopK
 要求显式 LOTUS resident；prepared 请求入口拒绝其他算子，不在缺少 stage 时以属性异常退出。
 此项只移除题号决定后端能力的限制，不开放新的场景、聚合或多算子完整查询；这些仍需接入与验证。
+
+### 完整查询时钟与仍未统一的路径
+
+五个入口显式记录 `query_clock_version=sembench.source_to_sink.v2`，同时保留 worker 进入、预检结束和
+sink 的实测时间戳。LOTUS resident 在输入／预算核对后、原查询真实 CSV 扫描前开始；
+LOTUS 图像及 MMQA 聚合在本地客户端和输入／叶级预检后、完整原查询读取前开始。
+Ray／Daft prepared 路径在配置／输入核对和预算准备后开始，包含必要的消息准备、原生执行和
+原查询的真实重读／后处理。禁止从历史宽区间估算扣除预检时间；旧 JSON 按原口径保留。
+
+这些版本化起点不等于所有运行配置已经可直接排名：Ray／Daft 单冷和 LOTUS resident 的首次惰性
+加载仍在区间内，LOTUS 外部服务则已就绪；模型启动条件必须匹配并独立记录，不能借同一字段名
+把不同 profile 混算。旧 `query_seconds`／外层生命周期区间仍可能包含预检、审计和关闭。
+当前 IMLane Filter 的 `prepare_query` 仍混合读取、身份核对与 tokenizer 准备；Kalypso 的旧 caller→sink
+仍包含 manifest／source 核对及必需输入文件准备。它们没有取得 v2 资格，不从已有宽时钟回填新值。
+默认 isolated 记录图继续明确留空统一 sink 指标；多算子、Join、TopK 支持以实际后端接点核对，
+不以时钟字段、软件夹具或逐题计划代替执行能力。
 
 ## 已退役和暂停
 

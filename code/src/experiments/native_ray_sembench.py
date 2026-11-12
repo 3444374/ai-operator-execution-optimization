@@ -24,12 +24,13 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
     started = time.monotonic_ns()
     report = dict(schema='semloom.sembench_text_result.v1', status='failed', backend='ray-data',
         execution_layout='public Ray Data LLM processor; original SemBench parser and full query',
-        source_started_ns=started, source_to_sink_seconds=None, strict_controller_to_sink_seconds=None,
+        worker_entry_ns=started, source_started_ns=None, source_to_sink_seconds=None,
+        query_clock_version='sembench.source_to_sink.v2', strict_controller_to_sink_seconds=None,
         production_core_used=False, result_cache_enabled=False, warmup_calls=0,
         lifecycle='single cold native instance', requested_generate_retries=0,
         performance_claim=False, physical_gpu_exit_confirmed=None,
-        timing_scope='fresh CSV/source and prepare, native startup/materialization, original parser/full sink; '
-                     'audit, evaluation, persistence and ray.shutdown excluded',
+        timing_scope='prepared execution and original fresh CSV scan/parser/full sink; native cold startup included; '
+                     'source/config preflight, budget claim, audit, evaluation, persistence and ray.shutdown excluded',
         strict_controller_unavailable_reason='worker API does not observe earliest host/controller code',
         engine_accept_ns=None, kernel_seconds=None)
     primary = None
@@ -43,13 +44,12 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
             scale_factor=config.get('scale_factor'))
         if query.files != checked_query.files:
             raise ValueError('native Ray fresh source differs from checked input identity')
-        method, prepared, requests = prepare(query)
-        report.update(query=query.describe(), logical_requests=len(requests), prepare_finished_ns=time.monotonic_ns())
+        report['query'] = query.describe()
         spec = config['ray_native']
         value = config['budget']
         ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
         unit = ledger.claim_shared_unit(value['unit_id'])
-        if len(requests) > unit.remaining:
+        if query.describe()['expected_model_calls'] > unit.remaining:
             raise ValueError('shared physical budget cannot cover every original occurrence')
         observer = dict(value, output=str(directory.resolve()))
         runtime_env = dict(py_executable=engine.model_python,
@@ -64,6 +64,11 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
             raise ValueError('conflicting Ray engine settings or unsupported explicit chat template')
         engine_kwargs.update(spec['engine_kwargs'])
 
+        report['preflight_finished_ns'] = time.monotonic_ns()
+        report['source_started_ns'] = time.monotonic_ns()
+        method, prepared, requests = prepare(query)
+        report.update(logical_requests=len(requests), prepare_finished_ns=time.monotonic_ns())
+
         def accept(raw):
             nonlocal result, native
             native = raw
@@ -72,7 +77,7 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
                 nonlocal result
                 result = value
                 report['sink_ready_ns'] = time.monotonic_ns()
-                report['source_to_sink_seconds'] = (report['sink_ready_ns'] - started) / 1e9
+                report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_started_ns']) / 1e9
                 report['semantic_audit_started_ns'] = time.monotonic_ns()
             _, semantic = finish(query, method, prepared, raw['predictions'], on_result_ready=sink_ready)
             report['semantic_audit_finished_ns'] = time.monotonic_ns()
@@ -83,7 +88,7 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
             engine_kwargs=engine_kwargs, processor_options=spec['processor_options'],
             runtime_options=config['profile'], engine_runtime_env=runtime_env, on_result_ready=accept)
         report['query_seconds'] = (time.monotonic_ns() - started) / 1e9
-        report['query_timing_scope'] = 'fresh source through semantic audit and runtime close; use source_to_sink_seconds'
+        report['query_timing_scope'] = 'legacy worker entry through preflight, semantic audit and runtime close; use versioned source_to_sink_seconds'
         if unit.attempts != len(requests):
             raise RuntimeError('mandatory native generate accounting does not match complete occurrences')
         from src.baselines.text.frameworks.ray_native_observer import summarize

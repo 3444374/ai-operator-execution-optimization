@@ -121,7 +121,8 @@ class ResidentDriver:
 
         started = time.monotonic_ns()
         report = dict(status='failed', query_id=spec['query_id'], phase=spec['temperature'],
-            source_start_ns=started, result_cache_enabled=False, extra_warmup=0, retries=0,
+            worker_entry_ns=started, source_start_ns=None, query_clock_version='sembench.source_to_sink.v2',
+            result_cache_enabled=False, extra_warmup=0, retries=0,
             first_engine_accept_ns=None, kernel_seconds=None)
         unit = primary = None
         try:
@@ -168,10 +169,12 @@ class ResidentDriver:
                         query_id=query.query_id, profile=self.config['profile'], budget=unit,
                         shared_owner=self.owner)
 
-                report['prepare_finished_ns'] = time.monotonic_ns()
+                report['preflight_finished_ns'] = time.monotonic_ns()
+                report['source_start_ns'] = time.monotonic_ns()
+                report['prepare_finished_ns'] = report['source_start_ns']
                 result, operator = query.execute(execute)
                 sink = emit('result_ready')
-                report.update(sink_ready_ns=sink, source_to_sink_seconds=(sink-started)/1e9,
+                report.update(sink_ready_ns=sink, source_to_sink_seconds=(sink-report['source_start_ns'])/1e9,
                     native_query_seconds=(sink-report['prepare_finished_ns'])/1e9)
                 if operator is not None and query.operation.describe()['kind'] == 'join':
                     from src.baselines.text.frameworks.lotus_native_join import finish_accounting
@@ -233,7 +236,8 @@ class ResidentDriver:
                     model_ready_observed_ns=None if operator is None else operator.get('model_ready_observed_ns'),
                     startup_this_round_seconds=(state['ready']['startup_seconds'] if first_model and state['ready'] else 0),
                     budget_attempts=unit.attempts, budget_remaining=unit.remaining,
-                    timing_scope='fresh source/prepare -> original full sink; snapshot/audit/evaluation/persistence/close separate')
+                    timing_scope='original fresh CSV scan -> full sink; first lazy model startup included; '
+                        'source/binding/budget preflight, snapshot/audit/evaluation/persistence/close separate')
                 return report
         except BaseException as error:
             primary = error

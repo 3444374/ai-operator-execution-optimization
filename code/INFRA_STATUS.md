@@ -131,6 +131,11 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 对 Join／TopK 等不支持算子在读取 stage 前明确拒绝。该改动不等于多算子查询已经接通，
 原项目的查询／系统职责及与本地执行比较的区别见[接入职责](src/baselines/README.md#sembench-原项目与本地接入职责)。
 
+LOTUS resident、Ray／Daft prepared、LOTUS 图像和 MMQA 聚合新增
+`query_clock_version=sembench.source_to_sink.v2`：起点在各自额外预检和配置准备之后，
+完整查询真实读取及最终关系处理仍计入；旧宽时钟不回填。冷模型／已就绪外部服务条件仍不同，
+IMLane／Kalypso 的旧时钟尚未统一，见[时钟范围](src/baselines/README.md#完整查询时钟与仍未统一的路径)。
+
 Kalypso Movie Q8/Q9/Q10 现由同一个 Map 接点绑定原题，保留作者提示、动态输出上限、
 length→8192 重试、原 parser 和完整关系后处理。Q10 另绑定原 Movies 评价文件；调用数从原题选择取得，
 不设固定样本量。候选 `e5ea4842f` 的既有 48 项 CPU 检查与 4000 条保存答复回放为软件证据；

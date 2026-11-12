@@ -86,12 +86,13 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         warmup_calls=0, retries=0, performance_claim=False,
         query_timing_scope="legacy source/query interval including post-result stage and response accounting",
         source_started_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
-        source_to_sink_timing_scope="local LM/client preparation, source identity/decode and CSV reads, native PNG formatting, "
-            "complete original operators and memory sink; external service startup, post-result audit, "
+        query_clock_version="sembench.source_to_sink.v2",
+        source_to_sink_timing_scope="actual image/source decode and CSV reads, native PNG formatting, "
+            "complete original operators and memory sink; input preflight, LM/client setup, external service startup, post-result audit, "
             "serialization, evaluation and audit flush excluded",
         evaluation_in_query_seconds=False)
     started = time.monotonic()
-    report["source_started_ns"] = time.monotonic_ns()
+    report["worker_entry_ns"] = time.monotonic_ns()
     writer = audit = lm = result = None
     failure = None
 
@@ -118,8 +119,10 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         writer = BufferedEvents(Path(directory) / "native-http.jsonl")
         audit = _NativeCalls(writer, config["model_name"])
         lm = _make_lm(config)
+        report["preflight_finished_ns"] = time.monotonic_ns()
         with lotus.settings.context(lm=lm, enable_cache=False), audit.observe_lm(lm):
             with observe_native_httpx(budget, audit.record, checked["endpoint"], timeout_s=config["query_timeout_s"]):
+                report["source_started_ns"] = time.monotonic_ns()
                 if config["scenario"] == "animals":
                     from src.baselines.image.sembench_animals import AnimalsDataset, run_original_query, evaluate_original
                     source = AnimalsDataset(Path(checkout), Path(manifest), manifest_digest)

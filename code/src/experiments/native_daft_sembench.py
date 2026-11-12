@@ -38,7 +38,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
     new_private_directory(directory)
     deadline = started / 1e9 + config['query_timeout_s']
     report = dict(schema='semloom.native_daft_sembench.result.v1', status='failed',
-        backend='daft-native-ai', source_start_ns=started, strict_controller_entry_ns=None,
+        backend='daft-native-ai', worker_entry_ns=started, source_start_ns=None,
+        query_clock_version='sembench.source_to_sink.v2', strict_controller_entry_ns=None,
         strict_controller_entry_reason='host imports, preflight and lease precede this function',
         clock='time.monotonic_ns on one host', warmup=0, whole_query_retries=0,
         result_cache=False, prefix_cache='native provider/config; effective value observed when exposed',
@@ -54,9 +55,16 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
             from transformers import AutoTokenizer
             tokenizer = AutoTokenizer.from_pretrained(config['model'], local_files_only=True,
                                                        trust_remote_code=False)
-        method, prepared, requests = prepare(query, tokenizer)
-        if len(requests) > budget.limit:
+        if query.describe()['expected_model_calls'] > budget.limit:
             raise ValueError('complete original query exceeds the declared model-call budget')
+        if query.operation is not None and query.operation.records:
+            ledger = CellBudgetLedger.create(directory / 'physical-budget.sqlite', budget,
+                deadline_utc=time.time() + max(0, deadline - time.monotonic()))
+            ledger.reserve_unit('query', budget.limit)
+            ledger.claim_shared_unit('query')
+        report['preflight_finished_ns'] = time.monotonic_ns()
+        report['source_start_ns'] = time.monotonic_ns()
+        method, prepared, requests = prepare(query, tokenizer)
         report.update(query=query.describe(), logical_requests=len(requests),
                       prepare_finished_ns=time.monotonic_ns())
 
@@ -70,7 +78,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
                 nonlocal result
                 result = value
                 report['sink_ready_ns'] = time.monotonic_ns()
-                report['source_to_sink_seconds'] = (report['sink_ready_ns'] - started) / 1e9
+                report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_start_ns']) / 1e9
                 if report['sink_ready_ns'] / 1e9 > deadline:
                     raise TimeoutError('complete original Daft query exceeded its query allowance')
                 report['semantic_audit_started_ns'] = time.monotonic_ns()
@@ -87,10 +95,6 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
         if requests:
             packet = directory / 'prepared-prompts.json'
             write_private_json(packet, dict(schema='semloom.native_daft_prompts.v1', requests=requests))
-            ledger = CellBudgetLedger.create(directory / 'physical-budget.sqlite', budget,
-                deadline_utc=time.time() + max(0, deadline - time.monotonic()))
-            ledger.reserve_unit('query', budget.limit)
-            ledger.claim_shared_unit('query')
             native_sampling = query.operation.stage.generation.kwargs()
             worker = {key: config[key] for key in ('model', 'engine_kwargs', 'provider_options',
                                                    'cleanup_s', 'stop_grace_s')}
@@ -115,7 +119,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
         report['quality'] = json_metric(query.evaluate(result))
         report['evaluation_finished_ns'] = time.monotonic_ns()
         report.update(status='completed', result=result_value(result),
-            timing_scope='fresh CSV/prepare, native model/query, original parser and full original sink; '
+            timing_scope='prepared execution, native cold model/query, original fresh CSV scan/parser/full sink; '
+                         'source/config/tokenizer preflight and budget setup excluded; '
                          'no wait for worker close on sink path; polling/IPC included',
             close_overlap='worker shutdown may overlap driver parsing; close and supervision are separate events')
     except BaseException as error:
