@@ -114,6 +114,8 @@ def main(argv=None):
 
     started = time.perf_counter_ns()
     config, engine, generation, _ = configuration(args.config)
+    if engine.chat_template is not None:
+        raise ValueError('request profiling requires the tokenizer-owned chat template')
     query = query_from_config(config, args.sembench_checkout, args.data_dir, generation)
     operation = query.operation
     if operation is None or not operation.records:

@@ -1,6 +1,6 @@
 # Feasibility Results
 
-[同请求消息长度复用](message_frame_size_reuse_20261109/README.md)保存精确字节、有限链固定结果回放和三种 CPU 测算对照；
+[同请求消息长度复用](message_frame_size_reuse_20261109/README.md)保存精确字节、有限链回放、实际输入 CPU 停止决定与模板身份修复；
 实际数据、原生 tokenizer 和 GPU 改善尚未验证。
 
 

@@ -55,3 +55,4 @@
 
 真实输入先用[native_frame_profile.py](native_frame_profile.py)的原生 formatter／本地 tokenizer 采集，
 再交原回放；只处理原查询初始已就绪集合，不执行模型。计时、实际额度和停止条件见同一诊断报告。
+该入口只接受 tokenizer 自带聊天模板；显式 `engine.chat_template` 会在采集前拒绝，避免把默认模板的 token 标为自定义模板输入。

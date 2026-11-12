@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+## 2026-11-12：消息帧候选的实际 CPU 停止与模板身份修复
+
+[主报告](diagnostics/message_frame_size_reuse_20261109/README.md#actual-cpu-stop)补入准确 `586fe4c` 的原执行回执：
+实际 Q9 输入长度复用未胜过直接 JSON，按计划停止，不安排 GPU。原件来源和本次未重跑的范围明确保留。
+[模板身份修复](diagnostics/message_frame_size_reuse_20261109/README.md#template-identity-review)拒绝未支持的显式模板，
+反例修前失败、修后相关 18 项 CPU 通过；临时 fixture 结果不转授为新源码的实际模型资格。
+
+
 ## 2026-11-09：同请求消息长度测算的 CPU 候选
 
 [独立研究报告](diagnostics/message_frame_size_reuse_20261109/README.md)保留原测算、直接 JSON、精确长度复用的全部 CPU 重复值和测量源码摘要。

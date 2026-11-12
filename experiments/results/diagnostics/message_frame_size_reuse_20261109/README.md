@@ -2,7 +2,8 @@
 
 来源：main `f44f174a27e564734774c015fa0847334698a321`；研究分支独立实现。
 [计划](../../../plans/数据组织.md#message-frame-size-reuse)与[研究说明](../../../../docs/research/优化方法依据.md#message-frame-size-reuse)
-先限定比较和停止条件。本报告支持 CPU 组件及固定结果回放，并补充上游 CSV 只读画像；实际输入的原生准备成本与 GPU 性能仍未验证。
+先限定比较和停止条件。后续准确 `586fe4c` 的实际 Q9 输入 CPU 检查已触发停止条件：长度复用未胜过直接 JSON。
+本报告区分早期 fixture、实际 CPU 回执与 2026-11-12 模板身份修复；未安排该候选的 GPU 实验。
 
 ## 发现与实现
 
@@ -92,7 +93,7 @@ Movie Q9-map 只有一个语义 Map，前置为普通谓词，不能据此证明
 初始调用无语义父节点，重复项不删。也可改用既有 Medical Q10 配置检查 Extract 输入准备，
 不能由该初始集合推断模型结果之后的就绪状态。
 
-由主会话在已有合法 CPU 环境执行；本任务没有登录服务器。变量均取现有实际路径和运行声明，
+以下为当时交给主会话的执行说明；实际完成状态见文末准确来源回执。变量均取现有实际路径和运行声明，
 尤其字节额度不能套用 fixture 值。先按 runtime README 使用已有 `AI_OPERATOR_ENV_FILE`
 完成 `core,text,semantic-benchmarks` 的只读 preflight；源码、数据和 tokenizer 不下载。
 
@@ -111,7 +112,7 @@ Movie Q9-map 只有一个语义 Map，前置为普通谓词，不能据此证明
 原 owner 的批 RPC `_encode` 同样使用 `limits.input_bytes`，回放遵循该映射。
 九项受影响 CPU 检查通过，覆盖非 8192 结果值、不同单项／总输入值传入 CLI、原尺寸核验和编码，
 并保持三臂成员、完整请求、token 与固定装配相同；采集替身另覆盖 2 MiB 单项声明。
-新增本地输出追加到[原检查日志](raw/followup-checks.log)，不覆盖先前结果；真实输入结果仍为 pending。
+新增本地输出追加到[原检查日志](raw/followup-checks.log)，不覆盖先前结果；该阶段的真实输入结果当时为 pending，随后在准确 `586fe4c` 执行。
 
 ```bash
 CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONPATH=code \
@@ -140,8 +141,7 @@ Core payload 编解码、源读取、LM／tokenizer 构造、发送与落盘未�
 
 请求／token 或任意尺寸不同立即停止；字节超额保留原拒绝。若长度复用不能胜过直接 JSON，
 或即使消除全部目标测算也小于准备时间的重复波动，就停止该候选，不安排 GPU。
-目前保留为 CPU 工程微优化；没有完成用户期待的 DAG／CPU–GPU 跨层创新成果，
-也没有实际输入的原生成本结论。本轮不扩大生产接点，PR 保持 draft。
+该候选只评估 CPU 工程开销，不是 DAG／CPU–GPU 跨层方法；后续实际 CPU 回执判定停止，生产接点不扩大，PR 保持 draft。
 
 无损原件可用已有命令恢复到一个新目录：
 
@@ -150,3 +150,40 @@ PYTHONPATH=code python3 code/scripts/analysis/restore_result_evidence.py \
   experiments/results/diagnostics/message_frame_size_reuse_20261109/raw/storage-manifest.jsonl \
   --output /tmp/new-message-frame-evidence
 ```
+
+<a id="actual-cpu-stop"></a>
+## 准确来源的实际 CPU 结果与停止决定
+
+2026-11-12 回查[原执行回执](https://github.com/3444374/ai-operator-execution-optimization/pull/93#issuecomment-6776968035)，
+将准确 `586fe4c44eb21ddd4670fb9f1b3099b775219caa` 的结果补入本报告；
+[回执副本](raw/actual-cpu-result-comment.json)保留原文与来源。本次没有重新运行实际采集，也未重新取得其私有原始包；
+以下数字归该回执，不能据本轮 fixture 修复将它们转授新源码。
+
+实际环境为 Linux x86_64、Python 3.12.3、LOTUS 1.2.4、Transformers 4.57.6，CPU 0–7。
+原 Q9 初始 128 个 occurrence 包含 99 种消息，29 种出现两次、70 种一次。
+五次原生 formatter/tokenizer 采集；各臂一次预热、五次计时回放。
+单项输入和结果各 2 MiB，总输入 272 MiB、窗口 136；没有模型调用、Ray runtime 或 GPU 工作。
+
+| 实际 Q9 输入回放 | 中位时间（ms） |
+|---|---:|
+| 原测算 | 47.897 |
+| 直接 JSON | 36.468 |
+| 长度复用 | 47.249 |
+
+长度复用比直接 JSON 慢 29.56%，已满足预先声明的停止条件，不安排此候选的 GPU 实验或默认接入。
+原测算占已捕获串行 CPU 切片约 12.81%；它不是完整查询占比。
+原回执保留首次采集包装器的导入失败及修正，源码和依赖未改；进程、SHM 与 lease 收尾通过。
+
+<a id="template-identity-review"></a>
+## 2026-11-12：模板身份缺陷修复
+
+两项独立审查在相同 `586fe4c` 上发现同一个问题：CLI 接受 `engine.chat_template`，
+但采集使用 tokenizer 默认模板，随后把带覆盖值的 engine 声明写入 frontier。
+不同模板会产生不同 token，三臂共享错误采集结果的内部一致性检查无法发现这种来源错配。
+
+现与已有请求采集入口一致，在采集前拒绝显式模板覆盖；没有增加模板加载器或改变默认模板行为。
+新增 CLI 反例先复现未拒绝，修后通过；连同消息帧测算、请求组织共 18 项本地 CPU 检查通过。
+SDK、tokenizer 和查询对象均为临时 fixture，无模型或外部服务访问。
+[修复证据](raw/template-identity-checks.json.gz)保留红／绿日志、两次测试启动／记录器错误及源码摘要；
+这些失败未被计入 18 项通过数，也不与历史检查累加为整树资格。
+准确 `586fe4c` 的实际运行使用默认模板，原停止判断保留；新版本不声称重新取得实际 CPU 或 GPU 资格。
