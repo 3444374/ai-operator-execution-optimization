@@ -162,6 +162,22 @@ class OriginalAnimalsImageTests(unittest.TestCase):
                 self.assertIn(f"files/animals/query/gold_sql/Q{query_id}.sql", report["source_sha256"])
         self.assertEqual(dataset.preflight()["query_id"], 1)
 
+    def test_ray_capture_uses_original_query_passes_messages_and_complete_sink(self):
+        from src.baselines.image.ray_animals_q7.capture_cpu import main
+        dataset=self.make_dataset(count=7)
+        for query_id in animals.IMAGE_QUERY_IDS:
+            output=self.root/('capture-'+str(query_id))
+            env=dict(Q7_OUTPUT=str(output),Q7_MANIFEST=str(dataset.manifest),
+                Q7_CHECKOUT=str(self.checkout),CUDA_VISIBLE_DEVICES='')
+            with self.subTest(query_id=query_id),patch.dict(os.environ,env):main(query_id)
+            receipt=json.loads((output/'CPU-NATIVE-CAPTURE.json').read_text())
+            expected=dataset.preflight(query_id)
+            self.assertEqual(receipt['preflight']['query_id'],query_id)
+            self.assertEqual(receipt['images'],expected['expected_model_calls'])
+            self.assertEqual(len(receipt['passes']),expected['native_filter_passes'])
+            self.assertTrue(receipt['complete_original_sink_match'])
+            self.assertEqual(receipt['actual_model_calls'],0)
+
     def test_original_image_queries_and_original_gold_evaluators_keep_their_result_schemas(self):
         for query_id in animals.IMAGE_QUERY_IDS:
             with self.subTest(query_id=query_id):

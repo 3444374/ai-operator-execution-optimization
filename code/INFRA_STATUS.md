@@ -51,6 +51,8 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 原生默认重试／caller runtime 的历史身份从[准确来源](../experiments/reproduction/native_baselines/README.md#retired-ray-q3-native-binding)恢复，
 没有把不同生命周期做成等价别名。Daft 专项 worker 也已移除旧 Q3 schema／执行图，
 其结果、关闭失败和部分构造失败用例迁到现行 prepared 路径；独立 HTTP profile 保留。
+Animals 的 Ray 零模型捕获／processor门也已按原题元数据消费一遍或两遍完整输入，移除资格工具
+写死Q7两遍的限制；四题7图软件样本与受影响28项检查通过，真实单遍Ray／VLM仍待验。
 其他已就绪项继续排队；不为每个格子另写执行器，不只积累软件通过数。
 已核对的普通文本题主要是单个语义调用；E-Commerce Q12 的后续 Extract 明确包含图像，
 已由完整原生 LOTUS 服务入口运行，不能当纯文本或假定其他后端已能执行它。

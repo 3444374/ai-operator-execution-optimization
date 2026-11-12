@@ -6,7 +6,8 @@ Q1/Q3/Q10 use one complete Filter, one native lifecycle and N model calls.
 Q7 uses the original zebra/impala Filters and City intersection, two sequential
 native lifecycles and 2N calls. All four reuse the same binding, worker, processor,
 budget and final-result release; the official query owns its relational result.
-The existing official sf64 manifest remains exactly 64 images / 128 calls; the
+The existing official sf64 manifest remains exactly 64 images, with 128 calls for
+Q7 and 64 for each single-pass query; the
 same entry also accepts the existing explicitly labeled finite software samples.
 It does not relabel a sample as the complete official source or broaden the
 manifest's supported input roles and size range.
@@ -41,7 +42,7 @@ Freeze `output/RUN-BOUND.json` with the fields below. Resource numbers are an
 example allocation; the controller must bind the agreed actual values and the
 SHA256 of each supplied helper/configuration file.
 The following example is for the unchanged complete sf64 source. For another
-accepted manifest, `physical_attempt_limit` must be exactly twice its verified
+accepted Q7 manifest, `physical_attempt_limit` must be exactly twice its verified
 row count. The driver checks that count before either native stage is dispatched;
 each actor uses that same frozen cap and the existing shared ledger.
 For Q1/Q3/Q10 the complete cap is N instead of 2N. The shared task metadata
@@ -114,7 +115,7 @@ Old `load_verified` remains only the generic hash-checked module loader (includi
 the socket helper), not the current host-policy entry. Archived owners still use
 their frozen source and cannot inherit this new boundary qualification.
 Private `TMPDIR`, `VLLM_RPC_BASE_PATH` and `RAY_TMPDIR` are per stage and restored
-afterward. The outer lease stays held across both stages. A stage timeout is
+afterward. The outer lease stays held across all original Filter stages. A stage timeout is
 separate from the mandatory outer query deadline.
 
 The final prediction/release exchange is bounded by the existing stage timeout;
@@ -273,14 +274,21 @@ mode, `Q7_SOURCE`, `Q7_CHECKOUT`, `Q7_MANIFEST`, `Q7_MODEL`, `Q7_OUTPUT`, `Q7_CO
 and `PYTHONPATH="$Q7_SOURCE/code"` explicitly.
 
 ```sh
-"$DRIVER_PYTHON" -B -m src.baselines.image.ray_animals_q7.capture_cpu
+"$DRIVER_PYTHON" -B -m src.baselines.image.ray_animals_q7.capture_cpu --query 7
 "$NATIVE_PYTHON" -B -m src.baselines.image.ray_animals_q7.processor_cpu
 "$NATIVE_PYTHON" -B -m src.baselines.image.ray_animals_q7.hook_cpu /fresh/hook-output
 ```
 
-Capture checks the original parser and complete City intersection with synthetic
-answers. Processor checks native message/token/pixel identity and the shared
-2N / (2N+1) boundary. Hook checks export/install in an actual Ray CPU worker without
+Capture accepts the same original Q1/Q3/Q7/Q10 identity as the worker (default Q7).
+It checks original wire images, parser and full sink with explicit software
+answers, including reversed occurrence replies; a direct original-SDK replay
+checks the relation without another per-query sink implementation.
+Processor consumes that capture's original query identity, Filter-pass count and
+complete call count. It checks native message/token/pixel identity and the shared
+N or 2N boundary plus the next rejected attempt. No processor-side query override
+or fixed Q7 two-pass assumption is used. The current capture receipt records
+`complete_original_sink_match`; old City-intersection-only receipts retain their
+frozen source. Hook checks export/install in an actual Ray CPU worker without
 engine construction or CUDA initialization. Outputs and native SDK provenance
 are qualification evidence, not model results. Host cleanup is checked separately.
 The variable-size processor receipt reports `software_guard_next_attempt_rejected`

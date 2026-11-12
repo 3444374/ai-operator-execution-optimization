@@ -34,10 +34,13 @@ def main():
     occurrences = json.loads((ROOT / 'OCCURRENCES.json').read_text())
     captured = json.loads((ROOT / 'CPU-NATIVE-CAPTURE.json').read_text())
     count = captured['preflight']['rows']
-    total = 2 * count
+    passes = captured['preflight']['native_filter_passes']
+    query_id = captured['preflight']['query_id']
+    total = captured['preflight']['expected_model_calls']
     assert type(count) is int and count > 0
+    assert total == count * passes
     assert len(messages) == len(occurrences) == total
-    assert [row['stage'] for row in occurrences] == [0] * count + [1] * count
+    assert [row['stage'] for row in occurrences] == [stage for stage in range(passes) for _ in range(count)]
     attempts = []
 
     def forbidden(*args, **kwargs):
@@ -102,7 +105,7 @@ def main():
         sys.path.insert(0, os.environ['Q7_SOURCE'] + '/code')
         from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
         from src.experiments.cell_budget import CellBudgetLedger
-        allowance = AttemptBudget('CPU-RAY-ANIMALS-Q7-boundary-' + str(total), total)
+        allowance = AttemptBudget('CPU-RAY-ANIMALS-Q'+str(query_id)+'-boundary-' + str(total), total)
         ledger = CellBudgetLedger.create(ROOT / ('CPU-ONLY-shared-' + str(total) + '.sqlite'), allowance, deadline_utc=time.time() + 600)
         ledger.reserve_unit(allowance.budget_id, total)
         unit = ledger.claim_shared_unit(allowance.budget_id)
@@ -113,7 +116,7 @@ def main():
         except BudgetExhausted:
             pass
         else:
-            raise AssertionError('software attempt beyond 2N accepted')
+            raise AssertionError('software attempt beyond the complete original query accepted')
         assert unit.attempts == total and unit.remaining == 0
         image_config = reference.image_processor.to_dict()
         import importlib.metadata, inspect
@@ -126,6 +129,6 @@ def main():
     print(json.dumps({key: result[key] for key in ('status', 'rows', 'model_constructor_attempts', 'actual_model_calls', 'CUDA_initialized', 'Ray_CPU_shutdown_confirmed')}))
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description='Zero-model Q7 qualification. Required environment and config schema: adjacent README.md and config.example.json')
+    parser = argparse.ArgumentParser(description='Zero-model Animals processor qualification; consumes the captured query identity')
     parser.parse_args()
     main()
