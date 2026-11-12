@@ -665,8 +665,12 @@ Unix IPC、完整 sink ACK 和原审计；只有模型服务替换为测试目�
 `relation`、最终 `result`／`quality` 和 `evidence`。同文不同答复不能按消息摘要合并；Join 还要核对
 完整中间关系，不能只因最终空表相同就通过。旧 `--original-run` Filter 门继续原行为，两种参考互斥。
 完整输入、缺行和重复 occurrence 三门继续共用 `--case`，后两者应在 provider 请求前拒绝。
-40项不同本机软件检查通过、0模型；它们只验证接线与参考身份，新的真实 SQL 门仍须由服务器运行，
-不把此前 `f246b28cd` 的驱动链接成功改记为 SQL 已验。
+40项不同本机软件检查通过、0模型。冻结 `8667d526c` 随后通过服务器的三道真实 SQL 门：
+完整输入执行一次 native AI SQL、消费64条软件答复并核对8×22关系及完整 sink ACK；
+缺行和重复 ID 均在 AI query／provider 请求前拒绝。复用既有 `52bf5763` DSO 的
+`author_build_mode=patched` 构建，未重编／重链接；原件、归档和清理已独立核验。
+这些证据只授予该来源的 SQL／交接资格，尚不是 IMLane 模型质量或作者 Join 算法复现；
+运行身份及恢复摘要见[接入验收报告](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-boolean-join-sql)。
 
 `prompt_columns` 保存原 LOTUS 观察到的源列顺序，而非渲染 header。原 `StageSpec.bind`
 已经从原题 instruction 解析列名，准备阶段核对相同列集合，再应用显式冻结顺序；

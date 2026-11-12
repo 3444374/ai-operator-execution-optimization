@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[SemBench 原生接入分路径验收](sembench_native_integration_20261112/README.md)：
+完整源关系、原作者 Kalypso Join／TopK 与 IMLane Boolean Join SQL 的冻结来源、原件恢复和资格边界。
+
 [原生 baseline 隔离组合](baseline_validated_integration_20261111/README.md)：
 精确合并、限定 CPU 回归、保存答复/软件 IPC 及测试隔离修复；组件目标成绩保持原提交，尚未合 main。
 

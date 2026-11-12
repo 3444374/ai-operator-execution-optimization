@@ -188,7 +188,9 @@ Cars Q3／Q8 也复用原生视觉服务，保留完整图像发生项及最后 
 同一 resident、原价格选择、N×N self-join、ID 拼接与 F1，没有单独执行器或候选预筛。
 IMLane 也通过独立 `text_join` schema 将同一原消息和完整 pair 发生项交原版 TINYINT prediction；
 复用既有 owner/SQL/ACK，由原 SDK 恢复 Join／原题 sink，原始答复和实际选列在 sink 后审计。
-原版 DSO/kernel/C++ 未改；软件检查不替代真实 Linux SQL/模型资格，零候选仍是薄 driver 接线限制。
+原版 DSO/kernel/C++ 未改。冻结 `8667d526c` 已通过[真实 Linux SQL 三门](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-boolean-join-sql)：
+完整64条软件答复、8×22中间关系及 sink ACK，缺行／重复 ID 在任何 AI query／provider 请求前拒绝；
+复用既有 patched 构建的 `52bf5763` DSO，0模型，资源与租约闭合。真实模型仍待验，零候选仍是薄 driver 接线限制。
 已核当前 LOTUS1.2.4 accessor 实际每侧只选一个 Series；此前多列软件检查证明与原 SDK 一致，
 不证明全部声明字段进入模型。现在 `native_join_inputs` 记录真实选列／遗漏字段，保留原生行为；
 完整多列意图语义及真实目标模型仍未验证。

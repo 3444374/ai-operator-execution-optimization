@@ -716,6 +716,7 @@ prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常�
 同一普通算子的 positional／keyword 参数由一个共享绑定处理，Map 的命名输出列按原 `suffix`
 写入；普通 Extract 保留声明字段及原 JSON 解析，quotes/raw 等未支持的选项仍明确拒绝。
 
+<a id="sembench-native-query-timing"></a>
 ### 完整查询时钟与仍未统一的路径
 
 维护版 LOTUS resident／视觉／MMQA 聚合、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 记录
