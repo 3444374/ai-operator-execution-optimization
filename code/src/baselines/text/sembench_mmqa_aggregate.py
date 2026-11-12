@@ -1,6 +1,7 @@
 """Pinned MMQA Q5 source, unchanged LOTUS query and original JSON evaluator."""
 
 from dataclasses import asdict
+from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -17,6 +18,11 @@ def input_identity(data_dir):
 
 def run_original_query(checkout, data_dir, *, input_observer=None):
     """Keep the author's title selection, sem_agg arguments and _output projection."""
+    return bind_original_query(checkout, data_dir, input_observer=input_observer)()
+
+
+def bind_original_query(checkout, data_dir, *, input_observer=None):
+    """Bind the native aggregation before timing its actual source and hierarchy."""
     import pandas as pd
 
     module = load_module(checkout, "sembench_mmqa_aggregate_lotus",
@@ -30,7 +36,7 @@ def run_original_query(checkout, data_dir, *, input_observer=None):
             input_observer(frame)
         return frame
 
-    return module.LotusRunner._execute_q5(SimpleNamespace(load_data=load_data))
+    return partial(module.LotusRunner._execute_q5, SimpleNamespace(load_data=load_data))
 
 
 def evaluate_original(checkout, result):

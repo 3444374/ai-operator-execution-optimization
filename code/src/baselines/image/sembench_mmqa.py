@@ -97,6 +97,11 @@ def _native_query_api():
 
 def run_original_query(checkout, data_dir, query_id):
     """Call the unchanged full exact query without setup, warmup or preset matches."""
+    return bind_original_query(checkout, data_dir, query_id)()
+
+
+def bind_original_query(checkout, data_dir, query_id):
+    """Bind the original complete Join/Extract query outside its timed scan."""
     import pandas as pd
 
     query = _query_id(query_id)
@@ -113,8 +118,13 @@ def run_original_query(checkout, data_dir, query_id):
         return pd.read_csv(data / name, **kwargs)
 
     owner.load_data = load
-    with _native_query_api():
-        return getattr(owner, "_execute_q" + query)()
+    execute = getattr(owner, "_execute_q" + query)
+
+    def run():
+        with _native_query_api():
+            return execute()
+
+    return run
 
 
 def evaluate_original(checkout, query_id, result):

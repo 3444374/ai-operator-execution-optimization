@@ -129,13 +129,16 @@ Movie Q5/Q6/Q7 的[共享原生 Join 候选](src/baselines/README.md#lotus-movie
 [首批 CPU 报告](../experiments/results/diagnostics/lotus_movie_join_native_20261111/README.md)
 只覆盖每题 8×8 软件答复回放及 sink 前后边界；没有新的模型、GPU 或完整 256×256 资格。
 
-LOTUS 原视觉查询与 MMQA Q5 聚合现于原完整关系返回时记录内存 sink，source 包括本地 LM／tokenizer
-准备，旧 `query_seconds` 保持。5 项受控时钟检查与 17 项原生 SDK 软件检查通过；Q5 原 sf25 资产已回放，
-但使用软件 tokenizer／生成，不能据此确定目标模型的分层请求数。视觉原查询的新增完整回放缺本地
-Animals manifest／SQL，目标环境验证仍待完成。
+LOTUS 原视觉查询与 MMQA Q5 聚合在完整原关系返回时记录内存 sink；维护版 v3 把本地 LM／tokenizer、
+源码校验／模块绑定和输入身份预检放在起点前，真实数据／图像读取、原生连续算子和完整后处理仍计入。
+Animals 的额外像素身份审计在 sink 后复核，不取代原 ImageArray 解码；具名官方 sf64 身份仍固定64条，
+软件 fixture 不再受64条上限。原 SDK、HTTP 软件答复与受控时钟检查覆盖两次独立 Filter、Join→Extract、
+真实中间关系和聚合分层；Q5 原 sf25 资产使用软件 tokenizer／生成回放，不证明目标模型的分层请求数。
+目标环境验证待完成；旧 `query_seconds` 和历史 v2 时长保持。
 
 [Kalypso 原生客户端](src/baselines/text/frameworks/kalypso_native/README.md#内存结果边界)新增完整原关系
-就绪时间，公共报告从真实 `query_start_ns` 计算 `source_to_sink_seconds`；trace 审计、结果编码、
+就绪时间，维护版公共报告从显式 `source_started_ns` 到内存 sink 计算 `source_to_sink_seconds`；
+旧 caller 起点另列，不回填历史值。trace 审计、结果编码、
 评价和证据持久化在该终点后。旧 `answer_ready_s` 保留，缺少新接点的路径明确留空。
 共享接点的 29 项 CPU 检查与公共时钟／生命周期的 42 项检查通过；后置失败仍保留 sink 并报告失败。
 现有 Q10 Map 与 Q3b–g 私有入口已给出新副本迁移补丁；4000 条 Map 保存答复和 12×25 条 MMQA
@@ -172,7 +175,7 @@ Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两
 不再每次嵌入执行区间。原题、原参数及已有独立调用入口保持，原 SDK／prepared／resident 软件回归通过；
 这不扩展单算子桥的多算子能力，也不转授新的目标模型或完整公平计时资格。
 
-LOTUS resident、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 使用
+LOTUS resident／视觉／MMQA 聚合、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 使用
 `query_clock_version=sembench.source_to_sink.v3`：共享文本输入身份校验在起点前和 sink 后执行，
 完整查询真实读取及最终关系处理仍计入；旧宽时钟和 v2 不回填。LOTUS 可显式
 `model_initialization=before_queries`，调用原 owner 初始化后执行 `ready_first/ready_repeat`，没有额外模型预热；
@@ -181,7 +184,7 @@ LOTUS resident、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／
 审计 token、预算及上下文检查，区间内保留执行消息、native SQL 和原完整 sink；后者前置
 manifest／源码绑定，仍新鲜读取原 Reviews CSV、生成作者必需输入并执行原关系。
 Kalypso 另保留 caller→sink，不改旧 receipt 或估算扣除。受影响软件检查通过，v3 目标代表查询待验；
-LOTUS 图像／MMQA 聚合仍是 v2，其余专用／私有入口的旧时钟按
+其余专用／私有入口的旧时钟按
 [时钟范围](src/baselines/README.md#完整查询时钟与仍未统一的路径)分列。
 服务器冻结 `d55e9229` 的112项CPU检查通过；IMLane Q3a完成25次请求、原F1为0.9167，
 5.4116秒保留为含文件校验的旧区间。Kalypso在prompt目录冲突处失败，请求0；这是运行绑定问题，

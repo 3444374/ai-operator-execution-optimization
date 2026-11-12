@@ -435,8 +435,8 @@ Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求�
 预检使用本地 tokenizer JSON 和原 LM 计数，记录声明的服务上下文、完整首层消息和计数来源，零模型／零额度消耗；
 本地 tokenizer 身份不代替服务端验证。运行使用既有持久预算逐 POST 消费，保留原分层归并、失败尝试和原 JSON 评价。
 该路径计时基于已就绪的外部服务，模型启动／退出另由宿主核查，不能与普通文本冷启动成绩混算。
-`sembench.source_to_sink.v2` 的 `source_to_sink_seconds` 从预检、LM／tokenizer 准备完成后、
-实际原查询读取前到完整聚合结果返回，排除 observer 收尾、评价、
+`sembench.source_to_sink.v3` 的 `source_to_sink_seconds` 从预检、LM／tokenizer 和原函数绑定完成后、
+实际原查询读取前到完整聚合结果返回，排除重复源码 Git 校验／模块加载、observer 收尾、评价、
 结果编码和持久化；旧 `query_seconds` 保持原边界。原 sf25 保存输入的软件 SDK 回放不证明目标 tokenizer
 的首层划分，真实调用上限仍需上述目标预检，不能直接使用软件 fixture 的单请求数。
 当前仅原生 LOTUS 聚合已接线，另外四种 baseline 的聚合项留空，不增加替代算法。
@@ -592,11 +592,14 @@ LOTUS／Palimpzest 的逐题方法或脚本定义查询，ThalamusDB／BigQuery 
 
 ### 完整查询时钟与仍未统一的路径
 
-维护版 LOTUS resident、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 记录
+维护版 LOTUS resident／视觉／MMQA 聚合、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 记录
 `query_clock_version=sembench.source_to_sink.v3`，同时保留 worker 进入、预检结束和 sink 的实测时间戳。
 共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，
-sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 图像和 MMQA 聚合仍是 v2，
-它们在本地客户端和输入／叶级预检后、完整原查询读取前开始，未取得本批 v3 资格。
+sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 视觉和 MMQA 聚合也在
+本地客户端、输入／叶级预检及原函数绑定后开始，不将 Git 校验和模块加载混入完整查询。
+Animals 像素身份审计在区间两侧，原生 ImageArray 的真实图像读取／解码仍在区间内；
+MMQA 保留真实 Join 结果及其后续 Extract，聚合保留实际摘要长度决定的原分层归并。
+软件 fixture 不再套用64条上限；具名官方 sf64 输入仍必须匹配其64条生成身份。
 Ray／Daft prepared 路径在配置／输入核对和预算准备后开始，包含必要的消息准备、原生执行和
 原查询的真实重读／后处理。禁止从历史宽区间估算扣除预检时间；旧 JSON 按原口径保留。
 

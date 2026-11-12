@@ -64,6 +64,10 @@ class ServiceFixture:
         self.step("original query", 3)
         return self.result
 
+    def bind(self, *args, **kwargs):
+        self.step("query binding", 11)
+        return self.query
+
     def identity(self, *args):
         self.step("identity audit", 7)
         return "frozen"
@@ -121,8 +125,9 @@ class ServiceFixture:
             else:
                 module = sembench_animals
                 stack.enter_context(patch.object(module, "AnimalsDataset",
-                    return_value=SimpleNamespace(frame=lambda **kwargs: None)))
-            stack.enter_context(patch.object(module, "run_original_query", self.query))
+                    return_value=SimpleNamespace(frame=lambda **kwargs: None,
+                        bind_frame=lambda: lambda: None, read=self.identity)))
+            stack.enter_context(patch.object(module, "bind_original_query", self.bind))
             stack.enter_context(patch.object(module, "evaluate_original", self.evaluate))
             inputs = dict(data_dir="unused") if self.kind != "animals" else dict(manifest="unused", manifest_digest="unused")
             return entry.run_query(self.config, "unused", Path("unused"),
@@ -135,11 +140,12 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
             with self.subTest(kind=kind):
                 fixture = ServiceFixture(kind)
                 report = fixture.run()
-                self.assertEqual(report["source_to_sink_seconds"], 10)
-                legacy_source = 5 if kind == "aggregate" else 10
-                self.assertEqual(report["query_seconds"], legacy_source + 7 + 13 + (7 if kind == "aggregate" else 0))
+                self.assertEqual(report["source_to_sink_seconds"], 3)
+                self.assertGreater(report["query_seconds"], report["source_to_sink_seconds"])
                 lm_started = next(at for name, at in fixture.events if name == "LM setup")
-                self.assertLessEqual(report["source_started_ns"] / 1e9, lm_started)
+                self.assertGreaterEqual(report["source_started_ns"] / 1e9, lm_started + 5)
+                bound_at = next(at for name, at in fixture.events if name == "query binding")
+                self.assertGreaterEqual(report["source_started_ns"] / 1e9, bound_at + 11)
                 if kind == "aggregate":
                     self.assertEqual(report["driver_initialization_seconds"], 5)
                 sink = report["sink_ready_ns"] / 1e9
@@ -174,7 +180,7 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
                     self.assertIs(failure.query_result, fixture.result)
                     report = failure.query_report
                     self.assertEqual(report["status"], "failed")
-                    self.assertEqual(report["source_to_sink_seconds"], 10)
+                    self.assertEqual(report["source_to_sink_seconds"], 3)
                     self.assertEqual(fixture.serialization_calls, 1)
                     if phase != "serialization":
                         self.assertEqual(report["result"]["data"], fixture.rows)
@@ -202,7 +208,7 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
         with self.assertRaises(ValueError) as caught:
             fixture.run()
         self.assertIs(caught.exception, failure)
-        self.assertEqual(failure.query_report["source_to_sink_seconds"], 10)
+        self.assertEqual(failure.query_report["source_to_sink_seconds"], 3)
         self.assertEqual(failure.query_report["result"]["data"], fixture.rows)
         self.assertNotIn("quality", failure.query_report)
 

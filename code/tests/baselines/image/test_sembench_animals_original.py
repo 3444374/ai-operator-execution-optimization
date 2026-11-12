@@ -132,6 +132,21 @@ class OriginalAnimalsImageTests(unittest.TestCase):
             for message in conversation if isinstance(message["content"], list)
             for part in message["content"] if part["type"] == "image_url"]
 
+    def test_fixture_size_is_not_capped_by_the_official_sf64_identity(self):
+        dataset = self.make_dataset(count=65)
+        self.assertEqual(dataset.preflight(7)["expected_model_calls"], 130)
+        self.assertEqual(dataset.read()["role"], "software_fixture")
+
+    def test_bound_frame_rereads_manifest_without_pixel_preflight_in_query(self):
+        load = self.dataset.bind_frame()
+        manifest = json.loads(Path(self.dataset.manifest).read_text())
+        manifest["rows"][0]["City"] = "changed after binding"
+        Path(self.dataset.manifest).write_text(json.dumps(manifest))
+        with patch.object(animals, "image_identity", side_effect=AssertionError("query repeated pixel audit")):
+            self.assertEqual(load().iloc[0]["City"], "changed after binding")
+        with self.assertRaisesRegex(ValueError, "manifest identity"):
+            self.dataset.read()
+
     def test_preflight_declares_complete_64_or_128_occurrences_without_vision_provider(self):
         dataset = self.make_dataset(count=64)
         for query_id in animals.IMAGE_QUERY_IDS:

@@ -86,7 +86,7 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         warmup_calls=0, retries=0, performance_claim=False,
         query_timing_scope="legacy source/query interval including post-result stage and response accounting",
         source_started_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
-        query_clock_version="sembench.source_to_sink.v2",
+        query_clock_version="sembench.source_to_sink.v3",
         source_to_sink_timing_scope="actual image/source decode and CSV reads, native PNG formatting, "
             "complete original operators and memory sink; input preflight, LM/client setup, external service startup, post-result audit, "
             "serialization, evaluation and audit flush excluded",
@@ -119,25 +119,29 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         writer = BufferedEvents(Path(directory) / "native-http.jsonl")
         audit = _NativeCalls(writer, config["model_name"])
         lm = _make_lm(config)
+        if config["scenario"] == "animals":
+            from src.baselines.image.sembench_animals import AnimalsDataset, bind_original_query, evaluate_original
+            source = AnimalsDataset(Path(checkout), Path(manifest), manifest_digest)
+            execute_query = bind_original_query(checkout, source.bind_frame(), inputs["query_id"])
+        else:
+            from src.baselines.image.sembench_mmqa import bind_original_query, evaluate_original
+            execute_query = bind_original_query(checkout, data_dir, config["query"])
         report["preflight_finished_ns"] = time.monotonic_ns()
         with lotus.settings.context(lm=lm, enable_cache=False), audit.observe_lm(lm):
             with observe_native_httpx(budget, audit.record, checked["endpoint"], timeout_s=config["query_timeout_s"]):
                 report["source_started_ns"] = time.monotonic_ns()
-                if config["scenario"] == "animals":
-                    from src.baselines.image.sembench_animals import AnimalsDataset, run_original_query, evaluate_original
-                    source = AnimalsDataset(Path(checkout), Path(manifest), manifest_digest)
-                    result = run_original_query(checkout, source.frame, inputs["query_id"])
-                else:
-                    from src.baselines.image.sembench_mmqa import run_original_query, evaluate_original
-                    result = run_original_query(checkout, data_dir, config["query"])
+                result = execute_query()
                 # The original relation is ready before observer teardown or audit.
                 report["sink_ready_ns"] = time.monotonic_ns()
                 report["source_to_sink_seconds"] = (report["sink_ready_ns"] - report["source_started_ns"]) / 1e9
         report["post_sink_audit_started_ns"] = time.monotonic_ns()
         try:
             if config["scenario"] == "animals":
+                source.read()
                 expected_stages = [inputs["rows"]] * inputs["native_filter_passes"]
             else:
+                if check(config, checkout, data_dir=data_dir)["inputs"] != inputs:
+                    raise ValueError("MMQA visual input changed while executing the original query")
                 expected_stages = [inputs["exact_join_candidates"]]
                 if inputs["query"] == "Q2b":
                     expected_stages.append(len(result))

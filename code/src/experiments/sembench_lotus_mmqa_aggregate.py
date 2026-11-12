@@ -188,7 +188,7 @@ def run_query(config, checkout, directory, *, budget, data_dir):
         warmup_calls=0, retries=0, performance_claim=False, evaluation_in_query_seconds=False,
         query_timing_scope="legacy source/query interval including post-result input identity and response accounting",
         source_started_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
-        query_clock_version="sembench.source_to_sink.v2",
+        query_clock_version="sembench.source_to_sink.v3",
         source_to_sink_timing_scope="actual source read and complete unchanged Q5 hierarchy/projection in memory; "
             "LM/client/tokenizer setup, input/leaf preflight, external service startup, post-result audit, "
             "serialization, evaluation and audit flush excluded",
@@ -221,11 +221,12 @@ def run_query(config, checkout, directory, *, budget, data_dir):
         report["attempt_limit_remaining_at_query_start"] = budget.remaining
         writer = BufferedEvents(Path(directory) / "native-http.jsonl")
         audit = NativeServiceCalls(writer, config["model_name"])
+        execute_query = mmqa.bind_original_query(checkout, data_dir)
         report["preflight_finished_ns"] = time.monotonic_ns()
         with lotus.settings.context(lm=lm, enable_cache=False), audit.observe_lm(lm, kind="aggregate"):
             with observe_native_httpx(budget, audit.record, checked["endpoint"], timeout_s=config["query_timeout_s"]):
                 report["source_started_ns"] = time.monotonic_ns()
-                result = mmqa.run_original_query(checkout, data_dir)
+                result = execute_query()
                 report["sink_ready_ns"] = time.monotonic_ns()
                 report["source_to_sink_seconds"] = (report["sink_ready_ns"] - report["source_started_ns"]) / 1e9
         report["post_sink_audit_started_ns"] = time.monotonic_ns()

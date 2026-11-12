@@ -14,6 +14,7 @@ from pathlib import Path
 import socket
 import tempfile
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -180,7 +181,7 @@ class NativeMMQAAggregateTests(unittest.TestCase):
 
     def assert_audit(self, report, directory, replies):
         self.assertIsInstance(report["source_started_ns"], int)
-        self.assertEqual(report["query_clock_version"], "sembench.source_to_sink.v2")
+        self.assertEqual(report["query_clock_version"], "sembench.source_to_sink.v3")
         self.assertLessEqual(report["preflight_finished_ns"], report["source_started_ns"])
         if report["sink_ready_ns"] is None:
             self.assertIsNone(report["source_to_sink_seconds"])
@@ -247,6 +248,24 @@ class NativeMMQAAggregateTests(unittest.TestCase):
                 self.assertEqual(claim.attempts, 1)
                 self.assertEqual(replies.requests[0]["body"]["messages"], report["preflight"]["native_plan"]["leaf_messages"][0])
                 self.assert_audit(report, directory, replies)
+
+    def test_module_binding_and_input_identity_checks_are_outside_the_full_hierarchy(self):
+        module = self.entry.mmqa
+        events = []
+        def observe(function):
+            def checked(*args, **kwargs):
+                events.append(time.monotonic_ns())
+                return function(*args, **kwargs)
+            return checked
+        config, _ = self.config()
+        replies = NativeAggregateReplies(self)
+        with patch.object(module, "load_module", observe(module.load_module)), \
+                patch.object(module, "file_identity", observe(module.file_identity)):
+            report, _, _ = self.invoke(config, self.source(), replies)
+        self.assertTrue(events)
+        self.assertTrue(all(not report["source_started_ns"] <= event <= report["sink_ready_ns"]
+                            for event in events))
+        self.assertEqual(report["model_calls"], 1)
 
     def test_multilevel_uses_native_summary_prompts_and_output_dependent_request_count(self):
         config, _path = self.multi_config()

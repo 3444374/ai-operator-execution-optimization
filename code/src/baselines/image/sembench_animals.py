@@ -5,6 +5,7 @@ model provider is not supplied by this adapter.
 """
 
 from dataclasses import asdict, dataclass
+from functools import partial
 import hashlib
 import json
 from pathlib import Path
@@ -113,8 +114,8 @@ class AnimalsDataset:
         if role not in ("official_animals_sf64", "software_fixture"):
             raise ValueError("Animals input needs an explicit official or fixture identity")
         rows = value.get("rows")
-        if not isinstance(rows, list) or not 1 <= len(rows) <= 64:
-            raise ValueError("Animals qualification accepts at most 64 image occurrences")
+        if not isinstance(rows, list) or not rows:
+            raise ValueError("Animals manifest requires a nonempty image occurrence list")
         if role == "official_animals_sf64":
             provenance = value.get("provenance", {})
             if (
@@ -168,9 +169,25 @@ class AnimalsDataset:
         )
 
     def frame(self, *, references=False):
+        return self._frame(self.read()["rows"], references=references)
+
+    def bind_frame(self):
+        """Verify before timing, then freshly read manifest rows without pixel audit.
+
+        Native ImageArray still reads/decodes the actual images. The caller runs
+        read() again after the complete sink to audit manifest and image identity.
+        """
+        self.read()
+
+        def load():
+            return self._frame(json.loads(Path(self.manifest).read_text())["rows"])
+
+        return load
+
+    @staticmethod
+    def _frame(rows, *, references=False):
         import pandas as pd
 
-        rows = self.read()["rows"]
         fields = ["ImagePath", "City", "StationID"]
         if references:
             fields.append("Species")
@@ -182,6 +199,11 @@ class AnimalsDataset:
 
 def run_original_query(checkout, load_images, query_id=1):
     """Call an unchanged upstream image query, without constructor warmup."""
+    return bind_original_query(checkout, load_images, query_id)()
+
+
+def bind_original_query(checkout, load_images, query_id=1):
+    """Bind the original function before timing; its source remains freshly read."""
     verify_animals_checkout(checkout, query_id)
     module = load_module(
         checkout,
@@ -197,7 +219,7 @@ def run_original_query(checkout, load_images, query_id=1):
             raise ValueError("reference Species must not enter the semantic query")
         return frame
 
-    return getattr(module.LotusRunner, f"_execute_q{query_id}")(SimpleNamespace(load_data=load))
+    return partial(getattr(module.LotusRunner, f"_execute_q{query_id}"), SimpleNamespace(load_data=load))
 
 
 def evaluate_original(checkout, result, labeled_images, query_id=1):

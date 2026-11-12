@@ -18,6 +18,7 @@ from pathlib import Path
 import socket
 import tempfile
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -238,7 +239,7 @@ class NativeLotusImageQueryTests(unittest.TestCase):
 
     def assert_audit(self, report, directory, replies):
         self.assertIsInstance(report["source_started_ns"], int)
-        self.assertEqual(report["query_clock_version"], "sembench.source_to_sink.v2")
+        self.assertEqual(report["query_clock_version"], "sembench.source_to_sink.v3")
         self.assertLessEqual(report["preflight_finished_ns"], report["source_started_ns"])
         if report["sink_ready_ns"] is None:
             self.assertIsNone(report["source_to_sink_seconds"])
@@ -301,6 +302,28 @@ class NativeLotusImageQueryTests(unittest.TestCase):
                 self.assertFalse(report["performance_claim"])
                 self.assertEqual(report["retries"], 0)
                 self.assert_audit(report, directory, replies)
+
+    def test_source_and_pixel_audits_surround_the_complete_native_query(self):
+        from src.baselines.image import sembench_mmqa as mmqa
+
+        for scenario, query in (("animals", "Q7"), ("mmqa", "Q2b")):
+            inputs = self.animals_inputs() if scenario == "animals" else self.mmqa_inputs()
+            config, _ = self.config(scenario, query)
+            replies = NativeHTTPReplies(self, scenario)
+            source = animals if scenario == "animals" else mmqa
+            checks = []
+            def observe(function):
+                def checked(*args, **kwargs):
+                    checks.append(time.monotonic_ns())
+                    return function(*args, **kwargs)
+                return checked
+            with patch.object(source, "load_module", observe(source.load_module)), \
+                    patch.object(source, "image_identity", observe(source.image_identity)):
+                report, _, _ = self.invoke(config, inputs, replies)
+            self.assertTrue(checks)
+            self.assertTrue(all(not report["source_started_ns"] <= event <= report["sink_ready_ns"]
+                                for event in checks), scenario)
+            self.assertEqual([stage["input_occurrences"] for stage in report["native_lm_calls"]], [4, 4])
 
     def test_mmqa_native_join_and_extract_keep_duplicate_images_and_json_format(self):
         inputs = self.mmqa_inputs()
