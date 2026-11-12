@@ -71,31 +71,35 @@ class TopKOperation:
     generation: object
     instruction: str
     records: tuple[RecordOccurrence, ...]
+    columns: tuple[str, ...]
 
     def describe(self):
         count = len(self.records)
         return dict(kind='topk', method='quick', K=count, input_rows=count,
             expected_model_calls=count * (count - 1) // 2,
             call_count_kind='upper_bound; one request per native binary comparison',
-            input_columns=list(self.frame.columns), model_columns=['reviewText'],
+            input_columns=list(self.frame.columns), model_columns=list(self.columns),
             instruction=self.instruction, result_cache=False, cascade=False,
             pivot='original numpy.random.randint; actual RNG state recorded')
 
 
 @dataclass(frozen=True)
 class JoinOperation:
-    """The author's exact self Join; every ordered source pair is a request."""
+    """The author's exact Join; every ordered left/right pair is a request."""
     frame: object
+    right_frame: object
     model_name: str
     generation: object
     instruction: str
     records: tuple[RecordOccurrence, ...]
+    columns: tuple[str, str]
 
     def describe(self):
-        count = len(self.frame)
-        return dict(kind='join', method='exact', input_rows=count, right_input_rows=count,
-            expected_model_calls=count * count, call_count_kind='exact ordered Cartesian pairs',
-            input_columns=list(self.frame.columns), model_columns=['reviewText:left', 'reviewText:right'],
+        left_count, right_count = len(self.frame), len(self.right_frame)
+        return dict(kind='join', method='exact', input_rows=left_count, right_input_rows=right_count,
+            expected_model_calls=left_count * right_count, call_count_kind='exact ordered Cartesian pairs',
+            input_columns=list(self.frame.columns), right_input_columns=list(self.right_frame.columns),
+            model_columns=list(self.columns),
             instruction=self.instruction, result_cache=False, cascade=False,
             source_pair_order='left-major; original positions, including same IDs and text')
 
@@ -108,33 +112,43 @@ def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
     if lotus.settings.serialization_format != SerializationFormat.DEFAULT:
         raise ValueError('this record bridge uses original LOTUS DEFAULT text serialization')
     if kind == 'join':
-        if (len(args) != 1 or not args[0].equals(frame) or set(kwargs) != {'join_instruction'}
-                or set(lotus.nl_expression.parse_cols(kwargs['join_instruction']))
-                    != {'reviewText:left', 'reviewText:right'}):
-            raise ValueError('only original Movie Q5/Q6/Q7 exact self Join is bound')
+        import pandas as pd
+        if len(args) != 1 or not isinstance(args[0], pd.DataFrame) or set(kwargs) != {'join_instruction'}:
+            raise ValueError('ordinary exact Join requires one right frame and its original instruction')
+        right_frame = args[0]
+        columns = lotus.nl_expression.parse_cols(kwargs['join_instruction'])
+        left = [column for column in columns if column.endswith(':left')]
+        right = [column for column in columns if column.endswith(':right')]
+        if (len(columns) != 2 or len(left) != 1 or len(right) != 1
+                or left[0][:-5] not in frame.columns or right[0][:-6] not in right_frame.columns):
+            raise ValueError('ordinary exact Join requires one explicit :left and :right source column')
+        left_column, right_column = left[0], right[0]
         if generation.response_format is not None or generation.logprobs is not None:
             raise ValueError('ordinary Join uses the original Boolean answers without helper sampling')
         records = []
-        rows = list(frame[['reviewText']].iterrows())
-        for left, (left_index, left_row) in enumerate(rows):
-            for right, (right_index, right_row) in enumerate(rows):
+        right_rows = list(right_frame[[right_column[:-6]]].iterrows())
+        for left, (left_index, left_row) in enumerate(frame[[left_column[:-5]]].iterrows()):
+            for right, (right_index, right_row) in enumerate(right_rows):
                 records.append(RecordOccurrence(query_id + f'-pair-{left}-{right}', len(records),
-                    f'{int(left_index)}:{int(right_index)}',
-                    {'reviewText:left': str(left_row['reviewText']),
-                     'reviewText:right': str(right_row['reviewText'])}))
-        return JoinOperation(frame.copy(deep=True), model_name, generation,
-                             kwargs['join_instruction'], tuple(records))
+                    f'{left_index}:{right_index}',
+                    {left_column: str(left_row[left_column[:-5]]),
+                     right_column: str(right_row[right_column[:-6]])}))
+        return JoinOperation(frame.copy(deep=True), right_frame.copy(deep=True), model_name, generation,
+                             kwargs['join_instruction'], tuple(records), (left_column, right_column))
     if kind == 'topk':
-        if (len(args) != 1 or kwargs != dict(K=len(frame), method='quick', return_stats=True)
-                or lotus.nl_expression.parse_cols(args[0]) != ['reviewText']):
-            raise ValueError('only original Movie Q9 quick TopK with K=N is bound')
+        if len(args) != 1 or kwargs != dict(K=len(frame), method='quick', return_stats=True):
+            raise ValueError('ordinary quick TopK with K=N and original statistics is required')
+        columns = tuple(lotus.nl_expression.parse_cols(args[0]))
+        if not columns or any(column not in frame.columns for column in columns):
+            raise ValueError('TopK instruction must reference present source columns')
         if (generation.response_format is not None or generation.logprobs is not None
                 or generation.repetition_penalty != 1):
             raise ValueError('ordinary TopK uses plain binary answers without helper sampling')
         records = tuple(RecordOccurrence(query_id + '-row-' + str(i), i,
-            int(label) if isinstance(label, Integral) else label, {'reviewText': str(row['reviewText'])})
-            for i, (label, row) in enumerate(frame[['reviewText']].iterrows()))
-        return TopKOperation(frame.copy(deep=True), model_name, generation, args[0], records)
+            int(label) if isinstance(label, Integral) else label,
+            {column: str(row[column]) for column in columns})
+            for i, (label, row) in enumerate(frame[list(columns)].iterrows()))
+        return TopKOperation(frame.copy(deep=True), model_name, generation, args[0], records, columns)
     if kind in ('filter', 'map'):
         if len(args) != 1 or kwargs:
             raise ValueError('this original query profile uses one ordinary instruction without overrides')
@@ -316,7 +330,8 @@ class SemBenchTextQuery:
                 raise ValueError('the query emitted an undeclared additional semantic operator')
             actual = _operation(kind, frame, args, kwargs, model_name=self.model_name,
                                 generation=self.generation, query_id=self.query_id)
-            if actual.describe() != self.operation.describe() or not frame.equals(self.operation.frame):
+            if (actual.describe() != self.operation.describe() or not frame.equals(self.operation.frame)
+                    or kind == 'join' and not actual.right_frame.equals(self.operation.right_frame)):
                 raise ValueError('the original operator input or arguments changed after preflight')
             used = True
             operator_report = execute_operator(actual, invoke)
