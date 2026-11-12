@@ -1,8 +1,10 @@
-"""Prepare the pinned author's DuckDB copy, or link the thin Movie Q3 driver.
+"""Prepare the pinned author's DuckDB copy, or link a thin prediction driver.
 
 ``prepare`` writes a private source copy and explicit configure/build commands;
 it never runs CMake, installs packages, or changes the canonical author prefix.
 ``driver`` compiles q3.cpp against a separately built shared DuckDB library.
+``sembench-driver`` only links the prepared VARCHAR projection against a
+hash-bound, already qualified varchar-owned DSO and checks its loaded identity.
 """
 
 import argparse
@@ -25,6 +27,35 @@ from src.infrastructure.redact import redact_text
 AUTHOR = '072f8257db80569e42c9f5727d839587df529652'
 FMT_ORIGINAL = 'set(IMLANE_FMT_PATH "/home/IMLane_main/third_party/fmt/dist")'
 FMT_PORTABLE = 'set(IMLANE_FMT_PATH "" CACHE PATH "IMLane fmt prefix")'
+CONVERTER_HEADER = Path('src/include/prediction/datachunk_converter.hpp')
+SCHEMA_ROOT_CALL = 'ConverArrowAarrayToVector(tbl->chunks[0].children[0], &schema, out)'
+SCHEMA_CHILD_CALL = 'ConverArrowAarrayToVector(tbl->chunks[0].children[0], schema.children[0], out)'
+ORIGINAL_CONVERTER_SHA256 = '3baaa780a905e7a1c26c4b83aeaa6d48bc6a990d38aceb9e81ae4935aab30666'
+SCHEMA_CHILD_SHA256 = 'b361ce33e9ff89e44def48c039a9da2c614dc08b032e3f2eb6d1ec6ea6aafa54'
+VARCHAR_OWNED_SHA256 = 'c7a57bbba6193df41bea880bfa69f255a3720126ad60fb16db1b3cfa19d22048'
+
+
+def prepare_converter(copied_source, *, schema_child=False, varchar_owned=False):
+    """Apply the explicit engineering variant only to a fresh pinned export."""
+    if schema_child and varchar_owned:
+        raise ValueError('choose one explicit converter variant')
+    header = copied_source / CONVERTER_HEADER
+    original = header.read_bytes()
+    if hashlib.sha256(original).hexdigest() != ORIGINAL_CONVERTER_SHA256:
+        raise ValueError('converter differs from the pinned original author bytes')
+    variant = 'original-author'
+    if varchar_owned:
+        subprocess.run(['git', '-C', str(copied_source), 'apply',
+                        str(OWNED / 'patches/varchar_owned.patch')], check=True)
+        if file_identity(header)['sha256'] != VARCHAR_OWNED_SHA256:
+            raise ValueError('VARCHAR-owned patch produced unexpected header bytes')
+        variant = 'varchar-owned-engineering'
+    elif schema_child:
+        header.write_bytes(original.replace(SCHEMA_ROOT_CALL.encode(), SCHEMA_CHILD_CALL.encode()))
+        variant = 'schema-child-engineering'
+    return dict(variant=variant,
+                path=str(CONVERTER_HEADER), original_sha256=ORIGINAL_CONVERTER_SHA256,
+                prepared=file_identity(header), native_DSO_qualified=False)
 
 
 def _capture(command):
@@ -136,6 +167,7 @@ def prepare(args):
         raise ValueError('pinned DuckDB fmt declaration was not found exactly once')
     modified = original.replace(FMT_ORIGINAL, FMT_PORTABLE)
     cmake.write_text(modified)
+    converter = prepare_converter(copied_source, schema_child=args.schema_child, varchar_owned=args.varchar_owned)
     restoration = restore_missing_sources(copied_source, args.upstream_source)
     version_flags, versions = version_options(source)
     configure, compile_library = configure_commands(
@@ -143,7 +175,8 @@ def prepare(args):
     report = dict(
         schema='semloom.imlane-duckdb-prepare.v1', author=author, version=versions,
         source_archive=file_identity(archive), source_subtree='database/duckdb',
-        author_prediction_sources_modified=False, missing_source_restoration=restoration,
+        author_prediction_sources_modified=args.schema_child or args.varchar_owned, converter=converter,
+        missing_source_restoration=restoration,
         portability_patch=dict(path='CMakeLists.txt', old=FMT_ORIGINAL, new=FMT_PORTABLE,
             original_sha256=hashlib.sha256(original.encode()).hexdigest(),
             modified_sha256=hashlib.sha256(modified.encode()).hexdigest()),
@@ -156,7 +189,7 @@ def prepare(args):
     return 0
 
 
-def driver_command(source, prefix, duckdb_source, duckdb_build, output, compiler):
+def driver_command(source, prefix, duckdb_source, duckdb_build, output, compiler, *, driver_source=None):
     includes = [duckdb_source / 'src/include', prefix / 'include', source / 'include',
         source / 'third_party/nanoarrow/dist/include', source / 'third_party/msgpack/include',
         source / 'third_party/concurrentqueue/include', source / 'third_party/libuv/include',
@@ -164,13 +197,16 @@ def driver_command(source, prefix, duckdb_source, duckdb_build, output, compiler
         source / 'third_party/fmt/dist/include', source / 'third_party/boost/dist/include']
     libraries = [duckdb_build / 'src', prefix / 'lib', source / 'third_party/nanoarrow/dist/lib',
                  source / 'third_party/fmt/dist/lib', source / 'third_party/boost/dist/lib']
-    return [compiler, '-std=c++17', '-O2', str(OWNED / 'q3.cpp'), '-o', str(output),
+    return [compiler, '-std=c++17', '-O2', str(driver_source or OWNED / 'q3.cpp'), '-o', str(output),
             *['-I' + str(path) for path in includes], *['-L' + str(path) for path in libraries],
             '-Wl,-rpath,' + ':'.join(map(str, libraries)),
             '-lduckdb', '-ldbendrt_c', '-lfmt', '-lboost_system', '-pthread']
 
 
-def driver(args):
+def driver(args, *, sembench=False, native_filter=False, movie_scores=False):
+    bound = sembench or native_filter
+    if bound and sys.platform != 'linux':
+        raise RuntimeError('prepared native IMLane driver linkage requires Linux')
     source, prefix, author = _author(args.root)
     duckdb_source, duckdb_build, output = (
         path.resolve() for path in (args.duckdb_source, args.duckdb_build, args.output))
@@ -185,21 +221,68 @@ def driver(args):
         raise ValueError('driver build refuses to overwrite a prior result')
     library = duckdb_build / 'src/libduckdb.so'
     library_identity = file_identity(library)
+    driver_source = OWNED / ('q9.cpp' if movie_scores else 'mmqa_filter.cpp' if native_filter else 'sembench.cpp' if sembench else 'q3.cpp')
+    if movie_scores:
+        if library_identity['sha256'] != '52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf':
+            raise ValueError('Q9 requires the original qualified DOUBLE DSO')
+    if bound:
+        if (not re.fullmatch('[0-9a-f]{64}', args.duckdb_sha256)
+                or library_identity['sha256'] != args.duckdb_sha256):
+            raise ValueError('prepared driver requires the declared already-qualified DuckDB DSO')
+        source_header = file_identity(duckdb_source / CONVERTER_HEADER)
+        expected_header = ORIGINAL_CONVERTER_SHA256 if native_filter else VARCHAR_OWNED_SHA256
+        if source_header['sha256'] != expected_header:
+            raise ValueError('driver converter differs from its declared author variant')
     output.parent.mkdir(parents=True, exist_ok=True)
-    command = driver_command(source, prefix, duckdb_source, duckdb_build, output, args.compiler)
+    command = driver_command(source, prefix, duckdb_source, duckdb_build, output, args.compiler,
+                             driver_source=driver_source)
+    if bound:
+        command.extend(['-ldl', '-DSEMLOOM_EXPECTED_DUCKDB_DSO=' + json.dumps(str(library)),
+                        '-DSEMLOOM_EXPECTED_DUCKDB_SHA256=' + json.dumps(args.duckdb_sha256)])
     record = dict(schema='semloom.imlane-duckdb-driver-build.v1', author=author,
         command=command, compiler=_version([args.compiler, '--version']),
-        duckdb_library=library_identity, driver_source=file_identity(OWNED / 'q3.cpp'),
+        duckdb_library=library_identity, driver_source=file_identity(driver_source),
         duckdb_cmake=file_identity(duckdb_source / 'CMakeLists.txt'),
         cmake_cache=file_identity(duckdb_build / 'CMakeCache.txt'),
         real_model_requests=0, returncode=None, binary=None)
+    if movie_scores:
+        record.update(schema='semloom.imlane.movie_scores_build.v1', status='failed',
+            binary_path=str(output), duckdb_library_path=str(library),
+            kernel=file_identity(OWNED / 'q9_udf.py'),
+            relation_handoff=file_identity(OWNED / 'relation_handoff.hpp'))
+    if bound:
+        kernel = OWNED / ('mmqa_filter_udf.py' if native_filter else 'sembench_udf.py')
+        record.update(schema='semloom.imlane.filter_driver_build.v1' if native_filter else 'semloom.imlane.prepared_driver_build.v1', status='failed',
+            variant='original-author' if native_filter else 'varchar-owned-engineering', source_header=source_header,
+            binary_path=str(output), duckdb_library_path=str(library),
+            kernel_path=str(kernel), kernel=file_identity(kernel),
+            relation_handoff=file_identity(OWNED / 'relation_handoff.hpp'),
+            DSO_rebuilt=False)
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=args.timeout_seconds)
         record.update(returncode=result.returncode,
             compiler_output=redact_text(result.stdout + result.stderr))
         if result.returncode == 0:
             record['binary'] = file_identity(output)
-    except (OSError, subprocess.TimeoutExpired) as error:
+            if movie_scores:
+                record['status'] = 'built'
+            if bound:
+                probe_path = output.with_suffix('.link.json')
+                probe = subprocess.run([str(output), '--probe-dso', str(probe_path)],
+                    capture_output=True, text=True, timeout=15,
+                    env=dict(os.environ, CUDA_VISIBLE_DEVICES='', LD_LIBRARY_PATH=str(library.parent) +
+                             os.pathsep + os.environ.get('LD_LIBRARY_PATH', '')))
+                record['link_probe_process'] = dict(returncode=probe.returncode,
+                    output=redact_text(probe.stdout + probe.stderr))
+                if probe.returncode:
+                    raise RuntimeError('prepared driver DSO linkage probe failed')
+                linked = json.loads(probe_path.read_text())
+                resolved = Path(linked['converter_resolved_DSO']).resolve()
+                if resolved != library.resolve() or file_identity(resolved) != library_identity:
+                    raise ValueError('prepared driver resolved a different or modified DuckDB DSO')
+                record.update(status='built', link_probe=linked, link_probe_path=str(probe_path),
+                              link_probe_identity=file_identity(probe_path))
+    except (OSError, subprocess.TimeoutExpired, RuntimeError, ValueError) as error:
         record['error'] = redact_text(str(error))
         try:
             write_private_json(record_path, record)
@@ -230,15 +313,25 @@ def main(argv=None):
     preparation.add_argument('--upstream-source', type=Path, required=True,
                              help='local cache of the three exact files in missing_sources.json')
     preparation.add_argument('--jobs', type=_positive, required=True)
-    compilation = commands.add_parser('driver')
-    compilation.add_argument('--root', type=Path, required=True)
-    compilation.add_argument('--duckdb-source', type=Path, required=True)
-    compilation.add_argument('--duckdb-build', type=Path, required=True)
-    compilation.add_argument('--output', type=Path, required=True)
-    compilation.add_argument('--compiler', default='g++')
-    compilation.add_argument('--timeout-seconds', type=_positive, default=120)
+    converter_variant = preparation.add_mutually_exclusive_group()
+    converter_variant.add_argument('--schema-child', action='store_true',
+        help='explicit engineering variant: pair the output column with its Arrow child schema')
+    converter_variant.add_argument('--varchar-owned', action='store_true',
+        help='separate engineering variant: child schema and VARCHAR NULL/offset/owned string storage')
+    for action in ('driver', 'sembench-driver', 'filter-driver', 'movie-scores-driver'):
+        compilation = commands.add_parser(action)
+        compilation.add_argument('--root', type=Path, required=True)
+        compilation.add_argument('--duckdb-source', type=Path, required=True)
+        compilation.add_argument('--duckdb-build', type=Path, required=True)
+        compilation.add_argument('--output', type=Path, required=True)
+        compilation.add_argument('--compiler', default='g++')
+        compilation.add_argument('--timeout-seconds', type=_positive, default=120)
+        if action in ('sembench-driver', 'filter-driver'):
+            compilation.add_argument('--duckdb-sha256', required=True,
+                help='digest of the existing qualified variant-specific DuckDB DSO; never rebuild it')
     args = parser.parse_args(argv)
-    return prepare(args) if args.action == 'prepare' else driver(args)
+    return prepare(args) if args.action == 'prepare' else driver(args,
+        sembench=args.action == 'sembench-driver', native_filter=args.action == 'filter-driver', movie_scores=args.action == 'movie-scores-driver')
 
 
 if __name__ == '__main__':

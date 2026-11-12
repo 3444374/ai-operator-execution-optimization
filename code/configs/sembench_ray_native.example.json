@@ -1,0 +1,33 @@
+{
+  "schema": "semloom.sembench_text_run.v1",
+  "scenario": "movie",
+  "query": "10",
+  "query_id": "RAY-MOVIE-Q10-UNIQUE-RUN",
+  "backend": "ray-data",
+  "model_name": "openai/local-qwen2.5-7b",
+  "generation": {
+    "max_tokens": 8192, "temperature": 0, "top_p": 1, "seed": 0,
+    "stop": [], "presence_penalty": 0, "frequency_penalty": 0, "repetition_penalty": 1
+  },
+  "engine": {
+    "model_path": "<MODEL_DIRECTORY>",
+    "tokenizer_path": "<TOKENIZER_DIRECTORY>",
+    "model_python": "<NATIVE_RAY_VLLM_PYTHON>",
+    "driver_python": "<RAY_LOTUS_DRIVER_PYTHON>",
+    "max_model_calls": 32,
+    "seed": 0
+  },
+  "resources": {
+    "cpu_workers": 1, "gpu_workers": 1,
+    "startup_timeout_s": 240, "query_timeout_s": 600
+  },
+  "profile": {"address": "local", "num_cpus": 4, "num_gpus": 1},
+  "ray_native": {
+    "processor_options": {},
+    "engine_kwargs": {"enable_prefix_caching": true}
+  },
+  "budget": {
+    "path": "<EXISTING_PERMANENT_BUDGET_SQLITE>",
+    "id": "<PERMANENT_BUDGET_ID>", "limit": 32, "unit_id": "<RESERVED_COLD_UNIT>"
+  }
+}

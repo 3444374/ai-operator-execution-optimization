@@ -186,10 +186,30 @@ def run_query(config, checkout, directory, *, budget, data_dir):
         physical_gpu_exit_confirmed=None, service_startup_in_query_seconds=False, result_cache_enabled=False,
         driver_initialization_in_query_seconds=False,
         warmup_calls=0, retries=0, performance_claim=False, evaluation_in_query_seconds=False,
-        query_timing_scope="source identity/read, native leaf preflight and complete unchanged Q5 hierarchy/projection",
+        query_timing_scope="legacy source/query interval including post-result input identity and response accounting",
+        source_started_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
+        source_to_sink_timing_scope="local LM/client/tokenizer preparation, source identity/read, native leaf preflight and "
+            "complete unchanged Q5 hierarchy/projection in memory; external service startup, post-result audit, "
+            "serialization, evaluation and audit flush excluded",
         complete_cli_timing="supervisor.elapsed_s includes imports, tokenizer/LM setup, preflight, evaluation and audit flush")
     started = time.monotonic()
-    writer = audit = lm = failure = None
+    report["source_started_ns"] = time.monotonic_ns()
+    writer = audit = lm = result = failure = None
+
+    def preserve_failure(error, phase):
+        nonlocal failure
+        if failure is None:
+            failure = error
+        else:
+            failure.add_note(phase + " failed: " + type(error).__name__)
+
+    def serialize_result():
+        report["result_serialization_started_ns"] = time.monotonic_ns()
+        try:
+            report["result"] = json_metric(result.to_dict(orient="split"))
+        finally:
+            report["result_serialization_finished_ns"] = time.monotonic_ns()
+
     try:
         lm = _make_lm(config)
         report["driver_initialization_seconds"] = time.monotonic() - started
@@ -203,49 +223,78 @@ def run_query(config, checkout, directory, *, budget, data_dir):
         with lotus.settings.context(lm=lm, enable_cache=False), audit.observe_lm(lm, kind="aggregate"):
             with observe_native_httpx(budget, audit.record, checked["endpoint"], timeout_s=config["query_timeout_s"]):
                 result = mmqa.run_original_query(checkout, data_dir)
-        if mmqa.input_identity(data_dir) != checked["source"]:
-            raise ValueError("MMQA input changed while executing the original aggregation")
-        stages = audit.lm_calls
-        if (not stages or stages[0]["input_occurrences"] != checked["work"]["leaf_requests"]
-                or stages[-1]["input_occurrences"] != 1
-                or any(stage["post_attempts"] != stage["input_occurrences"] for stage in stages)):
-            raise RuntimeError("native aggregation requests differ from the complete uncached SDK hierarchy")
-        accounting = audit.snapshot()
-        if (accounting["succeeded"] != sum(stage["input_occurrences"] for stage in stages)
-                or accounting["failed"] or accounting["unknown"] or accounting["unfinished"]):
-            raise RuntimeError("native aggregate POSTs lack complete successful response/model evidence")
+                report["sink_ready_ns"] = time.monotonic_ns()
+                report["source_to_sink_seconds"] = (report["sink_ready_ns"] - report["source_started_ns"]) / 1e9
+        report["post_sink_audit_started_ns"] = time.monotonic_ns()
+        try:
+            if mmqa.input_identity(data_dir) != checked["source"]:
+                raise ValueError("MMQA input changed while executing the original aggregation")
+            stages = audit.lm_calls
+            if (not stages or stages[0]["input_occurrences"] != checked["work"]["leaf_requests"]
+                    or stages[-1]["input_occurrences"] != 1
+                    or any(stage["post_attempts"] != stage["input_occurrences"] for stage in stages)):
+                raise RuntimeError("native aggregation requests differ from the complete uncached SDK hierarchy")
+            accounting = audit.snapshot()
+            if (accounting["succeeded"] != sum(stage["input_occurrences"] for stage in stages)
+                    or accounting["failed"] or accounting["unknown"] or accounting["unfinished"]):
+                raise RuntimeError("native aggregate POSTs lack complete successful response/model evidence")
+        finally:
+            report["post_sink_audit_finished_ns"] = time.monotonic_ns()
         report["query_seconds"] = time.monotonic() - query_started
-        report["result"] = json_metric(result.to_dict(orient="split"))
+        serialize_result()
         evaluated = time.monotonic()
-        report["quality"] = json_metric(mmqa.evaluate_original(checkout, result))
-        report["evaluation_seconds"] = time.monotonic() - evaluated
+        report["evaluation_started_ns"] = time.monotonic_ns()
+        try:
+            report["quality"] = json_metric(mmqa.evaluate_original(checkout, result))
+        finally:
+            report["evaluation_finished_ns"] = time.monotonic_ns()
+            report["evaluation_seconds"] = time.monotonic() - evaluated
         report["status"] = "completed"
     except BaseException as error:
         failure = error
         report.update(error_type=type(error).__name__, error=redact_text(str(error)))
     finally:
+        if result is not None and "result_serialization_started_ns" not in report:
+            try:
+                serialize_result()
+            except BaseException as error:
+                preserve_failure(error, "result serialization")
+        report["audit_finalization_started_ns"] = time.monotonic_ns()
         if audit is not None:
-            report.update(calls=audit.snapshot(), native_lm_calls=audit.lm_calls, model_calls=len(audit.requests))
+            report.update(native_lm_calls=audit.lm_calls, model_calls=len(audit.requests))
+            try:
+                report["calls"] = audit.snapshot()
+            except BaseException as error:
+                preserve_failure(error, "native audit snapshot")
         else:
             report["model_calls"] = 0
         if lm is not None:
-            report["lm"] = lm_report(lm)
+            try:
+                report["lm"] = lm_report(lm)
+            except BaseException as error:
+                preserve_failure(error, "native LM report")
+        report["audit_finalization_finished_ns"] = time.monotonic_ns()
         if writer is not None:
+            report["audit_flush_started_ns"] = time.monotonic_ns()
             try:
                 writer.close()
             except BaseException as error:
                 report["audit_cleanup_error"] = dict(error_type=type(error).__name__, error=redact_text(str(error)))
-                if failure is None:
-                    failure = error
-                else:
-                    failure.add_note("native audit close failed: " + type(error).__name__)
-            report["event_writer"] = writer.snapshot()
+                preserve_failure(error, "native audit close")
+            finally:
+                report["audit_flush_finished_ns"] = time.monotonic_ns()
+            try:
+                report["event_writer"] = writer.snapshot()
+            except BaseException as error:
+                preserve_failure(error, "native audit writer snapshot")
         report["elapsed_seconds"] = time.monotonic() - started
     if failure is not None:
         report["status"] = "failed"
         report.setdefault("error_type", type(failure).__name__)
         report.setdefault("error", redact_text(str(failure)))
         failure.query_report = report
+        if result is not None:
+            failure.query_result = result
         raise failure
     return report
 

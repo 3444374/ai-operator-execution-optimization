@@ -51,8 +51,12 @@ PostgreSQL 的实现、接线与资料按历史来源保留，当前不作为开
 - 文本语义任务是首版主场景，图像用于跨模态验证；`AI_COMPLETE`、`AI_EMBED/AI_CLASSIFY` 按各自 PG 接点解释；
 - PostgreSQL + pgvector 的 COPY + deferred index 是 PG 写回工程 baseline。
 
-项目不以广泛 PostgreSQL fork、PL/Python 逐行 HTTP UDF、LOTUS DataConnector 外拉、修改 vLLM
-continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU 查询算子或单纯产品集成为主线。
+项目不以广泛 PostgreSQL fork、PL/Python 逐行 HTTP UDF、LOTUS DataConnector 外拉、模型结构修改、
+传统 GPU 查询算子或单纯产品集成为主线。允许为已识别的物理执行问题修改 vLLM、Ray 等后端，
+包括调度、缓存、数据交接和必要的 GPU 执行接点；优先核对原生接口，接口不足时采用可独立比较的修改。
+每项修改固定上游版本与来源，保留原生未修改对照，说明可操作资源、语义和生命周期影响，
+并按[后端修改比较](experiments/plans/reference/对照规范.md#backend-change-comparison)验证完整任务净收益。
+修改后端本身不作为创新性或收益的证据。
 允许在 `REL_18_3` extension capability 与 carrier audit 证明目标 LOTUS/Cortex 类优化或稳定 node lifecycle
 无法可靠表达后，维护受控的最小 core semantic patch；不得仅为“更原生”改 grammar、storage 或扩大 fork。
 “数据库内置”只表示 SQL/planner/query lifecycle 属于数据库，不表示 payload 不会传到外部服务。

@@ -8,6 +8,8 @@
 
 | 内容 | 报告入口 |
 |---|---|
+| 当前执行与资源清理 | [records 主报告](diagnostics/records_runtime_refactor_20261104/README.md) |
+| 原生 Movie Q3 复测 | [功能、质量与退出记录](diagnostics/native_sembench_q3_20261106/README.md) |
 | LOTUS原生CLIP建索引与检索 | [六路径历史与最终融合资格](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)、[PNG共享适配](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate) |
 | 单GPU文件CLIP冷算子 | [静态／HSE／原生Ray Data复验与257图数值补测](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/image_clip_file_operator_20261014/README.md) |
 | 原生Daft／Ray／IMLane接入 | [三方法软件检查与LOTUS六路径单／双GPU模型](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/postgresql/native_executor_baselines_20261012/README.md) |
@@ -28,88 +30,3 @@
 保存与精简按[结果规则](AGENTS.md)执行。大量原始文件按各实验的`raw/storage-manifest.jsonl`定位，
 直接引用的数据仍就地读取；归档成员按[恢复说明](../../code/scripts/README.md#实验结果恢复)取用。
 [存储检查](EXPERIMENT_EVIDENCE_REGISTRY.md#storage-review-20261002)、[恢复核验](EXPERIMENT_EVIDENCE_REGISTRY.md#legacy-retention-20261002)记录当前整理情况。
-
-2026-11-05：42 份空日志与两份相同 lint 输出改由既有存储清单共用归档对象，
-原路径、运行身份和逐文件摘要保留；八份受影响清单的 560 个原件已逐字节恢复核对。
-有内容的故障、性能与关键运行日志保持，实验结论不变。
-
-## 历史实验解读
-
-早期实验的目的与解释进入对应报告；教学数字、模拟说明和真实测量保留各自来源。
-组织、提交与代价估计的历史汇总见[实验数据分析](EXPERIMENT_DATA_ANALYSIS_20260727.md)，具体原始证据从台账定位。
-
-## 原首页章节定位
-
-原首页的运行摘要已归入所属报告；下列位置保留旧章节引用。
-
-<a id="filtermap绑定2026-09-07"></a>
-[Filter→Map绑定（2026-09-07）](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="统一入口"></a>
-[统一入口](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="共同调用与tuple绑定2026-09-07"></a>
-[共同调用与tuple绑定（2026-09-07）](postgresql/semantic_binding_20260907/README.md)
-
-<a id="map调用分析提取2026-09-07"></a>
-[Map调用分析提取（2026-09-07）](postgresql/semantic_call_extraction_20260907/README.md)
-
-<a id="two-filter-and-and-bounded-gateway-sessions-2026-09-07"></a>
-[Two Filter AND and bounded gateway sessions (2026-09-07)](postgresql/semfilter_and_20260907/README.md)
-
-<a id="postgresql-扩展目录整理2026-09-07"></a>
-[PostgreSQL 扩展目录整理（2026-09-07）](postgresql/pg_module_layout_20260907/README.md)
-
-<a id="semmap-resource-measurement-repair-2026-09-06"></a>
-[SemMap resource measurement repair (2026-09-06)](postgresql/semmap_resource_lifecycle_20260906/README.md)
-
-<a id="postgresql-生成型-map-真实模型与资源检查2026-09-04"></a>
-[PostgreSQL 生成型 Map 真实模型与资源检查（2026-09-04）](postgresql/semmap_real_model_resource_20260904/README.md)
-
-<a id="postgresql-生成型-map-c-v5pg-golden2026-09-03"></a>
-[PostgreSQL 生成型 Map C v5/PG golden（2026-09-03）](postgresql/semmap_pg_wire_20260903/README.md)
-
-<a id="postgresql-生成型-map-pg-plan权限2026-09-03"></a>
-[PostgreSQL 生成型 Map PG plan/权限（2026-09-03）](postgresql/semmap_pg_plan_20260903/README.md)
-
-<a id="postgresql-生成型-map-纯值与-python-v52026-09-03"></a>
-[PostgreSQL 生成型 Map 纯值与 Python v5（2026-09-03）](postgresql/semmap_values_20260903/README.md)
-
-<a id="postgresql-生成型-map-消息编译2026-09-03"></a>
-[PostgreSQL 生成型 Map 消息编译（2026-09-03）](postgresql/semmap_messages_20260903/README.md)
-
-<a id="postgresql-函数对象身份2026-09-02"></a>
-[PostgreSQL 函数对象身份（2026-09-02）](postgresql/function_identity_20260902/README.md)
-
-<a id="postgresql-choice-profile2026-09-02"></a>
-[PostgreSQL choice profile（2026-09-02）](postgresql/choice_service_20260902/README.md)
-
-<a id="postgresql-exact-semfilter-reference-calibration2026-09-01"></a>
-[PostgreSQL exact SemFilter reference calibration（2026-09-01）](postgresql/semfilter_prompt_qualification_20260901/README.md)
-
-<a id="状态感知-phase-change2026-08-11"></a>
-[状态感知 phase-change（2026-08-11）](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="开题统一文本-database-e2e2026-08-08-历史结果"></a>
-[开题统一文本 database-E2E（2026-08-08 历史结果）](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="开题文本原生框架入口2026-08-08"></a>
-[开题文本原生框架入口（2026-08-08）](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="开题文本多-job-干扰2026-08-09"></a>
-[开题文本多 Job 干扰（2026-08-09）](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="图像-ai_embed-operator2026-08-0304"></a>
-[图像 AI_EMBED operator（2026-08-03/04）](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="双-gpu-调度与容量2026-07-2829"></a>
-[双 GPU 调度与容量（2026-07-28/29）](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="output-aware-packing-2026-07-26"></a>
-[Output-aware Packing (2026-07-26)](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="local-baselines"></a>
-[Local Baselines](EXPERIMENT_EVIDENCE_REGISTRY.md)
-
-<a id="当前状态"></a>
-[当前状态](EXPERIMENT_EVIDENCE_REGISTRY.md)

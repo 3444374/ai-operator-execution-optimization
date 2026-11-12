@@ -17,10 +17,15 @@
 LOTUS 主线由 SemBench 提供任务与评价，保留 LOTUS 原方法及全局校准。
 近期聚焦**面向语义算子链的 GPU 资源编排**：依据合法依赖、实际工作与资源状态协调模型供给，
 同时考虑 CPU 准备、传输、主机驻留和结果消费，以完整查询时间评价；职责和单卡／未来多副本边界见[架构](experiments/plans/系统架构.md#semantic-chain-gpu-orchestration)。
-近期研究集中于[选择性语义链的合法依赖与物理数据寿命](experiments/plans/数据组织.md#selective-chain-plan)：
-固定逻辑计划、模型、prompt 与生成规则，检验依赖范围细化及有限物理重组是否改善完整查询。
+近期按[物理阶段观察方案](experiments/plans/数据组织.md#dag-resource-observation)推进：真实执行观察、跨任务特性归纳、
+可解释的编排动作、同条件验证。以单算子、分支汇合和选择性串联覆盖不同需求，先核源码与数据资格，
+再定位准备、搬运、模型计算、缓存和消费的实际成本；流水重叠是强工程起点，不是充分的研究增量。
+[选择性语义链的合法依赖与物理数据寿命](experiments/plans/数据组织.md#selective-chain-plan)是其中一个候选，
+与[GPU／执行引擎协同候选](docs/research/优化方法依据.md#gpu-engine-coordination)一并依据观察选择，不预定图片缓存为唯一主线。
+保持原请求的执行优化与字段／提示布局变化分别评价；后者先定义语义和质量要求，不能由字段集合相同推定模型输出等价。
 普通／级联 Filter 是方法参照、无机会反例与全局依赖场景；[动态供给扫描](#dynamic-resource-feedback-goal)与[阶段资源编排](experiments/plans/系统架构.md#physical-stage-research-goal)分别验证，单纯增大并发本身不作为研究增量。
-近期优先验证合法记录的后继推进；实际默认、接入与资格从[代码状态](code/INFRA_STATUS.md#record-local-sections-c827)核对。
+近期先落实[首批真实查询观察](experiments/plans/数据组织.md#dag-first-observation)，既有逐记录后继推进作为可复用能力与对照；
+实际默认、接入与资格从[代码状态](code/INFRA_STATUS.md#record-local-sections-c827)核对。
 
 records→结果独立建设，旧 request 接点按实际适用范围复用。LOTUS 目标配置为 Daft 扫描／普通关系处理
 加 Ray Core／Actor，SemLoom 自管准备、供给与回收；Ray Data、Daft、IMLane 对照各自原生执行。
@@ -52,14 +57,17 @@ Semantic API / database AI operator
 未来若恢复 PostgreSQL 路径，由 extension 先提供 SQL/planner/query-lifecycle seam；若目标 LOTUS/Cortex rewrite、plan identity
 或 lifecycle 出现可复现阻断，允许维护 `REL_18_3` 最小 core semantic patch。默认语义由中立
 plan/task/result 协议定义，LOTUS v1.2.4 不再是核心依赖。Daft、Ray、vLLM、pgvector 和 CLIP
-是物理执行与验证平台，不是贡献名称。项目不修改 vLLM continuous batching、Ray 调度器、模型结构
-或 GPU kernel，也不回到传统 GPU 查询算子。
+是物理执行与验证平台，不是贡献名称。允许为具体编排假说调整 vLLM、Ray 的调度、缓存和 GPU 执行接点；
+原生能力、上游修改与 SemLoom 策略分别比较，采用规则见[后端修改比较](experiments/plans/reference/对照规范.md#backend-change-comparison)。
+不以改后端的代码量为贡献，也不将当前课题改成通用模型结构或传统 GPU 查询算子研究。
 
 ## 2. 研究内容
 
 ### 2.1 研究内容一：workload-aware work-unit 构造
 
 研究同一逻辑任务的输入表示、阶段工作量、准备位置与后继消费者如何共同决定批次和留存。
+物理阶段图记录实际工作单元和数据交接；候选包括相容表示共享、准备／传输／模型批次分别组织、
+前缀与 GPU 执行形态感知的数据组织，以及有依据的字段／提示布局选择。具体机制和采用条件归方法文档。
 `WorkDescriptor` 描述 source/prepare/model/result work、局部性、校准签名与不确定性；
 需要实测信息获取成本和实际动作，不能把字段存在当作成本自适应。
 原生 tensor 路径首先检验重复准备／计算、表示膨胀、复制和消费等待；
@@ -73,6 +81,10 @@ B与并发C、在途保护W分别配置；当前记录链的接入与资格见[�
 峰值留存和 GPU 供给用于解释；没有净收益时保留静态方案。
 
 ### 2.2 研究内容二：容量感知的提交、路由与多作业调度
+
+研究已合法就绪的阶段何时推进、取得多少执行机会及使用哪个兼容实例；CPU 准备、模型供给、
+结果消费和表示持有共同影响选择。动态供给是独立研究问题，代价估计提供信息；
+它可以与数据组织分别验证，再检验联合收益，不以图片复用或依赖细化成功为前提。
 
 <a id="dynamic-resource-feedback-goal"></a>
 动态扫描以寻找**当前可利用资源下的性能平台**为目标：改变供给窗口时，观察有效吞吐、完整查询时间、可比请求的 P95／P99 尾延迟，
@@ -124,9 +136,11 @@ PG 接入由数据库拥有 SQL、计划、快照、权限、取消与结果生�
 ## 8. 当前执行顺序
 
 1. 先读取代码状态与对应证据，复用已接纳接口；普通文本小单元与原生 LOTUS 核对，不重复建设已完成接点。
-2. 按[选择性链方案](experiments/plans/数据组织.md#selective-chain-plan)验证合法推进、真实消费者与 buffer 寿命；
-   调优 fused、有界 FIFO、通用字节背压和阶段预算构成强对照。局部队列改善须能解释完整查询收益。
-3. 实际模型验证先核输出／工作量可比性与生命周期，再比较完整查询；文本与 Animals 图文分别取得资格。
+2. 按[首批观察方案](experiments/plans/数据组织.md#dag-first-observation)分别取得单算子、分支汇合和真实串联的有效轨迹，
+   识别准备、GPU 工作、缓存、搬运和消费特性；采集缺项和无机会反例保留，不以一题推断通用规律。
+3. 只对观察支持的[编排候选](docs/research/优化方法依据.md#gpu-engine-coordination)做单独及联合比较；
+   调优 fused、原生流水、缓存、同信息简单规则和阶段预算为强对照，后端补丁单列。
+   实际模型先核输出／工作量与生命周期；布局变化另做质量评价，文本与图文分别取得资格。
    已停止候选的原因只从台账读取，新运行按现行实验规则另有具体计划，不继承历史额度。
 4. 多卡负载、拓扑执行组、必要跨卡传输与多 Job 共享由真实瓶颈决定；训练、KV 迁移和多租户为后续适用问题。
 

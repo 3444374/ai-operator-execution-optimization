@@ -1,0 +1,77 @@
+--- a/src/include/prediction/datachunk_converter.hpp
++++ b/src/include/prediction/datachunk_converter.hpp
+@@ -39,9 +39,21 @@
+                 break;
+             }
+             case LogicalTypeId::VARCHAR: {
++                auto source_offset = UnsafeNumericCast<idx_t>(c_array->offset);
++                auto validity_bits = (const uint8_t *)c_array->buffers[0];
++                auto &validity = FlatVector::Validity(res);
++                validity.SetAllValid(size);
++                if (validity_bits) {
++                    for (idx_t row_idx = 0; row_idx < size; row_idx++) {
++                        auto source_idx = source_offset + row_idx;
++                        if ((validity_bits[source_idx / 8] & (uint8_t(1) << (source_idx % 8))) == 0) {
++                            validity.SetInvalid(row_idx);
++                        }
++                    }
++                }
+                 if (ctype == "u" || ctype == "z") { // NORMAL FIXED
+                     auto c_data = (char *)c_array->buffers[2];
+-                    auto offsets = (uint32_t *)c_array->buffers[1];
++                    auto offsets = (uint32_t *)c_array->buffers[1] + source_offset;
+                     auto strings = FlatVector::GetData<string_t>(res);
+                     for (idx_t row_idx = 0; row_idx < size; row_idx++) {
+                         if (FlatVector::IsNull(res, row_idx)) {
+@@ -52,11 +64,11 @@
+                         if (str_len > NumericLimits<uint32_t>::Maximum()) { // LCOV_EXCL_START
+                             throw duckdb::ConversionException("DuckDB does not support Strings over 4GB");
+                         } // LCOV_EXCL_STOP
+-                        strings[row_idx] = string_t(cptr, UnsafeNumericCast<uint32_t>(str_len));
++                        strings[row_idx] = StringVector::AddStringOrBlob(res, cptr, UnsafeNumericCast<uint32_t>(str_len));
+                     }
+                 } else if (ctype == "U" || ctype == "Z") { // SUPER
+                     auto c_data = (char *)c_array->buffers[2];
+-                    auto offsets = (uint64_t *)c_array->buffers[1];
++                    auto offsets = (uint64_t *)c_array->buffers[1] + source_offset;
+                     auto strings = FlatVector::GetData<string_t>(res);
+                     for (idx_t row_idx = 0; row_idx < size; row_idx++) {
+                         if (FlatVector::IsNull(res, row_idx)) {
+@@ -67,24 +79,24 @@
+                         if (str_len > NumericLimits<uint32_t>::Maximum()) { // LCOV_EXCL_START
+                             throw duckdb::ConversionException("DuckDB does not support Strings over 4GB");
+                         } // LCOV_EXCL_STOP
+-                        strings[row_idx] = string_t(cptr, UnsafeNumericCast<uint32_t>(str_len));
++                        strings[row_idx] = StringVector::AddStringOrBlob(res, cptr, UnsafeNumericCast<uint32_t>(str_len));
+                     }
+                 } else if (ctype == "vu") { // VIEW
+                     auto strings = FlatVector::GetData<string_t>(res);
+-                    auto arrow_string = (arrow_string_view_t *)c_array->buffers[1];
++                    auto arrow_string = (arrow_string_view_t *)c_array->buffers[1] + source_offset;
+                     for (idx_t row_idx = 0; row_idx < size; row_idx++) {
+                         if (FlatVector::IsNull(res, row_idx)) {
+                             continue;
+                         }
+                         auto length = UnsafeNumericCast<uint32_t>(arrow_string[row_idx].Length());
+                         if (arrow_string[row_idx].IsInline()) {
+-                            strings[row_idx] = string_t(arrow_string[row_idx].GetInlineData(), length);
++                            strings[row_idx] = StringVector::AddStringOrBlob(res, arrow_string[row_idx].GetInlineData(), length);
+                         } else {
+                             auto buffer_index = UnsafeNumericCast<uint32_t>(arrow_string[row_idx].GetBufferIndex());
+                             int32_t offset = arrow_string[row_idx].GetOffset();
+                             D_ASSERT(c_array->n_buffers > 2 + buffer_index);
+                             auto c_data = (char *)c_array->buffers[2 + buffer_index];
+-                            strings[row_idx] = string_t(&c_data[offset], length);
++                            strings[row_idx] = StringVector::AddStringOrBlob(res, &c_data[offset], length);
+                         }
+                     }
+                 } else {
+@@ -133,7 +145,7 @@
+             void ConvertFromExchange(std::shared_ptr<ArrowLaneTable> tbl, duckdb::Vector &out) {
+                 auto &schema = tbl->schema;
+                 D_ASSERT(tbl->GetNumChunks() == 1);
+-                duckdb::ConverArrowAarrayToVector(tbl->chunks[0].children[0], &schema, out);
++                duckdb::ConverArrowAarrayToVector(tbl->chunks[0].children[0], schema.children[0], out);
+             }
+         };
+     }

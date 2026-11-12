@@ -126,7 +126,56 @@ class ModelWorkerTests(unittest.IsolatedAsyncioTestCase):
 
     def factory(self, config):
         self.factory_calls.append(deepcopy(config))
-        return worker.NativeModel(self.engine, FakeSampling, 'final-only', object(), 'software-fixture')
+        return worker.NativeModel(self.engine, FakeSampling, 'final-only', object(), 'software-fixture', FakeSampling)
+
+    def bound_budget(self, limit):
+        from src.experiments.attempt_ledger import AttemptBudget
+        from src.experiments.cell_budget import CellBudgetLedger
+        budget = AttemptBudget('native-json-fixture', limit)
+        ledger = CellBudgetLedger.create(self.directory / 'budget.sqlite', budget,
+                                         deadline_utc=time.time() + 30)
+        ledger.reserve_unit('query', limit)
+        unit = ledger.claim_shared_unit('query')
+        self.config['request_budget'] = dict(path=str(ledger.path), budget_id=budget.budget_id,
+                                            limit=limit, unit_id='query')
+        return unit
+
+    async def test_structured_json_and_physical_budget_preserve_original_sampling(self):
+        unit = self.bound_budget(2)
+        await self.start()
+        self.engine.release.set()
+        values = dict(PARAMS, seed=0, stop=[], structured_outputs={'json_object': True})
+        response = await self.call(self.request(2, sampling_params=values))
+        self.assertEqual(response['status'], 'succeeded')
+        self.assertEqual(unit.attempts, 2)
+        self.assertEqual(len(self.engine.calls), 2)
+        for _prompt, sampling, _request_id, _at in self.engine.calls:
+            self.assertTrue(sampling.structured_outputs.json_object)
+            for key, value in values.items():
+                if key != 'structured_outputs': self.assertEqual(getattr(sampling, key), value)
+        overflow = await self.call(self.request(1, sampling_params=values))
+        self.assertEqual(overflow['status'], 'failed')
+        self.assertEqual(overflow['calls'][0]['error_type'], 'BudgetExhausted')
+        self.assertFalse(overflow['calls'][0]['attempted'])
+        self.assertEqual(len(self.engine.calls), 2)
+        self.assertEqual(unit.attempts, 2)
+
+    async def test_failed_native_generate_keeps_its_charge(self):
+        unit = self.bound_budget(1)
+        await self.start()
+        self.engine.fail_first = True
+        response = await self.call(self.request(1))
+        self.assertEqual(response['status'], 'failed')
+        self.assertEqual(unit.attempts, 1)
+        self.assertTrue(response['calls'][0]['attempted'])
+
+    async def test_bad_budget_is_rejected_before_model_construction(self):
+        self.config['request_budget'] = {'limit': 25}
+        with self.assertRaisesRegex(ValueError, 'shared request-budget'):
+            await worker.serve(self.config, model_factory=self.factory,
+                               stop=self.stop, install_signals=False)
+        self.assertEqual(self.factory_calls, [])
+        self.assertFalse(Path(self.config['socket_path']).exists())
 
     async def start(self):
         self.task = asyncio.create_task(worker.serve(self.config, model_factory=self.factory,
@@ -403,6 +452,7 @@ class ModelWorkerTests(unittest.IsolatedAsyncioTestCase):
         modules['vllm.renderers'].ChatParams = lambda **kwargs: kwargs
         modules['vllm.sampling_params'].RequestOutputKind = SimpleNamespace(FINAL_ONLY='final-only')
         modules['vllm.sampling_params'].SamplingParams = FakeSampling
+        modules['vllm.sampling_params'].StructuredOutputsParams = FakeSampling
         modules['vllm.utils.mistral'].is_mistral_tokenizer = lambda tokenizer: False
         modules['vllm.v1.engine.async_llm'].AsyncLLM = SimpleNamespace(
             from_engine_args=lambda args: (calls.append(args), self.engine)[1])

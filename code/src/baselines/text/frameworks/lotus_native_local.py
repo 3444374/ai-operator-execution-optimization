@@ -60,6 +60,18 @@ class LocalNativeModel:
         with self._state_lock:
             return self._start()
 
+    def snapshot(self):
+        """Observe this owner's identity and debt; never start or drain a model."""
+        import psutil
+        with self._state_lock:
+            ready = deepcopy(self.ready_report)
+            pid = None if ready is None else ready['pid']
+            return dict(owner_id=id(self), provider_name=self.provider_name,
+                engine_uid=None if ready is None else ready['engine_uid'], model_API_pid=pid,
+                process_created=None if pid is None else psutil.Process(pid).create_time(),
+                ready=ready, active_query=self._active_query is not None, tainted=self._tainted,
+                transport=None if self.transport is None else self.transport.snapshot())
+
     def _start(self):
         if self._closing or self._tainted:
             raise RuntimeError('native model owner requires cleanup before reuse')

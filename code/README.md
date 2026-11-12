@@ -3,8 +3,8 @@
 研究对象是 AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化。
 本目录提供外部执行核心；当前 records 使用 SemBench 等外部工作负载验证数据执行、供给、背压和生命周期，
 LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当前不作为开发或验收前提。
-普通 Movie records 通过本地 IPC 调用模型引擎；不启动旧 Movie HTTP 服务。
-整查询默认不设总期限，显式期限保留，启动和关闭分别等待；旧SemLoom fixed HTTP接线已退出当前树，未来多查询不以HTTP为接入方式。
+普通 Movie records 通过本地 IPC 调用模型引擎。
+整查询默认不设总期限，显式期限保留，启动和关闭分别等待。
 普通records的新关闭请求只取得调用方剩余时间，已到期和在途引用分别处理，见[关闭时长](src/execution_provider/adapters/README.md#records-close-allowance)。
 当前可选能力、默认及验证限制见[配置总览](../docs/执行配置与优化开关.md)和[代码状态](INFRA_STATUS.md)。
 
@@ -13,7 +13,7 @@ LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当�
 | 任务 | 入口 | 职责 |
 |---|---|---|
 | Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](scripts/experiments/run_lotus_records_movie.py) | 原输入、任务与评价，选择执行适配；Q4 为完整输入上的正面比例 |
-| Movie Q4/Q8/Q9-map/Q10 与 MMQA 十二道文本题 | [run_sembench_text_query.py](scripts/experiments/run_sembench_text_query.py) | 原查询选择／汇总与原评价，单个 F/M/E 交既有原生图；[逐题范围](src/baselines/README.md#additional-sembench-text) |
+| Movie Q1/Q2/Q3/Q4/Q8/Q9/Q10 与 MMQA 十二道文本题 | [run_sembench_text_query.py](scripts/experiments/run_sembench_text_query.py) | 原查询选择／汇总与原评价，F/M/E 交原生图；Q9 TopK 显式选择 LOTUS resident；[逐题范围](src/baselines/README.md#additional-sembench-text) |
 | 完整查询矩阵／连续查询 | [run_movie_records_matrix.py](scripts/experiments/run_movie_records_matrix.py) | 显式 backend、生命周期、额度与时钟 |
 | 原生 LOTUS 对照 | [lotus_native_local.py](src/baselines/text/frameworks/lotus_native_local.py) | 原算子／LM／LiteLLM batch_completion；仅 provider 使用现有模型 IPC |
 | 独立 Kalypso 对照 | [作者适配说明](src/baselines/text/frameworks/kalypso_native/README.md) | 保留作者服务、参数与调度；不是 LOTUS 后端 |
@@ -43,8 +43,8 @@ LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当�
 
 生产的 scheduling／serving／execution_provider／semantic_methods／modalities／observability／infrastructure
 不从 `baselines` 取得实现。共用代码直接放在所属共享层，SemLoom 和对照分别调用；
-框架专用的 Ray Data／Daft 图留在基线模块。CLIP 共享批处理 workers 已从 Ray 基线图迁至
-[clip_batch_workers.py](src/modalities/image/clip_batch_workers.py)，生产不再导入该 baseline 图。
+框架专用的 Ray Data／Daft 图留在基线模块。公共 CLIP 批处理由
+[clip_batch_workers.py](src/modalities/image/clip_batch_workers.py)负责。
 
 ## 独立对照和可比范围
 
@@ -62,36 +62,9 @@ IMLane 保留作者桥接；它们可共享 LOTUS 方法、模型内核、IPC �
 三项 vLLM 容量未指定时交引擎解析，显式值保持；[参数归属](src/baselines/README.md#共享层和参数)
 区分模型容量、LOTUS 客户端批大小和原生图批大小。作者 Kalypso 调度、模型提示和输出上限保持。
 
-## 退役、暂停和研究保留
-
-旧 Movie HTTP owner、旧固定五后端矩阵、PG／HTTP 实验 CLI、相连旧对照脚本／配置和专用测试已退出维护树。
-PG 扩展 C／SQL、部署源和实验接线按准确 Git 树归档，当前不推进，是否恢复以后另行决定；若恢复须在隔离树中进行，
-不把历史源重新加入当前生产搜索路径。逐文件摘要与恢复方法见
-[归档索引](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md)。
-
-无现用调用的旧PG画像接线、HTTP／共享额度画像配置、CSV总字段和专用请求轨迹模型也已退役，
-专测、旧导出及空包随实现移除；[准确来源与恢复](../experiments/reproduction/native_baselines/README.md#retired-profiler-application)
-保留历史格式，实际Core事件、时钟及Ray运行适配继续由所属模块维护。
-
-SAOR 与多任务共享额度一起由 [research/multitask](src/research/multitask/README.md) 维护，
-离线分析与研究证据继续保留；依赖已退役 HTTP／PG 命令的旧启动胶水随归档隔离。
-当前源码不再承诺这些旧命令可运行。独立 PG provider／通用传输内核和有研究价值的模态／调度组件若仍有消费者则保留，
-不因停止旧实验而删除其公共协议，也不宣称它们已接入当前 SemBench。
-
-所有历史成绩、负结果、unknown、成本和五份具名代码投影保持。
-[历史恢复入口](../experiments/reproduction/native_baselines/README.md)只恢复指定源码，不执行模型。
-当前新增 CPU 检查不转授历史 GPU 资格，不宣称清理带来查询加速。
-
-旧phase-change运行器的配置对象与准备说明也已退出维护树，和[原运行来源](../experiments/reproduction/native_baselines/README.md#retired-phase-runner-preparation)一起恢复；
-现用[audit_phase_change.py](scripts/analysis/audit_phase_change.py)继续独立复算历史状态、请求和动作，不需要旧准备包。
-
-原PG campaign的[M1示例配方](../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retained-m1-config)
-随配套执行代码归档，不再列于现用`configs/`；原字节、来源和恢复方法保持。
-
 ## 核心文件职责
 
 下列文件承担不同的可独立修改职责，直接使用现有对象，不增加转发层或重复状态。
-完整改动、原失败、准确受测源码与恢复方式见[重构主记录](../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md)。
 
 | 所属部分 | 文件与责任 |
 |---|---|
@@ -99,21 +72,21 @@ SAOR 与多任务共享额度一起由 [research/multitask](src/research/multita
 | 算子链 | [lotus_record_chain_core.py](src/execution_provider/adapters/lotus_record_chain_core.py) 负责组装和资源生命周期；[lotus_chain_fused_runtime.py](src/execution_provider/adapters/lotus_chain_fused_runtime.py) 负责融合批传输；[records_query_runtime.py](src/execution_provider/adapters/records_query_runtime.py) 持有记录级方法和关系数据 |
 | 服务数据释放 | [传输](src/execution_provider/adapters/lotus_chain_actor_backend.py)、[准备组织](src/execution_provider/adapters/lotus_chain_token_batches.py)与[actor owner](src/execution_provider/adapters/lotus_records_actor_owner.py)各清理自身字段；链owner核实交接并按原顺序调用，不再直接改写这些私有字段 |
 | 容量声明 | [records_capacity.py](src/execution_provider/adapters/records_capacity.py) 定义普通记录／融合链容量、独立预算和 IPC 解析；查询 owner 只消费这些值 |
-| payload物化 | [payloads.py](src/data/materializers/payloads.py)处理sealed rows与Arrow／Daft物化；Daft配置直接调用[infrastructure.daft_runtime](src/infrastructure/daft_runtime.py)，不再经文本组织原型转借 |
+| payload物化 | [payloads.py](src/data/materializers/payloads.py)处理sealed rows与Arrow／Daft物化；Daft配置直接调用[infrastructure.daft_runtime](src/infrastructure/daft_runtime.py) |
 | 扫描与模型适配 | [records_scan.py](src/execution_provider/adapters/records_scan.py) 共用 Daft Native 扫描；[records_async_model.py](src/execution_provider/adapters/records_async_model.py) 接非阻塞请求与回执，owner 保留 Ray 分配和 RPC 终态责任 |
 | Session | [session.py](src/scheduling/core/session.py) 管服务回执、准备借用和任务表；[session_dispatch.py](src/scheduling/core/session_dispatch.py) 管成员选择与提交；[session_flow.py](src/scheduling/core/session_flow.py) 管交付、取消和消费者关闭 |
 | 调度 | [scheduler.py](src/scheduling/core/scheduler.py) 负责普通提交与真实完成；[envelope_source.py](src/scheduling/core/envelope_source.py) 读取阻塞输入；[topology.py](src/scheduling/core/topology.py) 选择端点和投影本地占用；共享研究通过显式交接接入 |
 | 反馈 | [submission_control](src/scheduling/submission_control/README.md) 分开配置、供给、请求试探、批反馈和计量；现用请求与批策略各有明确消费者 |
 | 引擎与 IPC | [vllm_protocol.py](src/serving/backends/vllm_protocol.py) 保存中性规范；sync／async 各自构造引擎；[父进程、worker与帧编码](src/serving/backends/README.md)各管自身生命周期，两种关闭均沿用调用方实际剩余时间 |
-| 本地服务与任务接点 | [image_gateway.py](src/execution_provider/image_gateway.py)拥有图像连接与方法生命周期；[image_connection.py](src/execution_provider/image_connection.py)处理图像帧，[gateway_runtime.py](src/execution_provider/gateway_runtime.py)保存连接消息与状态；[incremental_execution.py](src/execution_provider/adapters/incremental_execution.py)只组合现有Core任务对象，已无HTTP工厂 |
-| 图像执行 | [image_backend.py](src/semantic_methods/lotus/image_backend.py) 组装原方法；[staged_execution.py](src/modalities/image/staged_execution.py) 负责HSE调度与清理，[staged_metrics.py](src/modalities/image/staged_metrics.py)累计计时／字节／峰值并装配原结果；图像选择类型与分片函数归[中性图像类型](src/modalities/image/contracts.py)，[文件输入](src/modalities/image/file_source.py)不再导入SQL模块；[检索结果写入](src/experiments/lotus_image_reporting.py)留在实验层，增量图像backend继续使用自身任务协议 |
+| 本地服务与任务接点 | [image_gateway.py](src/execution_provider/image_gateway.py)拥有图像连接与方法生命周期；[image_connection.py](src/execution_provider/image_connection.py)处理图像帧，[gateway_runtime.py](src/execution_provider/gateway_runtime.py)保存连接消息与状态；[incremental_execution.py](src/execution_provider/adapters/incremental_execution.py)只组合现有Core任务对象 |
+| 图像执行 | [image_backend.py](src/semantic_methods/lotus/image_backend.py) 组装原方法；[staged_execution.py](src/modalities/image/staged_execution.py) 负责HSE调度与清理，[staged_metrics.py](src/modalities/image/staged_metrics.py)累计计时／字节／峰值并装配原结果；图像选择类型与分片函数归[中性图像类型](src/modalities/image/contracts.py)，[文件输入](src/modalities/image/file_source.py)读取文件资产；[检索结果写入](src/experiments/lotus_image_reporting.py)留在实验层，增量图像backend继续使用自身任务协议 |
 | 观测 | [文件职责](src/observability/README.md#current-observation-owners) 归集时钟、事件与模型复用；[phase_sampler.py](src/observability/process_resources/phase_sampler.py) 保存分阶段RSS／CPU采样，图像CLI直接导入实际实现 |
 | 离线记录汇总 | [record_dag_observation.py](src/experiments/record_dag_observation.py)关联回执、事件与CPU片段；[record_dag_windows.py](src/experiments/record_dag_windows.py)计算时间区间及样本重叠，读取内容同时用于解析和来源摘要 |
 | Movie实验执行 | [lotus_records_movie.py](src/experiments/lotus_records_movie.py)保留参数与预检；[movie_records_query.py](src/experiments/movie_records_query.py)共享查询评价／回执合并；[movie_records_worker.py](src/experiments/movie_records_worker.py)拥有普通后端的构造、运行与关闭，Session和IMLane直接导入实际实现 |
-| 原生查询生命周期 | [native_query_lifecycle.py](src/experiments/native_query_lifecycle.py) 观察调用方driver的启动、完整查询与关闭；后端支持／复用声明随调用传入，Kalypso不再临时改写默认集合 |
+| 原生查询生命周期 | [native_query_lifecycle.py](src/experiments/native_query_lifecycle.py) 观察调用方driver的启动、完整查询与关闭；后端支持／复用声明随调用传入 |
 | 独立研究 | [研究索引](src/research/README.md)分别登记[多任务／SAOR](src/research/multitask/README.md)和[文本组织／到达回放原型](src/research/data_organization/README.md)；生产payload及请求组批直接用公共运行组件，研究不进入普通records默认配置 |
 | 离线代价 | [operator_costs](src/experiments/operator_costs/README.md)拥有CSV／profile特征、既有估计比较与SemFilter参考校准；分析CLI负责输入、评估及输出，通用数学仍在planning/costs，运行链估算与反馈保持 |
-| 实验服务核对 | [shared_vllm/preflight.py](src/experiments/shared_vllm/preflight.py)供场景脚本读取idle／命令行；[0.25.1源码审计](src/experiments/saor/vllm_0251_source_audit.py)拥有固定服务身份，旧矩阵专属live校验与专测按[准确来源](../experiments/reproduction/native_baselines/README.md#retired-shared-service-verifiers)恢复 |
+| 实验服务核对 | [shared_vllm/preflight.py](src/experiments/shared_vllm/preflight.py)供场景脚本读取idle／命令行；[0.25.1源码审计](src/experiments/saor/vllm_0251_source_audit.py)拥有固定服务身份 |
 | 校准身份 | [calibration/core.py](src/experiments/calibration/core.py)适配Movie身份、模型ready及完整查询回执；实际容量只取一次现有Movie解析结果，归一化与准备模式共同读取，跨候选默认对比保持 |
 
 SDK 与 Movie／Session 的 R 默认均为 `None`。普通 async 和已支持 rolling 从完整 Core 预算、typed IPC、

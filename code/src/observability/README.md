@@ -8,11 +8,27 @@ over the execution policy it observes.
 - `native_query_timing.py` reads existing query and model receipts. An unconfirmed native
   submission whose outcome is `unknown` remains unknown; it is not proof that nothing was sent.
   Such a receipt contributes neither a confirmed API-call count nor a measured model duration.
+  The Kalypso adapter's explicit `memory_sink_timing` receipt provides
+  `source_to_sink_seconds` from the session's `query_start_ns` to the complete original
+  relation in memory. Legacy `answer_ready_s` and API-return clocks keep their meanings;
+  absent or invalid sink receipts remain unavailable. An observed sink survives a later
+  audit/close failure and does not turn that query into a successful result.
 - `process_resources/supervised.py` samples the supervisor's birth-matched process RSS,
   declared affinity and host SHM delta under an exclusive lease. Its `ResourceMonitor`
   preserves the original implementation used by the external Kalypso owner helper;
   it imports no execution provider or retired experiment. Limits come from that owner.
   Host SHM delta is not creator attribution, and summed RSS can count shared pages twice.
+- `process_resources/host_idle.py` owns host-boundary process classification and the
+  existing single-device GPU identity/idle checks. An unrelated Python interpreter
+  is retained under `unclassified_python`, rather than treated as proof of resource
+  contention. Recognized native workloads, GPU use and incomplete inventories still
+  reject the boundary; this is not proof of CPU isolation or harmlessness. When new
+  semaphores remain, unclassified Python at either boundary prevents the existing
+  time-window cleanup from claiming their ownership. No process is signalled by this
+  reader. New snapshots include the policy schema and source SHA; historical snapshots
+  cannot be reclassified as successful runs. The native stage adapter's explicit
+  `load_host` binds these checks to the same frozen cleanup/lease helper; outer owners
+  must use it too. The original helper file and old failed evidence stay unchanged.
 <a id="current-observation-owners"></a>
 
 - `execution_timing.py`, `buffered_events.py` and `model_reuse.py` own optional adapter timing,

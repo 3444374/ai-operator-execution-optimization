@@ -1,5 +1,14 @@
 # 原生基线与具名 Core 历史复现
 
+[原生LOTUS resident日常入口](../../../code/src/baselines/README.md#lotus-native-resident-sembench)
+维护在现有CLI/stage/lifecycle中；固定fd06的Q3a/Q4包只保留原复现身份，不复制为第二套正式控制器。
+
+[Daft 原生单 F/M/E 接线](../../../code/src/baselines/README.md#daft-native-prepared-sembench)
+维护在正式源码，CPU 重放入口是 `python -m tests.baselines.text.replay_daft_sembench`，
+接收 `--config`、`--reference`、`--output-dir`；参考是明确身份的保存答复，模型不启动。
+原生 SDK、完整原 accessor/关系/sink/评价和预算检查的[实际结果](../../results/diagnostics/daft_native_semantics_20261110/README.md)
+与 `ffbc352ac` 两题真实单冷资格分列。历史实验 packet 保持冻结，不再从中复制新执行控制器。
+
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
@@ -758,10 +767,10 @@ IPC 拆分涉及的四个历史文件继续使用已有19条准确路由，没�
 
 维护目录删除孤立的 HTTP 请求准备、响应重放、固定两 Map 方法及其专用 driver／limits。
 当前 records 使用原生模型 IPC，有限记录链、通用 MethodDriver、Filter cascade、图像原方法及基线执行保留。
-[sdk.py](../../../code/src/semantic_methods/lotus/sdk.py)只记录已安装 SDK 的来源，继续支持
-`text` 和 `lotus-image-text-v1`，供[原查询复算](../../results/diagnostics/main_queries_20261015/recompute.py)
-与[原服务复算](../../results/diagnostics/main_service_auto_20261015/recompute.py)读取。
-`source.py` 的 provider 来源观察另被当前 MMQA 聚合使用，没有随旧执行实现删除。
+当时保留的 `sdk.py` 来源观察包装已在 `8eb33a7dc` 退役；`text` 和 `lotus-image-text-v1` 的
+[原查询复算](../../results/diagnostics/main_queries_20261015/recompute.py)与
+[原服务复算](../../results/diagnostics/main_service_auto_20261015/recompute.py)应使用各自固定历史源码。
+当前 [source.py](../../../code/src/semantic_methods/lotus/source.py)的 provider 来源观察仍由 MMQA 聚合使用。
 
 退役前源码位于完整 Git 树 `e5669213ea8b74e5adcd5040c5dfc4000fd3f8d2`：
 

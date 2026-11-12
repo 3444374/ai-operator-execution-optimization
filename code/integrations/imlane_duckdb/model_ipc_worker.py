@@ -22,7 +22,8 @@ import uuid
 from integrations.imlane_duckdb.model_wire import (
     READY_SCHEMA, SCHEMA, SHUTDOWN_SCHEMA, decode_json, read_frame, write_frame,
 )
-from src.infrastructure.private_artifacts import publish_private_json, require_outside_git
+from src.infrastructure.private_artifacts import content_digest, publish_private_json, require_outside_git
+from src.serving.backends.vllm_protocol import sampling_params
 
 
 _RESOLVED_FIELDS = {
@@ -44,7 +45,8 @@ def _positive(value, name):
 def configuration(value):
     required = {'model', 'served_model_name', 'dtype', 'engine_options',
                 'socket_path', 'ready_path', 'shutdown_path'}
-    if type(value) is not dict or set(value) != required:
+    if (type(value) is not dict or required - value.keys()
+            or value.keys() - (required | {'request_budget'})):
         raise ValueError('model IPC worker requires exactly: ' + ', '.join(sorted(required)))
     for name in ('model', 'served_model_name', 'dtype'):
         if type(value[name]) is not str or not value[name].strip():
@@ -95,6 +97,7 @@ class NativeModel:
     final_only: object
     chat_params: object
     version: str | None
+    structured_outputs_type: object = None
 
 
 def native_model(config):
@@ -102,7 +105,7 @@ def native_model(config):
     import vllm
     from vllm.engine.arg_utils import AsyncEngineArgs
     from vllm.renderers import ChatParams
-    from vllm.sampling_params import RequestOutputKind, SamplingParams
+    from vllm.sampling_params import RequestOutputKind, SamplingParams, StructuredOutputsParams
     from vllm.utils.mistral import is_mistral_tokenizer
     from vllm.v1.engine.async_llm import AsyncLLM
 
@@ -117,7 +120,7 @@ def native_model(config):
             tokenize=(is_mistral_tokenizer(engine.renderer.tokenizer)
                       or engine.model_config.enable_prompt_embeds)))
         return NativeModel(engine, SamplingParams, RequestOutputKind.FINAL_ONLY, chat,
-                           getattr(vllm, '__version__', None))
+                           getattr(vllm, '__version__', None), StructuredOutputsParams)
     except BaseException as primary:
         try:
             engine.shutdown()
@@ -158,9 +161,23 @@ def _ready(model, config, identity):
         generation_config='vllm', socket_identity=dict(device=identity[0], inode=identity[1]))
 
 
+def request_budget(value):
+    """Open the caller's existing once-claimed unit; never create or refund it."""
+    from src.experiments.attempt_ledger import AttemptBudget
+    from src.experiments.shared_request_budget import SharedClaimedUnit
+    if (type(value) is not dict
+            or set(value) != {'path', 'budget_id', 'limit', 'unit_id'}):
+        raise ValueError('an explicit existing shared request-budget descriptor is required')
+    unit = SharedClaimedUnit(Path(value['path']), AttemptBudget(value['budget_id'], value['limit']),
+                             value['unit_id'])
+    unit.remaining  # Validate the actual claim before model construction.
+    return unit
+
+
 class ModelWorker:
-    def __init__(self, config, model, stop):
+    def __init__(self, config, model, stop, budget=None):
         self.config, self.model, self.stop = config, model, stop
+        self.budget = budget
         self.connections = {}
         self.cleanup_error = None
 
@@ -178,8 +195,9 @@ class ModelWorker:
         try:
             if self.stop.is_set() or time.monotonic() >= request['deadline_monotonic']:
                 raise TimeoutError('model IPC deadline exhausted before rendering')
-            sampling = self.model.sampling_type(**dict(deepcopy(request['sampling_params']), n=1,
-                                                       output_kind=self.model.final_only))
+            sampling = sampling_params(dict(deepcopy(request['sampling_params']), n=1,
+                                            output_kind=self.model.final_only),
+                                       self.model.sampling_type, self.model.structured_outputs_type)
             _, prompts = await self.model.engine.renderer.render_chat_async([messages], self.model.chat_params)
             if len(prompts) != 1 or prompts[0].get('type') != 'token':
                 raise ValueError('native text chat renderer did not return one token prompt')
@@ -192,6 +210,11 @@ class ModelWorker:
                 raise ValueError('rendered prompt plus requested output exceed native max_model_len')
             if self.stop.is_set() or time.monotonic() >= request['deadline_monotonic']:
                 raise TimeoutError('model IPC deadline exhausted before generate')
+            if self.budget is not None:
+                call['budget_attempt'] = self.budget.reserve(content_digest(dict(
+                    messages=messages, prompt_token_ids=prompt_ids,
+                    sampling_params=request['sampling_params'])))
+                call['rendered_prompt_token_ids'] = list(prompt_ids)
             call.update(attempted=True, generate_started_monotonic_ns=time.monotonic_ns())
             generator = self.model.engine.generate(prompts[0], sampling, call['request_id'])
             final = None
@@ -330,6 +353,7 @@ def _shutdown_deadline(path):
 async def serve(config, *, model_factory=native_model, stop=None, install_signals=True):
     """Own one socket and one engine; software factories are a CPU-test seam."""
     config = configuration(config)
+    budget = request_budget(config['request_budget']) if 'request_budget' in config else None
     socket_path = Path(config['socket_path'])
     parent = socket_path.parent.lstat()
     if (not stat.S_ISDIR(parent.st_mode) or parent.st_uid != os.getuid()
@@ -346,7 +370,7 @@ async def serve(config, *, model_factory=native_model, stop=None, install_signal
     primary = None
     try:
         model = model_factory(config)
-        worker = ModelWorker(config, model, stop)
+        worker = ModelWorker(config, model, stop, budget)
         # Bind ourselves so start_unix_server cannot replace an existing socket.
         import socket
         bound = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
