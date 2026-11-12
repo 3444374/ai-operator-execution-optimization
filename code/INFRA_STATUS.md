@@ -158,3 +158,7 @@ records resident 的顺序复用不能直接解释为共享 owner 上完整查�
 | 旧关闭故障与负结果 | 原 1596 第二项关闭失败及模型 unknown 等仍按主报告保存；后来检查通过不解释旧故障原因 |
 
 没有运行回执的能力保留为 pending。正式模型比较使用对应计划、实际环境和准确版本，不能从本页推断已运行。
+
+[关闭 profiler 后的独立重复](../experiments/results/diagnostics/native_stage_handoff_20261110/README.md#kv-unprofiled-20261112)
+确认固定机器／构建／C128下 TCP 分片配置的流水内部收益；共置仍更快，未改变默认值，
+未授予完整查询、其他并发或取消清理资格。
