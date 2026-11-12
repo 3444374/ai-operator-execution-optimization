@@ -237,12 +237,10 @@ class NativeQueryDriver:
             automatically_replayed=False)
         try:
             with opener.open(req,timeout=self.cfg['query_s']) as response:
-                self.http_body=response.read(32*1024**2+1)
+                self.http_body=response.read()
                 status=response.status
             ended=time.monotonic_ns()
             self.http_clock.update(returned_ns=ended,status=status,elapsed_s=(ended-started)/1e9)
-            if len(self.http_body)>32*1024**2:
-                raise ValueError('Native response exceeds the declared 32 MiB limit')
             if status!=200:raise ValueError('Native semantic query did not succeed')
             return json.loads(self.http_body)
         except BaseException as error:

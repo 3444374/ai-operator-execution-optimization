@@ -246,6 +246,10 @@ Movie Q5/Q6/Q7 与 E-Commerce Q7 的原结果／评分、2×3重复输入和原 
 这不代表任意连续算子或 E-Commerce 多分支查询已在 Kalypso 完成。
 见[原生 Join 绑定](src/baselines/text/frameworks/kalypso_native/README.md#原生-join-组合与配对身份)。
 
+Kalypso 客户端另移除与原关系规模无关的固定32MiB响应上限，完整读取后仍做原有数量／身份检查。
+33MiB本地回归先复现旧失败再通过，原HTTP/JSON/sink与失败边界通过；结合上述接线共69项不同
+软件检查最终通过，0真实模型。外部 owner 预算、超时与资源监督不变，旧源码结果不回填。
+
 [IMLane VARCHAR 资格入口](integrations/imlane_duckdb/README.md)明确区分作者 `072f8257`、可选
 schema-child 和 varchar-owned 工程变体。连同[完整原关系交接](src/experiments/native_imlane_relation.py)，
 原接线的 29 项不同 CPU 检查及 14 份保存 sink 关系回放通过。作者原版 Linux 零模型 15 例实际为

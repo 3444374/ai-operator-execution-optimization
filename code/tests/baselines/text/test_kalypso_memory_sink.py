@@ -24,6 +24,21 @@ class ControlledClock:
 
 
 class KalypsoMemorySinkTests(unittest.TestCase):
+    def test_complete_native_response_can_exceed_old_32MiB_cap(self):
+        body=json.dumps(dict(source_context='x'*(33*1024**2))).encode()
+        class Response:
+            status=200
+            def __enter__(self):return self
+            def __exit__(self,*args):pass
+            def read(self,limit=-1):return body if limit<0 else body[:limit]
+        with patch.object(adapter,'load_dependencies',return_value=lambda *args:None), \
+                patch.object(adapter.request,'build_opener',return_value=SimpleNamespace(open=lambda *a,**kw:Response())):
+            driver=adapter.NativeQueryDriver(self.cfg,{},self.root/'large-response')
+            driver.defer_http_evidence=True
+            result=driver.post({},'q',self.root)
+        self.assertEqual(len(result['source_context']),33*1024**2)
+        self.assertEqual(driver.http_body,body)
+
     def setUp(self):
         from tests.experiments.test_movie_records_session import PlanTests
         helper=PlanTests()
@@ -118,8 +133,8 @@ class KalypsoMemorySinkTests(unittest.TestCase):
                 return self
             def __exit__(self, *args):
                 clock.advance(1)
-            def read(self, limit):
-                test.assertEqual(limit,32*1024**2+1)
+            def read(self, limit=None):
+                test.assertIsNone(limit)
                 clock.advance(5)
                 return test.body
 
