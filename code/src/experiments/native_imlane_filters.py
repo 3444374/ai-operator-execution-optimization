@@ -1,4 +1,4 @@
-"""One original Movie Q1–Q4, MMQA Q3/Q6 or Medical Q1/Q4 Filter and full sink on author IMLane.
+"""One prepared SemBench Filter and its complete original sink on author IMLane.
 
 The native TINYINT SQL, owner, request budget, result ACK and supervisor retain
 their existing implementations. One invocation selects one complete query;
@@ -35,7 +35,6 @@ from src.serving.backends.vllm_protocol import GenerationSpec
 SCHEMA = 'semloom.imlane.mmqa_filter.v1'
 MEDICAL_SCHEMA = 'semloom.imlane.medical_filter.v1'
 MOVIE_SCHEMA = 'semloom.imlane.movie_filter.v1'
-QUERIES = ('3a', '3b', '3c', '3d', '3e', '3f', '3g', '6a', '6b', '6c')
 DSO_SHA256 = '52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf'
 CODE = Path(__file__).resolve().parents[2]
 
@@ -47,18 +46,17 @@ def configuration(value, *, frozen=True):
     if not frozen:
         fields -= {'input_sha256', 'prompt_columns', 'max_model_calls'}
     medical = type(value) is dict and value.get('schema') == MEDICAL_SCHEMA
-    movie = type(value) is dict and value.get('schema') == MOVIE_SCHEMA
     if medical:
         fields.add('scale_factor')
-    queries = ('1', '4') if medical else ('1', '2', '3', '4') if movie else QUERIES
     if (type(value) is not dict or set(value) != fields
-            or value['schema'] not in (SCHEMA, MEDICAL_SCHEMA, MOVIE_SCHEMA)
-            or value['query_id'] not in queries
-            or medical and value['scale_factor'] != 11112):
-        raise ValueError('select a supported original Filter query; Medical Q1/Q4 requires scale 11112')
+            or value['schema'] not in (SCHEMA, MEDICAL_SCHEMA, MOVIE_SCHEMA)):
+        raise ValueError('use a Movie, MMQA or Medical Filter configuration')
+    if medical:
+        from src.baselines.text.sembench_medical import text_files
+        text_files(value['scale_factor'])
     generation = GenerationSpec.from_dict(value['generation'])
-    if generation.response_format is not None or generation.max_tokens != 8192:
-        raise ValueError('native Filter requires the original unstructured 8192-token generation')
+    if generation.response_format is not None:
+        raise ValueError('native Filter requires unstructured Boolean answers')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'):
         _positive(value[name])
     if frozen:
@@ -66,17 +64,27 @@ def configuration(value, *, frozen=True):
     return dict(value), generation
 
 
-def _source_query(config, generation):
+def _source_query(config, generation, *, frozen=True):
     scenario = {SCHEMA: 'mmqa', MEDICAL_SCHEMA: 'medical', MOVIE_SCHEMA: 'movie'}[config['schema']]
-    return SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], scenario,
+    query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], scenario,
         config['query_id'], execution_id=config['execution_id'], model_name=config['model_name'],
         generation=generation, **(dict(scale_factor=config['scale_factor']) if scenario == 'medical' else {}))
+    if query.operation is None or query.operation.describe()['kind'] != 'filter':
+        raise ValueError('this native entry requires one original Filter operation')
+    if not query.operation.records:
+        raise ValueError('the native Filter driver requires a nonempty original input')
+    if frozen:
+        if {name: item['sha256'] for name, item in query.files.items()} != config['input_sha256']:
+            raise ValueError('original source files changed')
+        if len(query.operation.records) != config['max_model_calls']:
+            raise ValueError('single-query Filter binds every original occurrence')
+    return query
 
 
 def freeze_config(value):
     """Observe the original input once; produce a config, not permission to run."""
     config, generation = configuration(value, frozen=False)
-    query = _source_query(config, generation)
+    query = _source_query(config, generation, frozen=False)
     method, prepared, _requests = prepare(query)
     config.update(input_sha256={name: item['sha256'] for name, item in query.files.items()},
                   prompt_columns=list(method.columns), max_model_calls=len(prepared))
@@ -87,26 +95,19 @@ def prepare_query(config):
     from transformers import AutoTokenizer
     config, generation = configuration(config)
     query = _source_query(config, generation)
-    scenario, medical = query.scenario, query.scenario == 'medical'
-    if {name: item['sha256'] for name, item in query.files.items()} != config['input_sha256']:
-        raise ValueError('original source files changed')
     method, prepared, requests = prepare(query, prompt_columns=config['prompt_columns'])
-    if method.stage.kind != 'filter' or len(prepared) != config['max_model_calls']:
-        raise ValueError('single-query Filter binds every original occurrence')
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     tokens = [tokenizer.apply_chat_template(row['messages'], tokenize=True, add_generation_prompt=True)
               for row in requests]
-    if scenario == 'movie':
-        label, text = 'reviewId', 'reviewText'
-    elif medical:
-        label, text = 'patient_id', 'symptoms'
-    else:
-        label, text = ('Airlines', 'Destinations') if query.query.startswith('6') else ('title', 'text')
     rows = []
     for record, request in zip(query.operation.records, requests, strict=True):
-        source = query.operation.frame.iloc[record.source_position]
+        # Keep the existing three-string native ABI. These two fields carry
+        # source identity/cells, not a guessed task title and text column. The
+        # original formatter's complete messages remain the model input.
         rows.append(dict(occurrence_id=request['call_id'], source_position=record.source_position,
-            title=str(source[label]), text=str(source[text]), messages=request['messages']))
+            title=str(record.source_index),
+            text=json.dumps(record.values, ensure_ascii=False, allow_nan=False, sort_keys=True),
+            messages=request['messages']))
     return query, method, prepared, requests, tokens, rows
 
 
@@ -187,6 +188,10 @@ def run_worker(args, config, *, service_factory=ModelService):
         build_record=file_identity(Path(args.build_record)))
     primary = service = ledger = unit = result = None
     try:
+        # Reject unsupported task shapes before starting a model. This source
+        # preflight is part of the cold worker interval; the query still makes
+        # its own fresh preparation after the model is ready.
+        _source_query(config, generation)
         for name in ('model-calls', 'model-service'):
             (args.output / name).mkdir(mode=0o700)
         limit = config['max_model_calls']
@@ -219,7 +224,7 @@ def run_worker(args, config, *, service_factory=ModelService):
             with open_private_text(args.output / 'input.csv') as stream:
                 writer = csv.writer(stream); writer.writerow(('occurrence_id', 'title', 'text', 'source_position'))
                 writer.writerows((r['occurrence_id'], r['title'], r['text'], r['source_position']) for r in rows)
-            if max(map(len, tokens)) + 8192 > service.ready_info['max_model_len']:
+            if max(map(len, tokens)) + generation.max_tokens > service.ready_info['max_model_len']:
                 raise ValueError('full Filter prompt and output exceed the actual model context')
             relation = FilterRelation(query, method, prepared, requests, tokens, rows)
             args.startup_timeout_s = window.query_deadline - time.monotonic()

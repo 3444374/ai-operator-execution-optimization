@@ -303,7 +303,8 @@ class OriginalRelationSinkTests(unittest.TestCase):
         bindings, accepted = {}, []
         for group, code in enumerate(('3b', '3c')):
             query = self.query('mmqa', code)
-            sources = [dict(occurrence_id=code + '-r' + str(i), source_position=group * 3 + i)
+            sources = [dict(occurrence_id=code + '-r' + str(i), source_position=group * 3 + i,
+                            title=str(query.operation.frame.iloc[i]['title']))
                        for i in range(3)]
             bindings[code] = (query, sources)
             for index in (1, 0) if group == 0 else (2, 0):

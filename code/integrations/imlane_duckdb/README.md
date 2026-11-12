@@ -19,7 +19,7 @@
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 | [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
 | [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | MMQA Q1 原题准备／完整 sink，复用既有作者、模型 owner 与监督器；25 次物理预算 |
-| [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 显式单题 Movie Q1（2000 次）／Q2–Q4（120 次）、MMQA Q3a–g／Q6a–c（25 次）或 Medical Q1/Q4（1200 次）；原版 TINYINT Filter、完整原查询 sink 后 ACK |
+| [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 复用 SemBench 捕获的单 Filter；源规模与预算从本次输入冻结，原版 TINYINT、完整原查询 sink 后 ACK |
 
 输入四VARCHAR依次为`occurrence_id/id/reviewId/reviewText`，作者转换器按位置命名`c0..c3`。
 输出为TINYINT，SQL比较`=1`；不走尚未资格的位图Arrow Boolean转换。完整cohort先进入DuckDB；
@@ -330,7 +330,8 @@ cold1200/hardcap1200、warmup0、retry0；1200条实际完整消息/token逐条�
 
 同一 [单题入口](../../src/experiments/native_imlane_filters.py) 以
 [Medical 配置](../../configs/sembench_imlane_medical_filter.example.json) 显式选择 Q4，
-固定患者 source scale 11112、原 join 后 1200 个发生项和 1200 次物理调用上限。
+历史完整批次使用患者 source scale 11112、原 join 后 1200 个发生项和 1200 次物理调用上限。
+当前 scale 由原 Medical 文件命名协议选择，实际 join 后的发生项数决定本次预算，不等于 scale 数值。
 原 SemBench c814 的 patients INNER JOIN symptoms、Filter、age.mean() 和单行
 average_acne_age 结果均保留；空集合、重复行、NULL age 和原 pandas join 语义不变。
 仍使用原作者 TINYINT DSO `52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf`，
@@ -560,8 +561,22 @@ Q9构建记录绑定当前q9.cpp、q9_udf.py、relation_handoff.hpp以及实际b
 `native_imlane_filters.configuration` 不再把 Movie/MMQA/Medical 的历史 2000/120/25/1200 行数当作
 执行能力白名单。显式 `max_model_calls` 仍由现有 `AttemptBudget` 验证为正整数；
 `prepare_query` 必须从冻结 SHA 对应的原题源码读取完整 occurrence，并验证数量等于该预算，
-不截断、不补行、不重试。支持题号、原 8192-token 生成参数及 Medical scale 11112 保持。
+不截断、不补行、不重试。题号与原操作由 `SemBenchTextQuery` 负责，后端不再维护题号白名单；
+只接收该任务层捕获的单 Filter。Medical scale 按原作者文件命名规则解析；生成上限来自本次
+`generation.max_tokens`，context 检查与实际回执审计使用同一值，8192 仍是现有比较配置的选择。
 接受其他输入规模不授权额外运行，目标运行仍只使用已批准的冻结配置和持久预算。
+
+现有三个场景 schema 与 CLI 保留，均调用同一执行器。三字符串 native ABI 不变：occurrence ID
+关联原完整 messages；原 `title/text` 运输字段现在携带 source index 与模型输入列的 JSON，
+不再按题号猜 reviewId/patient_id/title 等字段。JSON 仅为原输入 cell 的确定性运输表示，
+不是模型 prompt；评价列不进入它。完整关系按 occurrence 与源序恢复，再由原题做 head/count/
+比例/join/mean 等后处理。新输入可改变运输字节与必要 I/O，不能直接继承旧时长或目标资格。
+
+模型启动前检查原任务形态，ready 后仍 fresh source/prepare；两次工作分别真实计入 cold 与
+ready-source 区间。完整内存 sink 早于 ACK、审计、评价和关闭。Join/TopK/Extract/Map 不通过
+这个 TINYINT 入口；零输入由现有正预算/native driver 合同明确拒绝，不伪装成模型运行。
+正输入但全阴性的原空结果不受此限制。旧联合六题 packet 继续绑定它自己的旧 SOURCE；
+若迁移到新源码，其 source binding 必须显式带运输标签，不能从题号补猜。
 
 `prompt_columns` 保存原 LOTUS 观察到的源列顺序，而非渲染 header。原 `StageSpec.bind`
 已经从原题 instruction 解析列名，准备阶段核对相同列集合，再应用显式冻结顺序；

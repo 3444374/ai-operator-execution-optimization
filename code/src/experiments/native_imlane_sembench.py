@@ -153,8 +153,8 @@ def audit_ipc(directory, requests, tokens, predictions, sampling, *, by_occurren
             if (call['status'] != 'succeeded' or call['attempted'] is not True
                     or response['generated_text'] != outputs[call_id]
                     or response['rendered_prompt_token_ids'] != ids
-                    or response['requested_max_tokens'] != 8192
-                    or response['resolved_max_tokens'] != 8192
+                    or response['requested_max_tokens'] != sampling['max_tokens']
+                    or response['resolved_max_tokens'] != sampling['max_tokens']
                     or response['budget_attempt'] in attempts or response['request_id'] in request_ids):
                 raise ValueError('native text, tokens or charged request identity changed')
             seen.add(key); attempts.add(response['budget_attempt']); request_ids.add(response['request_id'])

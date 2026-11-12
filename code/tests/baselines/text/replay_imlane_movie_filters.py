@@ -48,6 +48,7 @@ def reference(root, query_id):
         texts.append(prediction['generated_text'])
     quality = {key: value for key, value in audit['quality'].items() if key != 'classification_audit'}
     return dict(messages=messages, texts=texts, result=frame, quality=quality,
+        source_columns=['reviewId', 'reviewText'],
         labels_and_texts=[(str(row['reviewId']), row['reviewText']) for row in rows],
         evidence={name: file_identity(root / name) for name in names})
 
@@ -72,7 +73,9 @@ def bridge_q3_reference(path, config):
         assert decisions[call['row_id']]['decision'] == q3_decision(call['text'])
     quality = {key: value for key, value in report['quality'].items() if key != 'classification_audit'}
     return dict(messages=[row['messages'] for row in requests], texts=[call['text'] for call in calls],
-        labels_and_texts=[(row['title'], row['text']) for row in rows], quality=quality,
+        source_columns=['reviewId', 'reviewText'],
+        labels_and_texts=[(str(row.reviewId), str(row.reviewText)) for row in query.operation.frame.itertuples()],
+        quality=quality,
         result=dict(index=[0], columns=['positive_review_cnt'], data=[[report['result']['positive_review_cnt']]]),
         evidence=dict(source_identity='168bc LOTUS-compatible IMLane project resident bridge, not native author defaults',
             saved_query=file_identity(path), complete_saved_prompt_token_arrays_equal=True))
