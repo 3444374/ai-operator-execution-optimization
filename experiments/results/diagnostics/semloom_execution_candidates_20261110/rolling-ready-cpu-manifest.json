@@ -7,7 +7,7 @@
     "code/tests/execution_provider/test_rolling_ready_selection.py": "9abf0c22a7aff860ef0dc0078dba707afe593b2413e6cc2f8a8e54707f719c1b"
   },
   "archive": "rolling-ready-cpu-20261113.tar.gz",
-  "archive_sha256": "e649078dc83663626c2556ca2ecc9a659641b01569e37846ebdcce60ac8177a4",
+  "archive_sha256": "f83b7b19b8b4dc87f69c5a1558c6327be464bea77abde453a4b5aa40d975b246",
   "files": [
     {
       "member": "PLAN.md",
@@ -134,6 +134,12 @@
       "original_sha256": "329b0944543c60a944dd6df34255738214f039ee61e7c7d337a2ae59beb37b4f",
       "public_sha256": "54e9d65fa6c022252cb7479d03b225d716d06b0cbcd773d78f333667698d8176",
       "bytes": 2253
+    },
+    {
+      "member": "standards-followup.md",
+      "original_sha256": "b92efee0c6c759e42e34c86ff24f1e43be3f617e8049826cae913caf0d95bd79",
+      "public_sha256": "b92efee0c6c759e42e34c86ff24f1e43be3f617e8049826cae913caf0d95bd79",
+      "bytes": 1808
     }
   ],
   "results": {
@@ -170,6 +176,9 @@
     "reviewed_commit": "6ddad4583338a1351a415b9c2b3138ce32bd3f9f",
     "standards_initial_findings": 1,
     "spec_findings": 0,
-    "correction": "Added exact invocation metadata and post-test CPU runtime identity; production and test code unchanged. Follow-up review pending."
+    "correction": "Exact invocation metadata and post-test CPU runtime identity added; independent follow-up verified all 12 invocations and original 21 members. Production/test code unchanged.",
+    "followup_reviewed_commit": "db61d178c64f30759f0ac5a07d27cdc5dfae0a2d",
+    "standards_remaining_findings": 0,
+    "spec_remaining_findings": 0
   }
 }
