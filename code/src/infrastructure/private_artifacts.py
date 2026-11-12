@@ -6,6 +6,7 @@ import json
 import math
 import os
 from pathlib import Path
+import stat
 import uuid
 
 
@@ -43,6 +44,74 @@ def require_outside_git(path: Path) -> None:
 def new_private_directory(path: Path) -> None:
     require_outside_git(path)
     path.mkdir(parents=True, mode=0o700, exist_ok=False)
+
+
+def copy_private_tree(source, destination):
+    """Copy regular evidence bytes; record links/special nodes without following them.
+
+    The caller must persist the returned inventory beside the copy and quiesce its
+    source first. This is not a filesystem snapshot or a resource-cleanup verdict.
+    Any read, write or verification error propagates, retaining the partial copy.
+    """
+    source, destination = Path(source), Path(destination)
+    if not stat.S_ISDIR(source.lstat().st_mode):
+        raise ValueError('evidence source must be a directory, not a symlink')
+    if destination.resolve().is_relative_to(source.resolve()):
+        raise ValueError('evidence destination must not be inside its source')
+    new_private_directory(destination)
+    entries = []
+
+    def copy_node(path, target):
+        info = path.lstat()
+        node = dict(path=path.relative_to(source).as_posix(), mode=info.st_mode,
+                    device=info.st_dev, inode=info.st_ino, uid=info.st_uid,
+                    gid=info.st_gid, size=info.st_size, mtime_ns=info.st_mtime_ns)
+        if stat.S_ISDIR(info.st_mode):
+            node.update(type='directory', storage='directory')
+            if path != source:
+                target.mkdir(mode=0o700)
+            entries.append(node)
+            for child in sorted(path.iterdir()):
+                copy_node(child, target / child.name)
+        elif stat.S_ISREG(info.st_mode):
+            digest, size = hashlib.sha256(), 0
+            descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+            with os.fdopen(descriptor, 'rb') as reader:
+                opened = os.fstat(reader.fileno())
+                if (not stat.S_ISREG(opened.st_mode) or
+                        (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns) != (
+                            info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns)):
+                    raise OSError('evidence file changed before copying: ' + str(path))
+                output = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                with os.fdopen(output, 'wb') as writer:
+                    for block in iter(lambda: reader.read(1048576), b''):
+                        writer.write(block)
+                        digest.update(block)
+                        size += len(block)
+                    writer.flush()
+                    os.fsync(writer.fileno())
+                after = os.fstat(reader.fileno())
+            expected = dict(sha256=digest.hexdigest(), bytes=size)
+            if (size != info.st_size or (after.st_size, after.st_mtime_ns) != (
+                    opened.st_size, opened.st_mtime_ns) or file_identity(target) != expected):
+                raise OSError('evidence file copy verification failed: ' + str(path))
+            node.update(type='file', storage='copied_and_verified', **expected)
+            entries.append(node)
+        else:
+            kind = next((name for name, check in (
+                ('symlink', stat.S_ISLNK), ('socket', stat.S_ISSOCK), ('fifo', stat.S_ISFIFO),
+                ('character_device', stat.S_ISCHR), ('block_device', stat.S_ISBLK))
+                if check(info.st_mode)), 'other')
+            node.update(type=kind, storage='metadata_only', rdev=info.st_rdev)
+            if kind == 'symlink':
+                node['link_target'] = os.readlink(path)
+            entries.append(node)
+
+    copy_node(source, destination)
+    return dict(schema='semloom.private_tree_copy.v1', source=str(source),
+                destination=str(destination), entries=entries,
+                regular_files_verified=sum(item['type'] == 'file' for item in entries),
+                scope='archive only; no query acceptance or resource cleanup inference')
 
 
 @contextmanager
