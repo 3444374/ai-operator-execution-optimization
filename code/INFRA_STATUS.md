@@ -105,8 +105,8 @@ cold/warm 各1200保存答复经真实 CPU Arrow／Unix IPC 回放，历史 CPU 
 Linux 原DSO/SQL门及一次冷1200，实际完整消息/token逐条一致；结果40行，precision=0.5、
 recall=0.4、F1=0.4444444444444445，hardcap1200、warmup0、retry0。原件与审计定位见
 [Medical Q1说明](integrations/imlane_duckdb/README.md#medical-q1-原版-filter-接线)。
-这不授予新组合目标资格；Q9维护CLI的Linux零模型门已由协调器报告通过，原件本机核验待完成；
-当前组合目标执行仍 pending。
+这不授予新组合目标资格；Q9维护CLI的独立Linux零模型门与原件本机核验已通过；
+当前组合未作整体目标／GPU执行。
 
 [IMLane Medical Q4](integrations/imlane_duckdb/README.md#medical-q4-原版-filter-接线) 复用原版
 TINYINT 单题入口，1200 个发生项进入完整原 join/filter/mean 内存 sink 后才 ACK；回执通过
@@ -233,5 +233,6 @@ records resident 的顺序复用不能直接解释为共享 owner 上完整查�
 [唯一CLI](src/experiments/native_imlane_movie_scores.py)已收口原Q9薄driver/UDF、source/audit与完整内存sink接线；
 单cold256永久预算，原DSO不变。机器资源控制器与冻结数据仍在仓库外。
 当前迁移的资格范围及复现配置见[集成说明](integrations/imlane_duckdb/README.md)。
-本机软件IPC/原256消息-token/关系回放与目标模型运行分开记录。协调器报告 `4c08b57b` 维护CLI
-已通过Linux完整SQL256／零模型及实际加载原52bf DSO检查；原件本机核验待完成，当前组合未作目标执行。
+本机软件IPC/原256消息-token/关系回放与目标模型运行分开记录。`4c08b57b` 维护CLI已独立
+通过Linux完整SQL256／零模型及实际加载原52bf DSO检查，1173份原件已回收核验；
+其运行token是软件placeholder，不是新GPU token资格。当前组合未作整体目标／GPU执行。

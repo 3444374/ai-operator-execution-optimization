@@ -545,6 +545,11 @@ UnixIPC回放使用软件engine；token回放使用本地原tokenizer，不声�
 
 Q9构建记录绑定当前q9.cpp、q9_udf.py、relation_handoff.hpp以及实际binary/DSO字节；入口拒绝旧源码构建和被修改的产物。
 
-协调器报告维护源码 `4c08b57b9a2e54768c8c475226c870f5a0a950e0` 的Linux零模型门已通过：
-完整SQL256经正式CLI执行，实际加载原52bf DSO，三个stage退出与资源检查通过，SHM不变且lease释放。
-此处仅记录协调器报告，原件本机回收核验尚待完成；不改写旧v4历史，也不授予当前组合或GPU资格。
+维护源码 `4c08b57b9a2e54768c8c475226c870f5a0a950e0` 的独立Linux零模型门已通过并完成本机原件核验：
+正式CLI执行完整SQL256，完整关系／逐occurrence／永久预算256／sink→ACK→退出及资源清理通过；
+实际存活driver加载原52bf DSO，三个stage退出成功，SHM不变且lease释放。运行token是软件placeholder，
+不授予新GPU token或性能资格。私有v4冻结包的真实模型256次仍只归原包，不作为本CLI新增GPU结果。
+1173份原件包 `imlane-q9-maintained-4c08-1112-r1-evidence.tar.gz` 的SHA256为
+`fe608fe2254d25c9241bb90b1984b085067c9244200044ffae94ab5055b2521a`，汇总见仓库外
+`imlane-q9-maintained-linux-gate-20261112/RESULT.json`。当前Medical＋Q9组合只有本机回归和源码适用性
+核对，未作整体目标／GPU执行；各组件的原失败证据与独立成绩保持原身份。
