@@ -57,13 +57,20 @@ def make_budget(tokenizer, engine, chain, records, active_tokens=None):
 
 def run_case(records, chain, engine, resources, *, control_dir, token_budget=None,
              priority=False, actor_owner=None, execution='record_local_sections',
-             progression='record', progression_batch_rows=None):
+             progression='record', progression_batch_rows=None, ready_selector=None, on_ready_event=None):
     entered = time.monotonic_ns()
     ready, core_events, driver_modes = [], [], []
     options = {} if token_budget is None else {'token_budget': token_budget}
+    def record_ready(event):
+        ready.append(asdict(event))
+        if on_ready_event is not None:
+            on_ready_event(event)
     if priority:
-        options.update(ready_order='successor_first', successor_first=SuccessorFirst(2, 1.0),
-                       on_ready_event=lambda event: ready.append(asdict(event)))
+        options.update(ready_order='successor_first', successor_first=SuccessorFirst(2, 1.0))
+    if ready_selector is not None:
+        options['ready_selector'] = ready_selector
+    if priority or ready_selector is not None or on_ready_event is not None:
+        options['on_ready_event'] = record_ready
     owner = SemLoomRecordChainCore(engine, resources, control_dir=control_dir,
         execution=execution, actor_owner=actor_owner, progression=progression,
         progression_batch_rows=progression_batch_rows, **options)
@@ -147,7 +154,7 @@ def run_case(records, chain, engine, resources, *, control_dir, token_budget=Non
                     full_relation_ready_scope='complete consumed relation and finalized columns before automatic owner finish/close; caller interval includes owner construction/evaluate and model startup, not input loading before run_case',
                     iteration_scope='includes lazy model startup in fused and automatic query close in both paths',
                     iterator_complete_scope='not claimed earliest model result readiness'),
-        default_ready_options_omitted=not priority)
+        default_ready_options_omitted=not priority and ready_selector is None)
 
 
 def replay_native_answers(records, chain, result, tokenizer=None):
@@ -206,6 +213,10 @@ def compare(root, config, *, config_sha256=None):
                 [('fused-count', 'fused'), ('record-local-count', 'record_local_sections')]):
             raise ValueError('matched execution comparison requires the fixed C1/B1 pair')
     progression = config.get('suite') == 'progression'
+    ready_work = config.get('suite') == 'ready-work'
+    if ready_work:
+        from src.experiments.ready_work_validation import load_profile
+        profile = load_profile(config)
     if progression:
         from src.semantic_methods.lotus.records import RecordsResources
         from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
@@ -223,6 +234,17 @@ def compare(root, config, *, config_sha256=None):
         value=json.loads((root/'cases'/case['case_id']/'case.json').read_text())
         if value['status']!='completed' or value['public_git_commit']!=config['public_git_commit']:
             raise ValueError('incomplete or wrong source case: '+case['case_id'])
+        if ready_work:
+            selection = value.get('ready_work_selection', {})
+            actual = {key:value.get(key) for key in profile['signature']}
+            native = value.get('close', {}).get('model_owner', {}).get('model_ready', {}).get('native_execution_profile', {})
+            if (actual != profile['signature'] or value.get('config_sha256') != config_sha256 or
+                    selection.get('profile') != profile or selection.get('case_id') != case['case_id'] or
+                    selection.get('accepted_choices') != 48 or
+                    native.get('status') != 'observed_worker_execution_profile' or
+                    native.get('batch_invariant_requested') is not True or
+                    native.get('batch_invariant_active') is not True):
+                raise ValueError('ready-work source/profile/acceptance receipt differs: '+case['case_id'])
         if matched:
             lifecycle = value.get('lifecycle', {})
             runtime = value.get('caller_runtime', {})
@@ -312,4 +334,7 @@ def compare(root, config, *, config_sha256=None):
     if progression:
         report.update(suite='progression', comparison_scope='same C, input/model/generation and fresh-query async backend',
             mechanism_gate='driver policy and capacity binding checked; group-stage timing and physical exits require separate evidence')
+    if ready_work:
+        report.update(suite='ready-work', comparison_scope='same C4/B1 and frozen measured API costs; fresh models',
+            mechanism_gate='each candidate needs contended accepted choices that differ from FIFO before any benefit claim')
     return report
