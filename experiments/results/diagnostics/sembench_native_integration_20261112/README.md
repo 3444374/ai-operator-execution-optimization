@@ -263,7 +263,8 @@ SDK方法在正常／失败路径均恢复。14项不同软件检查通过、0�
 ## IMLane prepared 请求的 occurrence 交接
 
 原VARCHAR prepared kernel已有call_id列，却没有把ID交给模型provider；Q1入口因而要求所有消息内容互异。
-现用既有`occurrence_ids`协议透传原ID，消息／生成／原生SQL／调度保持，取消这一内容限制。
+现将原ID交给provider已有的`occurrence_ids`本地回执字段；RPC按原batch ID／位置匹配，未新增请求字段。
+消息／生成／原生SQL／调度保持，取消这一内容限制。
 共享IPC审计只按occurrence、原batch位置、消息、token及实际答复核对，Filter／Join调用同步迁移；
 删除旧消息摘要关联路径、`by_occurrence`开关及无用导入，不保留两套当前关联机制。
 旧8667离线audit脚本属于其原件与固定源码，不修改历史脚本；新衍生审计使用现有无开关签名。
@@ -273,6 +274,12 @@ SDK方法在正常／失败路径均恢复。14项不同软件检查通过、0�
 首轮IPC模块遇到沙箱AF_UNIX bind权限错误，仅在允许本地Unix socket后重跑该模块21项通过，
 生产代码未为此改变，失败日志保留。真实作者SQL／当前kernel绑定及模型资格仍待验；
 DSO及C++ driver源码未改，旧构建记录不能手改摘要冒充重新绑定，不重复既有25次模型。
+
+随后417457的Linux首轮执行85次、去重82项：81通过，断连用例的诊断断言失败；同源码单项复核也失败，
+没有继续重复。该用例等待软件generate drain后立即读stderr，但原连接还会等待work／disconnect任务及
+writer关闭，最后才打印诊断；drain不是连接处理完成屏障。测试现观察原`connection`返回再核原诊断，
+保留abort／drain／日志／复用全部断言，不改生产关闭代码、不加固定sleep。
+本机受影响IPC模块21项通过、0模型；新测试边界的Linux检查仍待回执，原失败保留，不能说417457整批通过。
 
 <a id="lotus-native-join-projection"></a>
 ## LOTUS 多列 Join 的原生选列限制

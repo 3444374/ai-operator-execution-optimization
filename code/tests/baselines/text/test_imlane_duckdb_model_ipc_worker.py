@@ -331,6 +331,18 @@ class ModelWorkerTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.engine.active)
 
     async def test_disconnect_aborts_owned_requests_and_drains_before_reuse(self):
+        connection_completed = asyncio.Event()
+        original_connection = worker.ModelWorker.connection
+
+        async def observed_connection(instance, reader, writer):
+            try:
+                await original_connection(instance, reader, writer)
+            finally:
+                connection_completed.set()
+
+        observer = patch.object(worker.ModelWorker, 'connection', observed_connection)
+        observer.start()
+        self.addCleanup(observer.stop)
         await self.start()
         self.engine.expected = 2
         _reader, writer = await asyncio.open_unix_connection(self.config['socket_path'])
@@ -339,6 +351,7 @@ class ModelWorkerTests(unittest.IsolatedAsyncioTestCase):
         writer.close()
         await writer.wait_closed()
         await self.until_drained(2)
+        await asyncio.wait_for(connection_completed.wait(), 1)
         self.assertEqual(len(self.engine.aborts[0]), 2)
         self.assertFalse(self.engine.active)
         self.assertIn('client disconnected', self.stderr.getvalue())

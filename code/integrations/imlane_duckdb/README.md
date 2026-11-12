@@ -21,7 +21,8 @@
 | [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | MMQA Q1 原题准备／完整 sink，复用既有作者、模型 owner 与监督器；25 次物理预算 |
 | [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 复用 SemBench 捕获的单 Filter；源规模与预算从本次输入冻结，原版 TINYINT、完整原查询 sink 后 ACK |
 
-prepared VARCHAR的`call_id`现沿既有provider协议传到模型IPC，原消息和生成参数保持；重复文本及不同原答
+prepared VARCHAR的`call_id`现交给provider本地回执，RPC仍用原batch ID／位置关联，不增加请求字段；
+原消息和生成参数保持，重复文本及不同原答
 按occurrence／native batch位置核对，不再要求Q1的消息内容互异。共享审计与Filter入口只保留这一条
 关联路径，旧内容摘要回退及`by_occurrence`开关已移除。历史运行按各自固定源码审计，不改旧回执。
 Python kernel身份变化须经现有build-record／原生SQL检查重新绑定；DSO与C++ driver源码未改，

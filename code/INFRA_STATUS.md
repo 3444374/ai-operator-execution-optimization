@@ -59,7 +59,8 @@ Animals 的 Ray 零模型捕获／processor门也已按原题元数据消费一�
 旧Q2b的325次Join、空Extract、F1=0及103发生项原答关联缺口保留；不回填旧日志或授予非空第二阶段GPU资格。
 非空Extract的参考阶段准备已复用原查询／SDK，官方正例只作显式软件Join夹具；捕获后即停止，
 不产生查询结果／质量，不代替真实Join。组件模型诊断及其独立服务观测仍待完成。
-IMLane prepared VARCHAR现将原call_id传入既有模型IPC，取消Q1消息内容必须互异的接线限制；
+IMLane prepared VARCHAR现将原call_id交给provider本地回执，RPC仍由原batch ID与位置关联，
+没有新增模型请求字段；取消Q1消息内容必须互异的接线限制。
 共享审计只按occurrence与原batch位置核对。82项不同软件检查通过，原生SQL／新kernel绑定仍待验，
 没有修改DSO、C++ driver、消息、生成参数或旧模型结果。
 其他已就绪项继续排队；不为每个格子另写执行器，不只积累软件通过数。

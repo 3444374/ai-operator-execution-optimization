@@ -19,7 +19,8 @@ Q1冷时钟含模型启动。8667的MMQA Q2b真实325次只走空Join／空Extra
 103个发生项原措辞关联与非空第二阶段模型资格缺口单列，不把解析成员资格的置换不变性当完整原答观测。
 只读追查确认Q2b金标标志确实入模，该相同输入组仍被原parser判False；不据此改写提示／判定。
 非空Extract的原SDK消息准备使用明确官方参考Join软件夹具，捕获即停止，0模型／无查询质量，不能替代端到端资格。
-IMLane prepared VARCHAR沿既有协议补齐occurrence ID交接，移除消息互异限制与旧摘要关联；
+IMLane prepared VARCHAR补齐provider本地回执的occurrence ID，RPC仍按原batch ID／位置关联，未新增请求字段；
+移除消息互异限制与旧摘要关联，
 82项不同软件检查通过，当前kernel原生SQL绑定待验，不继承旧模型资格。
 独立原件再确认cb754的LOTUS quick完整256：3355次真实比较及1296次原parser回退分别保留；
 原相关性、ready-first时钟与原生算法身份不混排。0755的15项Linux检查和真实输入5条Extract消息捕获
