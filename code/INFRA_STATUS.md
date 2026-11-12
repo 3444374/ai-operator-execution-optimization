@@ -5,6 +5,10 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及所属报告。
 CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释，不把旧版本通过数累加为当前整树结果。
 
+[2026-11-12 实现与方案核查](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md#implementation-review-20261112)
+区分各 PR 的窄实现与未完成项：完整查询候选接线、实际未缓存工作／成本输入、动态消费者与多层表示、
+真实位置路由及 #101 短期限具名资源回收仍未完成；负结果候选按停止条件处理。
+
 <a id="native-gpu-decision-observation"></a>
 本分支继续增加显式就绪工作选择、排队／传输／重建成本路由、有界提前准备与原生引擎可选参数。
 [执行候选报告](../experiments/results/diagnostics/semloom_execution_candidates_20261110/README.md)记录 Q8／Q9 布局、
@@ -26,9 +30,10 @@ v1 另有 cascade 接点，当前 v2 没有该分支。[代码与 CPU 验证](..
 
 本分支另有默认关闭的完整请求排序、图片 URI 留存选择，以及表示寿命／供给等待诊断。
 [实现与本地证据](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
-区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备和 CPU 检查；完整请求排序已在新批次不变配置完成一对真实模型严格一致性诊断，见上述修复版补验。
-这些排序／媒体／供给策略的稳定GPU性能与完整查询收益、
-encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
+区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备、CPU 检查与准确 b1d965f 的 MMF GPU 对照。
+[原配置服务器回执](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md#server-qualification-20261111)
+保留严格 token 46/48 与该 head 的 v1 决策缺项；后续整合树的批次不变配置为一对 48/48 功能诊断，见上述修复版补验，二者不转授资格。
+这些排序／媒体／供给策略的稳定 GPU 性能与完整查询收益、encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 
 <a id="current-refactor-status"></a>
 <a id="refactor-completion-checklist"></a>
