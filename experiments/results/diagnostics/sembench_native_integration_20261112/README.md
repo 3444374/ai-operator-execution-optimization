@@ -153,6 +153,23 @@ Daft表达式、Rust前缀算子、LocalVLLMExecutor、submit／poll及collect�
 在允许进程检查后仅重跑该项通过，失败原件保留。真实Ray图像／token／pixel processor与单遍VLM
 仍由服务器单独验收，不能从旧Q7的两遍模型资格推定通过。
 
+<a id="native-service-duplicate-response-correlation"></a>
+## 原生服务重复输入的答复关联
+
+Q2b实机审计暴露相同请求内容对应不同措辞时，仅凭HTTP日志不能恢复每个原occurrence的答复。
+本次在既有 `NativeServiceCalls` 的LM观察范围内记录原 `_process_uncached_messages` 返回的
+completion ID顺序，原函数、参数、结果对象和SDK并发方式保持；不向请求插入ID或改模型提示。
+记录仅保留ID／计数，不保留额外base64图像副本。查询返回后用唯一completion ID关联实际HTTP尝试，
+写入 `native_sdk_response` 事件的LM调用号、uncached位置和HTTP请求号，关联／写盘在sink之外。
+缺失或重复ID、结果槽不完整时明确报告不可用，不按输入文本或网络完成顺序配对；
+全局请求终态和逐发生项关联分别披露，不改写旧日志缺失信息。
+
+57项不同检查为56通过、1跳过，模型调用0。新增实际LOTUS SDK用例覆盖相同输入、不同答复、
+HTTP完成顺序相反时的原结果／ID关联，以及并发LM调用、缺失／重复ID和方法恢复。
+完整视觉及分层Aggregate使用实际SDK／原题／软件HTTP检查消息字节、sink、解析与失败边界；
+受控时钟证明新增关联不进入完整结果区间，原异常与已有结果在观察失败时仍保留。
+跳过只因可选真实sf25 MMQA目录未绑定。新的Linux／模型资格另验，不重跑已完成Q2b来补旧证据。
+
 ## Cars 与 E-Commerce 真实资产缺口
 
 `baseline-cars-ecomm-data-checks-20261113-r1` 的Cars独立官方full_data.zip检查限定512MiB／15分钟，

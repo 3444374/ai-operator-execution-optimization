@@ -365,6 +365,10 @@ class NativeLotusImageQueryTests(unittest.TestCase):
             Counter(hashlib.sha256(request["payload"]).hexdigest() for request in replies.requests))
         self.assertEqual(report["model_calls"], len(replies.requests))
         self.assertTrue(report["event_writer"]["closed"])
+        if report['status']=='completed':
+            self.assertTrue(report['native_sdk_response_audit']['available'])
+            ordered=[event for event in events if event['event']=='native_sdk_response']
+            self.assertEqual(sorted(row['http_attempt'] for row in ordered),sorted(event['attempt'] for event in requests))
         evidence = (directory / "native-http.jsonl").read_text() + json.dumps(report)
         self.assertNotIn("data:image/png;base64,", evidence)
         self.assertNotIn(KEY_VALUE, evidence)

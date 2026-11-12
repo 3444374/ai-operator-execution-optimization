@@ -92,6 +92,10 @@ class ServiceFixture:
         self.step("writer snapshot", 19)
         return dict(closed=True)
 
+    def sdk_responses(self):
+        self.step('SDK response audit',37)
+        return dict(available=True,linked_occurrences=len(self.requests))
+
     def lm_report(self, lm):
         self.step("LM report", 23)
         return dict(role="software")
@@ -107,7 +111,8 @@ class ServiceFixture:
         entry = aggregate if self.kind == "aggregate" else image
         writer = SimpleNamespace(close=self.close, snapshot=self.writer_snapshot)
         audit = SimpleNamespace(lm_calls=self.stages, requests=self.requests, snapshot=self.snapshot,
-            observe_lm=lambda *a, **k: nullcontext(), record=lambda event: None)
+            observe_lm=lambda *a, **k: nullcontext(), record=lambda event: None,
+            record_sdk_responses=self.sdk_responses)
         clock = SimpleNamespace(monotonic=lambda: self.now, monotonic_ns=lambda: self.now * 1_000_000_000)
         settings = SimpleNamespace(lm=None, enable_cache=False, context=lambda **kwargs: nullcontext())
         settings.configure = lambda **values: vars(settings).update(values)
@@ -159,7 +164,7 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
                     self.assertEqual(report["driver_initialization_seconds"], 5)
                 sink = report["sink_ready_ns"] / 1e9
                 for name, at in fixture.events:
-                    if name in {"observer teardown", "identity audit", "snapshot", "serialization", "evaluation", "flush"}:
+                    if name in {"observer teardown", "identity audit", "snapshot", "serialization", "evaluation", "flush",'SDK response audit'}:
                         self.assertGreaterEqual(at, sink, name)
                 for phase in ("post_sink_audit", "result_serialization", "evaluation", "audit_finalization", "audit_flush"):
                     self.assertLessEqual(report[phase + "_started_ns"], report[phase + "_finished_ns"])
@@ -179,7 +184,7 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
 
     def test_post_sink_failures_keep_the_original_result_error_and_timestamp(self):
         for kind in ("animals", "mmqa", "aggregate"):
-            for phase in ("snapshot", "serialization", "evaluation", "LM report", "flush", "writer snapshot"):
+            for phase in ("snapshot", "serialization", "evaluation", "LM report", "flush", "writer snapshot",'SDK response audit'):
                 with self.subTest(kind=kind, phase=phase):
                     failure = RuntimeError("original " + phase + " failure")
                     fixture = ServiceFixture(kind, errors={phase: failure})
@@ -223,6 +228,54 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
 
 
 class NativeQueryObservationTests(unittest.TestCase):
+    @unittest.skipUnless(importlib.util.find_spec('lotus'), 'requires the actual LOTUS SDK')
+    def test_original_sdk_order_links_identical_inputs_and_distinct_replies_by_completion_id(self):
+        from litellm import ModelResponse
+        from lotus.models import LM
+
+        events=[]
+        calls=NativeServiceCalls(SimpleNamespace(record=events.append),'openai/software-model')
+        texts=['Answer: False','Different reasoning. Answer: False']
+        responses=[ModelResponse(id='response-'+str(i),model='software-model',
+            choices=[dict(index=0,message=dict(role='assistant',content=text),finish_reason='stop')],
+            usage=dict(prompt_tokens=3,completion_tokens=2,total_tokens=5)) for i,text in enumerate(texts)]
+        def complete(model,messages,**kwargs):
+            self.assertEqual(messages[0],messages[1])
+            # HTTP completion order differs from the SDK's original return slots.
+            for i in (1,0):
+                calls.record(dict(event='request',attempt=i))
+                calls.record(dict(event='http_response',attempt=i,status=200,
+                    response=responses[i].model_dump()))
+                calls.record(dict(event='http_finished',attempt=i))
+            return responses
+        lm=LM('openai/software-model',max_tokens=8,cache={})
+        original=type(lm).__call__
+        with native_query_settings(lm),calls.observe_lm(lm),patch('lotus.models.lm.batch_completion',complete):
+            result=lm([[dict(role='user',content='identical input')]]*2,show_progress_bar=False)
+        self.assertEqual(result.outputs,texts)
+        self.assertIs(type(lm).__call__,original)
+        self.assertNotIn('_process_uncached_messages',lm.__dict__)
+        audit=calls.record_sdk_responses()
+        self.assertTrue(audit['available'])
+        ordered=[e for e in events if e['event']=='native_sdk_response']
+        self.assertEqual([(e['lm_call_index'],e['uncached_position'],e['http_attempt']) for e in ordered],
+            [(0,0,0),(0,1,1)])
+        self.assertEqual([e['response_id'] for e in ordered],['response-0','response-1'])
+
+    def test_missing_or_duplicate_completion_ids_remain_unavailable_without_guessing(self):
+        for value in (None,'duplicate'):
+            events=[];calls=NativeServiceCalls(SimpleNamespace(record=events.append),'openai/software-model')
+            calls.lm_calls=[dict(input_occurrences=2)]
+            calls.sdk_batches=[(0,2,(value,value))]
+            for i in range(2):
+                calls.record(dict(event='request',attempt=i))
+                calls.record(dict(event='http_response',attempt=i,status=200,
+                    response=dict(id=value,model='software-model',choices=[{}])))
+            audit=calls.record_sdk_responses()
+            self.assertFalse(audit['available'])
+            self.assertEqual(audit['unlinked_occurrences'],2)
+            self.assertTrue(all(e['http_attempt'] is None for e in events if e['event']=='native_sdk_response'))
+
     def test_overlapping_native_calls_keep_query_totals_without_false_stage_counts(self):
         barrier = threading.Barrier(2, timeout=5)
         events = []
@@ -230,21 +283,28 @@ class NativeQueryObservationTests(unittest.TestCase):
 
         class LM:
             def __call__(self, messages):
+                self._process_uncached_messages(messages)
+                return SimpleNamespace(outputs=messages)
+
+            def _process_uncached_messages(self, messages):
                 barrier.wait()
                 for attempt in messages:
                     calls.record(dict(event='request', attempt=attempt))
                     calls.record(dict(event='http_response', attempt=attempt, status=200,
-                        response=dict(model='software-model', choices=[{}])))
+                        response=dict(id=str(attempt),model='software-model', choices=[{}])))
                     calls.record(dict(event='http_finished', attempt=attempt))
                 barrier.wait()
-                return messages
+                return [SimpleNamespace(id=str(attempt)) for attempt in messages]
 
         lm = LM()
         with calls.observe_lm(lm), ThreadPoolExecutor(max_workers=2) as pool:
-            self.assertEqual(list(pool.map(lm, ([1], [2]))), [[1],[2]])
+            self.assertEqual([value.outputs for value in pool.map(lm, ([1], [2]))], [[1],[2]])
+        self.assertNotIn('_process_uncached_messages',lm.__dict__)
         self.assertEqual(calls.snapshot(), dict(attempts=2,succeeded=2,failed=0,unknown=0,unfinished=0))
         self.assertTrue(all(stage['post_attempts'] is None for stage in calls.lm_calls))
         self.assertTrue(all('overlapping' in stage['post_attempts_unavailable_reason'] for stage in calls.lm_calls))
+        self.assertTrue(calls.record_sdk_responses()['available'])
+        self.assertEqual(sorted(e['http_attempt'] for e in events if e['event']=='native_sdk_response'),[1,2])
 
     @unittest.skipUnless(importlib.util.find_spec('lotus'), 'requires the native LOTUS settings API')
     def test_native_worker_threads_receive_the_query_model_and_globals_are_restored(self):

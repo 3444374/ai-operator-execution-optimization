@@ -221,6 +221,10 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
                 report["calls"] = audit.snapshot()
             except BaseException as error:
                 preserve_failure(error, "native audit snapshot")
+            try:
+                report['native_sdk_response_audit'] = audit.record_sdk_responses()
+            except BaseException as error:
+                preserve_failure(error, 'native SDK response observation')
         else:
             report["model_calls"] = 0
         if lm is not None:

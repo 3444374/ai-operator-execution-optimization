@@ -599,6 +599,11 @@ Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一
 不分配或退回额度；Q2b 按完整 Join＋最多同等数目的 Extract 预留。原失败与已发送单元不得重置。
 服务启动和 GPU 归外部 host owner，入口仅监督查询子进程；该计时为已有服务上的完整查询，不能混入文本冷模型启动成绩。
 私有审计保留原 POST 的内容摘要和 PNG URI 摘要，避免在事件队列复制整幅 base64 图像；原请求字节不变。
+共享服务观察还保留原 LOTUS `_process_uncached_messages` 按输入顺序返回的 completion ID，
+在完整查询之后用唯一ID关联HTTP尝试，写入 `native_sdk_response` 的LM调用号／发生项位置／请求号。
+相同输入可以有不同答复，不按消息摘要或HTTP完成顺序猜对应；缺失／重复ID记录为不可用。
+查询报告的 `native_sdk_response_audit` 披露覆盖数与原因；旧无序日志不能事后补成逐发生项全验。
+原SDK函数、请求、参数和调度保持，关联及写盘不进入sink区间；观察器退出后恢复原方法。
 生成配置未给出的值按原 SemBench 8192 token／无 stop 解析，显式值保持，不继承短文本 Filter 的8 token／换行截断。
 [Ray Animals Filter](image/ray_animals_q7/README.md)复用原生 Ray LLM processor、worker、预算和收尾，
 按原任务元数据执行 Q1/Q3/Q10 的一遍 Filter 或 Q7 的两遍 Filter及原 City交集。

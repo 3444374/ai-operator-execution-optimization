@@ -5,10 +5,12 @@ observe transport attempts without starting a service or adding model work.
 """
 
 from contextlib import contextmanager
+from collections import Counter
 import hashlib
 import os
 from pathlib import Path
 import threading
+import time
 
 from src.infrastructure.private_artifacts import write_private_json
 from src.infrastructure.redact import redact_text
@@ -74,6 +76,8 @@ class NativeServiceCalls:
         self.requests, self.succeeded, self.failed, self.finished = set(), set(), set(), set()
         self.lm_calls = []
         self._active_lm_calls = {}
+        self.response_ids = {}
+        self.sdk_batches = []
 
     def record(self, event):
         attempt, kind = event.get("attempt"), event["event"]
@@ -82,6 +86,8 @@ class NativeServiceCalls:
                 self.requests.add(attempt)
             elif kind == "http_response":
                 response = event["response"]
+                if type(response) is dict:
+                    self.response_ids[attempt] = response.get('id')
                 if (event["status"] == 200 and type(response) is dict
                         and response.get("model") == self.model and response.get("choices")):
                     self.succeeded.add(attempt)
@@ -97,6 +103,19 @@ class NativeServiceCalls:
     def observe_lm(self, lm, *, kind=None):
         lm_type = type(lm)
         original = lm_type.__call__
+        native_uncached = lm._process_uncached_messages
+        missing = object()
+        previous_uncached = lm.__dict__.get('_process_uncached_messages', missing)
+        current_call = threading.local()
+
+        def ordered_responses(data, *args, **kwargs):
+            responses = native_uncached(data, *args, **kwargs)
+            # The native SDK consumes these responses in uncached input order.
+            # Retain only IDs/counts here; reconciliation and writing follow sink.
+            with self.lock:
+                self.sdk_batches.append((current_call.index, len(data),
+                    tuple(getattr(response, 'id', None) for response in responses)))
+            return responses
 
         def observed(current, messages, *args, **kwargs):
             if current is not lm:
@@ -111,6 +130,7 @@ class NativeServiceCalls:
                     for active in (*self._active_lm_calls.values(), stage):
                         active['post_attempts_unavailable_reason'] = 'overlapping native LM calls; global request delta is not per-call attribution'
                 self._active_lm_calls[index] = stage
+            current_call.index = index
             try:
                 return original(current, messages, *args, **kwargs)
             finally:
@@ -120,10 +140,45 @@ class NativeServiceCalls:
                     del self._active_lm_calls[index]
 
         lm_type.__call__ = observed
+        lm._process_uncached_messages = ordered_responses
         try:
             yield
         finally:
             lm_type.__call__ = original
+            if previous_uncached is missing:
+                del lm._process_uncached_messages
+            else:
+                lm._process_uncached_messages = previous_uncached
+
+    def record_sdk_responses(self):
+        """Link SDK return slots to physical POSTs without matching prompt text."""
+        with self.lock:
+            batches = list(self.sdk_batches)
+            ids = {attempt: value for attempt, value in self.response_ids.items() if attempt in self.succeeded}
+            succeeded = len(self.succeeded)
+        http_counts = Counter(ids.values())
+        sdk_counts = Counter(value for _, _, values in batches for value in values)
+        attempts = {value: attempt for attempt, value in ids.items() if value is not None and http_counts[value] == 1}
+        linked = unlinked = 0
+        complete = len(batches) == len(self.lm_calls)
+        for call, count, values in sorted(batches):
+            complete = complete and count == len(values) == self.lm_calls[call]['input_occurrences']
+            for position, value in enumerate(values):
+                attempt = attempts.get(value) if value is not None and sdk_counts[value] == 1 else None
+                linked += attempt is not None
+                unlinked += attempt is None
+                self.writer.record(dict(event='native_sdk_response',lm_call_index=call,
+                    uncached_position=position,response_id=value,http_attempt=attempt,
+                    monotonic_ns=time.monotonic_ns(),phase='post_query_audit'))
+        available = complete and not unlinked and linked == succeeded
+        return dict(scope='original LOTUS uncached response order linked by unique HTTP completion ID; '
+                         'no input-text or completion-order inference',
+            available=available,completed_batches=len(batches),native_result_slots_complete=complete,
+            expected_occurrences=sum(stage['input_occurrences'] for stage in self.lm_calls),
+            successful_http_responses=succeeded,
+            linked_occurrences=linked,unlinked_occurrences=unlinked,
+            unavailable_reason=None if available else
+                'missing/duplicate completion IDs or incomplete native SDK result slots')
 
     def snapshot(self):
         with self.lock:
