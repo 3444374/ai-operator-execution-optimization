@@ -132,9 +132,11 @@ class NativeHTTPReplies:
             keep = pixels[0] == ((255,0,0) if self.query == 'Q3' else (0,128,0))
             text = 'True' if keep else 'False'
         else:
+            keep = self.mode != 'no_matches' and not (
+                self.mode == 'partial_matches' and 'TrackB' in json.dumps(body['messages']))
             text = ("Reasoning:\nThe word True is in this software reasoning, not the decision.\n\nAnswer: False"
                 if self.mode == "distracting_reasoning" else
-                "Reasoning: deterministic CPU fixture.\nAnswer: " + ("False" if self.mode == "no_matches" else "True"))
+                "Reasoning: deterministic CPU fixture.\nAnswer: " + ("True" if keep else "False"))
         return httpx.Response(200, request=request, json=dict(
             id=request_id, object="chat.completion", created=1,
             model=self.response_model or "local-image-fixture",
@@ -466,6 +468,30 @@ class NativeLotusImageQueryTests(unittest.TestCase):
                         {"DomesticOnly", "EuropeanLine"})
                     self.assertTrue(report["inputs"]["original_source_difference"])
                 self.assert_audit(report, directory, replies)
+
+    def test_q2b_only_actual_join_survivors_reach_extract_without_deduplicating_ids_or_images(self):
+        import pandas as pd
+
+        inputs = self.mmqa_inputs()
+        pd.DataFrame(dict(ID=[1, 1, 2], Track=['TrackA', 'TrackA', 'TrackB'])).to_csv(
+            inputs['data_dir'] / 'ap_warrior.csv', index=False)
+        config, _ = self.config('mmqa', 'Q2b')
+        replies = NativeHTTPReplies(self, 'mmqa', mode='partial_matches')
+        report, directory, claim = self.invoke(config, inputs, replies)
+        self.assertEqual(report['status'], 'completed')
+        self.assertEqual([stage['input_occurrences'] for stage in report['native_lm_calls']], [6, 4])
+        self.assertEqual(claim.attempts, 10)
+        self.assertEqual(claim.remaining, 2)  # The upper bound covers all six potential Extracts.
+        rows = self.result_rows(report)
+        self.assertEqual(len(rows), 4)
+        self.assertEqual({row['ID'] for row in rows}, {1})
+        self.assertEqual(Counter(row['image_id'] for row in rows), {'first.png': 2, 'duplicate.png': 2})
+        extracts = [row['body'] for row in replies.requests
+            if row['body'].get('response_format') == {'type': 'json_object'}]
+        self.assertEqual(len(extracts), 4)
+        self.assertEqual(len({NativeHTTPReplies.image_uris(body)[0] for body in extracts}), 1)
+        self.assertTrue(all(row['color'] == 'red' for row in rows))
+        self.assert_audit(report, directory, replies)
 
     def test_ecomm_full_query_passes_actual_filter_survivors_to_native_multimodal_extract(self):
         import pandas as pd
