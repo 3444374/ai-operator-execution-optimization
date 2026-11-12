@@ -1,0 +1,80 @@
+{
+  "status": "passed",
+  "models": 0,
+  "GPU": false,
+  "software_generate": 4,
+  "rounds": [
+    {
+      "round": 0,
+      "rows": 2,
+      "result": {
+        "call_id": [
+          "0-0",
+          "0-1"
+        ],
+        "answer": [
+          "software-0-0",
+          "software-0-1"
+        ]
+      },
+      "cumulative_model_constructors": 1,
+      "cumulative_native_executors": 1,
+      "cumulative_software_generate": 2
+    },
+    {
+      "round": 1,
+      "rows": 2,
+      "result": {
+        "call_id": [
+          "1-0",
+          "1-1"
+        ],
+        "answer": [
+          "software-1-0",
+          "software-1-1"
+        ]
+      },
+      "cumulative_model_constructors": 2,
+      "cumulative_native_executors": 2,
+      "cumulative_software_generate": 4
+    }
+  ],
+  "SDK": "Daft0.7.21",
+  "platform": "darwin",
+  "machine": "arm64",
+  "native_Daft_graph_replaced": false,
+  "source_of_requests": "two distinct finite two-row CPU fixtures",
+  "resource_profile": {
+    "gpus_per_actor": 0,
+    "concurrency": 1
+  },
+  "interpretation": "construction counts describe this actual SDK graph under software vLLM; not runtime reuse or timing of real models",
+  "native_sources": {
+    "Daft": {
+      "sha256": "d3e782571bd4785d210929e23a1330b11334ff616b454fc860dfd4e50abc4b2d",
+      "bytes": 6669
+    },
+    "Daft_native_extension": {
+      "sha256": "a26093911c969ad754aee47dbaee92f5d10e6d016020fb6ca705a69eab6df701",
+      "bytes": 126666352
+    },
+    "LocalVLLMExecutor": {
+      "sha256": "4c4fc6c125946c67e2b20de6b11b540b12095f1da59630c7681bdf79b069df63",
+      "bytes": 12567
+    }
+  },
+  "native_executor_constructors": 2,
+  "software_model_constructors": 2,
+  "constructor_delta_second_round": 1,
+  "cleanup": [
+    {
+      "loop_closed": true,
+      "thread_stopped": true
+    },
+    {
+      "loop_closed": true,
+      "thread_stopped": true
+    }
+  ],
+  "all_software_models_closed": true
+}

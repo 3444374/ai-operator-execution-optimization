@@ -19,7 +19,7 @@
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
 | 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 文件输入与公共 CLIP 实现 |
 | CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[软件检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
-| 直接原生Daft Movie Q3 | [worker／监督入口](../src/experiments/native_daft_query.py) | READY原子结果、独立关闭时钟；[配置与调用](#native-daft-q3-worker) |
+| 原生Daft完整文本查询 | [worker／监督入口](../src/experiments/native_daft_query.py) | 官方原题／prepared prompts、READY及独立关闭时钟；[配置与调用](#native-daft-prepared-worker) |
 | DuckDB＋作者IMLane Q3 | [构建／接线](../integrations/imlane_duckdb/README.md)、[软件CPU](../src/experiments/native_imlane_query.py)、[模型worker](../src/experiments/native_imlane_model_query.py) | 作者SQL／Arrow；模型worker拥有独立baseline服务，software CLI不会启动模型 |
 | 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) | [格式／NA 说明](analysis/OFFLINE_RESULTS.md) |
 | 准确历史树恢复 | [materialize_native_baseline.py](experiments/materialize_native_baseline.py) | 只还原与核验，不运行模型 |
@@ -31,8 +31,8 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 新原生 LOTUS 本地 IPC 已有 CPU 检查，官方完整 Q123 因本地缺 `overrides/cdlib/duckdb` 尚未通过，
 没有将 Core 替身当作原生执行资格。
 
-<a id="native-daft-q3-worker"></a>
-## 直接原生Daft Q3的worker与监督
+<a id="native-daft-prepared-worker"></a>
+## 原生 Daft prepared worker 与监督
 
 主driver在取得现有host租约、永久次数claim和当前环境preflight后，调用
 `src.experiments.native_daft_query.supervised_run(config_path, new_private_directory, model_python=..., monitor=...)`。
@@ -40,17 +40,18 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 监督子进程使用`python -B -m src.experiments.native_daft_query worker`；不再使用首测按结果文件轮询却未锚定READY期限的一次性控制脚本。
 所有配置／路径留仓库外；原有模型与driver环境分离。
 
-配置schema为`semloom.native_daft_q3.v1`，显式字段为`reviews_csv/model/sampling_params/engine_kwargs/provider_options`和
-`query_timeout_s=1200/cleanup_s=120/stop_grace_s=8`。生成使用temperature0、top_p1、max_tokens8192、stop[]、
-零惩罚／repetition1／单输出；engine_kwargs和provider_options省略原生覆盖时给空对象。
-读取完整Movie源，调用匹配的本地tokenizer，语义标签只用于driver侧离线评价。
+使用[完整原题入口](../src/baselines/README.md#daft-native-prepared-sembench)的 `sembench` 动作，
+由driver绑定原数据、tokenizer、原查询及评分，再生成 `semloom.native_daft_map.v1` worker配置。
+它包含 `requests_path/requests_sha256/request_budget/model/sampling_params/engine_kwargs/provider_options` 和
+`query_timeout_s/cleanup_s/stop_grace_s`；请求packet保留完整prompt及独立call_id，
+request_budget是已claim的永久额度。名称中的Map是既有运输schema，F／M／E和exact Join共用，
+不表示worker拥有Map或Q3语义。旧Q3源码／配置从[准确历史来源](../../experiments/reproduction/native_baselines/README.md#retired-daft-q3-native-binding)恢复。
 
 `result-ready.json`先保存一次完整预测，`worker.json`记录执行／关闭回执，`deadline.json`记录实际READY时钟；
-COUNT或READY已失败时保存`failed-result.json`而不报READY。附加写入失败不覆盖原异常或supervisor的清理报告。
-关闭112秒和最终TERM/KILL的8秒共用一份120秒收尾预算；没有READY时按完整1200秒查询期限停止。
-`completed`不是物理GPU退出证明。在driver环境调用`evaluate_q3(source, ready['result']['predictions'],
-positive_review_cnt=ready['result']['positive_review_cnt'], checkout=sembench_checkout)`离线评价，
-复用保存的预测，不重新运行AI图。失败和下一次规模见[诊断报告](../../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)。
+原生物化或READY已失败时保存`failed-result.json`而不报READY。附加写入失败不覆盖原异常或supervisor的清理报告。
+正常关闭与最终TERM/KILL共用一份配置的cleanup预算；无READY时按完整query期限停止。
+`completed`不是物理GPU退出证明。原完整查询在driver接收READY时先完成内存sink，审计／评价与写盘另计；
+复用保存答复，不重新运行AI图。历史Q3失败仍见[原诊断报告](../../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)。
 
 ## Movie session 配置
 

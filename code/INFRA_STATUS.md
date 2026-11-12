@@ -49,7 +49,8 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 记录，再用真实资产及代表查询验收。完整 SemBench 入口及已核活动服务器绑定走共享路径。
 旧 Ray Q3 专项图已退出维护，原题 Q1–Q4 差分覆盖同一 prepared processor；
 原生默认重试／caller runtime 的历史身份从[准确来源](../experiments/reproduction/native_baselines/README.md#retired-ray-q3-native-binding)恢复，
-没有把不同生命周期做成等价别名。Daft 专项 worker 的旧 Q3 调用仍须单独迁移；独立 HTTP profile 保留。
+没有把不同生命周期做成等价别名。Daft 专项 worker 也已移除旧 Q3 schema／执行图，
+其结果、关闭失败和部分构造失败用例迁到现行 prepared 路径；独立 HTTP profile 保留。
 其他已就绪项继续排队；不为每个格子另写执行器，不只积累软件通过数。
 已核对的普通文本题主要是单个语义调用；E-Commerce Q12 的后续 Extract 明确包含图像，
 已由完整原生 LOTUS 服务入口运行，不能当纯文本或假定其他后端已能执行它。

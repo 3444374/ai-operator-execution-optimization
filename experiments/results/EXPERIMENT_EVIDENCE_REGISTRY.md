@@ -5,6 +5,8 @@
 [主报告](diagnostics/sembench_native_integration_20261112/README.md)登记完整 Movie source 修复后的
 Kalypso Join 样本64次、原作者 TopK 样本16次真实请求，以及 IMLane Boolean Join 的三道真实零模型 SQL 门。
 各自固定来源、算法、时钟、私有归档摘要和未知项；历史回放不记新模型质量，样本资格不外推全量或组合树。
+同报告另记录被替代Ray／Daft Q3专项图的退役及原Daft图零模型生命周期：两次collect构造各自执行器，
+不把表达式复用记为模型复用；现用prepared图和历史成绩身份保持。
 
 ## 2026-11-11：原生 baseline 隔离组合的 CPU 验证
 

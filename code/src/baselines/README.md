@@ -115,8 +115,10 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
 - [中立 Q3 合同](text/sembench_movie_native.py)读取完整原 CSV，按源位置保留 occurrence_id，标签只用于后置评价。
   `q3_messages/q3_decision` 与 LOTUS1.2.4 普通 Qwen Filter 做 CPU 差分，运行时不导入 LOTUS／Core。
   `evaluate_q3`消费同一份保存的预测，核对原生COUNT、调用原评价器，并报告FP／FN及解析失败default=True。
-- [Daft 原生 AI](text/frameworks/daft_sembench_native.py)的 `execute_q3(rows, model=..., tokenizer=..., sampling_params=...)`
-  使用原生 `prompt(vllm-prefix-caching)`、一次 collect及原生筛选／计数；tokenizer由调用方提供匹配的本地资产。
+- [Daft 原生 AI](text/frameworks/daft_sembench_native.py)当前复用
+  [原题 prepared 查询](#daft-native-prepared-sembench)，使用原生 `prompt(vllm-prefix-caching)` 和一次 collect；
+  tokenizer与完整原题／sink由任务层拥有。旧专项 `execute_q3` 及其worker schema 已退役，
+  [历史来源](../../../experiments/reproduction/native_baselines/README.md#retired-daft-q3-native-binding)保留。
   native runner不重设线程；只接受确实生效的prefix／buffer／morsel选项，拒绝仅distributed生效的actor参数。
   首测返回120条但进程收尾失败，原质量和失败保留在[诊断报告](../../../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)。
   独立进程用[公共工厂／shutdown作用域](text/frameworks/daft_native_owner.py)关闭实际创建引擎；
@@ -145,9 +147,10 @@ Daft复测使用[新worker／监督入口](../experiments/native_daft_query.py)�
 <a id="daft-native-prepared-sembench"></a>
 ### Daft 原生 AI 的完整文本查询入口
 
-当前完整 SemBench 调用走本节和下节的共享查询入口；当前已核服务器活动绑定也没有使用旧
-Daft 的 `execute_q3`／`semloom.native_daft_q3.v1`。旧 Daft Q3 API 对照仍保留其完整 cohort 的原生
-Filter／COUNT、默认重试和 runtime 归属；它与 prepared 图不同，不能用转调新函数来冒充行为不变。
+完整 SemBench 调用走本节和下节的共享查询入口；旧 Daft `execute_q3`、独立tokenizer／Filter／COUNT图
+和 `semloom.native_daft_q3.v1` 配置已删除。原题 Q1–Q4 与 Join 通过同一 prepared packet及原 sink；
+现有监督器保留结果READY、错误原件、永久预算和关闭期限，不再在worker中复制Q3语义。
+历史专项图与新图的执行边界不同，不将退役操作称作生命周期完全等价。
 
 [原 worker](../experiments/native_daft_query.py)的 `sembench` 动作现在调用
 [统一的单查询接线](../experiments/native_daft_sembench.py)，复用原监督器、Daft
@@ -232,8 +235,8 @@ Q9 Map 不代表 TopK。上述是该冻结提交的独立单冷成绩，当前�
 其余题与同 owner 暖轮仍按各自回执判断。
 
 旧的无 `ray_native` 配置继续作为明确标注的历史记录图入口；其耗时不纳入新口径。
-该入口及 `execute_q3` 各有现行调用者，本次不删除。完成目标资格及调用方配置迁移后，
-再退出被替代的完整文本记录图；不删除原始成功/失败证据或活跃公共清理 helper。
+该记录图仍有独立调用者，未被本次prepared接线完整替代。旧Q3专项API已按前述恢复说明退役；
+其余记录图在完成对应调用迁移与验证后再退出，不删除原始成功/失败证据或活跃公共清理helper。
 
 <a id="lotus-native-resident-sembench"></a>
 ### 原生 LOTUS 的显式 resident 文本查询

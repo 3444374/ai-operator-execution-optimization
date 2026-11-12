@@ -487,43 +487,47 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         self._assert_result_equal(ready[0],expected)
         self.assertEqual([json.loads(row['prompt']) for row in requests],messages)
 
-    def test_prepared_join_daft_driver_binds_native_packet_and_complete_sink(self):
+    def test_prepared_daft_driver_binds_original_queries_packet_and_complete_sink(self):
         from src.baselines.text.sembench_prepared import result_value
         from src.experiments import native_daft_sembench as driver
         from src.experiments.attempt_ledger import AttemptBudget
         from src.experiments.shared_request_budget import SharedClaimedUnit
         from src.infrastructure.private_artifacts import read_json,publish_private_json
 
-        query=self._query('movie','5')
-        count=len(query.operation.records)
-        answers=['False' if i%2 else 'True' for i in range(count)]
-        expected,messages=self._join_reference(query,answers)
-        config=dict(schema='semloom.native_daft_sembench.v1',sembench_checkout=str(query.checkout),
-            data_dir=str(self.data),scenario='movie',query='5',query_id=query.query_id,
-            model_name=query.model_name,model='CPU-only',sampling_params=query.generation.kwargs(),
-            engine_kwargs={},provider_options={},query_timeout_s=60,cleanup_s=5,stop_grace_s=1,
-            max_model_calls=count)
-        def supervised(path,directory,**options):
-            worker=read_json(path)
-            requests=read_json(worker['requests_path'])['requests']
-            self.assertEqual([json.loads(row['prompt']) for row in requests],messages)
-            self.assertEqual(worker['sampling_params'],query.operation.generation.kwargs())
-            value=worker['request_budget']
-            unit=SharedClaimedUnit(Path(value['path']),AttemptBudget(value['budget_id'],value['limit']),value['unit_id'])
-            for row in requests:unit.reserve(hashlib.sha256(row['call_id'].encode()).hexdigest())
-            raw=dict(result_ready_monotonic_ns=time.monotonic_ns(),result=dict(predictions=[
-                dict(call_id=row['call_id'],generated_text=text) for row,text in zip(requests,answers,strict=True)][::-1]))
-            directory.mkdir()
-            options['on_result_ready'](raw)
-            publish_private_json(directory/'worker.json',dict(status='completed',native_api={},
-                model_close_receipt=dict(status='closed')))
-            return dict(status='CPU fixture')
-        tokenizer=SimpleNamespace(apply_chat_template=lambda messages,**kwargs:json.dumps(messages))
-        report=driver.run_query(config,self.data/'driver-result',model_python='CPU-only',
-                                tokenizer=tokenizer,supervise=supervised)
-        self.assertEqual(report['status'],'completed')
-        self.assertEqual(report['result'],result_value(expected))
-        self.assertEqual(report['logical_requests'],count)
+        for key in ('1','2','3','4','5'):
+            query=self._query('movie',key)
+            count=len(query.operation.records)
+            answers=['False' if i%2 else 'True' for i in range(count)]
+            if key=='5':expected,messages=self._join_reference(query,answers)
+            else:
+                expected,batches=self._reference(query,answers)
+                messages=[message for messages,_ in batches for message in messages]
+            config=dict(schema='semloom.native_daft_sembench.v1',sembench_checkout=str(query.checkout),
+                data_dir=str(self.data),scenario='movie',query=key,query_id=query.query_id,
+                model_name=query.model_name,model='CPU-only',sampling_params=query.generation.kwargs(),
+                engine_kwargs={},provider_options={},query_timeout_s=60,cleanup_s=5,stop_grace_s=1,
+                max_model_calls=count)
+            def supervised(path,directory,**options):
+                worker=read_json(path)
+                requests=read_json(worker['requests_path'])['requests']
+                self.assertEqual([json.loads(row['prompt']) for row in requests],messages)
+                self.assertEqual(worker['sampling_params'],query.operation.generation.kwargs())
+                value=worker['request_budget']
+                unit=SharedClaimedUnit(Path(value['path']),AttemptBudget(value['budget_id'],value['limit']),value['unit_id'])
+                for row in requests:unit.reserve(hashlib.sha256(row['call_id'].encode()).hexdigest())
+                raw=dict(result_ready_monotonic_ns=time.monotonic_ns(),result=dict(predictions=[
+                    dict(call_id=row['call_id'],generated_text=text) for row,text in zip(requests,answers,strict=True)][::-1]))
+                directory.mkdir()
+                options['on_result_ready'](raw)
+                publish_private_json(directory/'worker.json',dict(status='completed',native_api={},
+                    model_close_receipt=dict(status='closed')))
+                return dict(status='CPU fixture')
+            tokenizer=SimpleNamespace(apply_chat_template=lambda messages,**kwargs:json.dumps(messages))
+            report=driver.run_query(config,self.data/('driver-result-'+key),model_python='CPU-only',
+                                    tokenizer=tokenizer,supervise=supervised)
+            self.assertEqual(report['status'],'completed')
+            self.assertEqual(report['result'],result_value(expected))
+            self.assertEqual(report['logical_requests'],count)
 
 
     def test_prepared_join_empty_invalid_ids_and_native_hooks_are_preserved(self):

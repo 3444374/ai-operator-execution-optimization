@@ -12,6 +12,20 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-daft-q3-native-binding"></a>
+## 旧 Daft Q3 专项原生图恢复
+
+维护树已删除 `daft_sembench_native.execute_q3` 和 `semloom.native_daft_q3.v1` worker分支。
+当前[完整原题入口](../../../code/src/baselines/README.md#daft-native-prepared-sembench)继续使用原
+prepared AI表达式、模型owner、trace、监督器和关闭期限；Q3不再另建tokenizer／Filter／COUNT实现。
+worker、READY、关闭失败和部分构造失败测试迁到现有prepared路径，官方Q1–Q4／Join在driver完成原sink。
+
+准确公开来源 `431573e08582ccc869fccbdf3e5e9e7c34085deb` 的
+`code/src/baselines/text/frameworks/daft_sembench_native.py`、`code/src/experiments/native_daft_query.py`
+及同提交脚本README可通过 `git show` 恢复旧API与配置。旧原生cohort Filter／COUNT与新任务层的
+执行边界保持各自历史身份，不回填旧耗时；历史模型运行仍按归档内的原source恢复。
+当前旧schema明确拒绝，不留自动转调或第二套executor。独立Ray HTTP profile不受本次退役影响。
+
 <a id="retired-ray-q3-native-binding"></a>
 ## 旧 Ray Q3 专项原生图恢复
 

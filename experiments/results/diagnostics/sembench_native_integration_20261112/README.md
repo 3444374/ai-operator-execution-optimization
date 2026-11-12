@@ -84,6 +84,26 @@ Filter／COUNT图及callbacks，保留原题任务层。Movie Q1–Q4 使用真�
 首轮失败及修复日志保留。3项跳过为独立Daft SDK和未绑定的两个可选真实数据环境变量，
 不据此判断资产缺失。此清理不新增任何模型／性能资格，也不承担项目整体历史清理。
 
+## Daft Q3 worker 迁移与原生图生命周期
+
+当前原题driver一直使用prepared worker；旧Q3分支另做tokenizer、源读取、Filter／COUNT，
+本次迁移其所有现行worker／测试调用并删除该分支与配置schema。prepared表达式、owner、trace和
+关闭实现逐字不变；原Q1–Q4和Join由任务层完成原sink。13项worker／期限／失败检查、
+1项包含五道原查询的driver差分及实际Daft0.7.21 SDK的12项检查全部通过，共26项、0模型。
+SDK使用已存在的Mac arm64二进制，仅在独立测试进程指定SDK路径，没有安装或改动driver环境。
+首轮一个旧Mock未提供prepared结果的native_api字段，修正fixture后通过；失败日志保留。
+准确恢复来源及旧执行边界见[退役记录](../../../reproduction/native_baselines/README.md#retired-daft-q3-native-binding)。
+
+另以[可执行诊断](../../../../code/tests/baselines/text/probe_daft_native_lifecycle.py)保留真实
+Daft表达式、Rust前缀算子、LocalVLLMExecutor、submit／poll及collect，只替换vLLM依赖。
+同一prompt表达式分别处理两个不同的2行DataFrame，实际构造执行器／软件模型各2个，
+软件generate共4次；第二次collect新增一个构造。线程／事件循环关闭，真实模型及GPU调用0。
+明确的软件资源profile为gpus_per_actor=0、concurrency=1，不将它称为模型性能配置。
+[原始CPU回执](daft_lifecycle_mac.json)保存平台、二进制／Python源码摘要和完整两轮结果，
+诊断源SHA为 `16a8389dc11decf1c179afdcec86a8d9159ab53a50448862bdea9c39653a4a00`。
+这证明该原生本地路径的两次collect未复用模型；不能外推所有Daft入口，也不代表多算子不可实现。
+后续接线必须保留实际模型构造／冷启动成本，不能用直接executor或自造池冒充同一原生图。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

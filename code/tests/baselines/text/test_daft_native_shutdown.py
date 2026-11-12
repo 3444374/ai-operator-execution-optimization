@@ -10,7 +10,7 @@ from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from src.baselines.text.frameworks.daft_sembench_native import execute_q3
+from src.baselines.text.frameworks.daft_sembench_native import execute_prepared_map
 from tests.baselines.text.native_sdk_fixtures import module_entries
 
 
@@ -37,8 +37,12 @@ def native_cpu_api(directory, *, shutdown_error=None, construction_error=None):
             self.shutdown_calls = []
             engines.append(self)
 
+        async def add_request(self,*args,**kwargs):
+            return None
+
         async def generate(self, prompt, sampling_params, request_id, **kwargs):
-            yield SimpleNamespace(outputs=[SimpleNamespace(text='Answer: True')])
+            yield SimpleNamespace(finished=True,request_id=request_id,
+                outputs=[SimpleNamespace(text='Answer: True',token_ids=None,finish_reason='CPU_fixture')])
 
         async def do_log_stats(self):
             return None
@@ -71,7 +75,7 @@ def native_cpu_api(directory, *, shutdown_error=None, construction_error=None):
         # by the real native sink. No model or CUDA implementation is imported.
         executor = LocalVLLMExecutor('CPU-only', {}, dict(kwargs['generate_args']))
         executors.append(executor)
-        executor.submit('', ['one complete request'], RecordBatch.from_pydict({'row_id': ['r0']}))
+        executor.submit('', ['one complete request'], RecordBatch.from_pydict({'call_id': ['source-0']}))
         executor.finished_submitting()
         deadline = time.monotonic() + 2
         output = None
@@ -107,17 +111,14 @@ def native_cpu_api(directory, *, shutdown_error=None, construction_error=None):
 
 
 class DaftNativeShutdownTests(unittest.TestCase):
-    def rows(self):
-        return [dict(occurrence_id='source-0', id='taken_3', reviewId='business-id', reviewText='review')]
-
     def run_query(self, **kwargs):
-        return execute_q3(self.rows(), model='CPU-only', sampling_params={'max_tokens': 8192},
-            tokenizer=SimpleNamespace(apply_chat_template=lambda *args, **options: 'complete template'), **kwargs)
+        return execute_prepared_map([dict(call_id='source-0',prompt='one complete request')],
+            model='CPU-only',sampling_params={'max_tokens':8192},**kwargs)
 
     def test_result_return_also_releases_the_native_model_process(self):
         with tempfile.TemporaryDirectory() as directory, native_cpu_api(directory) as native:
             result = self.run_query()
-            self.assertEqual(result['positive_review_cnt'], 1)
+            self.assertEqual(len(result['predictions']),1)
             self.assertEqual(len(native.engines), 1)
             self.assertFalse(native.engines[0].process.is_alive(), 'native query left its model process alive')
             self.assertEqual(len(native.engines[0].shutdown_calls), 1)
@@ -127,7 +128,7 @@ class DaftNativeShutdownTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, native_cpu_api(directory) as native:
             observed = []
             def ready(result):
-                observed.append((result['positive_review_cnt'], native.engines[0].process.is_alive(),
+                observed.append((len(result['predictions']), native.engines[0].process.is_alive(),
                                  result['metadata']['result_ready_monotonic_ns']))
             result = self.run_query(on_result_ready=ready, close_timeout_s=3)
             self.assertEqual(observed[0][:2], (1, True))
@@ -146,8 +147,8 @@ class DaftNativeShutdownTests(unittest.TestCase):
             with self.assertRaises(NativeModelCloseError) as caught:
                 self.run_query()
             self.assertIs(caught.exception.__cause__, failure)
-            report = caught.exception.native_q3_report
-            self.assertEqual(report['positive_review_cnt'], 1)
+            report = caught.exception.native_query_report
+            self.assertEqual(len(report['predictions']),1)
             self.assertEqual(len(report['predictions']), 1)
             self.assertEqual(report['metadata']['model_close_receipt']['status'], 'unknown')
             self.assertFalse(report['metadata']['model_close_receipt']['engine_api_shutdown_confirmed'])
@@ -162,7 +163,7 @@ class DaftNativeShutdownTests(unittest.TestCase):
             with self.assertRaises(ValueError) as caught:
                 self.run_query(on_result_ready=ready)
             self.assertIs(caught.exception, primary)
-            self.assertEqual(primary.native_q3_report['positive_review_cnt'], 1)
+            self.assertEqual(len(primary.native_query_report['predictions']),1)
             self.assertEqual(primary.model_close_report['status'], 'unknown')
             self.assertIs(native.cls.__dict__['from_engine_args'], native.original_factory)
 
@@ -172,7 +173,7 @@ class DaftNativeShutdownTests(unittest.TestCase):
             with self.assertRaises(RuntimeError) as caught:
                 self.run_query()
             self.assertIs(caught.exception, failure)
-            receipt = failure.native_q3_report['metadata']['model_close_receipt']
+            receipt = failure.native_query_report['metadata']['model_close_receipt']
             self.assertEqual(receipt['status'], 'unknown')
             self.assertEqual(receipt['construction_attempts'], 1)
             self.assertEqual(receipt['captured_models'], 0)
