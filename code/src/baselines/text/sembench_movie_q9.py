@@ -1,4 +1,8 @@
-"""Private Q9 source, original LOTUS formatter, and original SemBench sink."""
+"""Original Q9 Map source, LOTUS formatter, and complete SemBench sink.
+
+The selected source determines occurrence and business-ID counts. Historical
+256-row inputs are frozen experiment assets, not limits of this task binding.
+"""
 from dataclasses import replace
 import csv
 import json
@@ -18,6 +22,8 @@ def prepare(config, directory, query_id):
     assert sampling.pop('n') == 1
     query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], 'movie', '9',
         execution_id=query_id, model_name=config['model_name'], generation=GenerationSpec.from_dict(sampling))
+    if query.operation is None or not query.operation.records:
+        raise ValueError('native Q9 Map requires a nonempty original selection')
     captured = []
 
     def capture(operation, original):
@@ -40,9 +46,9 @@ def prepare(config, directory, query_id):
                    source_position=int(record.source_position))
         rows.append(row)
         messages[row['occurrence_id']] = dict(row, messages=json.loads(call['messages_json']))
-    assert len(rows) == len(messages) == 256 and len({r['reviewId'] for r in rows}) == 128
+    assert len(rows) == len(messages) == len(operation.records)
     assert all(r['id'] == 'ant_man_and_the_wasp_quantumania' for r in rows)
-    assert [r['source_position'] for r in rows] == list(range(256))
+    assert [r['source_position'] for r in rows] == list(range(len(rows)))
     with (directory / 'input.csv').open('w', newline='') as output:
         writer = csv.DictWriter(output, fieldnames=list(rows[0]))
         writer.writeheader()
@@ -69,7 +75,7 @@ def finish(query, operation, calls, rows, native, udf_directory):
     mapped = native['mapped_occurrences']
     by_id = {row['occurrence_id']: row for row in mapped}
     expected = {row['occurrence_id'] for row in rows}
-    assert len(mapped) == len(by_id) == len(expected) == 256 and by_id.keys() == predictions.keys() == expected
+    assert len(mapped) == len(by_id) == len(expected) == len(rows) and by_id.keys() == predictions.keys() == expected
     texts = []
     for source in rows:
         item, value = predictions[source['occurrence_id']], by_id[source['occurrence_id']]
@@ -93,6 +99,6 @@ def finish(query, operation, calls, rows, native, udf_directory):
     return frame, dict(frame=json_metric(frame.to_dict(orient='split')), calls=[
         dict(call, text=text, status='succeeded', score=by_id[row['occurrence_id']]['score'])
         for row, call, text in zip(rows, calls, texts, strict=True)],
-        unique_occurrences=256, unique_reviewIds=128,
+        unique_occurrences=len(expected), unique_reviewIds=len({row['reviewId'] for row in rows}),
         native_projection='DOUBLE score; raw model texts retained in matching UDF/IPC receipts',
         original_lotus_map_postprocess_identity=True, original_numeric_sink_matches_projection=True)

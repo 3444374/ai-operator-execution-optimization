@@ -520,7 +520,9 @@ Q1 结果先保存为原 Series，持久化时转成单列关系，不改变内�
 维护入口为 `PYTHONPATH=code python -m src.experiments.native_imlane_movie_scores
 --config PRIVATE_CONFIG --output FRESH_PRIVATE_OUTPUT`（在同一行执行）。
 外层继续负责主机 lease、资源 preflight、进程监督及永久预算的创建/独占 claim；入口不另建调度器。
-仅单次 cold256、warmup0、retry0。输入256个occurrence/128个reviewId，保留重复和原顺序；不排序、不做Q10平均。
+仅单次 cold，warmup 0、retry 0。规模 `N` 来自原 Q9 完整选中关系，保留每个 occurrence、重复
+reviewId 和原顺序；不排序、不做 Q10 平均。历史输入的 256 个 occurrence／128 个 reviewId
+不是入口限制，唯一 reviewId 数按实际输入统计。空选中关系在模型启动前明确拒绝。
 
 - [q9.cpp](q9.cpp)：原SQL DOUBLE投影，在完整关系sink完成的ACK前持有结果。
 - [q9_udf.py](q9_udf.py)：原数字解析及Q9专属Arrow/消息边界，调用既有provider。
@@ -530,14 +532,36 @@ Q1 结果先保存为原 Series，持久化时转成单列关系，不改变内�
 配置沿用模型配置、sampling_params、data_dir、sembench_checkout、model_name、author_root、method_python、
 request_timeout_s、query_seconds、cleanup_seconds、run_id、provider_mode，另外显式提供
 input_identity（私有原输入与消息SHA清单路径）、build_record（薄driver构建记录）、request_budget。
-request_budget为既有已claim描述符：path、budget_id、limit=256、unit_id。非新鲜单位拒绝，模型owner每次generate前永久扣费。
+request_budget 为既有已 claim 描述符：path、budget_id、limit=N、unit_id。`N` 必须等于原题完整
+选中关系的 occurrence 数；入口在准备后、模型启动前核对，不把预算当作截取前 N 行的指令。
+非新鲜单位拒绝，模型 owner 每次 generate 前永久扣费。回执的 requested/resolved max_tokens
+必须同时等于 `sampling_params.max_tokens`，不固定为历史 8192，也不接受静默截断。
 机器路径、原数据/token参考及结果不进入源码。运行时要求原DSO
 `52bf5763aab6f35b76746a9fc15b75e27bac1534315d1a20926eb4a78c2badaf`。
 
 薄driver构建用 `build.py movie-scores-driver --root AUTHOR_ROOT --duckdb-source DUCKDB_SOURCE
 --duckdb-build DUCKDB_BUILD --output FRESH_DRIVER`（同一行）；只链接既有原DSO，不重新构建作者库。
-原source开始到完整内存sink、service-start到sink、model-ready到sink分别直接观测；ACK后driver退出、审计和关闭仍须成功。
-这些观测不由历史耗时相减推算。
+原 source 准备到完整内存 sink 的冷区间包含模型启动；service-start 到 sink、model-ready 到 sink
+分别直接观测。后者仅是 ready 后的尾段，不能标为 ready 后重新准备 source 的完整查询时钟。
+ACK 后 driver 退出、审计和关闭仍须成功。这些观测不由历史耗时相减推算。
+
+规模限制修正 `3c810975` 的 16 个不同 CPU 用例已通过，包含 1／7／17 行软件输入、重复 ID、
+完整原 sink／evaluator、永久预算及失败时序。复核用现有入口：
+
+```sh
+SEMLOOM_NATIVE_TEST_CHECKOUT="$SEMBENCH_CHECKOUT" PYTHONPATH=code \
+  "$DRIVER_PYTHON" -B -m unittest -v \
+  tests.experiments.test_native_imlane_movie_scores \
+  tests.experiments.test_native_imlane_relation.PublishedRelationTimingTests
+```
+
+上述本机增量使用软件 owner／native relation。后续 `0e80e7fa` 于 2026-11-12 通过目标
+原版 `52bf5763` DSO 的完整软件 SQL：原输入 256 occurrence／128 个业务 ID，以及独立冻结的
+6 occurrence／3 个重复业务 ID 样本。完整原消息、逐发生项响应、完整 scored relation、
+sink → ACK → driver 退出及外层资源清理均通过，DSO 未重编、模型调用为 0。
+该轮运行 token 为软件占位；没有新增真实模型 token、质量或性能资格，N=6 也不是原完整负载。
+五项目标门检与一项保留失败共 363 份原件汇总于仓库外
+`baseline-reuse-zero-1112-final/FINAL-AUDIT.json`，不继承下述历史运行成绩。
 
 本机复核入口为[Arrow/IPC回放](../../tests/baselines/text/replay_imlane_movie_scores.py)和
 [消息/token回放](../../tests/baselines/text/replay_imlane_movie_score_tokens.py)，通过环境变量SEMLOOM_Q9_FIXTURE指定私有冻结参考。
@@ -628,3 +652,9 @@ fresh 边界仅续两项尚未执行的比较并清洁退出，没有重跑已�
 `9c28aa8f0946b43bffbf6cbec3deab6079613d7ae8f34f5f3264a75310991df9`，原件归档 SHA256 为
 `4ec13baafdd68922b6ede3f49d76ec8e521be97cf9faaa6602a8e5b4c438d6ca`。该资格仅属于这份源码的
 目标 SQL／绑定迁移，模型调用为 0，不转授后续通用化候选或全部 SemBench 题目。
+
+后续通用 Filter 源码 `016a83529` 已于 2026-11-12 独立通过 Movie Q2 的完整 120 occurrence
+目标门检：原版 DSO／SQL、原 UDF／Arrow、真实 Unix IPC、完整原 sink 与 ACK，以及受监督退出
+和资源清理均通过；软件生成 120 次，真实模型 0 次，DSO 未重编。新运输字段不再仅有本机替身证据。
+本机 54 项定向检查及 Movie Q2 120／Medical Q4 1200 条保存答复回放分别保留；
+本次目标门检不授予 Medical、其他题或新 GPU 性能资格。原资格失败与旧联合包继续保留准确版本。

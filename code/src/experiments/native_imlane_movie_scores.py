@@ -1,4 +1,9 @@
-"""One original Q9 DOUBLE Map query under an externally supervised host lease."""
+"""One original Q9 DOUBLE Map query under an externally supervised host lease.
+
+The caller supplies a fresh claimed budget matching the complete prepared
+source, one call per occurrence. Source and message hashes still bind the
+input; repeated review IDs are neither collapsed nor assigned a fixed count.
+"""
 import argparse
 import json
 import os
@@ -72,7 +77,7 @@ def audit_ipc(directory, rows):
             assert item['position'] == position and item['attempted'] and item['status'] == 'succeeded'
             assert item['response'] == response['calls'][position]
             assert item['response']['finish_reason'] in ('stop', 'length')
-            assert item['response']['requested_max_tokens'] == item['response']['resolved_max_tokens'] == 8192
+            assert item['response']['requested_max_tokens'] == item['response']['resolved_max_tokens'] == provider['sampling_params']['max_tokens']
             assert item['messages_sha256'] == content_digest(request['messages_batch'][position])
             assert item['response_id'] == item['response']['request_id']
             ids.append(item['response_id'])
@@ -89,7 +94,7 @@ def audit_ipc(directory, rows):
         for source, prediction, item in zip(udf['sources'], udf['predictions'], batch['calls'], strict=True):
             assert source['messages_sha256'] == prediction['messages_sha256'] == item['messages_sha256']
             assert prediction['generated_text'] == item['response']['generated_text']
-    assert not batches and len(calls) == len(ids) == len(set(ids)) == len(rows) == 256
+    assert not batches and len(calls) == len(ids) == len(set(ids)) == len(rows)
     return dict(calls=calls, batch_rpc_invocations=len(ends), generate_API_calls=len(calls),
         unique_request_ids=len(set(ids)), unknown=0, retries=0,
         count_scope='Public AsyncLLM.generate invocation receipts; native add_request/kernel counts unobserved')
@@ -118,10 +123,8 @@ def run(config_path, output, *, service_factory=ModelService):
     config['driver'] = build['binary_path']
     assert file_sha256(Path(config['data_dir']) / 'Reviews.csv') == identity_lock['Reviews_csv_sha256']
     descriptor = dict(config['request_budget'])
-    if descriptor['limit'] != 256:
-        raise ValueError('Q9 requires exactly one permanently bounded 256-call unit')
     from integrations.imlane_duckdb.model_ipc_worker import request_budget
-    if request_budget(descriptor).remaining != 256:
+    if request_budget(descriptor).remaining != descriptor['limit']:
         raise ValueError('Q9 requires a fresh claimed unit; continuation/retry forbidden')
     config['model_service'] = dict(config['model_service'], request_budget=descriptor)
     new_private_directory(output)
@@ -142,6 +145,8 @@ def run(config_path, output, *, service_factory=ModelService):
         directory.mkdir(mode=0o700)
         started = time.monotonic_ns()
         query, operation, calls, rows = q9_binding.prepare(config, directory / 'input', config['run_id'] + '-' + phase)
+        if descriptor['limit'] != len(rows):
+            raise ValueError('Q9 requires one permanently bounded call per prepared source occurrence')
         assert [content_digest(json.loads(call['messages_json'])) for call in calls] == identity_lock['messages_sha256']
         service = service_factory(config['model_service'], output / 'model-service', environment=dict(os.environ),
                 deadline=window.query_deadline, cleanup_deadline=window.begin_cleanup, stop_budget=stop, stop_grace_s=8)
@@ -205,12 +210,12 @@ def run(config_path, output, *, service_factory=ModelService):
         report['rounds'].append(current)
         write_private_json(directory / 'AUDIT.json', current)
         all_ids = [item['response_id'] for current in report['rounds'] for item in current['ipc']['calls']]
-        assert len(all_ids) == len(set(all_ids)) == 256
+        assert len(all_ids) == len(set(all_ids)) == len(rows)
         last_ready = report['rounds'][-1]['result_ready_ns']
         write_private_json(output / 'result-ready.json', dict(schema=READY_SCHEMA,
             result_ready_monotonic_ns=last_ready, clock='CLOCK_MONOTONIC'))
         window.accept_ready(last_ready, clock='CLOCK_MONOTONIC')
-        report.update(status='completed', model_calls=256, unknown=0, same_model=True)
+        report.update(status='completed', model_calls=len(all_ids), unknown=0, same_model=True)
     except BaseException as error:
         primary = error
         report.update(error_type=type(error).__name__, error=redact_text(str(error)), traceback=redact_text(traceback.format_exc()))
