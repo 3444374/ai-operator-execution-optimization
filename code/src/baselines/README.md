@@ -295,7 +295,10 @@ TopK 不进入 F/M/E 记录图；原 LOTUS 拥有随机 pivot、比较批次、�
 随后评价、持久化和关闭。重放不发模型请求；审计失败保留失败与原生答复。
 
 CPU 软件资格使用 `python -m tests.baselines.text.replay_lotus_topk replay`。
-该模块的 `renderer` 子命令只核目标 vLLM 原生消息渲染/token，不加载引擎或权重。
+输入字段、发生项数和最坏比较量从原查询取得，不限8行或`reviewText`。相同文本仍是独立发生项，
+软件常量答复可共享，原文档位置与比较身份不按消息摘要合并；空原查询及单行不启动软件模型。
+该模块的 `renderer` 子命令只核目标 vLLM 原生消息渲染/token和prompt加原输出上限的context，
+不加载引擎或权重。完整输入可使用同一入口，但仍需独立冻结数据、资源上限与目标验收。
 TopK 原消息含文本列表，不能直接把 Qwen tokenizer 的 TypeError 用自定义提示绕过。
 本机 source-derived token 参考与目标原生 renderer 验收分开；软件回归见
 [原 quick 比较测试](../../tests/baselines/text/test_lotus_native_topk.py)，renderer 回执路径修复见

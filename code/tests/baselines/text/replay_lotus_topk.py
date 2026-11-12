@@ -29,11 +29,18 @@ def pair_fixture(query, tokenizer):
     from src.baselines.text.frameworks.lotus_native_topk import make_lm
 
     op = query.operation
-    docs = task_instructions.df2multimodal_info(op.frame, ['reviewText'])
-    instruction = lotus.nl_expression.nle2str(op.instruction, ['reviewText'])
+    values = []
+    fixture = dict(schema='semloom.lotus_topk_software_pairs.v1', pairs=values,
+        requested_output_tokens=0 if op is None else op.generation.max_tokens,
+        semantics='constant Document 1 drives worst-case partitions; no sentiment/quality claim',
+        tokenizer_scope='source-derived text normalization; target renderer equivalence pending',
+        renderer_source='https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/chat_utils.py')
+    if op is None:
+        return fixture  # The original empty query emits no semantic operator.
+    docs = task_instructions.df2multimodal_info(op.frame, list(op.columns))
+    instruction = lotus.nl_expression.nle2str(op.instruction, list(op.columns))
     module = importlib.import_module('lotus.sem_ops.sem_topk')
     lm = make_lm(op, 1)
-    values = []
     for left in range(len(docs)):
         for right in range(len(docs)):
             if left == right:
@@ -51,10 +58,7 @@ def pair_fixture(query, tokenizer):
             values.append(dict(left=left, right=right, messages=messages,
                 messages_sha256=content_digest(messages), normalized_conversation=conversation,
                 expected_token_ids=tokens, text='Document 1'))
-    return dict(schema='semloom.lotus_topk_software_pairs.v1', pairs=values,
-        semantics='constant Document 1 drives worst-case partitions; no sentiment/quality claim',
-        tokenizer_scope='source-derived text normalization; target renderer equivalence pending',
-        renderer_source='https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/chat_utils.py')
+    return fixture
 
 
 def renderer_check(fixture, model, output):
@@ -66,21 +70,25 @@ def renderer_check(fixture, model, output):
 
     assert vllm.__version__ == '0.25.1'
     assert not torch.cuda.is_initialized()
-    config = VllmConfig(model_config=ModelConfig(model=model, tokenizer=model,
-        trust_remote_code=False, max_model_len=32768), device_config=DeviceConfig(device='cpu'))
+    model_config = ModelConfig(model=model, tokenizer=model, trust_remote_code=False, max_model_len=32768)
+    config = VllmConfig(model_config=model_config, device_config=DeviceConfig(device='cpu'))
     renderer = renderer_from_config(config)
     params = ChatParams(chat_template=None, chat_template_content_format='auto',
         chat_template_kwargs=dict(add_generation_prompt=True, continue_final_message=False,
             tools=None, tokenize=False))
-    frozen = read_json(fixture)
+    fixture = Path(fixture)
+    frozen = read_json(fixture, max_bytes=fixture.stat().st_size)
     try:
         conversations, prompts = renderer.render_chat([p['messages'] for p in frozen['pairs']], params)
         for pair, conversation, prompt in zip(frozen['pairs'], conversations, prompts, strict=True):
             assert conversation == pair['normalized_conversation']
             assert prompt['prompt_token_ids'] == pair['expected_token_ids']
+            assert len(prompt['prompt_token_ids']) + frozen['requested_output_tokens'] <= model_config.max_model_len
         assert not torch.cuda.is_initialized()
         write_private_json(Path(output), dict(status='passed', model_calls=0, native_renderer='vllm '+vllm.__version__,
             pairs=len(prompts), complete_messages_and_token_arrays_equal=True,
+            context_limit=model_config.max_model_len, requested_output_tokens=frozen['requested_output_tokens'],
+            all_pairs_fit_context=True,
             prompt_tokens=[len(p['prompt_token_ids']) for p in prompts],
             CUDA_initialized=False, scope='CPU renderer/config/tokenizer only; no engine/weights/physical lifecycle'))
     finally:
@@ -97,21 +105,27 @@ def replay(config_path, checkout, data_dir, output):
     assert config['ranking'] == 'topk' and config['resident']['repetitions'] == 1
     query = query_from_config(config, checkout, data_dir, generation)
     verify_inputs(config, query)
-    assert len(query.operation.records) == 8 and query.describe()['expected_model_calls'] == 28
+    count = 0 if query.operation is None else len(query.operation.records)
+    bound = query.describe()['expected_model_calls']
+    allowance = max(1, bound)  # The existing permanent ledger requires a positive reservation.
+    assert config['budget']['limit'] == engine.max_model_calls == allowance
     tokenizer = AutoTokenizer.from_pretrained(engine.tokenizer_path or engine.model_path, local_files_only=True)
     frozen = pair_fixture(query, tokenizer)
     output = Path(output)
     new_private_directory(output)
     write_private_json(output/'pairs.json', frozen)
-    responses = {}
+    responses, source_pairs = {}, {}
     for pair in frozen['pairs']:
-        responses[pair['messages_sha256']] = dict(text=pair['text'], token_ids=pair['expected_token_ids'],
-            source_position=pair['left'], source_index=pair['right'])
+        source_pairs[pair['left'], pair['right']] = pair
+        # Equal messages deliberately share the constant software response. Pair
+        # identity comes from the native document occurrences, never this digest.
+        responses.setdefault(pair['messages_sha256'], dict(text=pair['text'],
+            token_ids=pair['expected_token_ids'], source_position=pair['left'], source_index=pair['right']))
     fixture = output/'responses.json'
     write_private_json(fixture, responses)
     value = config['budget']
     ledger = CellBudgetLedger.create(Path(value['path']), AttemptBudget(value['id'], value['limit']), deadline_utc=None)
-    ledger.reserve_unit(value['unit_ids'][0], 28)
+    ledger.reserve_unit(value['unit_ids'][0], allowance)
     cpu_engine = replace(engine, model_path=str(fixture), model_python=sys.executable,
         driver_python=sys.executable, max_model_len=32768)
     connect = socket.socket.connect
@@ -129,40 +143,46 @@ def replay(config_path, checkout, data_dir, output):
     assert session['owners'][0]['close']['status'] == 'closed'
     round_ = session['queries'][0]
     actual = round_['backend_report']
-    calls, pairs = actual['operator']['calls'], actual['operator']['pairs']
+    calls, pairs = actual['operator'].get('calls', []), actual['operator'].get('pairs', [])
     by_id = {call['call_id']: call for call in calls}
-    assert len(by_id) == len(pairs) == 28
-    assert len({tuple(sorted((p['left'], p['right']))) for p in pairs}) == 28
+    assert len(by_id) == len(pairs) == bound
+    assert len({tuple(sorted((p['left'], p['right']))) for p in pairs}) == bound
     for pair in pairs:
         call = by_id[pair['call_id']]
-        assert call['fixture_source_position'] == pair['left'] and call['fixture_source_index'] == pair['right']
+        expected = source_pairs[pair['left'], pair['right']]
+        assert pair['messages'] == expected['messages']
         assert json.loads(call['fixture_messages']) == pair['messages']
         saved = responses[content_digest(pair['messages'])]
         assert call['text'] == 'Document 1'
         assert json.loads(call['prompt_token_ids_json']) == saved['token_ids']
         assert call['fixture_generation'] == generation.kwargs()
-    times = [actual[k] for k in ('source_start_ns','prepare_finished_ns','model_ready_observed_ns',
+    times = [actual[k] for k in ('source_start_ns','prepare_finished_ns',
         'sink_ready_ns','snapshot_finished_ns','audit_finished_ns','evaluation_started_ns','evaluation_finished_ns')]
+    if bound:
+        times.insert(2, actual['model_ready_observed_ns'])
     assert times == sorted(times)
     assert times[-1] <= round_['persistence_started_ns'] <= round_['persistence_finished_ns']
     unit = SharedClaimedUnit(Path(value['path']), AttemptBudget(value['id'], value['limit']), value['unit_ids'][0])
-    assert unit.attempts == 28 and unit.remaining == 0
+    assert unit.attempts == bound and unit.remaining == allowance - bound
     try:
         unit.reserve('f'*64)
     except BudgetExhausted:
         pass
     else:
-        raise AssertionError('29th request accepted')
-    events = [json.loads(line) for line in Path(str(fixture)+'.events').read_text().splitlines()]
-    assert sum(e['event']=='construct' for e in events) == sum(e['event']=='close' for e in events) == 1
-    assert sum(e['event']=='start' for e in events) == sum(e['event']=='end' for e in events) == 28
+        raise AssertionError('closed query accepted another request')
+    event_file = Path(str(fixture)+'.events')
+    events = [json.loads(line) for line in event_file.read_text().splitlines()] if bound else []
+    constructs = int(bound > 0)
+    assert sum(e['event']=='construct' for e in events) == sum(e['event']=='close' for e in events) == constructs
+    assert sum(e['event']=='start' for e in events) == sum(e['event']=='end' for e in events) == bound
     source = Path(__file__).resolve().parents[4]
-    receipt = dict(status='passed_software_only', model_calls=0, source_occurrences=8,
-        software_IPC_requests=28, worst_case_bound_exercised=True, attempt_29_rejected=True,
+    receipt = dict(status='passed_software_only', model_calls=0, source_occurrences=count,
+        software_IPC_requests=bound, worst_case_bound_exercised=True, closed_unit_extra_attempt_rejected=True,
+        comparison_upper_bound=bound, directed_renderer_pairs=len(frozen['pairs']),
         complete_native_relation_sink_and_original_evaluator_replayed=True,
-        messages_source_pair_identity_and_fixture_tokens_equal=True,
+        native_source_pair_occurrences_complete=True, messages_and_fixture_tokens_equal=True,
         sink_before_snapshot_audit_evaluation_persistence_close=True,
-        model_fixture_constructs=1, model_fixture_closes=1, quality_claim=False,
+        model_fixture_constructs=constructs, model_fixture_closes=constructs, quality_claim=False,
         code_sha256={str(p.relative_to(source)):file_sha256(p) for p in [
             source/'code/src/baselines/text/sembench_text.py',
             source/'code/src/baselines/text/frameworks/lotus_native_topk.py',

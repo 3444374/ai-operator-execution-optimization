@@ -153,6 +153,19 @@ Daft表达式、Rust前缀算子、LocalVLLMExecutor、submit／poll及collect�
 在允许进程检查后仅重跑该项通过，失败原件保留。真实Ray图像／token／pixel processor与单遍VLM
 仍由服务器单独验收，不能从旧Q7的两遍模型资格推定通过。
 
+随后冻结`60c875f9fc6b5b4c3a45421dc46ca3164345ee11`、code tree
+`d628b1ac0e75085c0a9a92b54fcd87e849d2ea58`的
+`baseline-60c875-daft-rayq1-cpu-20261113-r1`通过Linux Daft14＋12项、无skip，
+以及Q1官方sf64的实际Ray2.56.1／vLLM0.22像素、完整token与第65次预算拒绝门，0模型。
+没有重复e95两次collect诊断。
+
+同一来源的`ray-animals-q1-60c875-native-gpu64-20261113-r1`随后完成一次真实冷查询：
+64次generate API开始／成功终态，unknown、retry、额外预热0；原完整COUNT为3，原relative_error=0。
+实际wire消息、请求到原occurrence关联、pre-MM及展开后的完整输入token数组、输出token数组核对通过。
+GPU像素张量、纯kernel／GPU工作、first engine accept与金额未观测。
+source→完整内存sink为152.202383049秒，**包含原生模型启动**；controller→sink154.334707351秒。
+物理清理和租约释放通过；这不转授Q3／Q10、其他来源或ready-first计时，也不是跨系统性能结论。
+
 <a id="native-service-duplicate-response-correlation"></a>
 ## 原生服务重复输入的答复关联
 
@@ -169,6 +182,60 @@ HTTP完成顺序相反时的原结果／ID关联，以及并发LM调用、缺失
 完整视觉及分层Aggregate使用实际SDK／原题／软件HTTP检查消息字节、sink、解析与失败边界；
 受控时钟证明新增关联不进入完整结果区间，原异常与已有结果在观察失败时仍保留。
 跳过只因可选真实sf25 MMQA目录未绑定。新的Linux／模型资格另验，不重跑已完成Q2b来补旧证据。
+
+冻结`40c477f2f9b9ad59f6901f38228bc3681c540300`、code tree
+`e2e0fe99ca1658072c10a6590a68714fcdc3b3a9`的
+`baseline-40c477-service-IDs-cpu-20261113-r1`随后在Linux原LOTUS SDK绑定真实sf25文本资产，
+四模块57／57、0skip、0模型；原日志及资源／租约清理通过。它不修补旧Q2b日志，也不新增VLM资格。
+
+<a id="mmqa-q2b-empty-model-path"></a>
+## MMQA Q2b 的空路径模型结果与第二阶段缺口
+
+`lotus-mmqa-q2b-8667-native-vlm-20261113-r1`固定`8667d526c`及上述code tree
+`986a62fa65f5ff98ea7c7c1ccaadeff9f16759b0`，完成325次Join POST、成功终态，Extract实际0次。
+完整结果为空，原precision／recall／F1均0；ready后source→内存sink45.744609236秒，
+模型启动65.08640497秒另计。原生Join实际选中了该题全部声明列，不能把本项质量归因于下文多列限制。
+
+36组相同输入中的103个occurrence原始措辞不能由旧HTTP日志唯一恢复。服务器后置CPU审计确认
+这些组的所有原生Boolean解析成员资格在任意组内置换下相同，所以空Join／空Extract／原评价可复核；
+这不恢复逐发生项原答关联。首轮严格审计失败保留，未新增模型重跑，不能记作全部观测通过。
+空Extract保留维护wrapper的空schema兼容身份，不声称是未修改作者空输入报错行为。
+
+非空Join→Extract已有原查询／原SDK／软件HTTP的完整消息、JSON参数、重复图像和失败用例；
+真实非空第二阶段仍未验证。本轮没有发现可据此修改parser／提示的接线错误，不能预填匹配行或
+替换真实答复来制造非空。质量负结果及第二阶段缺口分别保留，后续新代表输入须独立计划／冻结；
+不为补齐覆盖而重复这325次请求。
+
+<a id="lotus-native-join-projection"></a>
+## LOTUS 多列 Join 的原生选列限制
+
+来源为已安装LOTUS1.2.4源码、固定上游及四个独立进程的软件运行，紧凑观测见
+[原生选列记录](lotus_join_projection_cpu.json)。原accessor在多个`:left/:right`引用中每侧只留下
+最后一个列名，core只接收一个Series；`parse_cols`先转set，所选列还受进程hash seed影响。
+同一1×1临时输入声明左右各两列，seed0选择b/c、seed1选择b/d、seed2和3选择a/c；
+每次真实消息仅含选中列值，两列遗漏。每进程只用一个显式False软件答复，模型调用0。
+
+截至固定上游[`aa81339c`](https://github.com/lotus-data/lotus/tree/aa81339c813e828bc2e4f51d4209a853c81ce7a2)，
+[`sem_join.py`](https://github.com/lotus-data/lotus/blob/aa81339c813e828bc2e4f51d4209a853c81ce7a2/lotus/sem_ops/sem_join.py)
+和[`nl_expression.py`](https://github.com/lotus-data/lotus/blob/aa81339c813e828bc2e4f51d4209a853c81ce7a2/lotus/nl_expression.py)
+的Git blob分别为`05be2ba10ba40afe1467554b5976b025f06190b0`和
+`0e5739a51a633f6948a7c60ecc7db41970bbc955`，与已安装1.2.4相同。
+因此完整多列载荷在这条原生路径中不能表示，升级到该来源也不解决；不能把它写成只缺模型验证。
+现有LOTUS及复用其Join消息的Ray／Daft／IMLane保留原生行为，`native_join_inputs`继续披露遗漏。
+不通过拼接列值、改写原指令或静默补丁冒充官方完整多列语义；这是该接口的限制，不是整个系统无Join能力。
+
+## TopK 软件门移除样本与字段限制
+
+现有[同owner软件入口](../../../../code/tests/baselines/text/replay_lotus_topk.py)改为从原查询取得
+字段、N与N(N−1)/2比较上界，保留原quick、原parser、完整排名／sink／评价及既有IPC预算。
+全部有向比较用于目标renderer与完整token／context门，不再把8行、28次或`reviewText`当作入口要求。
+重复文本可共用明确的Document 1软件答复，发生项仍由原文档位置绑定，不用响应摘要假装来源唯一。
+0／1／5行完整原查询分别产生0／0／10次软件IPC，0／1不构造模型；关闭的预算单位拒绝额外尝试。
+多字段相同文本的0／1／3／9行还覆盖全部有向pair，目标renderer在context不足时拒绝并关闭执行器。
+
+12项不同受影响检查通过，模型调用0；首轮空原查询不发出算子，暴露资格脚本访问`None.records`，
+修正后仅重跑受影响三项通过，原失败保留。原生产TopK、随机pivot及生成配置未改。
+这些是软件入口资格，不授予原完整256的模型／性能资格；已有8行真实记录保持原身份，不重复请求。
 
 ## Cars 与 E-Commerce 真实资产缺口
 
@@ -201,6 +268,10 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | e95 Daft Linux CPU | 27635 | 33 | `63ca0761aae0d0464c6ad0d02db07d13d7ec1f0cbd41ce38799122ada6ee2f96` |
 | Cars／E-Commerce检查 | 388677 | 63 | `61cc26fd6cec44c6a6bfb76eb4fad28fb088182c9c236ed98a0fa5c14e7e9b54` |
 | E-Commerce恢复记录 | 259761 | 22 | `e39f956c1d2641942dbbaca547258a48fea4d398800a2f7eeffd8c5cf80785e1` |
+| 60c875 Linux CPU | 85531127 | 1284 | `df2d87b0add4023028c4415ab8814370b7164c66ea67b06c9c939317b8fdece7` |
+| 60c875 Ray Q1 GPU64 | 82065595 | 216 | `c752bb34fede696daee37b1e661d8c3ba063dea7b0e02d1dce4ea0914ccd56b9` |
+| 40c477 Linux CPU | 3391607 | 1209 | `f009e8dd5d1cceba72ad7e97faf50765edf544730623795ea6b9c89ff63f94f9` |
+| 8667 MMQA Q2b GPU | 59392914 | 94 | `7d733719a54b8de5eb560c3b9096d4247a82cbfb73d8ca38537ac3d0a9cd4840` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

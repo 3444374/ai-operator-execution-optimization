@@ -1,0 +1,172 @@
+{
+  "status": "confirmed_native_projection_limitation",
+  "source_type": "installed native SDK source and zero-model original accessor runs",
+  "lotus_version": "1.2.4",
+  "upstream_commit_with_identical_blobs": "aa81339c813e828bc2e4f51d4209a853c81ce7a2",
+  "source_files": {
+    "lotus/sem_ops/sem_join.py": {
+      "git_blob": "05be2ba10ba40afe1467554b5976b025f06190b0",
+      "sha256": "9d1c1cc9af03ef4446c31cf607ed26dacef572c89d72746b0a351d8421edbd01"
+    },
+    "lotus/nl_expression.py": {
+      "git_blob": "0e5739a51a633f6948a7c60ecc7db41970bbc955",
+      "sha256": "c8864fd77fb0c1afa20453c8227c3ebbd6e124ebe84e083ce393cea9bcc0499e"
+    }
+  },
+  "instruction": "Compare {a:left}, {b:left} with {c:right}, {d:right}",
+  "fixture": {
+    "left_rows": 1,
+    "right_rows": 1,
+    "left_columns": [
+      "a",
+      "b"
+    ],
+    "right_columns": [
+      "c",
+      "d"
+    ],
+    "values": "distinct synthetic markers; original compact receipt retains payload verification, not raw values"
+  },
+  "responses": "constant False; one explicit software response per fresh process",
+  "model_calls": 0,
+  "runs": [
+    {
+      "observed": [
+        {
+          "declared_columns": [
+            "a:left",
+            "b:left",
+            "c:right",
+            "d:right"
+          ],
+          "selected_columns": [
+            "b:left",
+            "c:right"
+          ],
+          "selected_dtypes": [
+            "object",
+            "object"
+          ],
+          "rows": [
+            1,
+            1
+          ],
+          "omitted_columns": [
+            "a:left",
+            "d:right"
+          ],
+          "all_declared_columns_selected": false,
+          "scope": "unmodified native sem_join Series inputs; declared references alone do not prove payload fidelity"
+        }
+      ],
+      "model_calls": 0,
+      "software_responses": 1,
+      "actual_message_payload_verified": true,
+      "process_hash_seed": "0"
+    },
+    {
+      "observed": [
+        {
+          "declared_columns": [
+            "a:left",
+            "b:left",
+            "c:right",
+            "d:right"
+          ],
+          "selected_columns": [
+            "b:left",
+            "d:right"
+          ],
+          "selected_dtypes": [
+            "object",
+            "object"
+          ],
+          "rows": [
+            1,
+            1
+          ],
+          "omitted_columns": [
+            "a:left",
+            "c:right"
+          ],
+          "all_declared_columns_selected": false,
+          "scope": "unmodified native sem_join Series inputs; declared references alone do not prove payload fidelity"
+        }
+      ],
+      "model_calls": 0,
+      "software_responses": 1,
+      "actual_message_payload_verified": true,
+      "process_hash_seed": "1"
+    },
+    {
+      "observed": [
+        {
+          "declared_columns": [
+            "a:left",
+            "b:left",
+            "c:right",
+            "d:right"
+          ],
+          "selected_columns": [
+            "a:left",
+            "c:right"
+          ],
+          "selected_dtypes": [
+            "object",
+            "object"
+          ],
+          "rows": [
+            1,
+            1
+          ],
+          "omitted_columns": [
+            "b:left",
+            "d:right"
+          ],
+          "all_declared_columns_selected": false,
+          "scope": "unmodified native sem_join Series inputs; declared references alone do not prove payload fidelity"
+        }
+      ],
+      "model_calls": 0,
+      "software_responses": 1,
+      "actual_message_payload_verified": true,
+      "process_hash_seed": "2"
+    },
+    {
+      "observed": [
+        {
+          "declared_columns": [
+            "a:left",
+            "b:left",
+            "c:right",
+            "d:right"
+          ],
+          "selected_columns": [
+            "a:left",
+            "c:right"
+          ],
+          "selected_dtypes": [
+            "object",
+            "object"
+          ],
+          "rows": [
+            1,
+            1
+          ],
+          "omitted_columns": [
+            "b:left",
+            "d:right"
+          ],
+          "all_declared_columns_selected": false,
+          "scope": "unmodified native sem_join Series inputs; declared references alone do not prove payload fidelity"
+        }
+      ],
+      "model_calls": 0,
+      "software_responses": 1,
+      "actual_message_payload_verified": true,
+      "process_hash_seed": "3"
+    }
+  ],
+  "conclusion": "Each side exposes one Series to the native core; selected columns vary with process hash seed. Complete declared multi-column payload is not represented by this native path.",
+  "scope": "Does not patch the SDK, qualify real-model quality or change existing baseline identities."
+}

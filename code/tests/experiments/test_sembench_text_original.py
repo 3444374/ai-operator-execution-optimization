@@ -123,6 +123,46 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         for name in self.aliases:
             self.assertIs(sys.modules.get(name, self.absent), self.original_aliases[name])
 
+    def test_topk_cpu_entry_derives_bounds_and_keeps_duplicate_text_occurrences(self):
+        from src.experiments.sembench_text_resident import occurrence_digest
+        from src.infrastructure.private_artifacts import file_sha256
+        from tests.baselines.text.replay_lotus_topk import replay
+        from transformers import AutoTokenizer
+
+        template = json.loads((Path(__file__).resolve().parents[2] /
+            'configs/sembench_lotus_native.example.json').read_text())
+        tokenizer = Mock()
+        tokenizer.apply_chat_template.return_value = [1, 2]
+        base = pd.read_csv(self.data / 'Reviews.csv')
+        for count in (0, 1, 5):
+            with self.subTest(count=count):
+                source = pd.concat([base.iloc[[6]]] * count, ignore_index=True) if count else base.iloc[:0]
+                source.to_csv(self.data / 'Reviews.csv', index=False)
+                run_id = 'software-topk-size-' + str(count)
+                query = SemBenchTextQuery(CHECKOUT, self.data, 'movie', '9', execution_id=run_id,
+                    model_name=template['model_name'], generation=self.generation, ranking='topk')
+                bound = count * (count - 1) // 2
+                config = deepcopy(template)
+                config.update(scenario='movie', query='9', query_id=run_id, ranking='topk')
+                config['engine']['max_model_calls'] = max(1, bound)
+                config['resident'].update(repetitions=1)
+                config['resident']['binding'].update(
+                    input_files={'Reviews.csv': file_sha256(self.data / 'Reviews.csv')},
+                    occurrences_sha256=occurrence_digest(query))
+                config['budget'].update(path=str(self.data / (run_id + '.sqlite')),
+                    id=run_id, limit=max(1, bound), unit_ids=['query'])
+                config_path = self.data / (run_id + '.json')
+                config_path.write_text(json.dumps(config))
+                with patch.object(AutoTokenizer, 'from_pretrained', return_value=tokenizer):
+                    receipt = replay(config_path, CHECKOUT, self.data, self.data / run_id)
+                self.assertEqual(receipt['source_occurrences'], count)
+                self.assertEqual(receipt['software_IPC_requests'], bound)
+                self.assertEqual(receipt['directed_renderer_pairs'], 2 * bound)
+                self.assertTrue(receipt['native_source_pair_occurrences_complete'])
+                self.assertTrue(receipt['closed_unit_extra_attempt_rejected'])
+                self.assertEqual(receipt['model_fixture_constructs'], int(bound > 0))
+                self.assertEqual(receipt['model_calls'], 0)
+
     def _write_inputs(self):
         reviews = pd.DataFrame([
             ("duplicate", "taken_3", "same review", "NEGATIVE", 1),

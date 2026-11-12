@@ -29,12 +29,12 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 | 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
 |---|---|---|---|---|---|
 | 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；Cars/E-Commerce Filter 有软件检查，真实数据/SQL待验；原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
-| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接，软件检查；Linux/模型待验，非作者 Join 算法复现 | 原 CP＋Filter 已接，完整原题／原作者方法与 planner 软件检查；作者环境／模型待验 |
+| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接；8667样本真实SQL／模型已验，完整输入另验，非作者 Join 算法复现 | 原 CP＋Filter 已接；4f12样本作者模型已验，其他来源／输入另验 |
 | 文本完整排名；Movie Q9 TopK profile | 原 quick TopK 的显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 未接线 | 未接线 | 未接线 | 未接线 |
-| 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线，保留实际中间关系；软件检查与旧目标证据分列 | 未接线 | 未接线 | 未接线 | 未接线 |
+| 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线；空路径已实机执行，非空Extract与旧原答发生项关联仍有缺口 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 原分层 Aggregate；MMQA Q5 | 独立原 SDK 查询已接线，真实 sf25 软件回放通过 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 文本 Filter 后对实际保留行作图像 Extract；E-Commerce Q12 | 原函数及原生服务完整接线；临时数据软件验证，真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 多分支 Filter／Join 及分组 TopK；E-Commerce Q10/Q11/Q14 | 原完整函数已接线，软件原生图检查；多列 Join 受当前SDK选列限制，真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -52,9 +52,11 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 没有把不同生命周期做成等价别名。Daft 专项 worker 也已移除旧 Q3 schema／执行图，
 其结果、关闭失败和部分构造失败用例迁到现行 prepared 路径；独立 HTTP profile 保留。
 Animals 的 Ray 零模型捕获／processor门也已按原题元数据消费一遍或两遍完整输入，移除资格工具
-写死Q7两遍的限制；四题7图软件样本与受影响28项检查通过，真实单遍Ray／VLM仍待验。
+写死Q7两遍的限制；四题7图软件样本与受影响28项检查通过。冻结60c875随后通过Linux实际processor门
+及Q1官方sf64的64次真实调用，count=3、原误差0；冷source→sink包含原生启动，其他单遍题不转授。
 原生LOTUS服务观察已按SDK输入顺序返回的completion ID关联HTTP尝试，解决重复输入不同答复的
-逐发生项观测缺口；56项软件检查通过、1项未绑定真实MMQA资产跳过，不回填旧模型日志或授予新GPU资格。
+逐发生项观测缺口；本机56通过／1资产未绑定跳过，冻结40c477的Linux57项全部通过，0模型。
+旧Q2b的325次Join、空Extract、F1=0及103发生项原答关联缺口保留；不回填旧日志或授予非空第二阶段GPU资格。
 其他已就绪项继续排队；不为每个格子另写执行器，不只积累软件通过数。
 已核对的普通文本题主要是单个语义调用；E-Commerce Q12 的后续 Extract 明确包含图像，
 已由完整原生 LOTUS 服务入口运行，不能当纯文本或假定其他后端已能执行它。
@@ -201,7 +203,9 @@ IMLane 也通过独立 `text_join` schema 将同一原消息和完整 pair 发�
 真实请求、完整8×22关系／空sink及逐条消息／token核对，原F1=0；单样本资格不外推全量，零候选仍是薄 driver 接线限制。
 已核当前 LOTUS1.2.4 accessor 实际每侧只选一个 Series；此前多列软件检查证明与原 SDK 一致，
 不证明全部声明字段进入模型。现在 `native_join_inputs` 记录真实选列／遗漏字段，保留原生行为；
-完整多列意图语义及真实目标模型仍未验证。
+完整多列指令载荷在该原生接口中不能表示，不能仅记作待跑模型。四个独立进程的hash seed检查还确认
+实际所选字段会变化；截至上游`aa81339c`，Join与列解析文件仍与1.2.4逐字相同，升级这两处不能解决。
+固定源码与软件观测见[原生选列限制](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-native-join-projection)。
 上游1.1.3也有每侧一个Series及同类选列限制；不能把版本回退当成修复。Ray／Daft exact Join 复用
 同一原 SDK 消息／parser／关系和原题，保留该限制；原消息准备及 sink 重建的适配成本实际计时，
 后置消息核对／选列披露不进 sink。调用预算从真实 L×R 取得，未开放 TopK 或混合算子图。
