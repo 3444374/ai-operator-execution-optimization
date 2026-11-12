@@ -166,7 +166,7 @@ async def replay(config, originals, output):
             for prompt, effective, _, _ in engine.calls:
                 assert vars(effective) == dict(sampling, output_kind='final-only')
                 assert prompt['prompt_token_ids'] == tokens[prompt['fixture_index']]
-            bound = binding.FilterRelation(query, method, prepared, requests, tokens, rows)
+            bound = binding.FilterRelation(query, method, prepared, requests, tokens, rows, query.bind_execution())
             timing = timed_relation(bound, [value for batch_rows in reversed(accepted) for value in batch_rows],
                 output / 'relation', frozen['result'], sampling, output / 'model-calls')
             write_private_json(output / 'TIMING.json', timing)

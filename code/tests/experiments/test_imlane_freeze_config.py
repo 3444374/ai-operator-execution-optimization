@@ -107,7 +107,7 @@ print(json.dumps(dict(columns=m.columns,requests=r,tokens=t)))'''
         tokenizer = AutoTokenizer.from_pretrained(TOKENIZER, local_files_only=True, trust_remote_code=False)
         self.assertEqual(tokens, [tokenizer.apply_chat_template(m, tokenize=True,
             add_generation_prompt=True) for m in messages])
-        relation = entry.FilterRelation(query, method, prepared, requests, tokens, rows)
+        relation = entry.FilterRelation(query, method, prepared, requests, tokens, rows, query.bind_execution())
         source = self.root / 'prepared-messages.json'
         source.write_text(json.dumps({'rows': rows}))
         kernel.prepared.cache_clear()
@@ -173,7 +173,8 @@ print(json.dumps(dict(columns=m.columns,requests=r,tokens=t)))'''
         def execute(invoke):
             value = invoke(operation, None)
             return value['frame'][['first']], value
-        query = SimpleNamespace(operation=operation, files={}, execute=execute, query='new-task', query_id='new-task')
+        query = SimpleNamespace(operation=operation, files={}, execute=execute, bind_execution=lambda: execute,
+                                query='new-task', query_id='new-task')
         seed = dict(self.seed, query_id='new-task', generation=generation)
         with patch.object(entry, 'SemBenchTextQuery', return_value=query):
             _, rows = self.assert_native_filter(seed)

@@ -174,7 +174,7 @@ async def replay_saved_filter(config, frozen, phase, output):
                 for prompt, effective, _, _ in engine.calls:
                     assert vars(effective) == dict(sampling, output_kind='final-only')
                     assert prompt['prompt_token_ids'] == tokens[prompt['fixture_index']]
-                bound = binding.FilterRelation(query, method, prepared, requests, tokens, rows)
+                bound = binding.FilterRelation(query, method, prepared, requests, tokens, rows, query.bind_execution())
                 timing = timed_relation(bound, [value for part in reversed(accepted) for value in part],
                     output / 'relation', frozen['result'], sampling, output / 'model-calls')
                 assert timing['original_quality'] == frozen['quality']
