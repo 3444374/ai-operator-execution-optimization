@@ -172,14 +172,21 @@ Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两
 不再每次嵌入执行区间。原题、原参数及已有独立调用入口保持，原 SDK／prepared／resident 软件回归通过；
 这不扩展单算子桥的多算子能力，也不转授新的目标模型或完整公平计时资格。
 
-LOTUS resident、Ray／Daft prepared、LOTUS 图像和 MMQA 聚合新增
-`query_clock_version=sembench.source_to_sink.v2`：起点在各自额外预检和配置准备之后，
-完整查询真实读取及最终关系处理仍计入；旧宽时钟不回填。冷模型／已就绪外部服务条件仍不同，
+LOTUS resident、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 使用
+`query_clock_version=sembench.source_to_sink.v3`：共享文本输入身份校验在起点前和 sink 后执行，
+完整查询真实读取及最终关系处理仍计入；旧宽时钟和 v2 不回填。LOTUS 可显式
+`model_initialization=before_queries`，调用原 owner 初始化后执行 `ready_first/ready_repeat`，没有额外模型预热；
+默认仍在首次查询内启动。已就绪路径记录实际就绪观测，Ray／Daft 仍是包含启动的原生单冷路径。
 维护版 IMLane Filter 与 Kalypso Movie Filter／Map 也已移出额外预检：前者在起点前准备源码、
 审计 token、预算及上下文检查，区间内保留执行消息、native SQL 和原完整 sink；后者前置
 manifest／源码绑定，仍新鲜读取原 Reviews CSV、生成作者必需输入并执行原关系。
-Kalypso 另保留 caller→sink，不改旧 receipt 或估算扣除。受影响软件检查通过，目标真实代表
-查询待验；其余专用／私有入口的旧时钟仍按[时钟范围](src/baselines/README.md#完整查询时钟与仍未统一的路径)分列。
+Kalypso 另保留 caller→sink，不改旧 receipt 或估算扣除。受影响软件检查通过，v3 目标代表查询待验；
+LOTUS 图像／MMQA 聚合仍是 v2，其余专用／私有入口的旧时钟按
+[时钟范围](src/baselines/README.md#完整查询时钟与仍未统一的路径)分列。
+服务器冻结 `d55e9229` 的112项CPU检查通过；IMLane Q3a完成25次请求、原F1为0.9167，
+5.4116秒保留为含文件校验的旧区间。Kalypso在prompt目录冲突处失败，请求0；这是运行绑定问题，
+不代表原生不支持。Join的8行64对只完成CPU及真实renderer核对；E-Commerce真实数据在已查位置缺失，
+多列原题和全量目标运行仍未验证。上述结果不转授本批v3或性能排名资格。
 
 Kalypso Movie Q8/Q9/Q10 现由同一个 Map 接点绑定原题，保留作者提示、动态输出上限、
 length→8192 重试、原 parser 和完整关系后处理。Q10 另绑定原 Movies 评价文件；调用数从原题选择取得，

@@ -166,7 +166,7 @@ Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON �
 
 原始预测发布后，监督器立即调用原 parser/完整查询 sink；driver 不先等待 worker 关闭。
 `source_start_ns → sink_ready_ns` 含 fresh CSV、prepare、模型启动、原生执行及完整原查询，
-`sembench.source_to_sink.v2` 将原输入预检、tokenizer 加载和预算创建放到起点前，
+`sembench.source_to_sink.v3` 将原输入身份校验、tokenizer 加载和预算创建放到起点前，
 实际 IPC/polling 包含在内；原 sink 后才记录持久化、评价，模型 close/进程退出另列，
 close 可能与 driver 后处理重叠。严格 host controller 入口仍未知，不能把该区间追认为
 包含 host 导入、预检和租约的统一 cold 总时钟。native generate/add/final 为 API 证据，
@@ -194,8 +194,8 @@ Ray Data LLM processor 拥有图、chat template、tokenization、batching、模
 `materialize().take_all()` 后，在 `ray.shutdown()` 前执行原 parser 和完整关系查询；
 原查询返回的内存结果立即标记 `sink_ready_ns`。`source_to_sink_seconds` 包含本轮新鲜 source/prepare、
 Ray/模型启动及原关系计算；消息摘要、关系序列化、评价、持久化和关闭在 sink 后另记事件。
-`sembench.source_to_sink.v2` 的起点位于输入身份／配置核对、预算领取之后；准备的是已绑定输入，
-原查询在完成 parser／关系计算时仍重新读取并核对 CSV，没有通过缓存结果跳过实际查询读取。
+`sembench.source_to_sink.v3` 的起点位于输入身份／配置核对、预算领取之后；准备的是已绑定输入，
+原查询在完成 parser／关系计算时仍重新读取 CSV，完整文件摘要在 sink 后核对，没有跳过实际读取。
 `query_seconds` 仍是包含审计和 runtime close 的较宽区间，不能代替 sink 指标。
 最早 host/controller 入口未在此 worker 观察，保持空值；AsyncLLM 首提交、末确认终态与构造返回事件
 保存在 `native-events-*.jsonl` 并在查询报告汇总，不能称为引擎接受或 GPU kernel 时间。
@@ -236,6 +236,11 @@ Q9 Map 不代表 TopK。上述是该冻结提交的独立单冷成绩，当前�
 [resident 配置](../../configs/sembench_lotus_native.example.json)后，同一原生 LOTUS owner 执行冷查询和
 指定数量的新鲜暖查询；每轮重新读取 source/prepare，经原 accessor、LM、LiteLLM 和本地原生模型 IPC
 到完整原 sink。`native_lm_max_batch_size=64` 是显式实验 profile，不是作者默认；SemLoom Core 不参与调度。
+
+`resident.model_initialization` 默认 `inside_first_query`，保留首次查询内惰性启动和 `cold/warm` 标签。
+显式 `before_queries` 先调用同一原生 owner 的 `start()`，随后执行 `ready_first/ready_repeat`；
+不增加模型查询预热，也不更改原生引擎初始化。启动、实际 ready 和 source 起点分别记录；
+`model_ready_before_source` 及其观测时间区分两种条件，不能仅凭 first/repeat 标签推断缓存冷热。
 
 ```bash
 PYTHONHASHSEED=3 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHON" -B \
@@ -587,21 +592,25 @@ LOTUS／Palimpzest 的逐题方法或脚本定义查询，ThalamusDB／BigQuery 
 
 ### 完整查询时钟与仍未统一的路径
 
-已迁移的维护入口显式记录 `query_clock_version=sembench.source_to_sink.v2`，同时保留 worker 进入、预检结束和
-sink 的实测时间戳。LOTUS resident 在输入／预算核对后、原查询真实 CSV 扫描前开始；
-LOTUS 图像及 MMQA 聚合在本地客户端和输入／叶级预检后、完整原查询读取前开始。
+维护版 LOTUS resident、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 记录
+`query_clock_version=sembench.source_to_sink.v3`，同时保留 worker 进入、预检结束和 sink 的实测时间戳。
+共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，
+sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 图像和 MMQA 聚合仍是 v2，
+它们在本地客户端和输入／叶级预检后、完整原查询读取前开始，未取得本批 v3 资格。
 Ray／Daft prepared 路径在配置／输入核对和预算准备后开始，包含必要的消息准备、原生执行和
 原查询的真实重读／后处理。禁止从历史宽区间估算扣除预检时间；旧 JSON 按原口径保留。
 
-这些版本化起点不等于所有运行配置已经可直接排名：Ray／Daft 单冷和 LOTUS resident 的首次惰性
-加载仍在区间内，LOTUS 外部服务则已就绪；模型启动条件必须匹配并独立记录，不能借同一字段名
+这些版本化起点不等于所有运行配置已经可直接排名：Ray／Daft 单冷和默认 LOTUS resident 的首次惰性
+加载仍在区间内；显式 LOTUS `before_queries`、IMLane Filter 和 Kalypso 使用已就绪模型，
+另记实际 ready 观测。模型启动条件必须匹配并独立记录，不能借同一字段名
 把不同 profile 混算。旧 `query_seconds`／外层生命周期区间仍可能包含预检、审计和关闭。
 IMLane Filter 现在把源码／输入、tokenizer 与审计 token、预算和实际上下文检查放在起点之前，
 执行消息和必需 CSV、原生 SQL、原查询实际扫描及完整 sink 留在区间内；worker 进入到 sink
 另计预检和模型启动。Kalypso 维护版 Filter 把 manifest／来源核对前置，区间内新鲜扫描原
 Reviews CSV，并生成作者必需输入；Map 也在 `make_query` 前置后开始原查询实际读取。
-两者由 receipt 的 `source_started_ns` 和显式版本计算，外层 caller→sink 另存
+Kalypso 由 receipt 的 `source_started_ns` 和显式版本计算，外层 caller→sink 另存
 `caller_to_memory_sink_seconds`；旧 receipt 保留旧值，不从宽区间估算扣除成本。
+旧 v2 共享文本路径仍含执行内文件摘要核对，旧 LOTUS 首次查询还含模型启动；原值保留，不能回填为 v3。
 其余 IMLane 专用入口、Kalypso 未迁移私有查询和旧时钟仍未取得此起点口径。
 默认 isolated 记录图继续明确留空统一 sink 指标；多算子、Join、TopK 支持以实际后端接点核对，
 不以时钟字段、软件夹具或逐题计划代替执行能力。

@@ -342,8 +342,17 @@ class SemBenchTextQuery:
 
     def execute(self, execute_operator):
         """Run the original query once around the selected native operator owner."""
-        # Preflight reads do not replace the query's real file scan. Gold-only
-        # label relations stay outside execution, as in the original benchmark.
+        result, operator = self.bind_execution()(execute_operator)
+        try:
+            self.verify_source()
+        except BaseException as error:
+            if operator is not None:
+                error.operator_report = operator
+            raise
+        return result, operator
+
+    def verify_source(self):
+        """Audit execution-file identities; gold-only snapshots are not query input."""
         for name, identity in self.files.items():
             if name in self.evaluation_files:
                 continue
@@ -351,9 +360,22 @@ class SemBenchTextQuery:
             expected_identity = dict(sha256=identity['sha256'], bytes=identity['bytes'])
             if file_identity(path) != expected_identity:
                 raise ValueError('SemBench input changed after preflight')
+
+    def bind_execution(self):
+        """Check source before timing and bind a real scan of the original query.
+
+        The caller records its full sink, then calls verify_source outside that
+        interval. execute() retains the combined checked entry for other callers.
+        """
+        self.verify_source()
+        return self._execute_bound
+
+    def _execute_bound(self, execute_operator):
+        for name in self.files:
+            if name in self.evaluation_files:
+                continue
+            path = self.data_dir / name
             self.frames[name] = self._read_file(path)
-            if file_identity(path) != expected_identity:
-                raise ValueError('SemBench input changed during query scan')
         used = False
         operator_report = None
 

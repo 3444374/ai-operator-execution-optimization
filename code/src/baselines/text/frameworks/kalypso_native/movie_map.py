@@ -117,6 +117,7 @@ class MapDriver(native.NativeQueryDriver):
             native_report={};responses=[]
             with native.query_phase(timing,'source_preflight'):
                 query=make_query(self.cfg,spec['query_id'],spec['task'])
+                execute_query=query.bind_execution()
             def execute(operation,unused_original):
                 with native.query_phase(timing,'source_and_required_input'):
                     values,path=prepare(self.cfg,spec,directory,operation)
@@ -132,13 +133,17 @@ class MapDriver(native.NativeQueryDriver):
                     completed=[replace(r,values={**r.values,operation.stage.method.output_column:text}) for r,text in zip(operation.records,parsed,strict=True)]
                     native_report.update(rows=values,raw_outputs=texts,latency_s=response['latency_sec'])
                     return dict(frame=operation.result_frame(completed),calls=[])
-            timing.update(query_clock_version='sembench.source_to_sink.v2',
-                          source_started_ns=time.monotonic_ns())
+            timing.update(query_clock_version='sembench.source_to_sink.v3',
+                          source_started_ns=time.monotonic_ns(),
+                          model_ready_before_source=self.model_ready_observed_ns is not None,
+                          model_ready_before_source_observed_ns=self.model_ready_observed_ns)
             with native.query_phase(timing,'original_query'):
-                frame,_=query.execute(execute)
+                frame,_=execute_query(execute)
                 if len(responses)!=1:raise ValueError('Binding requires one original native Map query')
             timing['memory_sink_ready_ns']=time.monotonic_ns()
             emit('memory_sink_ready')
+            with native.query_phase(timing,'result_encoding'):
+                result=frame.to_dict(orient='split');artifacts['result.json']=result
             with native.query_phase(timing,'trace_audit'):
                 timing['trace_audit_status']='running'
                 events=native.read_trace(self.cfg['native_trace'],spec['query_id'])
@@ -152,6 +157,7 @@ class MapDriver(native.NativeQueryDriver):
                 artifacts['native-map.json']=native_report
                 timing['trace_audit_status']='passed'
             with native.query_phase(timing,'source_snapshot'):
+                query.verify_source()
                 source=query.describe()
                 source['policy']='original Movie Map relation; cache disabled; no implicit warmup or transport retry'
                 source['native_retry_policy']='author SemMap length branch: at most once at 8192'
@@ -160,8 +166,6 @@ class MapDriver(native.NativeQueryDriver):
             with native.query_phase(timing,'quality_evaluation'):
                 evaluation_started=time.monotonic_ns();quality=query.evaluate(frame);evaluated=time.monotonic_ns()
                 artifacts['quality.json']=quality
-            with native.query_phase(timing,'result_encoding'):
-                result=frame.to_dict(orient='split');artifacts['result.json']=result
             report.update(status='completed',query_id=spec['query_id'],backend='kalypso-native',
                 baseline_name='Kalypso author SemMap with original SemBench instruction-field binding',
                 semantic_operator='SemMap, original Movie '+source['query']+' parser, relation and evaluator',

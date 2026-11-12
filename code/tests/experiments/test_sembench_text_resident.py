@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from src.experiments import sembench_text_query as entry
 from src.experiments import sembench_text_resident as resident
@@ -49,6 +49,7 @@ class ResidentBindingTests(unittest.TestCase):
         result = self.verify()
         self.assertEqual(result['source']['commit'],'selected-current-source')
         self.assertEqual(result['logical_requests'],2)
+        self.assertEqual(result['phase_labels'],['cold','warm'])
         (self.root/'tokenizer.json').write_text('changed')
         with self.assertRaisesRegex(ValueError,'asset hash mismatch'):
             self.verify()
@@ -81,6 +82,51 @@ class ResidentBindingTests(unittest.TestCase):
             if change == 'units':config['budget']['unit_ids']=['same','same']
             with self.subTest(change=change),self.assertRaises(ValueError):
                 resident.validate_configuration(config)
+
+    def test_explicit_initialization_uses_existing_owner_start_without_query_calls(self):
+        from src.baselines.text.frameworks import lotus_native_local
+        from src.serving.backends.vllm_protocol import GenerationSpec
+
+        self.config['resident']['model_initialization']='before_queries'
+        self.config['profile']=dict(native_lm_max_batch_size=3)
+        self.query.operation.generation=GenerationSpec(response_format={'type':'json_object'})
+        owner=SimpleNamespace(start=Mock(return_value={'engine_uid':'fixture-ready'}),
+                              close=Mock(return_value={'status':'closed'}))
+        resources=object()
+        driver=resident.ResidentDriver(self.config,'source','data',self.engine,GenerationSpec(),resources,None)
+        with patch.object(entry,'query_from_config',return_value=self.query), \
+                patch.object(lotus_native_local,'LocalNativeModel',return_value=owner) as factory, \
+                patch.object(resident.time,'monotonic_ns',side_effect=[10,20]):
+            report=driver.start()
+        factory.assert_called_once_with(self.engine,self.query.operation.generation,resources,3)
+        owner.start.assert_called_once_with()
+        self.assertTrue(report['model_ready'])
+        self.assertEqual((report['model_start_ns'],report['model_ready_observed_ns']),(10,20))
+        self.assertEqual(report['model_query_calls'],0)
+        self.assertEqual(report['extra_warmup'],0)
+        driver.close()
+        owner.close.assert_called_once_with(timeout=30)
+
+    def test_lazy_initialization_stays_default_and_invalid_profiles_are_rejected(self):
+        from src.baselines.text.frameworks import lotus_native_local
+
+        driver=resident.ResidentDriver(self.config,None,None,None,None,None,None)
+        with patch.object(lotus_native_local,'LocalNativeModel') as factory:
+            self.assertFalse(driver.start()['model_ready'])
+        factory.assert_not_called()
+        for value in ('unknown',None,True):
+            self.config['resident']['model_initialization']=value
+            with self.subTest(value=value),self.assertRaisesRegex(ValueError,'model_initialization'):
+                resident.validate_configuration(self.config)
+
+    def test_ready_profile_uses_explicit_first_and_repeat_labels(self):
+        self.config['resident']['model_initialization']='before_queries'
+        self.assertEqual(self.verify()['phase_labels'],['ready_first','ready_repeat'])
+        ledger = CellBudgetLedger.create(self.root/'budget.sqlite',AttemptBudget('resident-test',2),deadline_utc=None)
+        for unit in ('cold','warm'):ledger.reserve_unit(unit,1)
+        with patch.object(resident,'run_sequence',return_value={}) as sequence:
+            resident.run(self.config,'checkout','data',None,None,None,self.root/'run')
+        self.assertEqual([q['temperature'] for q in sequence.call_args.args[0]],['ready_first','ready_repeat'])
 
     def test_missing_or_spent_query_unit_prevents_owner_creation(self):
         ledger = CellBudgetLedger.create(self.root/'budget.sqlite',AttemptBudget('resident-test',2),deadline_utc=None)
@@ -177,19 +223,28 @@ class ResidentClockTests(unittest.TestCase):
         def execute(handler):
             now[0] += 3_000_000_000
             return 0, None
+        def bind():
+            now[0] += 7_000_000_000
+            return execute
+        def audit():
+            now[0] += 11_000_000_000
         query = SimpleNamespace(operation=None, describe=lambda: {'expected_model_calls': 0},
-            execute=execute, evaluate=lambda result: {'count': result})
+            execute=execute, bind_execution=bind, verify_source=audit,
+            evaluate=lambda result: {'count': result})
         ledger = SimpleNamespace(claim_shared_unit=lambda unit: SimpleNamespace(attempts=0, remaining=1),
                                  close_shared_unit=lambda unit: None)
-        driver = resident.ResidentDriver({}, 'unused', 'unused', None, GenerationSpec(), None, ledger)
+        driver = resident.ResidentDriver(dict(resident={}), 'unused', 'unused', None, GenerationSpec(), None, ledger)
         with patch.object(entry, 'query_from_config', side_effect=prepare), \
                 patch.object(resident, 'verify_inputs'), \
                 patch.object(resident.time, 'monotonic_ns', side_effect=lambda: now[0]):
             report = driver.query(dict(query_id='empty', temperature='cold', unit_id='unit'), lambda event: now[0])
-        self.assertEqual(report['preflight_finished_ns'] - report['worker_entry_ns'], 17_000_000_000)
+        self.assertEqual(report['preflight_finished_ns'] - report['worker_entry_ns'], 24_000_000_000)
         self.assertEqual(report['source_to_sink_seconds'], 3)
+        self.assertGreaterEqual(report['audit_finished_ns']-report['sink_ready_ns'],11_000_000_000)
         self.assertEqual(report['result'], 0)
-        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v2')
+        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v3')
+        self.assertFalse(report['model_ready_before_source'])
+        self.assertIsNone(report['model_ready_before_source_observed_ns'])
 
     def test_IPC_observer_restores_hooks_and_rejects_unconfirmed_or_duplicate_terminals(self):
         transport = SimpleNamespace(submit=lambda row,**kw:SimpleNamespace(status='queued',request_id='a'),

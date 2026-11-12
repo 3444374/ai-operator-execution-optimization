@@ -169,7 +169,7 @@ def persist_relation_observation(directory, report, result, *, primary=None):
         raise failure
 
 
-def finish_mmqa_filters(native, bindings):
+def finish_mmqa_filters(native, bindings, *, execute_queries=None):
     """Run complete original query sinks from prepared native Filter membership.
 
     ``bindings`` maps a query label to ``(SemBenchTextQuery, source_rows)``.
@@ -209,7 +209,8 @@ def finish_mmqa_filters(native, bindings):
     for label, (query, _sources) in bindings.items():
         def original_operator(operation, _invoke):
             return dict(frame=operation.result_frame(selected[label]))
-        results[label], _ = query.execute(original_operator)
+        execute = query.execute if execute_queries is None else execute_queries[label]
+        results[label], _ = execute(original_operator)
     return results
 
 

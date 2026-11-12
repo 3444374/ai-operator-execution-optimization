@@ -86,7 +86,10 @@ class PreparedSemanticsTests(unittest.TestCase):
             report = handler(operation, lambda: self.fail('model accessor invoked'))
             result = report['frame'].sort_index()
             return result, report
-        return SimpleNamespace(operation=operation, query_id='fixture', execute=execute)
+        query = SimpleNamespace(operation=operation, query_id='fixture', execute=execute,
+                                verify_source=lambda: None)
+        query.bind_execution = lambda: query.execute
+        return query
 
     def prepared(self, kind):
         query = self.query(kind)
@@ -178,7 +181,7 @@ class PreparedSemanticsTests(unittest.TestCase):
             report = self.run_driver(Path(directory)/'run', [1_000_000_000], preflight_seconds=17)
         self.assertEqual(report['source_to_sink_seconds'], 3)
         self.assertEqual(report['preflight_finished_ns'] - report['worker_entry_ns'], 17_000_000_000)
-        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v2')
+        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v3')
 
     def test_message_digests_and_relation_serialization_advance_only_post_sink_clock(self):
         from src.baselines.text import sembench_prepared as semantics

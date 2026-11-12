@@ -63,7 +63,7 @@ class RayPreparedTests(unittest.TestCase):
             report, _ = self.run_query(Path(directory), [1_000_000_000], preflight_seconds=17)
         self.assertEqual(report['source_to_sink_seconds'], 5)
         self.assertEqual(report['preflight_finished_ns'] - report['worker_entry_ns'], 17_000_000_000)
-        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v2')
+        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v3')
         self.assertGreater(report['query_seconds'], report['source_to_sink_seconds'] + 17)
 
     def test_sink_excludes_audit_serialization_and_close(self):

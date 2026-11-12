@@ -48,7 +48,7 @@ def prepare(query, tokenizer=None, *, prompt_columns=None):
     return method, prepared, requests
 
 
-def finish_relation(query, method, prepared, predictions):
+def finish_relation(query, method, prepared, predictions, *, execute_query=None):
     """Run the original parser and full query without post-result audit work."""
     from lotus.sem_ops.postprocessors import extract_postprocess, map_postprocess
     from src.semantic_methods.lotus.filter_answers import parse_filter_answers
@@ -83,7 +83,7 @@ def finish_relation(query, method, prepared, predictions):
             output_records.append(record)
         return dict(frame=operation.result_frame(output_records), parsed_outputs=parsed.outputs)
 
-    result, operator = query.execute(original_operator)
+    result, operator = (query.execute if execute_query is None else execute_query)(original_operator)
     return result, dict(texts=texts, parsed_outputs=None if parsed is None else parsed.outputs,
                         operator=operator)
 
@@ -100,11 +100,13 @@ def audit_relation(prepared, relation):
                 operator_relation=None if operator is None else result_value(operator['frame']))
 
 
-def finish(query, method, prepared, predictions, *, on_result_ready=None):
+def finish(query, method, prepared, predictions, *, on_result_ready=None, execute_query=None):
     """Run original semantics, expose the full sink, then build audit artifacts."""
-    result, relation = finish_relation(query, method, prepared, predictions)
+    result, relation = finish_relation(query, method, prepared, predictions, execute_query=execute_query)
     if on_result_ready is not None:
         on_result_ready(result)
+    if execute_query is not None:
+        query.verify_source()
     return result, audit_relation(prepared, relation)
 
 

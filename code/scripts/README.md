@@ -106,6 +106,8 @@ LITELLM_LOCAL_MODEL_COST_MAP=True PYTHONHASHSEED=3 PYTHONPATH=code "$DRIVER_PYTH
 ```
 
 该回放不使用模型答案，不能报告真实质量或延迟；目标 `run` 仍需精确源码、模型/输入绑定与外层监督。
+LOTUS resident 可显式设置 `model_initialization=before_queries`，先初始化同一原生模型，
+再执行 `ready_first/ready_repeat`，不发额外预热查询；省略时仍是查询内惰性启动的 `cold/warm`。
 MMQA 准备仅调用原三种文本生成方法并复制固定表，不下载、不生成图片、不调用模型。
 Medical 准备只复制所选已有规模的三份原 CSV，保留 `data/` 布局，不重新采样或启动图音准备：
 

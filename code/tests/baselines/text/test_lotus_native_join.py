@@ -230,6 +230,7 @@ class NativeJoinTests(unittest.TestCase):
             clock[0] += 13_000_000_000
             return dict(software_fixture=True)
         query = SimpleNamespace(operation=op, query_id='clock-query', execute=execute,
+            bind_execution=lambda: execute, verify_source=lambda: None,
             describe=lambda: dict(expected_model_calls=64), evaluate=evaluate)
         ledger = SimpleNamespace(claim_shared_unit=lambda value: unit,
                                  close_shared_unit=lambda value: events.append(('unit-close', clock[0])))

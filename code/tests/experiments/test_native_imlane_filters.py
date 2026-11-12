@@ -146,7 +146,8 @@ class FilterWorkerTests(unittest.TestCase):
             def preflight(*_):
                 self.assertEqual(events, [])
                 clock[0] += preflight_seconds * 1_000_000_000
-                return SimpleNamespace(describe=lambda:{}), SimpleNamespace(columns=['Airlines']), [], [], [[1]], []
+                query=SimpleNamespace(describe=lambda:{}, bind_execution=lambda: lambda handler: (result,None))
+                return query, SimpleNamespace(columns=['Airlines']), [], [], [[1]], []
             with patch.object(entry,'verified_build',return_value=native_build), \
                     patch.object(entry,'prepare_query',side_effect=preflight), \
                     patch.object(entry,'_prepare_requests',side_effect=prepare), \
@@ -183,7 +184,7 @@ class FilterWorkerTests(unittest.TestCase):
         self.assertIsNone(error);self.assertEqual(report['model_startup_seconds'],90)
         self.assertEqual(report['ready_source_to_sink_seconds'],5)
         self.assertEqual(report['cold_worker_entry_to_sink_seconds'],95)
-        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v2')
+        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v3')
         self.assertEqual(report['source_started_ns'], report['query_started_monotonic_ns'])
         self.assertEqual(events,['start','ready','source','sink','audit','close'])
 

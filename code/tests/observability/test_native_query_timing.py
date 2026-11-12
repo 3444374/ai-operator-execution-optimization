@@ -96,6 +96,17 @@ class MemorySinkTests(unittest.TestCase):
         self.assertIsNone(result['source_to_sink_seconds'])
         self.assertIn('unrecognized',result['source_to_sink_unavailable_reason'])
 
+    def test_v3_preserves_ready_observation_without_rewriting_legacy_receipts(self):
+        q=self.query()
+        self.assertIsNone(query_timing(q)['model_ready_before_source'])
+        q['backend_report']['memory_sink_timing'].update(
+            query_clock_version='sembench.source_to_sink.v3',source_started_ns=3_000_000_000,
+            model_ready_before_source=True,model_ready_before_source_observed_ns=2_500_000_000)
+        result=query_timing(q)
+        self.assertEqual(result['source_to_sink_seconds'],1)
+        self.assertTrue(result['model_ready_before_source'])
+        self.assertEqual(result['model_ready_before_source_observed_ns'],2_500_000_000)
+
     def test_audit_and_event_delivery_do_not_extend_memory_sink(self):
         q=self.query()
         first=query_timing(q)

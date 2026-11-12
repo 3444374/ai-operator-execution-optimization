@@ -18,11 +18,13 @@ from .native_query_lifecycle import run_sequence
 
 def validate_configuration(config):
     spec = config['resident']
-    if config['backend'] != 'lotus-native' or set(spec) != {
+    if config['backend'] != 'lotus-native' or set(spec) - {'model_initialization'} != {
             'repetitions', 'timeout_s', 'cleanup_s', 'python_hash_seed', 'binding'}:
         raise ValueError('explicit native LOTUS resident configuration required')
+    if spec.get('model_initialization', 'inside_first_query') not in ('inside_first_query', 'before_queries'):
+        raise ValueError('choose model_initialization=inside_first_query or before_queries')
     if type(spec['repetitions']) is not int or spec['repetitions'] < 1:
-        raise ValueError('resident requires at least one complete cold query; later queries are fresh warm queries')
+        raise ValueError('resident requires at least one complete fresh query')
     if (type(spec['timeout_s']) not in (int, float) or type(spec['cleanup_s']) not in (int, float)
             or not 0 < spec['cleanup_s'] < spec['timeout_s'] < float('inf')):
         raise ValueError('finite resident supervision and cleanup allowance required')
@@ -95,7 +97,10 @@ def verify_binding(config, query, engine, *, assets=True):
         model_files=spec['binding']['model_files'], tokenizer_files=spec['binding']['tokenizer_files'],
         asset_hashes_checked=assets, logical_requests=count * spec['repetitions'],
         request_count_kind=('upper_bound' if query.describe().get('ranking') == 'topk' else 'exact'),
-        per_query_requests=count, phase_labels=['cold'] + ['warm'] * (spec['repetitions'] - 1))
+        per_query_requests=count,
+        phase_labels=(['ready_first'] + ['ready_repeat'] * (spec['repetitions'] - 1)
+            if spec.get('model_initialization', 'inside_first_query') == 'before_queries'
+            else ['cold'] + ['warm'] * (spec['repetitions'] - 1)))
 
 
 class ResidentDriver:
@@ -106,8 +111,22 @@ class ResidentDriver:
         self.request_ids = set()
 
     def start(self):
-        # run_sequence's owner-ready is this adapter, not model readiness. The
-        # actual native model starts inside the first nonempty source query.
+        if self.config['resident'].get('model_initialization', 'inside_first_query') == 'before_queries':
+            from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+            from .sembench_text_query import query_from_config
+
+            query = query_from_config(self.config, self.checkout, self.data_dir, self.generation)
+            verify_inputs(self.config, query)
+            if query.describe()['expected_model_calls']:
+                self.owner = LocalNativeModel(self.engine, query.operation.generation,
+                    self.resources, self.config['profile']['native_lm_max_batch_size'])
+                started = time.monotonic_ns()
+                ready = self.owner.start()
+                return dict(model_startup_scope='explicit before_queries; no model-query warmup',
+                    model_ready=True, model_start_ns=started, model_ready_observed_ns=time.monotonic_ns(),
+                    owner_ready=ready, extra_warmup=0, model_query_calls=0)
+            return dict(model_startup_scope='before_queries; no model input', model_ready=False,
+                        extra_warmup=0, model_query_calls=0)
         return dict(model_startup_scope='lazy first nonempty query', model_ready=False,
                     protocol='original LOTUS LM / LiteLLM / local AsyncLLM IPC')
 
@@ -121,9 +140,12 @@ class ResidentDriver:
 
         started = time.monotonic_ns()
         report = dict(status='failed', query_id=spec['query_id'], phase=spec['temperature'],
-            worker_entry_ns=started, source_start_ns=None, query_clock_version='sembench.source_to_sink.v2',
+            worker_entry_ns=started, source_start_ns=None, query_clock_version='sembench.source_to_sink.v3',
             result_cache_enabled=False, extra_warmup=0, retries=0,
             first_engine_accept_ns=None, kernel_seconds=None)
+        report['model_initialization'] = self.config['resident'].get('model_initialization', 'inside_first_query')
+        report['query_sequence_phase'] = ('first_query' if spec['temperature'] in ('cold', 'ready_first')
+                                          else 'repeat_query')
         unit = primary = None
         try:
             with lotus.settings.context(enable_cache=False):
@@ -169,10 +191,14 @@ class ResidentDriver:
                         query_id=query.query_id, profile=self.config['profile'], budget=unit,
                         shared_owner=self.owner)
 
+                execute_query = query.bind_execution()
                 report['preflight_finished_ns'] = time.monotonic_ns()
+                report['model_ready_before_source'] = self.owner is not None and self.owner.ready_report is not None
+                report['model_ready_before_source_observed_ns'] = (
+                    time.monotonic_ns() if report['model_ready_before_source'] else None)
                 report['source_start_ns'] = time.monotonic_ns()
                 report['prepare_finished_ns'] = report['source_start_ns']
-                result, operator = query.execute(execute)
+                result, operator = execute_query(execute)
                 sink = emit('result_ready')
                 report.update(sink_ready_ns=sink, source_to_sink_seconds=(sink-report['source_start_ns'])/1e9,
                     native_query_seconds=(sink-report['prepare_finished_ns'])/1e9)
@@ -180,6 +206,7 @@ class ResidentDriver:
                     from src.baselines.text.frameworks.lotus_native_join import finish_accounting
                     finish_accounting(operator)
                 report['operator'] = {} if operator is None else {k:v for k,v in operator.items() if k != 'frame'}
+                query.verify_source()
                 state = None if self.owner is None else self.owner.snapshot()
                 report['snapshot_finished_ns'] = time.monotonic_ns()
                 if state is not None:
@@ -236,8 +263,9 @@ class ResidentDriver:
                     model_ready_observed_ns=None if operator is None else operator.get('model_ready_observed_ns'),
                     startup_this_round_seconds=(state['ready']['startup_seconds'] if first_model and state['ready'] else 0),
                     budget_attempts=unit.attempts, budget_remaining=unit.remaining,
-                    timing_scope='original fresh CSV scan -> full sink; first lazy model startup included; '
-                        'source/binding/budget preflight, snapshot/audit/evaluation/persistence/close separate')
+                    timing_scope='original fresh data scan -> full sink; model_ready_before_source distinguishes '
+                        'an already ready model from first lazy startup inside this interval; source/file-identity/'
+                        'binding/budget preflight and post-sink source audit, evaluation, persistence and close separate')
                 return report
         except BaseException as error:
             primary = error
@@ -276,11 +304,16 @@ def run(config, checkout, data_dir, engine, generation, resources, output):
     if any(unit not in units or units[unit]['claimed'] or units[unit]['requests'] != expected
            for unit in value['unit_ids']):
         raise ValueError('reserve all fresh resident query units before creating a model')
+    initialization = config['resident'].get('model_initialization', 'inside_first_query')
+    labels = ('ready_first', 'ready_repeat') if initialization == 'before_queries' else ('cold', 'warm')
     queries = [dict(query_id=config['query_id']+'-'+str(i), phase='measured',
-        temperature='cold' if i == 0 else 'warm', unit_id=unit)
+        temperature=labels[0] if i == 0 else labels[1], unit_id=unit)
         for i, unit in enumerate(value['unit_ids'])]
     driver = ResidentDriver(config, checkout, data_dir, engine, generation, resources, ledger)
+    setup = dict(config_sha256=content_digest(config), source=config['resident']['binding']['source'],
+        model_initialization=initialization, extra_warmup=0, automatic_retries=0)
+    if initialization == 'inside_first_query':
+        setup['adapter_owner_ready_is_model_ready'] = False
     return run_sequence(queries, lambda directory, first: driver, output,
         backend='lotus-native', lifecycle='resident',
-        setup=dict(config_sha256=content_digest(config), source=config['resident']['binding']['source'],
-            adapter_owner_ready_is_model_ready=False, extra_warmup=0, automatic_retries=0))
+        setup=setup)

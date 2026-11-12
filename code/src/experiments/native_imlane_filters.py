@@ -145,14 +145,16 @@ def verified_build(path):
 
 
 class FilterRelation:
-    def __init__(self, query, method, prepared, requests, tokens, rows):
+    def __init__(self, query, method, prepared, requests, tokens, rows, execute_query):
         self.query, self.method, self.prepared = query, method, prepared
         self.requests, self.tokens, self.rows = requests, tokens, rows
+        self.execute_query = execute_query
 
     def sink(self, native):
         if native['variant'] != 'original-author' or native['expected_DSO_sha256'] != DSO_SHA256:
             raise ValueError('native Filter must retain the original author DSO identity')
-        return finish_mmqa_filters(native, {self.query.query: (self.query, self.rows)})[self.query.query]
+        return finish_mmqa_filters(native, {self.query.query: (self.query, self.rows)},
+            execute_queries={self.query.query: self.execute_query})[self.query.query]
 
     def audit(self, native, result, directory, sampling):
         from pandas import Series
@@ -191,7 +193,7 @@ def run_worker(args, config, *, service_factory=ModelService):
     previous = {n: signal.signal(n, args.stop_budget.signal) for n in (signal.SIGTERM, signal.SIGINT)}
     report = dict(schema=config['schema'], status='failed', variant='original-author', query_id=config['query_id'],
         worker_entry_monotonic_ns=entered, retries=0, extra_warmup=0,
-        query_clock_version='sembench.source_to_sink.v2', source_started_ns=None,
+        query_clock_version='sembench.source_to_sink.v3', source_started_ns=None,
         outer_host_lease_required=True, physical_gpu_exit_confirmed=None,
         build_record=file_identity(Path(args.build_record)))
     primary = service = ledger = unit = result = None
@@ -204,6 +206,7 @@ def run_worker(args, config, *, service_factory=ModelService):
         report.update(source=query.describe(), effective_prompt_columns=list(checked[1].columns),
                       source_preflight_finished_ns=time.monotonic_ns())
         del checked
+        execute_query = query.bind_execution()
         window.check()
         for name in ('model-calls', 'model-service'):
             (args.output / name).mkdir(mode=0o700)
@@ -231,6 +234,8 @@ def run_worker(args, config, *, service_factory=ModelService):
             if max(map(len, tokens)) + generation.max_tokens > service.ready_info['max_model_len']:
                 raise ValueError('full Filter prompt and output exceed the actual model context')
             report['preflight_finished_ns'] = time.monotonic_ns()
+            report['model_ready_before_source'] = True
+            report['model_ready_before_source_observed_ns'] = report['model_ready_observed_ns']
             started = time.monotonic_ns()
             report['query_started_monotonic_ns'] = started
             report['source_started_ns'] = started
@@ -239,7 +244,7 @@ def run_worker(args, config, *, service_factory=ModelService):
             with open_private_text(args.output / 'input.csv') as stream:
                 writer = csv.writer(stream); writer.writerow(('occurrence_id', 'title', 'text', 'source_position'))
                 writer.writerows((r['occurrence_id'], r['title'], r['text'], r['source_position']) for r in rows)
-            relation = FilterRelation(query, method, prepared, requests, tokens, rows)
+            relation = FilterRelation(query, method, prepared, requests, tokens, rows, execute_query)
             args.startup_timeout_s = window.query_deadline - time.monotonic()
             command = [build['binary_path'], '--input', str(args.output / 'input.csv'),
                 '--module', build['kernel_path'], '--function', 'infer_mmqa', '--kind', args.kind,
@@ -284,7 +289,7 @@ def run_worker(args, config, *, service_factory=ModelService):
             report['cold_worker_entry_to_sink_seconds'] = (report['full_sink_observed_monotonic_ns'] - entered) / 1e9
             report['ready_source_to_sink_seconds'] = report['source_to_sink_seconds']
         report['deadline'] = window.report()
-        report['timing_scope'] = ('ready_source_to_sink v2: actual message/native-input preparation, native SQL, '
+        report['timing_scope'] = ('ready_source_to_sink v3: actual message/native-input preparation, native SQL, '
             'original CSV scan and complete memory sink after owner ready; source binding/configuration, '
             'tokenizer/audit-token preparation, context and budget checks precede the start. ACK, audit, '
             'evaluation and close follow. cold_worker_entry_to_sink additionally includes preflight and model startup; '

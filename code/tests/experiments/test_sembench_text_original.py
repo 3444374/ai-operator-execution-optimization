@@ -267,6 +267,22 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                 self.assertGreater(read.call_count, 0)
                 self._assert_result_equal(result, expected)
 
+    def test_bound_execution_reads_data_without_file_hashing_then_audits_after_sink(self):
+        from src.baselines.text import sembench_text as source
+
+        query=self._query('movie','8')
+        answers=['POSITIVE']*len(query.operation.records)
+        expected,_=self._reference(query,answers)
+        execute,_,_=self._chain(query,answers)
+        run=query.bind_execution()
+        with patch.object(source,'file_identity',side_effect=AssertionError('query interval hashed a source file')):
+            result,_=run(execute)
+        self._assert_result_equal(result,expected)
+        path=self.data/'Reviews.csv'
+        path.write_text(path.read_text().replace('same review','changed after sink'))
+        with self.assertRaisesRegex(ValueError,'changed after preflight'):
+            query.verify_source()
+
     def test_ecomm_original_multi_column_join_reuses_native_owner_and_evaluator(self):
         import lotus
         from lotus.types import LMOutput

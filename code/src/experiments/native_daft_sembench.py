@@ -39,7 +39,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
     deadline = started / 1e9 + config['query_timeout_s']
     report = dict(schema='semloom.native_daft_sembench.result.v1', status='failed',
         backend='daft-native-ai', worker_entry_ns=started, source_start_ns=None,
-        query_clock_version='sembench.source_to_sink.v2', strict_controller_entry_ns=None,
+        query_clock_version='sembench.source_to_sink.v3', strict_controller_entry_ns=None,
+        model_ready_before_source=False,
         strict_controller_entry_reason='host imports, preflight and lease precede this function',
         clock='time.monotonic_ns on one host', warmup=0, whole_query_retries=0,
         result_cache=False, prefix_cache='native provider/config; effective value observed when exposed',
@@ -62,6 +63,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
                 deadline_utc=time.time() + max(0, deadline - time.monotonic()))
             ledger.reserve_unit('query', budget.limit)
             ledger.claim_shared_unit('query')
+        execute_query = query.bind_execution()
         report['preflight_finished_ns'] = time.monotonic_ns()
         report['source_start_ns'] = time.monotonic_ns()
         method, prepared, requests = prepare(query, tokenizer)
@@ -84,7 +86,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
                 report['semantic_audit_started_ns'] = time.monotonic_ns()
 
             _, semantic = finish(query, method, prepared, raw['result']['predictions'],
-                                 on_result_ready=sink_ready)
+                                 on_result_ready=sink_ready, execute_query=execute_query)
             report['semantic_audit_finished_ns'] = time.monotonic_ns()
             # The original sink timestamp precedes serialization and all audit.
             report['sink_persistence_started_ns'] = time.monotonic_ns()

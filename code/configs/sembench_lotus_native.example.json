@@ -35,6 +35,7 @@
   "profile": {"native_lm_max_batch_size": 64},
   "lifecycle": "resident",
   "resident": {
+    "model_initialization": "inside_first_query",
     "repetitions": 2,
     "timeout_s": 600,
     "cleanup_s": 30,

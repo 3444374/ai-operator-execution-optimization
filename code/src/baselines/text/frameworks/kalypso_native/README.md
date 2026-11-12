@@ -24,11 +24,15 @@ trace 完整发生项、request ID 和 model UID 核对在 sink 后执行，审�
 排除 JSON 解析和文件持久化。
 
 `memory_sink_timing` 仍用现有 v1 receipt schema，迁移路径额外记录
-`query_clock_version="sembench.source_to_sink.v2"` 和实测 source 起点。Filter 在此之前验证
+`query_clock_version="sembench.source_to_sink.v3"` 和实测 source 起点。Filter 在此之前验证
 manifest、物化文件和原始来源，然后由绑定 reader 在区间内真实扫描原 Reviews CSV，保留
 声明的 prefix 与行类型；不是返回预检缓存行。原文件的事后完整性和标签核对仍在 sink 后。
-Map 在预检阶段绑定原查询，区间内执行原查询的读取、必需输入文件、原生请求与完整关系。
-未知版本或缺失起点明确留空；没有该字段的旧 receipt 保持原 caller 区间，不回填为 v2。
+Map 在预检阶段绑定原查询并核文件身份，区间内执行原查询的读取、必需输入文件、原生请求与完整关系，
+事后完整文件校验在 sink 之后。attach 实际 loaded-model 证明核验后记录模型就绪观测，
+receipt 传递 `model_ready_before_source` 与观测时间；它不是由调用者标签推断的启动耗时。
+未知版本或缺失起点明确留空；没有该字段的旧 receipt 保持原 caller 区间，v2 Map 仍含执行内文件校验。
+历史时长不回填为 v3。运行的 `map_prompt_root` 必须与 CPU 预检输出分开，使用新的空目录；
+已有 prompt 表会因独占创建失败，不自动覆盖或复用旧表。
 
 现有私有 Map／MMQA 查询重载 `query()` 并继承 `post()`，后者默认仍同步保存 HTTP 证据。
 这些入口未迁移时不能使用本次内存 sink 资格；只在迁移的 query 内开启延迟持久化。退役该兼容

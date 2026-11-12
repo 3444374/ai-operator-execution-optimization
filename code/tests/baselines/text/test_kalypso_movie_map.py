@@ -267,13 +267,13 @@ class OriginalMapSizeContracts(unittest.TestCase):
                 original_prepare=movie_map.prepare
                 original_make_query=movie_map.make_query
                 original_parse=postprocessors.map_postprocess
-                original_execute=movie_map.SemBenchTextQuery.execute
+                original_query=movie_map.SemBenchTextQuery._original
                 original_evaluate=movie_map.SemBenchTextQuery.evaluate
                 def prepare(*args):clock.advance(2);return original_prepare(*args)
                 def make_query(*args):clock.advance(17);return original_make_query(*args)
                 def parse(*args):clock.advance(5);return original_parse(*args)
-                def execute(owner,*args):
-                    result=original_execute(owner,*args);clock.advance(4);return result
+                def original(owner,*args):
+                    result=original_query(owner,*args);clock.advance(4);return result
                 def read_trace(path,qid):
                     emit('trace');clock.advance(7)
                     return [] if Path(path).name=='map-trace.jsonl' else events
@@ -286,7 +286,7 @@ class OriginalMapSizeContracts(unittest.TestCase):
                         patch.object(movie_map,'prepare',prepare), \
                         patch.object(movie_map,'make_query',make_query), \
                         patch.object(postprocessors,'map_postprocess',parse), \
-                        patch.object(movie_map.SemBenchTextQuery,'execute',execute), \
+                        patch.object(movie_map.SemBenchTextQuery,'_original',original), \
                         patch.object(movie_map.SemBenchTextQuery,'evaluate',evaluate), \
                         patch.object(adapter,'read_trace',read_trace):
                     driver=movie_map.MapDriver(cfg,bound,helper.data/f'query-{task}-{count}',transport)

@@ -140,13 +140,15 @@ def _memory_sink_timing(query, report):
     result=dict(memory_sink_ready_ns=None,source_to_sink_seconds=None,
                 source_to_sink_unavailable_reason=None,memory_sink_scope=None,
                 query_clock_version=None,source_started_ns=None,caller_to_memory_sink_seconds=None)
+    result['model_ready_before_source']=None
+    result['model_ready_before_source_observed_ns']=None
     receipt=report.get('memory_sink_timing')
     if not isinstance(receipt,dict) or receipt.get('schema')!='semloom.kalypso_memory_sink.v1':
         result['source_to_sink_unavailable_reason']='explicit memory-sink receipt unavailable; legacy result_ready is not substituted'
         return result
     submitted=query.get('query_start_ns')
     version=receipt.get('query_clock_version')
-    if version not in (None,'sembench.source_to_sink.v2'):
+    if version not in (None,'sembench.source_to_sink.v2','sembench.source_to_sink.v3'):
         result['source_to_sink_unavailable_reason']='unrecognized query clock version; legacy submission is not substituted'
         return result
     start=submitted if version is None else receipt.get('source_started_ns')
@@ -169,6 +171,8 @@ def _memory_sink_timing(query, report):
     result.update(memory_sink_ready_ns=sink,source_to_sink_seconds=(sink-start)/1e9,
                   memory_sink_scope=receipt.get('sink_scope'),query_clock_version=version,
                   source_started_ns=None if version is None else start,
+                  model_ready_before_source=receipt.get('model_ready_before_source'),
+                  model_ready_before_source_observed_ns=receipt.get('model_ready_before_source_observed_ns'),
                   caller_to_memory_sink_seconds=(sink-submitted)/1e9)
     return result
 

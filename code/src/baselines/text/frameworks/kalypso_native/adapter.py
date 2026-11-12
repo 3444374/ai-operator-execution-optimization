@@ -175,6 +175,7 @@ class NativeQueryDriver:
         self.next_query=0
         self.request_ids=set()
         self.model_uid=None
+        self.model_ready_observed_ns=None
         self.http_body=None
         self.http_clock=None
         # Existing private Map/MMQA drivers override query() and still require
@@ -213,7 +214,9 @@ class NativeQueryDriver:
             if (any(type(value) is not int or value<=0 for value in values)
                     or type(memory) not in (int,float) or not 0<memory<=1):
                 raise ValueError('Actual native worker capacity observation is incomplete')
+        self.model_ready_observed_ns=time.monotonic_ns()
         return dict(status='attached_ready',loaded_model=proof,native_launch=launch,
+                    model_ready_observed_ns=self.model_ready_observed_ns,
                     model_startup_scope='external GPU owner lifecycle; not measured by client attach',
                     service_startup_scope='GPU owner external lifecycle, not this attach operation')
 
@@ -342,8 +345,10 @@ class NativeQueryDriver:
                     source=MovieRecordSource.from_manifest(spec['manifest'])
                     read_rows=source.bind_query_rows()
                     task=MovieTask.from_config(spec['task'])
-                timing.update(query_clock_version='sembench.source_to_sink.v2',
-                              source_started_ns=time.monotonic_ns())
+                timing.update(query_clock_version='sembench.source_to_sink.v3',
+                              source_started_ns=time.monotonic_ns(),
+                              model_ready_before_source=self.model_ready_observed_ns is not None,
+                              model_ready_before_source_observed_ns=self.model_ready_observed_ns)
                 with query_phase(timing,'source_and_required_input'):
                     rows=read_rows()
                     eligible=[r for r in rows if task.accepts(r)]

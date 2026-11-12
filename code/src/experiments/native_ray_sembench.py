@@ -25,7 +25,8 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
     report = dict(schema='semloom.sembench_text_result.v1', status='failed', backend='ray-data',
         execution_layout='public Ray Data LLM processor; original SemBench parser and full query',
         worker_entry_ns=started, source_started_ns=None, source_to_sink_seconds=None,
-        query_clock_version='sembench.source_to_sink.v2', strict_controller_to_sink_seconds=None,
+        query_clock_version='sembench.source_to_sink.v3', strict_controller_to_sink_seconds=None,
+        model_ready_before_source=False,
         production_core_used=False, result_cache_enabled=False, warmup_calls=0,
         lifecycle='single cold native instance', requested_generate_retries=0,
         performance_claim=False, physical_gpu_exit_confirmed=None,
@@ -64,6 +65,7 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
             raise ValueError('conflicting Ray engine settings or unsupported explicit chat template')
         engine_kwargs.update(spec['engine_kwargs'])
 
+        execute_query = query.bind_execution()
         report['preflight_finished_ns'] = time.monotonic_ns()
         report['source_started_ns'] = time.monotonic_ns()
         method, prepared, requests = prepare(query)
@@ -79,7 +81,8 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
                 report['sink_ready_ns'] = time.monotonic_ns()
                 report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_started_ns']) / 1e9
                 report['semantic_audit_started_ns'] = time.monotonic_ns()
-            _, semantic = finish(query, method, prepared, raw['predictions'], on_result_ready=sink_ready)
+            _, semantic = finish(query, method, prepared, raw['predictions'], on_result_ready=sink_ready,
+                                 execute_query=execute_query)
             report['semantic_audit_finished_ns'] = time.monotonic_ns()
             report['semantic'] = semantic
 
