@@ -17,8 +17,9 @@ def prepare(query, tokenizer=None, *, prompt_columns=None):
 
     if query.operation is None:
         return None, [], []
-    if query.operation.describe()['kind'] == 'join':
-        raise ValueError('native Join requires its original LOTUS resident accessor, not prepared F/M/E')
+    kind = query.operation.describe()['kind']
+    if kind not in ('filter', 'map', 'extract'):
+        raise ValueError('prepared text requests support Filter/Map/Extract, not ' + kind)
     stage = query.operation.stage
     # Reuse the first observed raw order across processes, not display headers
     # or a fresh iteration of LOTUS placeholder sets. Default callers are unchanged.

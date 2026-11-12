@@ -66,11 +66,6 @@ def configuration(path):
     if value['backend'] == 'imlane':
         resources.request_capacity()
     lifecycle = value.get('lifecycle', 'isolated')
-    if value.get('ranking') == 'topk' and (value['backend'] != 'lotus-native' or lifecycle != 'resident'):
-        raise ValueError('author TopK requires the explicit native LOTUS resident owner')
-    if (value['scenario'] == 'movie' and str(value['query']).lower().removeprefix('q') in ('5', '6', '7')
-            and (value['backend'] != 'lotus-native' or lifecycle != 'resident')):
-        raise ValueError('author Movie Join requires the explicit native LOTUS resident owner')
     if lifecycle not in ('isolated', 'resident'):
         raise ValueError('choose isolated or explicit native LOTUS resident lifecycle')
     if lifecycle == 'resident':
@@ -90,6 +85,13 @@ def query_from_config(config, checkout, data_dir, generation):
 
 
 def check(config, query, engine):
+    kind = None if query.operation is None else query.operation.describe()['kind']
+    if kind in ('join', 'topk'):
+        if config['backend'] != 'lotus-native' or config.get('lifecycle', 'isolated') != 'resident':
+            raise ValueError('native ' + {'join': 'Join', 'topk': 'TopK'}[kind]
+                             + ' requires the explicit native LOTUS resident owner')
+    elif kind not in (None, 'filter', 'map', 'extract'):
+        raise ValueError('unsupported semantic operator for this text entry: ' + kind)
     expected = query.describe()['expected_model_calls']
     if engine.max_model_calls is None or engine.max_model_calls < expected:
         raise ValueError('engine.max_model_calls must cover the complete original operator')

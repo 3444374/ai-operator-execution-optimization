@@ -526,6 +526,25 @@ E-Commerce Q3／Cars Q10 的 keyword Extract、E-Commerce Q5 的 Map suffix 需�
 这些属于待接线／待数据，不是系统缺少原算法。E-Commerce、Cars 和 Medical 的其他原实现按各自文件与能力准备；
 此前限定目录中未找到的数据只记待定位，不推断全服务器没有，也不下载或改写算子凑结果。
 
+## SemBench 原项目与本地接入职责
+
+SemBench 论文评测 LOTUS、Palimpzest、ThalamusDB 和 BigQuery；仓库另有 CAESURA、FlockMTL
+接入，不能把源码中存在的入口都当成论文已报告的系统。论文主实验使用远程 Gemini 2.5 Flash，
+不是本项目的本地 vLLM／GPU 实验；系统版本、模型、策略和启动计时分别保留实际身份。
+来源见[论文 §5.1–5.2](https://arxiv.org/html/2511.01716v2#S5)。
+
+固定 `c814e380` 的[公共 runner](https://github.com/SemBench/SemBench/blob/c814e3807e72d4cf876b852b17e77f3cc94575c2/src/runner/generic_runner.py)
+共用查询发现、运行、结果和指标接口；系统 runner 负责原生调用及系统配置。
+LOTUS／Palimpzest 的逐题方法或脚本定义查询，ThalamusDB／BigQuery 主要执行对应 SQL。
+逐题保留选择、指令、关系后处理和评价是任务定义，不应为每题复制模型提交、预算、监督或关闭实现。
+多算子查询由原查询顺序及后端能力处理，不能凭题号或固定行数决定通用执行行为。
+
+本地 Ray／Daft 的 prepared 路径共享 LOTUS 方法，后端拥有各自原生执行图；IMLane／Kalypso
+按作者接点分别核对。它们不是上述论文四系统的完整复现，也不强行共用系统提示模板。
+文本入口现按捕获到的算子检查能力：普通 Filter／Map／Extract 使用既有接点，Join／TopK
+要求显式 LOTUS resident；prepared 请求入口拒绝其他算子，不在缺少 stage 时以属性异常退出。
+此项只移除题号决定后端能力的限制，不开放新的场景、聚合或多算子完整查询；这些仍需接入与验证。
+
 ## 已退役和暂停
 
 旧矩阵专用的 `common/gate.py` 及其四项专测已退役；现用入口没有调用该实现。

@@ -15,6 +15,12 @@ from src.serving.backends.vllm_protocol import GenerationSpec
 
 
 class PreparedSemanticsTests(unittest.TestCase):
+    def test_non_row_operator_is_rejected_before_stage_or_model_access(self):
+        for kind in ('join', 'topk', 'aggregate'):
+            query = SimpleNamespace(operation=SimpleNamespace(describe=lambda: dict(kind=kind)))
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, 'Filter/Map/Extract, not ' + kind):
+                prepare(query)
+
     def query(self, kind):
         frame = pd.DataFrame({'text': ['first', 'second'], 'title': ['b', 'a']}, index=[8, 3])
         args = (['text'], {'genre': None}) if kind == 'extract' else ('Describe {text}',)

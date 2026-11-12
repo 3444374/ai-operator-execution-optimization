@@ -104,16 +104,32 @@ class TextEntryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'every original operator input'):
             entry.fixture({},query,['one'],Path('/tmp'))
 
-    def test_native_ray_config_keeps_full_sink_route_and_rejects_topk(self):
+    def test_native_ray_config_keeps_full_sink_route(self):
         template = Path(__file__).parents[2] / 'configs/sembench_ray_native.example.json'
         config, _, _, _ = entry.configuration(template)
         self.assertIn('ray_native', config)
-        config.update(query='9', ranking='topk')
-        with tempfile.TemporaryDirectory() as raw:
-            path = Path(raw) / 'config.json'
-            path.write_text(json.dumps(config))
-            with self.assertRaisesRegex(ValueError, 'TopK requires.*LOTUS resident'):
-                entry.configuration(path)
+
+    def test_backend_support_uses_actual_operator_independently_of_query_number(self):
+        from src.serving.backends.vllm_protocol import EngineSpec
+        engine = EngineSpec(model_path='/tmp/model', model_python='/tmp/python',
+                            driver_python='/tmp/python', max_model_calls=3)
+        for query_id in ('1', '5', '9', 'another-task'):
+            for backend in entry.BACKENDS:
+                for lifecycle in ('isolated', 'resident'):
+                    for kind in ('filter', 'map', 'extract', 'join', 'topk', 'aggregate'):
+                        with self.subTest(query_id=query_id, backend=backend, lifecycle=lifecycle, kind=kind):
+                            query = SimpleNamespace(generation=GenerationSpec(),
+                                operation=SimpleNamespace(describe=lambda: dict(kind=kind), generation=GenerationSpec()),
+                                describe=lambda: dict(query=query_id, expected_model_calls=3))
+                            config = dict(backend=backend, lifecycle=lifecycle, profile={})
+                            supported = (kind in ('filter', 'map', 'extract') or
+                                kind in ('join', 'topk') and backend == 'lotus-native' and lifecycle == 'resident')
+                            if supported:
+                                checked = entry.check(config, query, engine)
+                                self.assertEqual(checked['inference_calls'], 0)
+                            else:
+                                with self.assertRaises(ValueError):
+                                    entry.check(config, query, engine)
 
     def test_result_projection_preserves_original_ratio_precision(self):
         import pandas as pd

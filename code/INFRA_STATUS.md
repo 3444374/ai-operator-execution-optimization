@@ -126,6 +126,11 @@ Linux 原环境已通过零模型 native import／request object 门检，CUDA �
 这些结果不转记当前组合源码，逐题来源见上述报告。当前输入完整 SHA 独立绑定，
 不补写旧 Q9 缺少 full-source hash 的历史未知项。
 
+文本预检按原查询实际产生的算子检查后端能力，不再按 Movie Q5/Q6/Q7 题号判断 Join。
+普通 Filter／Map／Extract 与显式 LOTUS resident 的 Join／TopK 范围不变；prepared 请求入口
+对 Join／TopK 等不支持算子在读取 stage 前明确拒绝。该改动不等于多算子查询已经接通，
+原项目的查询／系统职责及与本地执行比较的区别见[接入职责](src/baselines/README.md#sembench-原项目与本地接入职责)。
+
 Kalypso Movie Q8/Q9/Q10 现由同一个 Map 接点绑定原题，保留作者提示、动态输出上限、
 length→8192 重试、原 parser 和完整关系后处理。Q10 另绑定原 Movies 评价文件；调用数从原题选择取得，
 不设固定样本量。候选 `e5ea4842f` 的既有 48 项 CPU 检查与 4000 条保存答复回放为软件证据；
