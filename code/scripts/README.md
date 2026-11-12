@@ -11,6 +11,7 @@
 | 单次 Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) | `check/run` 使用现有方法与执行工厂；Q4 计算原 positivity ratio |
 | 原生 LOTUS 视觉运行 | [run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py) | 已有原生 VLM 服务上的完整查询、原评价和逐 POST 预算；[配置](#sembench-native-vlm-run) |
 | SemBench 图像准备 | [check_sembench_image_query.py](experiments/check_sembench_image_query.py) | 只读输入和像素身份／调用预算，不启动模型；[范围](#sembench-image-preparation) |
+| Cars 原 CSV 准备 | [prepare_sembench_cars_inputs.py](data/prepare_sembench_cars_inputs.py) | 从现成四表元数据调用原分层抽样，无图音下载；[来源与范围](../src/baselines/README.md#cars-original-csv-preparation) |
 | 补充 Movie／MMQA／Medical 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
 | 原生 LOTUS MMQA Q5 聚合 | [run_sembench_lotus_mmqa_aggregate.py](experiments/run_sembench_lotus_mmqa_aggregate.py) | 原分层聚合、无模型首层预检、外部服务及逐 POST 预算；[配置](#sembench-native-mmqa-aggregate) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |

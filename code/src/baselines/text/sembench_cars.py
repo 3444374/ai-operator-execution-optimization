@@ -3,6 +3,7 @@
 from dataclasses import asdict
 from functools import partial
 from pathlib import Path
+import shutil
 import tempfile
 from types import SimpleNamespace
 
@@ -32,6 +33,52 @@ def text_files(scale_factor=FULL_SCALE_FACTOR):
             sample + 'text_complaints_data_' + str(scale_factor) + '.csv',
             'data/full_data/car_data_full.csv',
             'data/full_data/text_complaints_data_full.csv')
+
+
+def prepare_inputs(checkout,source_dir,output_dir,scale_factor=FULL_SCALE_FACTOR):
+    """Use the original CSV sampler without downloading unrelated media payloads.
+
+    All four original full tables are required for modality-stratified sampling;
+    their image/audio paths remain unchanged and are not media qualification.
+    """
+    import pandas as pd
+    from src.infrastructure.private_artifacts import new_private_directory,write_private_json
+
+    text_files(scale_factor)
+    source=Path(source_dir).resolve();output=Path(output_dir).resolve()
+    names=('car_data_full.csv','image_data_full.csv','audio_data_full.csv','text_complaints_data_full.csv')
+    identities={name:file_identity(source/name) for name in names}
+    frames=[pd.read_csv(source/name) for name in names]
+    if not len(frames[0]):raise ValueError('the original full Cars relation is empty')
+    module=load_module(checkout,'sembench_cars_generator','src/scenario/cars/preparation/generate_data.py')
+    actual_scale=min(scale_factor,len(frames[0]))
+    selected=(module.scale_down_data(*frames,scaling_factor=scale_factor,seed=42)
+              if scale_factor<len(frames[0]) else frames)
+    if {name:file_identity(source/name) for name in names}!=identities:
+        raise ValueError('original Cars metadata changed during preparation')
+    new_private_directory(output)
+    full=output/'data/full_data';full.mkdir(parents=True,mode=0o700)
+    for name in names:
+        shutil.copyfile(source/name,full/name);(full/name).chmod(0o600)
+        if file_identity(full/name)!=identities[name]:raise ValueError('copied Cars metadata changed')
+    sample=output/'data'/('sf_'+str(actual_scale));sample.mkdir(mode=0o700)
+    sample_names=('car_data_','image_car_data_','audio_car_data_','text_complaints_data_')
+    projections=(None,['image_path','image_id','car_id'],['audio_path','audio_id','car_id'],
+                 ['summary','complaint_id','car_id'])
+    for frame,prefix,columns in zip(selected,sample_names,projections,strict=True):
+        path=sample/(prefix+str(actual_scale)+'.csv')
+        frame.to_csv(path,index=False,**({} if columns is None else dict(columns=columns)))
+        path.chmod(0o600)
+    report=dict(schema='semloom.sembench_cars_inputs.v1',sembench_commit=SEMBENCH_COMMIT,
+        source_dir=str(source),output_dir=str(output),source_files=identities,
+        requested_scale_factor=scale_factor,scale_factor=actual_scale,seed=42,
+        sampler='original scale_down_data, same full tables, order and CSV projections as prepare_data',
+        files={str(path.relative_to(output)):file_identity(path) for path in sorted((output/'data').rglob('*.csv'))},
+        selected_rows=dict(zip(('car','image','audio','complaint'),map(len,selected),strict=True)),
+        media_validation='not performed; original metadata paths retained, no image/audio payload download',
+        model_calls=0,downloads=0)
+    write_private_json(output/'manifest.json',report)
+    return report
 
 
 def bind_original_query(checkout, query_id, load_data, *, data_dir, scale_factor=FULL_SCALE_FACTOR):

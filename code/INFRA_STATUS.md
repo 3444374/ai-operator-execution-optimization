@@ -178,6 +178,9 @@ full_data 标签只供评价，既有 sample 的尺度只选择原路径，不�
 IMLane Cars Q1/Q4、E-Commerce Q1 复用同一原版 TINYINT Filter、owner 和完整 sink ACK，
 仅增加原场景文件绑定；原 formatter/tokenizer/Arrow kernel、重复发生项和空结果软件检查通过。
 Cars scale 只选原 CSV，不等于模型行数；Extract/Map/Join 的尚未接线状态不由 Filter 扩展而改变。
+Cars 新增[原CSV准备](src/baselines/README.md#cars-original-csv-preparation)：已有四表元数据可直接复用
+官方分层抽样／投影和完整标签，不把图像／音频 payload 下载作为文本查询准备前提。
+临时表与真实CLI已有软件检查；真实元数据、媒体和各题目标资格仍分别核定，不生成替代金标。
 Cars Q3／Q8 也复用原生视觉服务，保留完整图像发生项及最后 LIMIT；原 car_id／image_id 标签筛选与
 评分独立于计时，原图像路径不在执行时改写。固定 LOTUS tree 缺 Q2/Q5/Q6/Q7/Q9 查询文件，
 该官方实现缺口不等于其他系统不支持；不补造音频查询来宣称覆盖。

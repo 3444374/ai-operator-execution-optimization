@@ -432,6 +432,24 @@ IMLane 原版 TINYINT Filter 也复用同一任务绑定接 Cars Q1/Q4；现有 
 Q10 的字符串 Extract 仍不属于该原版 TINYINT 接点，不借用工程版 VARCHAR 的资格。
 文本入口不处理图音；Q3／Q8 使用下述同一原生视觉服务。
 
+<a id="cars-original-csv-preparation"></a>
+#### Cars 原 CSV 准备
+
+[准备脚本](../../scripts/data/prepare_sembench_cars_inputs.py)从现成官方 `full_data` 的四份 CSV 调用
+固定 c814 的原 `scale_down_data(seed=42)`，保留原分层抽样和输出投影，不触发上游 `prepare_data`
+附带的全部图像／音频下载。四表元数据仍是抽样必需项，不以空图音表替代；完整标签逐字节保留。
+
+```bash
+"$DRIVER_PYTHON" code/scripts/data/prepare_sembench_cars_inputs.py \
+  --sembench-checkout "$SEMBENCH_CHECKOUT" --source-dir "$CARS_FULL_CSV_DIR" \
+  --output-dir "$NEW_CARS_SCENARIO_DIR" --scale-factor "$SCALE_FACTOR"
+```
+
+输出含 `data/full_data/`、原 `data/sf_N/` 和来源／输出摘要；大于原车辆数的 scale 按作者改为实际车辆数。
+小规模抽样的作者最少分层数量也保持，不自行截成 N 行；实际各表行数另记，模型调用量仍由原题决定。
+图音路径原样保留，manifest 明确未检查媒体内容；CSV 准备不授予 Q3／Q8 或真实模型资格。
+临时元数据上的原抽样、四表完整标签／投影、三条文本原函数及真实 CLI 检查属于零模型软件证据。
+
 ### Cars 原图像查询
 
 同一 [Cars 任务绑定](text/sembench_cars.py)运行原 Q3／Q8，复用[原生视觉服务](../experiments/sembench_lotus_image_query.py)
