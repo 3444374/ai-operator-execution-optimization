@@ -61,6 +61,10 @@ PYTHONPATH=code "$DRIVER_PYTHON" -B code/scripts/experiments/validate_record_cha
 比较命令先保存完整差异，再在任一请求字段或最终关系不一致时退出1；一致时退出0。
 标准输出同时给出 `outputs_strictly_comparable`。退出0只说明这组回执严格一致，不授予性能资格。
 保存完整请求身份、原方法响应回放、输出差异、实际容量、ready／Core offer 事件和完整 owner 时间。
+`timing.full_relation_ready_ns` 记录完整结果已被消费且列已确定、自动关闭 owner 之前的时刻。
+`caller_to_full_relation_ready_s` 从 `run_case` 入口起算，包含 owner 构造、evaluate 和模型启动，
+不包含入口之前的 CSV／tokenizer 加载。它不是首行或首模型结果时间；原 `iterator_complete_ns`
+仍在自动关闭之后，`full_owner_call_s`、回放及外层 Ray 关闭口径保持不变，不回填旧报告。
 这些事件只表示方法就绪和 Core 接收，不代表原生引擎入场；CPU 检查和一对小运行都不能证明 GPU 缺活或加速。
 
 <a id="native-daft-q3-worker"></a>

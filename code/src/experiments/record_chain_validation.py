@@ -154,10 +154,13 @@ def run_case(records, chain, engine, resources, *, control_dir, token_budget=Non
             e['reason']=='successor_first' for e in ready),
         timing=dict(caller_entered_ns=entered, owner_constructed_ns=constructed,
                     evaluate_returned_ns=evaluated, iterator_complete_ns=iterator_complete_ns,
+                    full_relation_ready_ns=stream.full_relation_ready_ns,
+                    caller_to_full_relation_ready_s=(stream.full_relation_ready_ns-entered)/1e9,
                     caller_returned_ns=returned, full_owner_call_s=(returned-entered)/1e9,
                     construct_s=(constructed-entered)/1e9, evaluate_s=(evaluated-constructed)/1e9,
                     iterate_to_eof_s=(iterator_complete_ns-evaluated)/1e9,
                     final_close_s=(returned-close_entered)/1e9,
+                    full_relation_ready_scope='complete consumed relation and finalized columns before automatic owner finish/close; caller interval includes owner construction/evaluate and model startup, not input loading before run_case',
                     iteration_scope='includes lazy model startup in fused and automatic query close in both paths',
                     iterator_complete_scope='not claimed earliest model result readiness'),
         default_ready_options_omitted=not priority)

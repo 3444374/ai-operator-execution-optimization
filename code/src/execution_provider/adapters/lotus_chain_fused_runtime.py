@@ -216,6 +216,7 @@ class _CoreChainRows:
         self.pending = None
         self.source_eof = self.source_closed = self.finished = self.completed = False
         self.last_close_report = None
+        self.full_relation_ready_ns = None
         self.peak_core_usage = asdict(owner.core.capacity.usage())
         self._phase_records = []
         self._source_close_error = None
@@ -443,6 +444,7 @@ class _CoreChainRows:
                     if self.owner._has_next_phase:
                         self.owner._advance_relation_phase(self)
                         continue
+                    self.full_relation_ready_ns = time.monotonic_ns()
                     report = self.owner.close()
                     if report["status"] != "closed":
                         raise RuntimeError("Core chain cleanup remains unconfirmed")

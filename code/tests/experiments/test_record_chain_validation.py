@@ -496,6 +496,9 @@ class ExecutionComparisonTests(unittest.TestCase):
                                   entry.make_resources(self.config), execution='fused')
 
     def test_C1_pair_uses_real_query_owners_and_one_model_per_query(self):
+        import time
+        from types import SimpleNamespace
+        from src.execution_provider.adapters import records_query_runtime, lotus_chain_fused_runtime
         from src.execution_provider.adapters.records_async_model import AsyncCoreModelActor
         from src.execution_provider.method_workers.lotus_chain_batch import FusedChainBatch
         from tests.execution_provider.test_lotus_records_async_core import ThreadedRuntime
@@ -533,9 +536,42 @@ class ExecutionComparisonTests(unittest.TestCase):
             'resources': {**self.config['resources'], 'max_active_batches': 1}})
         model = EngineSpec(str(fixture.config), sys.executable, sys.executable, max_model_len=4096)
         results = []
+        clock = SimpleNamespace(ns=100_000_000_000)
+        observed_time = SimpleNamespace(monotonic=time.monotonic, monotonic_ns=lambda: clock.ns)
+        owner_type = checks.SemLoomRecordChainCore
+        evaluate, close, finish = owner_type.evaluate, owner_type.close, owner_type.finish_query
+        closing = set()
+
+        def timed_evaluate(owner, *args, **kwargs):
+            stream = evaluate(owner, *args, **kwargs)
+            self.assertIsNone(stream.full_relation_ready_ns)
+            clock.ns += 3_000_000_000
+            return stream
+
+        def record_close(owner):
+            if owner not in closing:
+                # The complete relation marker must precede even the first automatic close.
+                self.assertEqual(owner._active.full_relation_ready_ns, clock.ns)
+                closing.add(owner)
+                clock.ns += 7_000_000_000
+
+        def timed_close(owner, *args, **kwargs):
+            record_close(owner)
+            return close(owner, *args, **kwargs)
+
+        def timed_finish(owner, *args, **kwargs):
+            record_close(owner)
+            return finish(owner, *args, **kwargs)
+
         with ThreadedRuntime([]) as runtime, patch.object(AsyncCoreModelActor, '_process_type', return_value=Process), \
                 patch.object(FusedChainBatch, '_engine_type', Engine), \
-                patch.object(EngineSpec, 'validate_driver_environment', return_value={}):
+                patch.object(EngineSpec, 'validate_driver_environment', return_value={}), \
+                patch.object(checks, 'time', observed_time), \
+                patch.object(records_query_runtime, 'time', observed_time), \
+                patch.object(lotus_chain_fused_runtime, 'time', observed_time), \
+                patch.object(owner_type, 'evaluate', timed_evaluate), \
+                patch.object(owner_type, 'close', timed_close), \
+                patch.object(owner_type, 'finish_query', timed_finish):
             for execution in ('fused', 'record_local_sections'):
                 result = checks.run_case(records, chain, model, resources, control_dir=self.root,
                                          execution=execution)
@@ -549,6 +585,11 @@ class ExecutionComparisonTests(unittest.TestCase):
                 self.assertLessEqual(result['timing']['caller_entered_ns'], result['timing']['evaluate_returned_ns'])
                 self.assertLessEqual(result['timing']['evaluate_returned_ns'], result['timing']['iterator_complete_ns'])
                 self.assertLessEqual(result['timing']['iterator_complete_ns'], result['timing']['caller_returned_ns'])
+                self.assertEqual(result['timing']['caller_to_full_relation_ready_s'], 3)
+                self.assertEqual(result['timing']['full_owner_call_s'], 10)
+                self.assertEqual(result['timing']['iterator_complete_ns'] -
+                                 result['timing']['full_relation_ready_ns'], 7_000_000_000)
+                self.assertEqual(result['columns'], list(records[0].values) + ['label'])
                 self.assertEqual(checks.replay_native_answers(records, chain, result)['model_calls'], 0)
             self.assertEqual(len(runtime.async_actors), 1)
         self.assertEqual(results[0], results[1])
