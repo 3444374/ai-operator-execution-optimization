@@ -13,26 +13,30 @@ def install(cfg,unit,directory,native,operator_class):
     from vllm.kalypso.sem_ops.prompt_utils import get_data_prompt
     for name in ('native-trace.jsonl','topk-trace.jsonl'):
         (Path(directory)/name).touch(exist_ok=True)
-    allowed={q['query_id']:q for q in unit['queries']};tables={};errors=[]
-    original=operator_class._compare
+    allowed={q['query_id']:q for q in unit['queries']};errors=[]
+    original_call=operator_class.__call__;original_compare=operator_class._compare
+    async def rank(self,contexts):
+        if not contexts:return await original_call(self,contexts)
+        request=contexts[0].state.raw_request
+        qid=request.headers.get('X-Kalypso-Observation')
+        if qid not in allowed:raise ValueError('Native TopK query is outside its finite binding')
+        table=json.loads((Path(cfg['map_prompt_root'])/(qid+'.json')).read_text())
+        count=allowed[qid]['expected_rows']
+        if (table['query_id']!=qid or len(table['rows'])!=len(contexts) or len(contexts)!=count or self.k!=count
+                or self.instruction!=table['native_instruction'] or self.max_tokens!=5
+                or [ctx.state.idx for ctx in contexts]!=list(range(count))):
+            raise ValueError('Native full-ranking source or instruction changed')
+        for index,(ctx,row) in enumerate(zip(contexts,table['rows'],strict=True)):
+            if (row['idx']!=index or ctx.state.raw_request is not request or ctx.input.right_data
+                    or ctx.input.data!=get_data_prompt(row['data'].strip())):
+                raise ValueError('Native TopK lost its source occurrence')
+        return await original_call(self,contexts)
     async def compare(self,first,second):
         qid=first.state.raw_request.headers.get('X-Kalypso-Observation')
-        if qid not in allowed:raise ValueError('Native TopK query is outside its finite binding')
-        if qid not in tables:
-            tables[qid]=json.loads((Path(cfg['map_prompt_root'])/(qid+'.json')).read_text())
-        table=tables[qid];count=allowed[qid]['expected_rows'];pair=(first.state.idx,second.state.idx)
-        if (table['query_id']!=qid or len(table['rows'])!=count or self.k!=count
-                or self.instruction!=table['native_instruction'] or self.max_tokens!=5
-                or first.state.raw_request is not second.state.raw_request or pair[0]==pair[1]
-                or any(type(i) is not int or not 0<=i<count for i in pair)):
-            raise ValueError('Native full-ranking source or comparison changed')
-        for ctx,index in zip((first,second),pair,strict=True):
-            row=table['rows'][index]
-            if row['idx']!=index or ctx.input.right_data or ctx.input.data!=get_data_prompt(row['data'].strip()):
-                raise ValueError('Native TopK comparison lost its source occurrence')
+        pair=(first.state.idx,second.state.idx)
         token=native.ROW.set(pair)
         try:
-            result=await original(self,first,second)
+            result=await original_compare(self,first,second)
             try:
                 with (Path(directory)/'topk-trace.jsonl').open('a') as out:
                     out.write(json.dumps(dict(event='topk_compare',query_id=qid,pair=pair,
@@ -40,7 +44,7 @@ def install(cfg,unit,directory,native,operator_class):
             except Exception as error:errors.append(type(error).__name__)
             return result
         finally:native.ROW.reset(token)
-    operator_class._compare=compare
+    operator_class.__call__=rank;operator_class._compare=compare
     return errors
 
 

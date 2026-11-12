@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from types import ModuleType,SimpleNamespace as NS
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock,patch
 
 from src.baselines.text.frameworks.kalypso_native import adapter,native_server,sembench_inputs,sembench_topk,topk_binding,movie_map_inputs,topk_cpu,map_observation
 from src.baselines.text.sembench_prepared import result_value
@@ -61,7 +61,9 @@ class NativeTopKContracts(unittest.TestCase):
                         text='A' if pair[0]<pair[1] else 'B'
                         return NS(text=text,request_id=qid+'-'+str(len(seen)),finish_reason='stop')
                     async def execute(self,**kwargs):return await self.chatcomplete(**kwargs)
-                with patch.dict('sys.modules',self.modules(author)),patch.object(map_observation,'install_response_observation',return_value=[]):
+                modules=self.modules(author);source_check=Mock(wraps=author.get_data_prompt)
+                modules['vllm.kalypso.sem_ops.prompt_utils'].get_data_prompt=source_check
+                with patch.dict('sys.modules',modules),patch.object(map_observation,'install_response_observation',return_value=[]):
                     counter=native_server.install_hooks(cfg,unit,trace,Executor,author.SemFilter)
                 executor=Executor();raw=NS(headers={'X-Kalypso-Observation':qid})
                 contexts=list(author._data_source(raw,payload['data_path'],executor))
@@ -70,6 +72,7 @@ class NativeTopKContracts(unittest.TestCase):
                 self_test.assertEqual(plan,list(ops));self_test.assertEqual(ops[0].k,len(contexts))
                 self_test.assertEqual(ops[0].concurrency,20)
                 output=asyncio.run(ops[0](contexts))
+                self_test.assertEqual(source_check.call_count,len(contexts))
                 self_test.assertEqual(counter['reserved_calls'],len(seen))
                 if spec['expected_calls']==0:
                     with self_test.assertRaisesRegex(RuntimeError,'budget'):

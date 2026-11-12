@@ -370,6 +370,7 @@ TopK 分支。`expected_rows=N` 是原筛选后的全部 occurrence，`expected_
 原题继续拥有筛选、排名到分数的转换和原 evaluator，单行仍为原中性3分。
 
 [`topk_binding`](topk_binding.py)仅绑定比较发生项／观察 metadata，原 `_compare` 的方法体执行；
+完整 source 只在原 ranking 调用边界核对一次，不在每次比较中反复序列化／核对两个文档。
 响应顺序恢复全部关系列，完整原 sink 后再核实际 comparison、request ID、owner、预算及排名。
 不预先构造模型答复或把软件排名冒充模型结果。原 source、必需 CSV／字段表、HTTP、关系恢复和
 原后处理包含在 v3 source→sink，额外预检／审计／评价／保存另计。
