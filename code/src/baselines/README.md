@@ -121,10 +121,11 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
   首测返回120条但进程收尾失败，原质量和失败保留在[诊断报告](../../../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)。
   独立进程用[公共工厂／shutdown作用域](text/frameworks/daft_native_owner.py)关闭实际创建引擎；
   `on_result_ready`在关闭前发布结果，异常保留已物化预测。67a4已一次120条正常收尾，质量七个FN仍保留。
-- [Ray Data LLM](text/frameworks/ray_data_sembench_native.py)的 `execute_q3(rows, model=..., sampling_params=...)`
-  使用公开processor和原生异步vLLM，完整cohort先做Dataset.filter，一次materialize后审计和原生count。
-  处理器默认、原生重试、实际可得usage与runtime归属分开记录；现有0.25.1守卫CPU API通过，
-  Ray2.56.1发布extra仍要求0.22.0；67a4候选已实际执行120条，SHM残留使完整生命周期失败，物理attempt总数未证实。
+- [Ray Data LLM](text/frameworks/ray_data_sembench_native.py)当前维护
+  [原题 prepared 查询](#ray-native-prepared-sembench)，Q3 与其他普通文本查询复用同一原生 processor；
+  原题函数拥有选择、parser和完整 sink。旧专项 `execute_q3` 图已移除，
+  [历史来源及默认重试／runtime差异](../../../experiments/reproduction/native_baselines/README.md#retired-ray-q3-native-binding)保留。
+  Ray2.56.1发布extra仍要求0.22.0；旧67a4实际执行120条但SHM残留导致生命周期失败，物理attempt总数未证实。
 - [Ray公开HTTP profile](text/frameworks/ray_data_http_sembench_native.py)保留原HTTP处理器默认与Q3语义，
   外部caller拥有独立模型服务；query／Ray driver断开与物理进程／服务关闭分开核对，不声称修复旧local actor。
   35个替身方法及6996真实Ray＋独立软件服务的正常／错误两例通过；120＋1次实际POST、显式关闭和SHM检查通过。真实模型服务仍待验。
@@ -145,7 +146,7 @@ Daft复测使用[新worker／监督入口](../experiments/native_daft_query.py)�
 ### Daft 原生 AI 的完整文本查询入口
 
 当前完整 SemBench 调用走本节和下节的共享查询入口；当前已核服务器活动绑定也没有使用旧
-`execute_q3`／`semloom.native_daft_q3.v1`。旧 Q3 原生 API 对照仍保留其完整 cohort 的原生
+Daft 的 `execute_q3`／`semloom.native_daft_q3.v1`。旧 Daft Q3 API 对照仍保留其完整 cohort 的原生
 Filter／COUNT、默认重试和 runtime 归属；它与 prepared 图不同，不能用转调新函数来冒充行为不变。
 
 [原 worker](../experiments/native_daft_query.py)的 `sembench` 动作现在调用

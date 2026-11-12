@@ -410,6 +410,38 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                 self.assertEqual(len(semantic['calls']),len(answers))
                 self.assertEqual(semantic['native_join_inputs'][0]['all_declared_columns_selected'],scenario=='movie')
 
+    def test_movie_filters_use_original_query_sink_through_the_same_native_ray_processor(self):
+        from src.baselines.text.sembench_prepared import prepare,finish
+        from src.baselines.text.frameworks.ray_data_sembench_native import execute_prepared
+        from tests.baselines.text.ray_native_fixtures import recorded_processor
+        from src.experiments.attempt_ledger import AttemptBudget
+        from src.experiments.cell_budget import CellBudgetLedger
+
+        for key in ('1','2','3','4'):
+            query=self._query('movie',key)
+            answers=['Answer: False' if i%3==1 else 'Answer: True' for i in range(len(query.operation.records))]
+            expected,batches=self._reference(query,answers)
+            method,prepared,requests=prepare(query)
+            self.assertEqual([row['messages'] for row in requests],
+                [message for messages,_ in batches for message in messages])
+            budget=dict(path=str(self.data/('ray-filter-'+key+'.sqlite')),id='CPU-filter-'+key,
+                limit=len(answers),unit_id='query',output=str(self.data))
+            ledger=CellBudgetLedger.create(Path(budget['path']),AttemptBudget(budget['id'],budget['limit']),deadline_utc=None)
+            ledger.reserve_unit('query',budget['limit']);ledger.claim_shared_unit('query')
+            ready=[]
+            replies={row['call_id']:text for row,text in zip(prepared,answers,strict=True)}
+            with self.subTest(query=key),recorded_processor(replies) as cpu:
+                result=execute_prepared(requests,model='CPU-only',sampling_params=query.operation.generation.kwargs(),
+                    engine_kwargs={},processor_options={},runtime_options={},
+                    engine_runtime_env=dict(env_vars=dict(SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(budget))),
+                    on_result_ready=lambda raw:ready.append(finish(query,method,prepared,raw['predictions'])[0]))
+                self._assert_result_equal(ready[0],expected)
+                self.assertEqual(len(result['predictions']),len(answers))
+                self.assertEqual(len(cpu.requests),len(answers))
+                self.assertEqual(cpu.events.count('materialize'),1)
+                self.assertEqual(cpu.events[-1],'close')
+            ledger.close_shared_unit('query')
+
     def test_prepared_join_native_ray_processor_keeps_pair_occurrences(self):
         from src.baselines.text.sembench_prepared import prepare,finish
         from src.baselines.text.frameworks.ray_data_sembench_native import execute_prepared

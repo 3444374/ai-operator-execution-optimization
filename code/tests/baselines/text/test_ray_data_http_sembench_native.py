@@ -14,7 +14,31 @@ from unittest.mock import Mock, patch
 
 from src.baselines.text.frameworks import ray_data_http_sembench_native as native
 from src.baselines.text.sembench_movie_native import q3_messages
-from tests.baselines.text.test_ray_data_sembench_native import CPUDataSet
+
+
+class CPUDataSet:
+    """Only the public Dataset methods consumed by this binding."""
+
+    def __init__(self, read, events):
+        self.read, self.events = read, events
+
+    def filter(self, predicate):
+        self.events.append(("filter", predicate.__name__))
+        return CPUDataSet(lambda: [row for row in self.read() if predicate(row)], self.events)
+
+    def materialize(self):
+        self.events.append(("materialize",))
+        rows = self.read()
+        return CPUDataSet(lambda: rows, self.events)
+
+    def take_all(self):
+        self.events.append(("take_all",))
+        return list(self.read())
+
+    def count(self):
+        self.events.append(("count",))
+        return len(self.read())
+
 
 
 class NativeRayHTTPQ3Tests(unittest.TestCase):

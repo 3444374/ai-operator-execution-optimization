@@ -12,6 +12,22 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-ray-q3-native-binding"></a>
+## 旧 Ray Q3 专项原生图恢复
+
+维护树已删除 `ray_data_sembench_native.execute_q3` 及其专用 Filter／COUNT／parser callbacks。
+现行调用从[原题任务层及同一 prepared processor](../../../code/src/baselines/README.md#ray-native-prepared-sembench)
+执行 Movie Q1–Q4 等已支持查询；原查询函数拥有选择和完整关系处理，不再保留第二套 Q3 查询实现。
+移除前当前生产调用只使用 `execute_prepared`；旧测试调用迁移到原题／原 SDK／同一 processor 的四题差分，
+HTTP profile 所需的 CPU Dataset fixture 移到其自己的测试。prepared 执行函数与原生图保持逐字不变。
+
+准确公开来源 `ef75d32bb91e0c86e67cfd85884ab80cfcac07c8` 的
+`code/src/baselines/text/frameworks/ray_data_sembench_native.py` 可通过 `git show` 恢复旧 API；
+旧模型运行仍从各自归档的 source binding 恢复，不能用新接线重写其时间或退出状态。
+旧专项图允许原生默认重试／caller runtime，而维护的 prepared 图使用隔离 runtime 和显式零重试，
+因此本次是退役旧 profile，并非声称两个 API 的生命周期完全等价。
+独立 HTTP processor 的外部模型服务拓扑保留，它没有被 local-vLLM prepared 图替代。
+
 <a id="retired-http-capacity-sampler-source"></a>
 ## 旧独立HTTP容量采样命令恢复
 

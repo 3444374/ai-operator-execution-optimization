@@ -98,18 +98,6 @@ class MovieNativeTests(unittest.TestCase):
             evaluate_q3(source, self.predictions(source, ['True', 'False']),
                         positive_review_cnt=2, checkout='fixture')
 
-    def test_ray_callbacks_use_the_real_shared_prompt_and_original_parser(self):
-        from src.baselines.text.frameworks.ray_data_sembench_native import _postprocess, _preprocess
-
-        row = self.source()['rows'][1]
-        generation = dict(max_tokens=8192, stop=[])
-        prepared = _preprocess(row, sampling_params=generation)
-        self.assertEqual(prepared['messages'], q3_messages(row['reviewText']))
-        output = _postprocess(dict(row, generated_text='Reasoning:\nTrue\nAnswer: False',
-                                   num_generated_tokens=5))
-        self.assertIs(output['decision'], False)
-        self.assertEqual(output['occurrence_id'], row['occurrence_id'])
-        self.assertEqual(output['native_usage']['num_generated_tokens'], 5)
 
 
 if __name__ == '__main__':

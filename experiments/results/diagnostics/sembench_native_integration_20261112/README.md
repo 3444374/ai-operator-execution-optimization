@@ -70,6 +70,20 @@ full256及其他后端 TopK 仍须单独接线／验证。
 逻辑 Join 仍属于 LOTUS exact，IMLane拥有 prediction与原生传输；不能称为复现原作者 Join 算法。
 真实模型质量、性能与其他输入范围仍未由这三门验证。
 
+## 旧 Ray Q3 专项图退出维护
+
+当前生产入口已调用共享 `execute_prepared`，旧 `execute_q3` 只剩测试调用；本次删除该专项
+Filter／COUNT图及callbacks，保留原题任务层。Movie Q1–Q4 使用真实官方函数、LOTUS SDK及同一个
+软件 Ray processor 做消息／完整 sink 差分，重复业务ID继续按 occurrence 关联。
+现用 prepared 函数、默认参数、原生图、预算及关闭实现逐字不变；HTTP profile 保留其不同服务拓扑。
+旧 API 的默认重试／caller runtime 不能冒充新图的隔离零重试，恢复方式及差异见
+[历史入口](../../../reproduction/native_baselines/README.md#retired-ray-q3-native-binding)。
+
+81项不同受影响软件检查为78通过、3跳过，模型调用0。首轮新增四题差分误把参考helper的
+`(messages, options)`批列表当作平铺消息，断言失败；修正夹具展开方式后四题全部通过，
+首轮失败及修复日志保留。3项跳过为独立Daft SDK和未绑定的两个可选真实数据环境变量，
+不据此判断资产缺失。此清理不新增任何模型／性能资格，也不承担项目整体历史清理。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
