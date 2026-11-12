@@ -44,6 +44,7 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 C／R／work 与存储预算的具体取值和支持组合由[容量类型](src/execution_provider/adapters/records_capacity.py)及
 [配置总览](../docs/执行配置与优化开关.md)维护。未消费结果、unknown 和晚到请求继续占据其实际资源责任。
 模型 ready 返回的真实上下文用于长度核对，不能以配置省略推断上下文无限。
+显式声明原生 batch-invariant 配置时，ready 另外回读 worker 的请求值与实际初始化状态；回读失败保留 unavailable，默认执行不增加该 RPC。
 宿主内存与 cgroup 指标是观测，不等于资源授予。
 
 <a id="prepared-request-batching"></a>
