@@ -34,6 +34,11 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 新原生 LOTUS 本地 IPC 已有 CPU 检查，官方完整 Q123 因本地缺 `overrides/cdlib/duckdb` 尚未通过，
 没有将 Core 替身当作原生执行资格。
 
+The finite-chain helper records `timing.full_relation_ready_ns` after complete
+result consumption and before automatic owner close. `caller_to_full_relation_ready_s`
+includes owner construction, evaluation and lazy model startup; it is not a warm
+query metric. The existing iterator completion and close clocks remain unchanged.
+
 <a id="native-daft-q3-worker"></a>
 ## 直接原生Daft Q3的worker与监督
 
