@@ -2,7 +2,7 @@
   "schema": "semloom.pr97.target_validation.v1",
   "tested_source": "c7e78a73ac2e81209e3b684a528113f2baea55b1",
   "corrected_source": "edd287ff1b3fac141769e19f0e36faec4816dde7",
-  "corrected_source_target_status": "pending_upload_permission",
+  "corrected_source_target_status": "passed_single_cold_fused",
   "hardware": "single NVIDIA RTX 4090 24GiB",
   "model": "Qwen2.5-7B-Instruct",
   "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
@@ -62,7 +62,8 @@
         "active_requests": 0,
         "active_work": 0
       },
-      "query_complete": true
+      "query_complete": true,
+      "source": "c7e78a73ac2e81209e3b684a528113f2baea55b1"
     },
     "record_local_sections": {
       "status": "completed",
@@ -92,7 +93,8 @@
         "active_requests": 0,
         "active_work": 0
       },
-      "query_complete": true
+      "query_complete": true,
+      "source": "c7e78a73ac2e81209e3b684a528113f2baea55b1"
     }
   },
   "comparison": {
@@ -105,11 +107,11 @@
       238
     ]
   },
-  "total_actual_calls": 512,
+  "total_actual_calls": 768,
   "warmup_calls": 0,
   "retries": 0,
   "independent_cold_queries": true,
-  "timing_caveat": "fused source clock includes worker close_on_source_complete shutdown; final Core.close excluded but no matched final model-close exclusion. Keep raw, no subtraction.",
+  "timing_caveat": "Initial fused includes shared worker model close before full sink; preserve it without subtraction. Corrected fused and earlier record-local close the final model after the observed complete sink. Post-query audit/evaluation/persistence excluded; necessary in-execution journaling remains inside the clock.",
   "performance_claim": false,
   "semantic_equivalence_claim": false,
   "local_broad_regression": {
@@ -124,7 +126,7 @@
     "skipped": 0,
     "scope": "real shared worker lifecycle with CPU engine substitute, not target model"
   },
-  "target_stage_resource_checks": "both passed",
+  "target_stage_resource_checks": "all three independently executed arms passed; initial outer archive failure retained",
   "target_archive": {
     "original_copy_failed": true,
     "reason": "inactive Ray socket is not a regular file",
@@ -169,6 +171,109 @@
     "pr97-c7e78-originals-r1.tar.gz": {
       "bytes": 5432536,
       "sha256": "e6b8b2d6051490f7720185ff57123e9482de0542a2b5e994878d6dbaa9436a06"
+    },
+    "TARGET-AUDIT-edd287.json": {
+      "bytes": 2080,
+      "sha256": "36b1c1191f0a6ae24cd8f3d38e175a44cac2abf88ac51cd9f1e84d8af375f3b5"
+    },
+    "RECEIVE-edd287.json": {
+      "bytes": 153,
+      "sha256": "850053369620f72012600589845a2007bc1d87bb2ca098582c61abcc03fbb02c"
+    },
+    "pr97-edd287-originals-r1.tar.gz": {
+      "bytes": 5074173,
+      "sha256": "95d4f2705f12918a3297d4cfd932dcf65624a7b4b961a7ad0e259af00a7ecc33"
+    },
+    "pr97-corrected-source.tar.gz": {
+      "bytes": 2290549,
+      "sha256": "58532dcbb0c6129dd4a1f0570c80144b507df886aaa356a50c0a9e1a6b6bcb0e"
+    },
+    "corrected-packet.tar.gz": {
+      "bytes": 57717,
+      "sha256": "88c44091d77732360d3588ec0417bcb9cb0843692aca61ee11e2669dd9b1c90b"
     }
+  },
+  "initial_actual_calls": 512,
+  "corrected_arm": {
+    "source": "edd287ff1b3fac141769e19f0e36faec4816dde7",
+    "tested_code_tree": "b99be55605cde636c8c28171f458e7ca63ab250b",
+    "status": "completed",
+    "controller_started_utc": "2026-11-12T01:34:22.379769+00:00",
+    "controller_finished_utc": "2026-11-12T01:35:31.540753+00:00",
+    "target_source_files_verified": 1020,
+    "target_cpu_tests_passed": 27,
+    "calls": 256,
+    "hardcap": 256,
+    "warmup_calls": 0,
+    "retries": 0,
+    "actual_terminal_success": 256,
+    "full_message_matches": 256,
+    "full_runtime_input_token_matches": 256,
+    "unique_occurrences": 256,
+    "unique_business_review_ids": 128,
+    "final_relation_rows": 256,
+    "final_relation_columns": [
+      "reviewId",
+      "reviewScore"
+    ],
+    "memory_sink_seconds": 45.598785859,
+    "legacy_query_seconds": 47.336437325924635,
+    "observed_model_close_seconds": 1.5611395109444857,
+    "model_close_after_full_sink": true,
+    "observed_startup_seconds": 30.076556723564863,
+    "quality": {
+      "original_metric": {
+        "spearman_correlation": 0.6895413432282317,
+        "kendall_tau": 0.6026029668792039
+      },
+      "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+    },
+    "native_effective_capacity": {
+      "schema": "semloom.native_effective_capacity.v1",
+      "status": "observed_effective_config",
+      "max_num_seqs": 1,
+      "max_num_batched_tokens": 8192,
+      "max_model_len": 16384,
+      "kv_cache_blocks": 3966,
+      "kv_cache_block_tokens": 16,
+      "dtype": "torch.bfloat16",
+      "gpu_memory_utilization": 0.8,
+      "kv_free_bytes": null,
+      "physical_free_bytes": null,
+      "source": "constructed LLM.llm_engine.vllm_config; not free capacity"
+    },
+    "comparisons_to_initial_arms": {
+      "fused": {
+        "input_tokens_equal": 256,
+        "output_tokens_equal": 253,
+        "text_equal": 253,
+        "full_relation_equal": false
+      },
+      "record_local_sections": {
+        "input_tokens_equal": 256,
+        "output_tokens_equal": 256,
+        "text_equal": 256,
+        "full_relation_equal": true
+      }
+    },
+    "query_complete": true,
+    "target_stage_resource_checks": "passed",
+    "physical_cleanup": "passed",
+    "archive_regular_files_verified": 1093,
+    "archive_non_regular_entries": 0,
+    "archive_completed": true,
+    "scope": "single independent corrected fused cold qualification; earlier record-local not rerun",
+    "legacy_minus_sink_seconds": 1.737651466924632,
+    "duration_difference_scope": "legacy query_seconds minus memory_sink_seconds; starts come from consecutive monotonic/monotonic_ns reads, not one identical timestamp. Not an exact post-sink interval or a correction to any historical clock."
+  },
+  "observed_run_differences": {
+    "initial_fused_kv_cache_blocks": 3866,
+    "initial_record_local_kv_cache_blocks": 3966,
+    "corrected_fused_kv_cache_blocks": 3966,
+    "block_tokens": 16,
+    "initial_fused_startup_seconds_rounded": 55.485927,
+    "corrected_fused_startup_seconds": 30.076556723564863,
+    "causal_performance_claim": false,
+    "note": "Requested engine settings match, but actual capacity and cold startup differ. Do not attribute time or quality differences to the close fix."
   }
 }

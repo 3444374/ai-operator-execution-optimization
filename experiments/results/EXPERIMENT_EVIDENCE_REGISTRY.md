@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+## 2026-11-12：Core Q9 完整内存结果与关闭边界资格
+
+[同题目标报告](diagnostics/sembench_request_preparation_20261110/README.md)保留首次两条独立冷查询、
+fused 内部提前关闭缺陷及修正后的单冷资格。修正源 `edd287ff` 的256条真实调用全部通过，
+完整输入与首次 record-local 输出／关系逐项一致；后者不重复模型。三臂合计768次，预算、旧归档失败和原件分列。
+实际启动与 KV 容量不同，不据此作性能归因；旧20ms关闭时序缺口不在本次修补范围，广回归并非全绿。
+
 ## 2026-11-10：原请求画像与补充文本 Core 接入
 
 [准备报告](diagnostics/sembench_request_preparation_20261110/README.md)记录固定 SemBench Q9 的256个初始请求、
