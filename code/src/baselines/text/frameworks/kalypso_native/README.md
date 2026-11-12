@@ -379,6 +379,8 @@ TopK 分支。`expected_rows=N` 是原筛选后的全部 occurrence，`expected_
 方向、完整消息／本地 token IDs 和5 token context 上限。这些预览不是实际模型请求，也不改变
 原生算法选择的比较子集。[软件检查](../../../../../tests/baselines/text/test_kalypso_sembench_topk.py)
 覆盖空／单行、重复文本、7／8行算法边界、完整原 sink／评分、缺行和模型失败；原方法体运行于
-显式软件 API／KV 下。新接点的整个作者环境与真实模型仍 pending，不借用 Q9 Map 的资格。
+显式软件 API／KV 下。冻结 `11eff9cd7` 已独立通过原作者环境0／1／8行CPU门及样本8行真实模型，
+实际16次比较、原排名／分数／评分和资源清理核对完成，上界28不写成实际调用；全256行及其他来源
+仍待验，不借用 Q9 Map 的资格。源／模型／缓存与未观测指标以该冻结回执为准，不作性能排名。
 与受影响的 Map／Filter／Join、owner、HTTP／时钟和原题共114项不同本机检查为111通过、
 3跳过（独立Daft SDK及未设置的MMQA／Medical可选资产变量），0真实模型。
