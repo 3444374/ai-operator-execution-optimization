@@ -21,10 +21,6 @@ IMAGE_FILES = (
     "dtype_extensions/__init__.py", "sem_ops/sem_index.py", "sem_ops/sem_search.py",
     "sem_ops/load_sem_index.py", "vector_store/faiss_vs.py", "cache.py", "settings.py",
 )
-SDK_FILES = (
-    "models/lm.py", "sem_ops/sem_map.py", "templates/task_instructions.py",
-    "sem_ops/postprocessors.py", "cache.py", "settings.py", "nl_expression.py", "pricing.py",
-)
 
 
 def source_report(profile, lotus_files, *, provider_sources=False):

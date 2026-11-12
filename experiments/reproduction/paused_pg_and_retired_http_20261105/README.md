@@ -33,16 +33,6 @@
 五份具名历史投影继续使用原 ID、原 expected SHA 和原来源，只为受影响文件增加精确旧字节 override。
 历史成绩、失败、unknown、成本和私有原件不改写。此清理是工程职责和入口收敛，不是查询提速或质量修复。
 
-<a id="retained-m1-config"></a>
-## 原 PG campaign 示例配方
-
-[m1_screening.example.json](configs/m1_screening.example.json)从现用配置目录移至本目录，原字节保持。
-它由已归档的`postgresql/m1_campaign.py`读取，包含旧PG分组、固定模型配置和查询期限，
-不作为普通records配置。文件大小、摘要与原路径记录在[清单](MANIFEST.json)的`retained_path`项中，
-其字节与`7bf1d92b`完整来源树一致；恢复时应与该树中的campaign、模型适配和配套测试一起使用。
-当前CLI不加载本目录，PG及原研究记录继续保留。
-
-
 <a id="retired-http-observation"></a>
 ## HTTP 观测代理及专属回环测试
 

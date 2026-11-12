@@ -104,6 +104,17 @@ class TextEntryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'every original operator input'):
             entry.fixture({},query,['one'],Path('/tmp'))
 
+    def test_native_ray_config_keeps_full_sink_route_and_rejects_topk(self):
+        template = Path(__file__).parents[2] / 'configs/sembench_ray_native.example.json'
+        config, _, _, _ = entry.configuration(template)
+        self.assertIn('ray_native', config)
+        config.update(query='9', ranking='topk')
+        with tempfile.TemporaryDirectory() as raw:
+            path = Path(raw) / 'config.json'
+            path.write_text(json.dumps(config))
+            with self.assertRaisesRegex(ValueError, 'TopK requires.*LOTUS resident'):
+                entry.configuration(path)
+
     def test_result_projection_preserves_original_ratio_precision(self):
         import pandas as pd
         value=2/3
@@ -122,8 +133,29 @@ class TextEntryTests(unittest.TestCase):
             entry.run_query(dict(backend='ray-data'),query,None,None,Path('/tmp'))
         report=failed.exception.query_report
         self.assertEqual(report['status'],'failed')
+        self.assertIsNone(report['source_to_sink_seconds'])
         self.assertEqual(len(report['operator']['calls']),1)
         self.assertNotIn('quality',report)
+
+    def test_isolated_time_is_never_promoted_to_uniform_source_to_sink(self):
+        import pandas as pd
+        result = pd.DataFrame({'score': [2 / 3]})
+        for backend in entry.BACKENDS:
+            with self.subTest(backend=backend):
+                query = SimpleNamespace(describe=lambda: dict(expected_model_calls=0), operation=None,
+                    execute=lambda execute: (result, dict(calls=[], backend_close=dict(status='closed'))),
+                    evaluate=lambda frame: {'score': float(frame.score.iloc[0])})
+                # Query return is after the operator's audit/close. Later
+                # accounting and evaluation do not change that legacy scope.
+                with patch.object(entry.time, 'monotonic', side_effect=[100, 118, 121, 128, 128]):
+                    report = entry.run_query(dict(backend=backend), query, None, None, Path('/tmp'))
+                self.assertEqual(report['status'], 'completed')
+                self.assertEqual(report['query_seconds'], 18)
+                self.assertEqual(report['evaluation_seconds'], 7)
+                self.assertEqual(report['elapsed_seconds'], 28)
+                self.assertIsNone(report['source_to_sink_seconds'])
+                self.assertIn('audit and close', report['source_to_sink_unavailable_reason'])
+                self.assertEqual(report['quality']['score'], 2 / 3)
 
     def test_insufficient_claim_is_recorded_without_allocating_a_model_or_refunding(self):
         from src.experiments.attempt_ledger import AttemptBudget

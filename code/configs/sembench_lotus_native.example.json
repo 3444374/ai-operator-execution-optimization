@@ -1,0 +1,59 @@
+{
+  "schema": "semloom.sembench_text_run.v1",
+  "scenario": "mmqa",
+  "query": "3a",
+  "query_id": "LOTUS-MMQA-Q3A-UNIQUE-RUN",
+  "backend": "lotus-native",
+  "model_name": "openai/local-qwen2.5-7b",
+  "generation": {
+    "max_tokens": 8192,
+    "temperature": 0,
+    "top_p": 1,
+    "seed": 0,
+    "stop": [],
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "repetition_penalty": 1,
+    "response_format": null
+  },
+  "engine": {
+    "model_path": "<MODEL_DIRECTORY>",
+    "tokenizer_path": "<TOKENIZER_DIRECTORY>",
+    "model_python": "<NATIVE_MODEL_PYTHON>",
+    "driver_python": "<DRIVER_PYTHON>",
+    "max_model_calls": 50,
+    "seed": 0,
+    "enable_mfu_metrics": true
+  },
+  "resources": {
+    "cpu_workers": 1,
+    "gpu_workers": 1,
+    "prepare_batch_rows": 1,
+    "model_batch_rows": 1,
+    "startup_timeout_s": 240
+  },
+  "profile": {"native_lm_max_batch_size": 64},
+  "lifecycle": "resident",
+  "resident": {
+    "repetitions": 2,
+    "timeout_s": 600,
+    "cleanup_s": 30,
+    "python_hash_seed": 3,
+    "binding": {
+      "source": {"commit": "<QUALIFIED_CURRENT_COMMIT>", "code_tree": "<QUALIFIED_CODE_TREE>"},
+      "input_files": {"lizzy_caplan_text_data.csv": "<SHA256>"},
+      "occurrences_sha256": "<ORDERED_ORIGINAL_OCCURRENCES_SHA256>",
+      "model_files": {
+        "config.json": "<SHA256>",
+        "<EACH_WEIGHTS_FILE_OR_SHARD>": "<SHA256>"
+      },
+      "tokenizer_files": {"tokenizer.json": "<SHA256>", "tokenizer_config.json": "<SHA256>"}
+    }
+  },
+  "budget": {
+    "path": "<EXISTING_PERMANENT_BUDGET_SQLITE>",
+    "id": "<PERMANENT_BUDGET_ID>",
+    "limit": 50,
+    "unit_ids": ["<RESERVED_COLD_UNIT>", "<RESERVED_WARM_UNIT>"]
+  }
+}

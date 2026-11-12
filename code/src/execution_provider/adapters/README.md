@@ -2,15 +2,12 @@
 
 Ordinary records use local model IPC and native engines. Typed image requests use
 [ImageGateway](../image_gateway.py), [image frames](../image_connection.py) and
-[image_execution](image_execution.py). The old fixed-endpoint HTTP factories,
-transports, Map configuration and v6 transport protocol are retired. Their exact
-source, tests and historical measurements remain available through the
-[complete recovery notes](../../../../experiments/reproduction/paused_pg_and_retired_http_20261105/README.md#retired-fixed-http-adapters).
+[image_execution](image_execution.py).
 LOTUS VLM/MMQA, Kalypso and the official Ray HTTP baseline retain their own native connections.
 
 Map sessions and their golden metadata import [`map_codec.py`](../wire/map_codec.py)
-directly. The redundant `wire/v5.py` export module is removed; protocol version 5,
-its actual encoder and the distinct v3/v4 implementations remain.
+directly. Protocol version 5 uses its actual encoder; v3 and v4 have distinct
+implementations.
 
 ## Python consumer
 
@@ -37,12 +34,8 @@ shared backend; unknown work remains accounted for until Core receives an actual
 terminal. The generic task API does not add retries or a replacement HTTP/IPC gateway.
 The existing Image backend owns its typed prepare/model lifecycle and worker cleanup.
 
-The [native SDK HTTPX observer](../../experiments/native_http_observer.py) and
-shared request budgets remain independent of these removed factories. Its unused
-aiohttp session/response wrappers and their three dedicated tests are retired;
-the actual HTTPX observation function and its caller-owned accounting are unchanged. The offline
-SemFilter calibration reader still recognizes its historical profile name; that
-artifact identity does not restore the retired service selection.
+The [native SDK HTTPX observer](../../experiments/native_http_observer.py) records
+native HTTPX calls. Request accounting and shared budgets belong to the caller.
 
 ## Optional single-model finite record plans
 
@@ -520,8 +513,6 @@ cover history eviction, handoff failure/cancellation, polling and resident reuse
 Counter qualification is CPU-only; no new model performance evidence is implied.
 
 <a id="fixed-rolling-token-packing-ablation-cpu-experiment-only"></a>
-The former positive-B token-packing bypass and its CPU microbenchmark are historical only.
-Their exact source and experiment identities are [recoverable](../../../../experiments/reproduction/native_baselines/README.md#retired-positive-B-token-packing-bypass).
 Current rolling requests omit `prepared_batching` to skip token packing; explicit B still enables packing.
 
 ### Optional request resource feedback (local CPU candidate)
@@ -907,8 +898,7 @@ SemLoom异步路径的`EngineSpec.max_model_len`省略或null时，`AsyncEngineA
 应用token组织、可选在途工作量与已启动模型的接纳缓存使用该回执，外层额度与原未知结果记录不变。
 
 显式正整数精确保留；当前同步 SemLoom 的省略行为见[同步参数所有权](#sync-native-context-ownership)。
-原生 Ray／Daft／IMLane 同步对照也保留省略／null，见[同步参数所有权](#sync-native-context-ownership)；旧 Movie HTTP 包装和入口已退役，
-历史原配置从[恢复记录](../../../../experiments/reproduction/native_baselines/README.md#movie-http-retirement)读取。
+原生 Ray／Daft／IMLane 同步对照也保留省略／null，见[同步参数所有权](#sync-native-context-ownership)。
 显存比例、数据精度、方法／生成参数及单 GPU 支持保持。
 普通冷查询的上下文就绪成本计入原查询报告，空查询不为缓存启动模型；常驻查询沿用原ready回执。
 公共离线calibration在省略上下文时复用首个已声明完整样本的实际owner回执，随后构造身份；
@@ -937,12 +927,11 @@ token wrapper在独立查询的`start()`仍只返回延迟分配声明；实际�
 `profile={"mode":"async","admission":{"kind":"resource_feedback"}}`
 启用[当前请求反馈](#optional-request-resource-feedback-local-cpu-candidate)，每个查询从一个请求开始。
 owner 的请求总额、准备参数及 actor／IPC 容量在启动前解析；反馈只调整该范围内的后续接纳。
-已退役请求策略的原参数、提示与缓存说明从[准确历史版本](#retired-request-feedback)恢复。
 
 应用层未完成请求与引擎每轮处理的序列分别计限：`EngineSpec.max_num_seqs` 或
 `max_num_batched_tokens` 未指定／null时，异步 Core 不传对应引擎参数，交由安装的
 vLLM 0.25.1 解析；显式正整数原样传入。当前同步 `VllmEngine` 和原生图的
-`ReferenceVllmEngine` 也省略这两项。旧 Movie HTTP 入口已退出维护版。
+`ReferenceVllmEngine` 也省略这两项。
 启动回执的 `native_capacity` 从构造后的配置读回，即使未开启反馈；缺失字段保持未知。
 未指定不表示无限容量或自动性能调优，也不改变外层 C/B/W、上下文长度或显存比例。
 该引擎序列配置不再截断 records Core 的请求额度。外层额度可以更大，仍受
@@ -1535,8 +1524,7 @@ The strengthened 14-query CPU IPC test passed once on exact `b422951d`; its 168 
 
 Request and batch option types live in [feedback_options.py](../../scheduling/submission_control/feedback_options.py).
 The common SupplyState and paired-work measurement live in [feedback_work.py](../../scheduling/submission_control/feedback_work.py).
-The modern request adapter and its shared sampling method import those definitions directly, including the local update path;
-they no longer load adaptive or stage_work merely to obtain data. Explicit batch feedback continues to use its existing policy.
-The unused EWMA/HOL variants and their old package exports are retired; their accurate historical sources remain recoverable.
-[Behavior, source identities and unresolved IPC checks](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)
-separate unchanged policy behavior from code organization and memory-copy work.
+Request adapters and shared sampling import these data definitions directly,
+including the local update path. Explicit batch feedback uses its existing policy.
+[Policy behavior, source identities and IPC verification](../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#feedback-duties-and-record-copies)
+records the supported behavior and its verification limits.

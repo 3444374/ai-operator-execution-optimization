@@ -4,8 +4,75 @@ The caller owns execution and persistence. This module records existing driver
 and model receipts without creating requests or an execution loop.
 """
 from collections import defaultdict
+from contextlib import contextmanager
 import time
 from src.infrastructure.redact import redact_text
+
+
+@contextmanager
+def observe_native_requests(transport, events):
+    """Observe native IPC submissions/terminal delivery without changing policy."""
+    submit, poll = transport.submit, transport.poll
+
+    def observed_submit(row, **options):
+        started = time.monotonic_ns()
+        result = submit(row, **options)
+        events['submit'].append(dict(started_ns=started, returned_ns=time.monotonic_ns(),
+            request_id=result.request_id, status=result.status))
+        return result
+
+    def observed_poll(*args, **options):
+        result = poll(*args, **options)
+        observed = time.monotonic_ns()
+        events['terminal'].extend(dict(observed_ns=observed, request_id=row.request_id,
+            confirmed=row.engine_terminal_confirmed) for row in result)
+        return result
+
+    transport.submit, transport.poll = observed_submit, observed_poll
+    try:
+        yield
+    finally:
+        transport.submit, transport.poll = submit, poll
+
+
+def native_request_boundaries(events, calls):
+    """Check successful request identities and retain the provenance of clocks."""
+    queued = [row for row in events['submit'] if row['status'] == 'queued']
+    terminals = events['terminal']
+    ids = [row['engine_request_id'] for row in calls]
+    if (len(set(ids)) != len(ids) or len(queued) != len(ids) or len(terminals) != len(ids)
+            or {row['request_id'] for row in queued} != set(ids)
+            or {row['request_id'] for row in terminals} != set(ids)
+            or not all(row['confirmed'] for row in terminals)):
+        raise ValueError('native submissions and confirmed terminals differ from original query calls')
+    return dict(first_native_submit_ns=min((r['started_ns'] for r in queued), default=None),
+        last_confirmed_terminal_observed_ns=max((r['observed_ns'] for r in terminals), default=None),
+        first_engine_accept_ns=None, kernel_seconds=None,
+        unavailable_reason='IPC observations do not independently expose engine acceptance or kernels',
+        receipt_start_end_source='native model_start_monotonic/model_end_monotonic, not kernel clocks')
+
+
+def resident_launch_timing(supervision, session, controller_entry_ns):
+    """Keep controller, supervised runner and fresh-query intervals separate."""
+    sinks = [q['query_result_ready_ns'] for q in session['queries']]
+    runner = int(supervision['started_monotonic'] * 1e9)
+    if not sinks or sinks[0] is None or runner > sinks[0]:
+        raise ValueError('resident run has no complete original cold sink after launch')
+    if controller_entry_ns is not None and controller_entry_ns > runner:
+        raise ValueError('controller timestamp follows supervised runner launch')
+    return dict(controller_entry_ns=controller_entry_ns, runner_started_ns=runner,
+        controller_entry_to_sink_seconds=(None if controller_entry_ns is None else
+            (sinks[0] - controller_entry_ns) / 1e9),
+        runner_launch_to_sink_seconds=(sinks[0] - runner) / 1e9,
+        query_full_seconds=[q['full_query_seconds'] for q in session['queries']],
+        controller_scope='script timestamp after import time; excludes interpreter/time import',
+        runner_scope='existing supervisor timestamp before Popen; host preflight/lease excluded',
+        common_cold_total_seconds=None,
+        common_cold_total_reason='cross-system comparison requires the same observed outer boundary',
+        supervised_timeout_s=supervision['timeout_s'],
+        supervisor_cleanup_reserved_s=supervision['cleanup_reserved_s'],
+        outer_host_deadline_seconds=None,
+        outer_host_deadline_reason='host lease/resource cleanup is owned by the external caller')
 
 
 
@@ -68,17 +135,48 @@ def timed_driver_type(base,store):
 
 
 
+def _memory_sink_timing(query, report):
+    """Use the adapter's explicit in-memory sink, including after later failure."""
+    result=dict(memory_sink_ready_ns=None,source_to_sink_seconds=None,
+                source_to_sink_unavailable_reason=None,memory_sink_scope=None)
+    receipt=report.get('memory_sink_timing')
+    if not isinstance(receipt,dict) or receipt.get('schema')!='semloom.kalypso_memory_sink.v1':
+        result['source_to_sink_unavailable_reason']='explicit memory-sink receipt unavailable; legacy result_ready is not substituted'
+        return result
+    start=query.get('query_start_ns')
+    sink=receipt.get('memory_sink_ready_ns')
+    if not all(type(value) is int and value>=0 for value in (start,sink)) or sink<start:
+        result['source_to_sink_unavailable_reason']='missing or invalid source/memory-sink clock ordering'
+        return result
+    limits=[query.get('query_result_ready_ns'),query.get('query_terminal_ns')]
+    api=report.get('comparison_timing')
+    if isinstance(api,dict) and api.get('complete'):
+        entered=api.get('driver_entered_ns')
+        if type(entered) is int and sink<entered:
+            result['source_to_sink_unavailable_reason']='memory sink precedes driver entry'
+            return result
+        limits.append(api.get('API_returned_ns'))
+    if any(type(value) is int and sink>value for value in limits):
+        result['source_to_sink_unavailable_reason']='memory sink follows a later query boundary'
+        return result
+    result.update(memory_sink_ready_ns=sink,source_to_sink_seconds=(sink-start)/1e9,
+                  memory_sink_scope=receipt.get('sink_scope'))
+    return result
+
+
 def query_timing(query):
     """Join the exact new return clock to the existing outer submission clock.
 
     Missing clocks are unavailable, never reconstructed from query_terminal.
     """
-    timing=query.get('backend_report',{}).get('comparison_timing')
+    report=query.get('backend_report') or {}
+    timing=report.get('comparison_timing')
     start=query.get('query_start_ns')
     ready=query.get('query_result_ready_ns')
     result=dict(submitted_ns=start,result_ready_ns=ready,API_returned_ns=None,
                 answer_ready_s=None,API_return_s=None,driver_only_s=None,
                 session_terminal_s=None,API_timing_complete=False,reason=None)
+    result.update(_memory_sink_timing(query,report))
     if type(start) is int and type(ready) is int and ready>=start:
         result['answer_ready_s']=(ready-start)/1e9
     terminal=query.get('query_terminal_ns')

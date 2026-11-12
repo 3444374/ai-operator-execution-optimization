@@ -2,6 +2,46 @@
 
 本目录源自2026-10-25 r3适配。维护版将客户端接入中性生命周期与公共计时，并将新运行绑定改为作者CLI默认解析；旧运行的固定容量配置和成绩保留历史身份。本目录没有注册新的默认后端，也不包含作者服务、模型或数据。作者源码固定为`05024f027f932c0e398852e38302be30b9015481`，原生引擎属于vLLM0.13.0rc4分支。
 
+## 内存结果边界
+
+`NativeQueryDriver.query()` 在原生 HTTP 响应解析、发生项索引／模型／返回数量校验，以及原
+`MovieTask.result_frame()` 的完整投影或聚合完成后，立即记录
+`backend_report.memory_sink_timing.memory_sink_ready_ns`，随后发布 `memory_sink_ready` 事件。
+统一查询时间从外层 `query_start_ns` 到这个客户端单调时钟；不从旧 `answer_ready_s` 扣除估计开销。
+作者 HTTP handler 会等待完整 `processor.execute()` 后才返回所有存活 context，客户端只恢复
+原生 `idx` 对应的发生项，不改变 Filter parser、调用预算、HTTP 模型路径、pin 或 KV 策略。
+
+`semloom.kalypso_memory_sink.v1` 的 `phases` 分别记录 source／必需输入、HTTP＋JSON 解析、
+原关系生成、trace 审计、结果编码、评价和审计持久化的起止时间、秒数及状态。
+`native-input.csv` 是作者服务实际消费的执行输入，仍在 source 内写入；request／occurrences、
+response body／HTTP clock、决策和质量文件在 sink 之后保存。独立写入失败会继续保存其余证据，
+同时令查询失败；原始查询异常不会被后续写入异常替换。
+
+trace 完整发生项、request ID 和 model UID 核对在 sink 后执行，审计失败保留已观测的 sink，
+但最终查询仍失败，不能据此产生合格成绩。旧 `result_ready` 仍位于审计和编码完成之后；历史
+时长不改写。`HTTP-clock.json` 新版 `semloom.kalypso_http_clock.v2` 只计响应读取／关闭，明确
+排除 JSON 解析和文件持久化。
+
+现有私有 Map／MMQA 查询重载 `query()` 并继承 `post()`，后者默认仍同步保存 HTTP 证据。
+这些入口未迁移时不能使用本次内存 sink 资格；只在迁移的 query 内开启延迟持久化。退役该兼容
+行为的条件是所有实际调用者都采用显式内存 sink，并在新私有副本完成回归，不能修改冻结包。
+此目录的 Filter／Q9 Map 绑定不是 Kalypso 已完成题目的全集；既有 Movie Map 和 MMQA 私有运行另外保留
+其原生入口与历史结果。本次[受控时钟测试](../../../../../tests/baselines/text/test_kalypso_memory_sink.py)
+仅验证本地顺序、输出和失败证据，不授予新的作者环境或 GPU 资格。
+
+私有查询的迁移复用 `NativeQueryDriver.query_evidence()`，它仅统一延迟证据写入、阶段计时和
+异常回执，不运行查询、服务或模型。`response_map_texts()` 校验完整 Map 返回并恢复原顺序，
+随后仍须调用该查询已有的 parser；只有原 `query.execute()` 的完整投影／聚合返回后才能记录
+sink。Filter 使用 `response_decisions()` 恢复发生项，再交回原查询完成关系计算。逐行 prompt
+表被作者 hook 实际读取时也属于必需执行输入，仍在 sink 前写入。
+
+Q10 Map 与 MMQA Q3b–g 的现有私有入口已有独立副本迁移补丁，保留 `make_query`、`prepare`、
+`reconcile` 和 owner／CLI 编排。前者的两次 2000 行原 CPU 响应、后者的十二次归档真实 HTTP
+响应已做本地原查询／parser／评价器差分回放；新结果及评价与各自原件一致。后者旧 CPU fixture
+缺少 `model_name`，不能通过新边界的必要校验，失败记录保留；没有补造字段。
+回放中的 `original_query` 阶段包含输入、HTTP、parser 和原关系计算，和嵌套阶段不可直接相加。
+这些是新私有副本的 CPU 候选；未部署、未运行新的 GPU 查询，其余私有题入口仍须各自迁移。
+
 `adapter.py`只负责输入、完整发生项核验、源序恢复和观测接入；作者服务继续拥有Filter执行、生成设置、批处理和调度。原生parser以结果不含`false`判通过，与LOTUS不同。`native_server.py`保留实际worker模型元数据及物理设备旁录；客户端关闭不代表服务退出。`cpu_native.py`需要已有作者环境和模型tokenizer；本次没有安装或启动它们。
 
 attached比较流程与CLI维护在`src/experiments/kalypso_query_lifecycle.py`，查询脚本`run_kalypso_sembench_query.py`直接调用该模块。`adapter.py`保留作者服务客户端，不导入实验编排。旧`adapter.run_attached`与原模块CLI可从Git提交`5b25197dafc03d6ae7fa48e7c0f7460122e85e51`的完整树恢复。
@@ -63,3 +103,117 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 声明来自适配代码，没有新增CLI／JSON配置项，也不改变作者Filter、生成或服务调度。
 [复现、回归与源码](../../../../../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#native-lifecycle-call-support)
 记录观察器构造失败和两个会话交错退出的CPU反例；它们不代表真实作者服务并发或模型资格。
+
+
+## Movie Q9 Map 维护版接线
+
+`run_kalypso_sembench_query.py` 的专属 `movie-q9` unit 现在选择 `movie_map.MapDriver`；
+其余已支持的 Movie Q1–Q4 仍走原 Filter driver。Q9 使用原 SemBench c814 的
+`ranking="map"` 数字评分、完整排序关系和原评价器，不调用 TopK，也不宣布支持其他私有题。
+私有 `map_query.py`、`map_server.py` 不再作为新 Q9 运行入口；历史副本及原结果保持不变。
+
+新配置除了现有 owner／模型／输入绑定，还必须有：
+
+- 每题 `task="movie-q9"`，`expected_calls=N` 必须等于该份冻结输入经原 Q9 选择后的
+  非零发生项数，`max_native_calls=2*N`。unit 的 `call_cap` 仍显式声明有限总预算，
+  外层 owner 验证它与逐题预算之和；不得按历史样本量猜测 N 或静默扩大预算。
+- `sembench` 指向固定 c814 原查询／评价器，`data_dir` 指向完整 Movie CSV；
+  `source_data_sha256` 至少绑定完整 `Reviews.csv`，可同时记录 `Movies.csv`。
+- `map_prompt_root` 指向新私有空目录。每次查询重新扫描原输入，选出全部 N 个 Ant-Man
+  发生项，写入作者实际消费的 CSV 和逐发生项 prompt 表。重复业务 ID 不去重。
+- `native_launch="author_defaults"` 且没有 `engine`；保持原作者 05024 checkout、同一 maintained
+  source、依赖 SHA、worker 观察模块、新 CPU evidence 和新 owner 的时限／账本绑定。
+
+`map_observation.py` 迁入已经验证的 Q9 字段格式化和被动观察：精确 rubric／review 嵌入原作者
+Map prompt，原 `_planned_max_tokens`、`estimate_tokens`、ratio update/reset、pin/KV、采样和执行器
+不改写。作者首请求输出额度动态估计；仅 `finish_reason=length` 且额度小于 8192 时，原算法
+重入一次并使用 8192。第二次仍为 length 也不会再重试。因此 N 是逻辑发生项，2N 是物理
+上界；HTTP 和外层 lifecycle 都不自动重试。历史 256／512 仅属于原冻结配置，不是原查询
+或新输入的规模限制。通用 SemBench 的无重试元数据不代表禁用此作者分支。
+
+完整原查询关系返回即记录 memory sink，随后才执行 API start/sampling/end 身份审计、source
+快照、原评价器、编码、持久化和客户端 close。逐请求序号、请求 ID、idx、model UID、采样与
+原生重试分支均核对。审计失败可保留已观察 sink，但查询失败，不能产生合格成绩。
+`source_to_sink_seconds` 是 ready 服务后的新鲜逐题查询时间；`startup_inclusive_cold_seconds`
+在没有本次外部 owner 启动事件时留空，不把 attach 当模型加载，也不拆分／减算旧批次时钟。
+
+标准 CPU 入口对专属 Q9 unit 调用 `movie_map_cpu.check`，仅消费 driver 已冻结的输入，使用原
+tokenizer／planner／request 对象核对完整 prompt 和重试 cap 的 context 长度，保存每发生项完整
+消息、token IDs、row_id、source_position、source_index 和 reviewId；不创建引擎。
+该入口仍需要**已经存在的作者隔离环境**，不能用本机 source-method fixture 代替目标运行资格。
+
+历史维护版的本地 CPU 检查包含既有 Filter 回归、新 Q9 事件／预算负例、完整 256×2 保存响应与原评价器
+回放，以及真实维护版 query CLI 的受控时钟检查。全部 256 条原消息和 tokenizer IDs 与原归档
+一致；原方法体在显式 API/KV 替身下覆盖全 256 条 length→8192→length，最多两次，观察 hook
+保持原 generator 对象。它们不是新模型分数、全作者模块导入、目标 planner 或 GPU 资格。
+共享目录的名字不能作为版本证据：名含 05024 的本地资产实际还可能是 9e919 工程变体，必须
+核对 Git HEAD 和源码摘要；本次方法核对从原 05024 Git 对象取字节，不修改共享资产。
+
+可变输入规模的回归使用 1、7、13 个软件发生项，核对冻结原 source、重复业务 ID、完整原
+parser／结果关系／评价器、逐题 2N 限额及模型前预算拒绝；原生 planner/request 使用显式软件
+替身。受控时钟将原题必要执行计入 sink，将
+后置 trace、评价和保存推进留在 sink 之后。历史模型结果不自动转授给新源码。
+
+后续 `0afa54134` 于 2026-11-12 在原作者 `05024` 环境通过真实 tokenizer／planner／request
+的零模型门检：原输入每题 N=256、物理上限 512；独立冻结样本每题 N=6、物理上限 12。
+两组分别检查配置中的 cold/warm 两题，未执行冷暖模型查询，未加载权重或初始化 CUDA。
+这证明 N/2N 计划、输入与原生环境接点，不证明发生了 512 次调用或新的 GPU 性能。
+首次 archive-only 部署因缺少 Git 身份失败；第二次用同提交的干净 Git checkout 通过，
+初次失败及其与证据传输短暂重叠的记录保留。后续门检均待传输退出后启动，资源和租约清理通过。
+原件与 IMLane 两项门检汇总于仓库外 `baseline-reuse-zero-1112-final/FINAL-AUDIT.json`。
+
+零模型维护回归：
+
+```sh
+CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHON" -B -m unittest \
+  tests.baselines.text.test_kalypso_movie_map \
+  tests.baselines.text.test_kalypso_q9_cpu_inputs \
+  tests.baselines.text.test_kalypso_native_observation \
+  tests.baselines.text.test_kalypso_native_launch \
+  tests.baselines.text.test_kalypso_memory_sink \
+  tests.experiments.test_kalypso_owner_cli_binding
+```
+
+原查询小规模回归需设置 `SEMLOOM_NATIVE_TEST_CHECKOUT` 为固定 c814 源码，并使用已有
+LOTUS／pandas／DuckDB driver 环境；未配置时明确跳过，不以跳过记录作为通过。
+
+目标原生 CPU 命令仍是 `check_kalypso_native_cpu.py --config "$NEW_CONFIG" --output "$NEW_CPU_EVIDENCE"`；
+服务只由既有 owner 通过 `owner_cli_bindings` 返回的 maintained CLI 启动。新 Linux owner/source/
+协调器已报告 `2e2616a5` Q9 冷暖512次、0重试及完整 token/sink 审计通过；
+另报告同源 Movie Q1–Q4 冷暖共4720次新 sink 通过；Filter runtime 完整token数组未采集。
+来源与组合 CPU 的区别见[隔离组合报告](../../../../../../experiments/results/diagnostics/baseline_validated_integration_20261111/README.md)，不复用旧 LAUNCH、期限或模型成绩。
+
+
+### Q9 CPU 预检的双 Python 边界
+
+204faa 的目标零模型检查在作者 Python 调用 `SemBenchTextQuery` 时因缺 pandas 失败。
+作者环境没有 pandas 是正常隔离边界，不安装新依赖，也不将 driver 的 site-packages 混入作者环境。
+旧提交、失败与归档保留。修正版沿用两个正式 CLI 和既有 owner：
+
+1. 既有 driver Python 负责原 SemBench c814 查询选择、全部 N 个 occurrence、原 CSV 和精确指令。
+   对每题冻结 CSV、prompt 表、原 source 描述，输出 `CPU-INPUTS.json` 和其 SHA256。
+2. 把输出路径和摘要作为 `native_cpu_inputs={"manifest": ".../CPU-INPUTS.json", "sha256": "..."}`
+   写入新的私有配置并按既有 owner 重封配置摘要。作者 Python 只验证／消费冻结输入，运行原生
+   plan、tokenizer 和 request 检查；不导入或执行 SemBench、pandas、LOTUS 或评价器。
+
+```sh
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 \
+PYTHONPATH="$VERIFIED_REPO/code" "$DRIVER_PYTHON" -B \
+  "$VERIFIED_REPO/code/scripts/experiments/run_kalypso_sembench_query.py" \
+  --config "$NEW_CONFIG" --unit "$UNIT" --output "$NEW_CPU_INPUTS" --prepare-native-cpu
+
+CUDA_VISIBLE_DEVICES='' HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 \
+PYTHONPATH="$VERIFIED_REPO/code" "$AUTHOR_PYTHON" -B \
+  "$VERIFIED_REPO/code/scripts/experiments/check_kalypso_native_cpu.py" \
+  --config "$NEW_CONFIG_WITH_INPUT_HASH" --output "$NEW_CPU_EVIDENCE"
+```
+
+准备模式要求 `execution_enabled=false`、`CPU_fixture_only=true`。这不是模型执行模式，也不
+修改原 owner 的启动／清理。每一步复核真实 Git HEAD、tree、code tree、code 清洁状态与实际参与
+文件摘要，对照配置内 owner 已固定的 `adapter_commit`／`adapter_tree`；不能只信清单自述版本。
+冻结清单同时绑定 model/revision、tokenizer template、原作者版本、完整源 CSV 摘要、完整 unit、
+每题指令／输入文件摘要及发生项身份；任何变化均在原生 planning 前失败，不隐式重新准备或回退。
+
+输入预检不替代每次模型查询的新鲜原 source 扫描，也不改变 Map 重试、评分、排序或计时口径。
+没有 pandas 的 `-I -S` 子解释器测试通过实际 CPU CLI，显式原生替身只存在于测试脚本；生产 CLI
+没有替身选项。该测试不能授予目标作者 runtime／tokenizer／GPU 资格，仍须在原隔离环境重跑两步。

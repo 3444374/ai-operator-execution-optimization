@@ -314,14 +314,14 @@ class KalypsoBackendSupportTests(unittest.TestCase):
         with patch.object(adapter, "load_dependencies"), \
              patch.object(adapter, "NativeQueryDriver", Driver), \
              patch.object(sessions, "run_sequence", side_effect=run):
-            result = kalypso.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
+            result = kalypso.run_attached(cfg, {"queries": [dict(task="movie-q2")]}, Path("unused-fixture-output"))
         self.assertEqual(result["status"], "passed")
         error = ValueError("fixture comparison failure")
         with patch.object(adapter, "load_dependencies"), \
              patch.object(adapter, "NativeQueryDriver", Driver), \
              patch.object(sessions, "run_sequence", side_effect=error):
             with self.assertRaises(ValueError) as caught:
-                kalypso.run_attached(cfg, {"queries": []}, Path("unused-fixture-output"))
+                kalypso.run_attached(cfg, {"queries": [dict(task="movie-q2")]}, Path("unused-fixture-output"))
         self.assertIs(caught.exception, error)
         self.assertIs(sessions.BACKENDS, original[0])
         self.assertIs(sessions.RESIDENT, original[1])
@@ -366,7 +366,7 @@ class KalypsoBackendSupportTests(unittest.TestCase):
             def close(self):
                 return {'status': 'closed'}
         cfg = dict(native_launch='author_defaults', model='CPU-fixture', port=18103)
-        query = dict(query_id='fixture', task='fixture', phase='measured')
+        query = dict(query_id='fixture', task='movie-q2', phase='measured')
         with tempfile.TemporaryDirectory() as directory, \
              patch.object(sessions, 'BACKENDS', original[0]), \
              patch.object(sessions, 'RESIDENT', original[1]), \

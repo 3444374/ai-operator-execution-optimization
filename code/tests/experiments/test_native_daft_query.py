@@ -54,6 +54,46 @@ class NativeDaftWorkerTests(unittest.TestCase):
         with self.assertRaisesRegex(TimeoutError, 'complete query'):
             deadline(())
 
+    def test_native_readiness_callback_runs_once_during_monitoring_before_close_wait(self):
+        path = self.root / 'native-ready.json'
+        events = []
+        now = [100]
+        deadline = QueryDeadline(path, query_s=1200, cleanup_s=120, stop_grace_s=8,
+            clock=lambda: now[0], on_result_ready=lambda raw: events.append(raw['result_ready_monotonic_ns']))
+        self.ready(path, 101)
+        now[0] = 102
+        deadline(())
+        deadline(())
+        self.assertEqual(events, [101000000000])
+
+    def test_late_native_result_is_not_delivered_to_semantic_sink(self):
+        path = self.root / 'late-callback.json'
+        callback = Mock()
+        deadline = QueryDeadline(path, query_s=1, cleanup_s=120, stop_grace_s=8,
+            clock=lambda: 0, on_result_ready=callback)
+        self.ready(path, 2)
+        with self.assertRaises(TimeoutError):
+            deadline(())
+        callback.assert_not_called()
+
+    def test_invalid_prepared_packet_stops_before_native_model_entry(self):
+        from src.infrastructure.private_artifacts import file_sha256
+        packet = self.root / 'prompts.json'
+        write_private_json(packet, dict(schema='semloom.native_daft_prompts.v1', requests=[
+            dict(call_id='duplicate', prompt='first'), dict(call_id='duplicate', prompt='second')]))
+        config = dict(self.config)
+        del config['reviews_csv']
+        config.update(schema='semloom.native_daft_map.v1', requests_path=str(packet),
+            requests_sha256=file_sha256(packet), request_budget=dict(path='unused',
+                budget_id='CPU', limit=2, unit_id='CPU'))
+        execute = Mock()
+        with self.assertRaisesRegex(ValueError, 'unique occurrence'):
+            run_worker(config, self.root / 'duplicate', execute_query=execute)
+        config['requests_sha256'] = '0' * 64
+        with self.assertRaisesRegex(ValueError, 'digest changed'):
+            run_worker(config, self.root / 'changed', execute_query=execute)
+        execute.assert_not_called()
+
     def test_result_published_after_query_deadline_does_not_bypass_it(self):
         now = [0.]
         path = self.root / 'late-ready.json'

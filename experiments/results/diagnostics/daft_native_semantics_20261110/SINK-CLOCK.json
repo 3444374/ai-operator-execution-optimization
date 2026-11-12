@@ -1,0 +1,96 @@
+{
+  "status": "CPU_passed_real_model_not_repeated",
+  "parent_integration_commit": "9256287f8d2379f5703a638d0423b32ae312e298",
+  "issue": "P2: old sink timestamp followed message digests and operator relation serialization",
+  "historical_commits_preserved": [
+    "ffbc352ac5c31a2d5b89b2bdf8429d5003a329f5",
+    "9256287f8d2379f5703a638d0423b32ae312e298",
+    "e097bd6c9d7301f1b66a8406f58c67cb2d16555b"
+  ],
+  "historical_timing": "includes old post-query audit work; exact strict sink unknown, not backfilled",
+  "tested_files_sha256": {
+    "code/src/baselines/text/sembench_prepared.py": "b385dc8dbfa3d08b01a49fecaffc014a3353ca456de4856acd414d8c82a0f1b7",
+    "code/src/experiments/native_daft_sembench.py": "530831692cd71d1b0034592187002495e9dbb3bd3c441ff8c73b3dd1f0e22361",
+    "code/tests/baselines/text/replay_daft_sembench.py": "b9c95834458bd6bbc626844525aaf8250a56d0ecfd306d501b32808101a813d2",
+    "code/tests/baselines/text/test_sembench_prepared.py": "12b5c3d1f59d538fc16b932f4453e9da17ffc85e19e8c055d2ec318436dadb95"
+  },
+  "unit_checks": {
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0,
+    "new_checks": 2,
+    "controlled_clock": "two7s message digests plus three11s relation/result serializations all after sink; source_to_sink stays3s",
+    "failure_path": "native predictions and failed driver receipt retained after post-sink audit error",
+    "log_sha256": "9344fbe0e864788f50de2e687bb00160e9aa3c0336d6313a0353fcfd1d5b1440",
+    "initial_fixture_expectation_failure_preserved": "ec63cffaa7a27261186279a9a619979406318f09c3289ff468809dbaee8991c4"
+  },
+  "replays": [
+    {
+      "query": "q1",
+      "software_requests": 25,
+      "model_calls": 0,
+      "full_messages_tokens_relation_sink_evaluator_equal": true,
+      "source_saved_reply_identity_equal": true,
+      "budget_excess_refused": true,
+      "sink_before_audit_persistence_and_close": true,
+      "CPU_sha256": "86d5dea2073b25e739ed3538b7cb7bf57d7f817761b2b94bf3d1b66775421cab",
+      "driver_sha256": "02b2720d205b8e413f5088980243433efeee27c90b5f929715998e561edccba0",
+      "quality_replay": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      }
+    },
+    {
+      "query": "q3a",
+      "software_requests": 25,
+      "model_calls": 0,
+      "full_messages_tokens_relation_sink_evaluator_equal": true,
+      "source_saved_reply_identity_equal": true,
+      "budget_excess_refused": true,
+      "sink_before_audit_persistence_and_close": true,
+      "CPU_sha256": "a723516eb383ed2813e2d769854996d01154e6a2b13cef9e2f08e33b4c3a1a7f",
+      "driver_sha256": "83cc2db29495406d5dfaa1c43b51ef54497884c0df2be5707714ef64b19438d7",
+      "quality_replay": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 0.8461538461538461,
+          "f1_score": 0.9166666666666666
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      }
+    },
+    {
+      "query": "q4",
+      "software_requests": 24,
+      "model_calls": 0,
+      "full_messages_tokens_relation_sink_evaluator_equal": true,
+      "source_saved_reply_identity_equal": true,
+      "budget_excess_refused": true,
+      "sink_before_audit_persistence_and_close": true,
+      "CPU_sha256": "43880a730b6298654081b44bd2beb6bf9b246c78b55b58fdfb3088a9a3d8a096",
+      "driver_sha256": "c0f2064017c126dcba110871ac4cb816fbb38e59256de44faa1348483d5f478c",
+      "quality_replay": {
+        "original_metric": {
+          "precision": 0.5142857142857142,
+          "recall": 0.46153846153846156,
+          "f1_score": 0.48648648648648646
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      }
+    }
+  ],
+  "new_model_calls": 0,
+  "legacy_execute_q3_unchanged": true,
+  "public_finish_default_return_compatible": true,
+  "no_author_algorithm_or_native_scheduler_change": true,
+  "limitations": [
+    "model and supervising process are software fixtures",
+    "old49 real-model results retain old timing provenance",
+    "no new real-model or physical GPU cleanup evidence",
+    "other16 CPU cases and17 real-model cases not qualified by this fix"
+  ]
+}

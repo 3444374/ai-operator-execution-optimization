@@ -1,0 +1,53 @@
+{
+  "status": "passed_target_import_formal_Q3a_Q4_checks_and_existing_host_CPU_interface",
+  "source": {
+    "commit": "e097bd6c9d7301f1b66a8406f58c67cb2d16555b",
+    "tree": "1c3abeab1211d89203261221aab67d01a5101dea",
+    "code_tree": "a55088d3391decd44b070237b3c7645352168692",
+    "base_main": "6b0f4f6efcfe61225ffc0c7ad5a3f4af261dc1bf"
+  },
+  "HANDOFF_sha256": "825ec8f7dcf950a1af7e5a28fe88b167041b0a4dc464e859a92eac3a68fe4e53",
+  "checks": [
+    {
+      "query": "q3a",
+      "config_sha256": "c6d791bab27c91d4d8456fbf2d094fac3a4c00dcf95a575bb161ca33d1572885",
+      "check_result_sha256": "b275a614e4797c295ec2312d2d95d7e74253399c9c3c2147b1373ca207c1c054",
+      "per_query_declared": 25,
+      "total_declared_only": 50,
+      "consumed": 0,
+      "occurrences_sha256": "37ced727b3b929d777b310a49aac13362c12e5d59d994726cdef5a68423bdb58"
+    },
+    {
+      "query": "q4",
+      "config_sha256": "9b92f43e85d5731a1a71fe3f987af1d1b300c64b90d1678d680f9d6b0ff0ad85",
+      "check_result_sha256": "8dcc81eeb7422c67c9b6a8fae01cb939cc40f9a40265ce4128493caeaf06f78a",
+      "per_query_declared": 24,
+      "total_declared_only": 48,
+      "consumed": 0,
+      "occurrences_sha256": "bb07b1324a2821dc648608857fa7830a8df6b84e374fb1e83a823ec7a046ea57"
+    }
+  ],
+  "driver_versions": {
+    "lotus-ai": "1.2.4",
+    "torch": "2.12.1+cu130",
+    "transformers": "4.57.6",
+    "pyarrow": "24.0.0",
+    "pandas": "2.3.3"
+  },
+  "model_identity": {
+    "actual_full_four_weight_shards_index_config_and_tokenizer_checked": true,
+    "declared_model_file_count": 12,
+    "weights_loaded": false
+  },
+  "models": 0,
+  "generate": 0,
+  "queries": 0,
+  "budget_consumed": 0,
+  "originals": 59,
+  "archive_sha256": "4874862c4bf7874b4b228087216a1132830495bf34878dca92a679181751f509",
+  "existing_host_CPU_interface_passed": true,
+  "physical_GPU_model_lifecycle_exercised": false,
+  "retained_failure": "Q3a formal check succeeded; post-check auditor queried uninitialized shared_requests; corrected audit and continuedQ4 without rerunningQ3a",
+  "repeat_old_GPU_required_by_these_checks": false,
+  "new_e097_GPU_qualified": false
+}

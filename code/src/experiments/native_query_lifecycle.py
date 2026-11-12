@@ -225,7 +225,9 @@ def run_sequence(queries, factory, output, *, backend, lifecycle="resident", obs
                     (query["query_api_return_ns"]-query["query_start_ns"])/1e9)
                 # Preserve primary failure evidence before final owner cleanup.
                 try:
+                    query['persistence_started_ns'] = now()
                     publish_private_json(output / ("query-" + str(index) + ".json"), redact_json_values(query))
+                    query['persistence_finished_ns'] = now()
                 except BaseException as recording:
                     if query_failure is None:
                         raise
@@ -280,7 +282,11 @@ def run_sequence(queries, factory, output, *, backend, lifecycle="resident", obs
         if setup is not None and setup.get("worker_entry_ns") is not None:
             report["worker_e2e_s"] = (report["session_end_ns"] - setup["worker_entry_ns"]) / 1e9
         try:
+            persisted = now()
             write_private_json(output / "session.json", redact_json_values(report))
+            write_private_json(output / "session-persistence.json", dict(
+                session_json_started_ns=persisted, session_json_finished_ns=now(),
+                excludes='this receipt publication; per-query persistence ends are in session.json'))
         except BaseException as recording:
             if primary is None:
                 primary = recording
