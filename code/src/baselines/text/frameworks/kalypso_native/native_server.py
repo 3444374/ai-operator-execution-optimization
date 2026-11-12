@@ -138,10 +138,12 @@ def physical_call_caps(unit):
     caps={}
     for query in queries:
         logical=query['expected_calls']
+        if type(logical) is not int or logical<=0:
+            raise ValueError('Native query needs a finite positive logical occurrence count')
         cap=query.get('max_native_calls',logical)
         if query.get('task')=='movie-q9':
-            if logical!=256 or cap!=512:
-                raise ValueError('Complete Q9 Map requires 256 logical and 512 physical calls')
+            if cap!=2*logical:
+                raise ValueError('Q9 Map requires twice the logical occurrence count as its physical call cap')
         elif cap!=logical:
             raise ValueError('Only Movie Q9 Map binds a native length retry allowance')
         if type(cap) is not int or cap<=0 or query['query_id'] in caps:

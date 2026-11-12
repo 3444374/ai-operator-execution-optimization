@@ -38,6 +38,11 @@ Q1 SQL 25、Filter Q3a 25／Movie Q2 120 的完整 sink、ACK 和退出，以及
 
 通用 Filter `016a83529` 已另行通过目标 Movie Q2 完整 120 项原生软件 SQL、Arrow/IPC、
 原 sink/ACK 和外层资源清理，未重编 DSO、模型调用为 0；其余任务仍按各自精确源码证据判断。
+IMLane Q9 Map `0e80e7fa` 的原版 DSO 软件 SQL 256 项和独立重复 ID 样本 6 项通过，
+完整消息、关系、sink/ACK/退出已核；运行 token 为软件占位，不能转授模型 token 或性能资格。
+Kalypso Q9 Map `0afa54134` 在原 `05024` 环境通过 N=256／上限 512 与样本 N=6／上限 12
+的 tokenizer/planner/request 门检，未执行模型。首次缺 Git 身份的部署失败保留，修正部署后通过。
+这五项限定目标门检与一项失败共 363 份原件已校验，不代表所有题或整合树的新 GPU 实测。
 
 | 部分 | 当前实现 | 未完成或未验证 |
 |---|---|---|

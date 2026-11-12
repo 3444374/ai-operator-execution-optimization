@@ -114,11 +114,12 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 
 新配置除了现有 owner／模型／输入绑定，还必须有：
 
-- 每题 `task="movie-q9"`、`expected_calls=256`、`max_native_calls=512`；两题 unit 的
-  `call_cap=1024`，分别记录实际物理次数。外层 owner 仍验证总预算及逐题预算之和。
+- 每题 `task="movie-q9"`，`expected_calls=N` 必须等于该份冻结输入经原 Q9 选择后的
+  非零发生项数，`max_native_calls=2*N`。unit 的 `call_cap` 仍显式声明有限总预算，
+  外层 owner 验证它与逐题预算之和；不得按历史样本量猜测 N 或静默扩大预算。
 - `sembench` 指向固定 c814 原查询／评价器，`data_dir` 指向完整 Movie CSV；
   `source_data_sha256` 至少绑定完整 `Reviews.csv`，可同时记录 `Movies.csv`。
-- `map_prompt_root` 指向新私有空目录。每次查询重新扫描原输入，选出全部 256 个 Ant-Man
+- `map_prompt_root` 指向新私有空目录。每次查询重新扫描原输入，选出全部 N 个 Ant-Man
   发生项，写入作者实际消费的 CSV 和逐发生项 prompt 表。重复业务 ID 不去重。
 - `native_launch="author_defaults"` 且没有 `engine`；保持原作者 05024 checkout、同一 maintained
   source、依赖 SHA、worker 观察模块、新 CPU evidence 和新 owner 的时限／账本绑定。
@@ -126,8 +127,9 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 `map_observation.py` 迁入已经验证的 Q9 字段格式化和被动观察：精确 rubric／review 嵌入原作者
 Map prompt，原 `_planned_max_tokens`、`estimate_tokens`、ratio update/reset、pin/KV、采样和执行器
 不改写。作者首请求输出额度动态估计；仅 `finish_reason=length` 且额度小于 8192 时，原算法
-重入一次并使用 8192。第二次仍为 length 也不会再重试。因此 256 是逻辑发生项，512 是物理
-上界；HTTP 和外层 lifecycle 都不自动重试。通用 SemBench 的无重试元数据不代表禁用此作者分支。
+重入一次并使用 8192。第二次仍为 length 也不会再重试。因此 N 是逻辑发生项，2N 是物理
+上界；HTTP 和外层 lifecycle 都不自动重试。历史 256／512 仅属于原冻结配置，不是原查询
+或新输入的规模限制。通用 SemBench 的无重试元数据不代表禁用此作者分支。
 
 完整原查询关系返回即记录 memory sink，随后才执行 API start/sampling/end 身份审计、source
 快照、原评价器、编码、持久化和客户端 close。逐请求序号、请求 ID、idx、model UID、采样与
@@ -140,23 +142,40 @@ tokenizer／planner／request 对象核对完整 prompt 和重试 cap 的 contex
 消息、token IDs、row_id、source_position、source_index 和 reviewId；不创建引擎。
 该入口仍需要**已经存在的作者隔离环境**，不能用本机 source-method fixture 代替目标运行资格。
 
-本次本地 CPU 检查包含既有 Filter 回归、新 Q9 事件／预算负例、完整 256×2 保存响应与原评价器
+历史维护版的本地 CPU 检查包含既有 Filter 回归、新 Q9 事件／预算负例、完整 256×2 保存响应与原评价器
 回放，以及真实维护版 query CLI 的受控时钟检查。全部 256 条原消息和 tokenizer IDs 与原归档
 一致；原方法体在显式 API/KV 替身下覆盖全 256 条 length→8192→length，最多两次，观察 hook
 保持原 generator 对象。它们不是新模型分数、全作者模块导入、目标 planner 或 GPU 资格。
 共享目录的名字不能作为版本证据：名含 05024 的本地资产实际还可能是 9e919 工程变体，必须
 核对 Git HEAD 和源码摘要；本次方法核对从原 05024 Git 对象取字节，不修改共享资产。
 
+可变输入规模的回归使用 1、7、13 个软件发生项，核对冻结原 source、重复业务 ID、完整原
+parser／结果关系／评价器、逐题 2N 限额及模型前预算拒绝；原生 planner/request 使用显式软件
+替身。受控时钟将原题必要执行计入 sink，将
+后置 trace、评价和保存推进留在 sink 之后。历史模型结果不自动转授给新源码。
+
+后续 `0afa54134` 于 2026-11-12 在原作者 `05024` 环境通过真实 tokenizer／planner／request
+的零模型门检：原输入每题 N=256、物理上限 512；独立冻结样本每题 N=6、物理上限 12。
+两组分别检查配置中的 cold/warm 两题，未执行冷暖模型查询，未加载权重或初始化 CUDA。
+这证明 N/2N 计划、输入与原生环境接点，不证明发生了 512 次调用或新的 GPU 性能。
+首次 archive-only 部署因缺少 Git 身份失败；第二次用同提交的干净 Git checkout 通过，
+初次失败及其与证据传输短暂重叠的记录保留。后续门检均待传输退出后启动，资源和租约清理通过。
+原件与 IMLane 两项门检汇总于仓库外 `baseline-reuse-zero-1112-final/FINAL-AUDIT.json`。
+
 零模型维护回归：
 
 ```sh
 CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHON" -B -m unittest \
   tests.baselines.text.test_kalypso_movie_map \
+  tests.baselines.text.test_kalypso_q9_cpu_inputs \
   tests.baselines.text.test_kalypso_native_observation \
   tests.baselines.text.test_kalypso_native_launch \
   tests.baselines.text.test_kalypso_memory_sink \
   tests.experiments.test_kalypso_owner_cli_binding
 ```
+
+原查询小规模回归需设置 `SEMLOOM_NATIVE_TEST_CHECKOUT` 为固定 c814 源码，并使用已有
+LOTUS／pandas／DuckDB driver 环境；未配置时明确跳过，不以跳过记录作为通过。
 
 目标原生 CPU 命令仍是 `check_kalypso_native_cpu.py --config "$NEW_CONFIG" --output "$NEW_CPU_EVIDENCE"`；
 服务只由既有 owner 通过 `owner_cli_bindings` 返回的 maintained CLI 启动。新 Linux owner/source/
@@ -171,7 +190,7 @@ CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHO
 作者环境没有 pandas 是正常隔离边界，不安装新依赖，也不将 driver 的 site-packages 混入作者环境。
 旧提交、失败与归档保留。修正版沿用两个正式 CLI 和既有 owner：
 
-1. 既有 driver Python 负责原 SemBench c814 查询选择、完整 256 occurrence、原 CSV 和精确指令。
+1. 既有 driver Python 负责原 SemBench c814 查询选择、全部 N 个 occurrence、原 CSV 和精确指令。
    对每题冻结 CSV、prompt 表、原 source 描述，输出 `CPU-INPUTS.json` 和其 SHA256。
 2. 把输出路径和摘要作为 `native_cpu_inputs={"manifest": ".../CPU-INPUTS.json", "sha256": "..."}`
    写入新的私有配置并按既有 owner 重封配置摘要。作者 Python 只验证／消费冻结输入，运行原生

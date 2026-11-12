@@ -14,41 +14,69 @@ ROOT=Path(__file__).resolve().parents[4]
 
 class CPUInputContracts(unittest.TestCase):
     def setUp(self):
+        self.prepare(7)
+        self.addCleanup(patch.stopall)
+        patch.object(inputs,'binding',side_effect=lambda *args:self.binding).start()
+
+    def prepare(self,count):
         directory=tempfile.TemporaryDirectory();self.addCleanup(directory.cleanup)
         self.root=Path(directory.name)
-        self.cfg=dict(units=[unit()])
-        self.binding=dict(source='verified-test-source',unit=unit())
+        self.cfg=dict(units=[unit(count)])
+        self.binding=dict(source='verified-test-source',unit=unit(count))
         self.manifest=dict(schema=inputs.SCHEMA,binding=self.binding,model_calls=0,queries=[])
-        for spec in unit()['queries']:
+        for spec in unit(count)['queries']:
             root=self.root/spec['query_id'];root.mkdir()
             rows=[dict(idx=i,row_id=spec['query_id']+'-row-'+str(i),source_position=i,
-                source_index=i*7,reviewId='duplicate',reviewText='review '+str(i)) for i in range(256)]
+                source_index=i*7,reviewId='duplicate',reviewText='review '+str(i)) for i in range(count)]
             (root/'prompt.json').write_text(json.dumps(dict(query_id=spec['query_id'],instruction='original',rows=rows)))
             with (root/'input.csv').open('w',newline='') as stream:
                 writer=csv.DictWriter(stream,fieldnames=['data']);writer.writeheader()
                 writer.writerows(dict(data=r['reviewText']) for r in rows)
             description=dict(scenario='movie',query='Q9',ranking='map',query_id=spec['query_id'],
-                sembench_commit='c814e3807e72d4cf876b852b17e77f3cc94575c2',expected_model_calls=256,
+                sembench_commit='c814e3807e72d4cf876b852b17e77f3cc94575c2',expected_model_calls=count,
                 operation=dict(stage=dict(method=dict(instruction='original'))))
             (root/'source.json').write_text(json.dumps(description))
-            self.manifest['queries'].append(dict(query_id=spec['query_id'],logical_occurrences=256,
+            self.manifest['queries'].append(dict(query_id=spec['query_id'],logical_occurrences=count,
                 files={role:dict(path=str(path.relative_to(self.root)),sha256=inputs.sha(path))
                     for role,path in dict(csv=root/'input.csv',prompt=root/'prompt.json',source=root/'source.json').items()}))
         self.publish()
-        self.addCleanup(patch.stopall)
-        patch.object(inputs,'binding',return_value=self.binding).start()
 
     def publish(self):
         path=self.root/'CPU-INPUTS.json';path.write_text(json.dumps(self.manifest))
         self.cfg['native_cpu_inputs']=dict(manifest=str(path),sha256=inputs.sha(path))
 
     def test_complete_frozen_inputs_preserve_duplicate_business_ID_and_source_occurrences(self):
-        manifest,loaded=inputs.load_inputs(self.cfg)
-        self.assertEqual([len(q['table']['rows']) for q in loaded],[256,256])
-        rows=loaded[0]['table']['rows']
-        self.assertEqual({r['reviewId'] for r in rows},{'duplicate'})
-        self.assertEqual([r['source_index'] for r in rows],[i*7 for i in range(256)])
-        self.assertEqual(len({r['row_id'] for r in rows}),256)
+        for count in (1,7,13):
+            self.prepare(count)
+            manifest,loaded=inputs.load_inputs(self.cfg)
+            self.assertEqual([len(q['table']['rows']) for q in loaded],[count,count])
+            rows=loaded[0]['table']['rows']
+            self.assertEqual({r['reviewId'] for r in rows},{'duplicate'})
+            self.assertEqual([r['source_index'] for r in rows],[i*7 for i in range(count)])
+            self.assertEqual(len({r['row_id'] for r in rows}),count)
+
+    def test_source_and_manifest_counts_must_match_the_bound_query_not_history(self):
+        item=self.manifest['queries'][0]
+        item['logical_occurrences']=256;self.publish()
+        with self.assertRaisesRegex(ValueError,'occurrence identities'):inputs.load_inputs(self.cfg)
+        item['logical_occurrences']=7
+        path=self.root/item['files']['source']['path']
+        description=json.loads(path.read_text());description['expected_model_calls']=256
+        path.write_text(json.dumps(description));item['files']['source']['sha256']=inputs.sha(path)
+        self.publish()
+        with self.assertRaisesRegex(ValueError,'original Map task'):inputs.load_inputs(self.cfg)
+
+    def test_single_occurrence_counts_reject_boolean_aliases(self):
+        self.prepare(1)
+        item=self.manifest['queries'][0]
+        item['logical_occurrences']=True;self.publish()
+        with self.assertRaisesRegex(ValueError,'occurrence identities'):inputs.load_inputs(self.cfg)
+        item['logical_occurrences']=1
+        path=self.root/item['files']['source']['path']
+        description=json.loads(path.read_text());description['expected_model_calls']=True
+        path.write_text(json.dumps(description));item['files']['source']['sha256']=inputs.sha(path)
+        self.publish()
+        with self.assertRaisesRegex(ValueError,'original Map task'):inputs.load_inputs(self.cfg)
 
     def test_manifest_hash_and_each_frozen_file_hash_fail_closed(self):
         for target in ('CPU-INPUTS.json','cold/input.csv','cold/prompt.json','cold/source.json'):

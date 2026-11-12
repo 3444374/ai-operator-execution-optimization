@@ -107,6 +107,7 @@ def load_inputs(cfg):
         raise ValueError('Frozen Q9 CPU query sequence differs')
     loaded = []
     for item, spec in zip(queries, expected, strict=True):
+        count = spec['expected_calls']
         paths = {}
         for role in ('csv', 'prompt', 'source'):
             entry = item['files'][role]
@@ -119,15 +120,16 @@ def load_inputs(cfg):
         if (description['scenario'] != 'movie' or description['query'] != 'Q9'
                 or description['ranking'] != 'map' or description['query_id'] != spec['query_id']
                 or description['sembench_commit'] != 'c814e3807e72d4cf876b852b17e77f3cc94575c2'
-                or description['expected_model_calls'] != 256
+                or type(description['expected_model_calls']) is not int or description['expected_model_calls'] != count
                 or description['operation']['stage']['method']['instruction'] != table['instruction']):
             raise ValueError('Frozen Q9 CPU input is not the original Map task/instruction')
         rows = table['rows']
-        if (table['query_id'] != spec['query_id'] or item['logical_occurrences'] != 256 or len(rows) != 256
+        if (table['query_id'] != spec['query_id'] or type(item['logical_occurrences']) is not int
+                or item['logical_occurrences'] != count or len(rows) != count
                 or any(type(r['idx']) is not int or type(r['source_position']) is not int for r in rows)
-                or [r['idx'] for r in rows] != list(range(256))
-                or [r['source_position'] for r in rows] != list(range(256))
-                or [r['row_id'] for r in rows] != [spec['query_id'] + '-row-' + str(i) for i in range(256)]):
+                or [r['idx'] for r in rows] != list(range(count))
+                or [r['source_position'] for r in rows] != list(range(count))
+                or [r['row_id'] for r in rows] != [spec['query_id'] + '-row-' + str(i) for i in range(count)]):
             raise ValueError('Frozen Q9 CPU occurrence identities differ')
         with paths['csv'].open(newline='') as stream:
             reader = csv.DictReader(stream)
