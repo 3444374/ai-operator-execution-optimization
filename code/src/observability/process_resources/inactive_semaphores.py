@@ -10,6 +10,8 @@ from pathlib import Path
 
 def cleanup_inactive_semaphores(names, before, after, *, shm_root=Path("/dev/shm"), proc_root=Path("/proc")):
     """Remove only observed new POSIX semaphores after all owned work exited."""
+    if names and (before.get('unclassified_python') or after.get('unclassified_python')):
+        raise RuntimeError('new semaphore ownership is unconfirmed with unclassified Python present')
     import ctypes
     cleanup = []
     for name in names:

@@ -18,6 +18,17 @@ over the execution policy it observes.
   preserves the original implementation used by the external Kalypso owner helper;
   it imports no execution provider or retired experiment. Limits come from that owner.
   Host SHM delta is not creator attribution, and summed RSS can count shared pages twice.
+- `process_resources/host_idle.py` owns host-boundary process classification and the
+  existing single-device GPU identity/idle checks. An unrelated Python interpreter
+  is retained under `unclassified_python`, rather than treated as proof of resource
+  contention. Recognized native workloads, GPU use and incomplete inventories still
+  reject the boundary; this is not proof of CPU isolation or harmlessness. When new
+  semaphores remain, unclassified Python at either boundary prevents the existing
+  time-window cleanup from claiming their ownership. No process is signalled by this
+  reader. New snapshots include the policy schema and source SHA; historical snapshots
+  cannot be reclassified as successful runs. The native stage adapter's explicit
+  `load_host` binds these checks to the same frozen cleanup/lease helper; outer owners
+  must use it too. The original helper file and old failed evidence stay unchanged.
 <a id="current-observation-owners"></a>
 
 - `execution_timing.py`, `buffered_events.py` and `model_reuse.py` own optional adapter timing,

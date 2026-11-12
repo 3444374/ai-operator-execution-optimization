@@ -18,6 +18,20 @@ def load_verified(name, spec):
     return module
 
 
+def load_host(name, spec):
+    """Bind the maintained resource guard to the pinned lifecycle/cleanup helper.
+
+    Outer controllers use this same loader for their pre/post boundaries. The
+    verified helper file stays unchanged; snapshot receipts name the new policy.
+    """
+    from src.observability.process_resources import host_idle
+    host = load_verified(name, spec)
+    host.snapshot = host_idle.snapshot
+    host.assert_idle = host_idle.assert_idle
+    host.gpu_snapshot = host_idle.gpu_snapshot
+    return host
+
+
 class StageSupervisor:
     def __init__(self, host, api, sockets, semaphores, resources, monitor_factory, timeout_s):
         self.host, self.api = host, api
@@ -42,7 +56,7 @@ class StageSupervisor:
                        private_sockets_clear=None, host_idle_guard='not_reached',
                        socket_cleanup_attempted=False, semaphore_cleanup_attempted=False,
                        evidence=str(evidence),
-                       lifecycle_owner='project binding using unchanged pinned Q1 host helpers')
+                       lifecycle_owner='project supervisor with pinned cleanup helpers and explicit host resource policy')
         keys = ('TMPDIR', 'VLLM_RPC_BASE_PATH', 'RAY_TMPDIR')
         previous = {key: os.environ.get(key) for key in keys}
         os.environ.update({key: str(temp) for key in keys})
@@ -72,7 +86,8 @@ class StageSupervisor:
                 host.private_json(evidence / 'after.json', after)
                 host.private_json(evidence / 'resources-before-cleanup.json', resources)
                 receipt['resource_passed'] = resources['passed']
-                # assert_idle rejects unknown GPU/foreign ownership before any unlink.
+                # GPU/workload conflicts are rejected before unlink. Unclassified
+                # Python separately prevents time-window-only SHM attribution.
                 try:
                     host.assert_idle(after, self.resources)
                 except BaseException:
@@ -129,7 +144,7 @@ class StageSupervisor:
 
 def from_bound(bound):
     spec = bound['host_adapter']
-    host = load_verified('q7_pinned_host', spec['host_helper'])
+    host = load_host('q7_pinned_host', spec['host_helper'])
     sockets = load_verified('q7_pinned_sockets', spec['socket_helper'])
     from src.observability.process_resources import inactive_semaphores as semaphores
     resources_path = Path(spec['resource_config']['path'])

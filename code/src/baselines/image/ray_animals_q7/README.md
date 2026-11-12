@@ -75,7 +75,29 @@ complete City result. The driver records that memory-sink timestamp and sends an
 explicit release; only then does the final worker call `ray.shutdown()` and the
 same supervisor finish physical cleanup. The adapter uses the pinned host/socket helpers and the
 maintained [inactive semaphore cleanup](../../../observability/process_resources/inactive_semaphores.py).
-The host/resource checks reject foreign or unknown ownership before unlinking.
+The host/resource checks reject recognized native workloads, GPU use and incomplete
+inventories before unlinking. Unclassified Python is retained as an observation,
+not evidence of contention or harmlessness. If new semaphores remain, its presence
+at either boundary prevents time-window-only ownership inference and unlinking.
+
+The adapter uses the maintained `process_resources.host_idle` policy through
+`host_adapter.load_host`, while retaining the hash-checked helper's lease and owned
+process cleanup. The outer owner must load the same policy for its initial/final
+checks, not call the old helper directly:
+
+```python
+from src.baselines.image.ray_animals_q7.host_adapter import from_bound, load_host
+host = load_host('bound_host', bound['host_adapter']['host_helper'])
+api = host.production_api(Path(bound['source']) / 'code')
+```
+
+Bind `source`, its commit/code tree and the controller import path to the new
+verified support checkout; the workload source remains independently pinned.
+`from_bound` uses this loader for every stage. The private host helper bytes remain
+unchanged; snapshot `schema` and `policy_sha256` identify the maintained guard.
+Old `load_verified` remains only the generic hash-checked module loader (including
+the socket helper), not the current host-policy entry. Archived owners still use
+their frozen source and cannot inherit this new boundary qualification.
 Private `TMPDIR`, `VLLM_RPC_BASE_PATH` and `RAY_TMPDIR` are per stage and restored
 afterward. The outer lease stays held across both stages. A stage timeout is
 separate from the mandatory outer query deadline.
@@ -152,9 +174,10 @@ Qualification scope:
   was absent from the declared host process identities. Its command identity is
   confirmed; CPU/RSS use and performance impact were not measured. The existing
   guard refused cleanup; this attempt remains failed and did not exercise the
-  final-stage sink. Future
-  observation must not add a persistent remote Python process to the exclusive
-  stage. No process-name exception or relaxed idle guard is introduced.
+  final-stage sink. The subsequent diagnostic-only fix replaced persistent
+  Python polling with one-shot shell observation and left that frozen guard
+  unchanged. The current maintained resource policy described above is a
+  separate change; it cannot turn this failed attempt into a successful one.
 - A separate complete cold run of `909f842c456cae36b45a0bb5921f98570ea43385`
   subsequently completed 128 confirmed requests, the original City sink with
   precision/recall/F1 = 1, and final physical cleanup. The sole server coordinator
@@ -162,6 +185,12 @@ Qualification scope:
   unchanged guard. This run is independent of the failed 64-request attempt;
   neither requests nor clocks are spliced together. The later failed-stage
   evidence/EXIT-status changes have local CPU qualification only.
+- The maintained host-resource policy has 22 local CPU checks covering ordinary
+  Python observations, real-conflict rejection, incomplete inventories, safe SHM
+  refusal, and outer-before → stage → outer-after policy consistency. Target Linux
+  process/GPU inventory and cleanup acceptance remain pending; no model was run.
+  The later unknown Python PID in the a535 source check remains unattributed and
+  failed under its original policy. New snapshot semantics do not rewrite it.
 
 The former persistent remote `python3 -u -B -c` status loop is replaced by the
 frozen, one-shot `observe_q7_status.sh` operational artifact. Bind its verified
@@ -173,7 +202,7 @@ sh "$VERIFIED_Q7_STATUS_SCRIPT" "$CURRENT_RUN_DIR" "$CURRENT_SHORT_DIR"
 
 Each invocation reads existing status files and `ps`, then exits. The local
 coordinator schedules any later observation; no remote polling process remains.
-This changes observation, not the production guard or cleanup ownership rules.
+That operational change did not alter the frozen guard or cleanup ownership rules.
 The old watcher source and failed-run records remain evidence, not active launch
 instructions. The successful target run used shell commands; it does not by
 itself prove deployment of this exact frozen script.
