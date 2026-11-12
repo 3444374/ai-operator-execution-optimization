@@ -623,6 +623,12 @@ evaluator 和目标 Ray／GPU 新终点后来已由 `909f842c` 完成独立资�
 旧结果包含最后关闭，不能减去估计清理时间回填新口径。
 
 Ray／Daft 的 CLIP 图仍是独立嵌入路径；Q7 的资格不扩大为其他 VLM Join／Extract 支持。
+视觉预检对Animals明确报告已有Ray VLM Filter接点，其余任务仍按实际未接线状态报告；预检不授予模型资格。
+已安装Daft0.7.21源码中，当前`vllm-prefix-caching`接点使用单个文本表达式，`prompt()`明确拒绝
+多消息列表、system_message及return_format；现用prepared路径已将原消息渲染为完整文本，不受此列表限制。
+原Extract的JSON约束继续经sampling_params的structured_outputs传递，不依赖return_format。
+该SDK的OpenAI provider另支持图像bytes／File等原生输入。这不等于当前已接视觉任务，也不能把
+某个provider的接口限制扩成整个Daft不支持视觉；选择其他provider还须验证原消息／PNG、重试／预算、发生项关联和完整生命周期。
 IMLane／Kalypso 当前视觉绑定未建立，不由此推断整个上游系统永远不支持视觉。
 原 LOTUS 明确不支持的音频题留空，其余未验证能力另记。
 

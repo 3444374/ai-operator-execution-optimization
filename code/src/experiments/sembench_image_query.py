@@ -43,8 +43,9 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
         native_lotus_query="original query/evaluator and native SDK service entry wired; service qualification pending",
         baseline_states={
             "lotus-native": "run_sembench_lotus_image_query.py binds the original SDK; actual VLM service not checked here",
-            "ray-data": "existing CLIP graph does not establish VLM Filter/Join/Extract support",
-            "daft": "existing CLIP graph does not establish VLM Filter/Join/Extract support",
+            "ray-data": ("native Animals VLM Filter entry wired; this input/service is not qualified by preflight"
+                         if scenario == "animals" else "this visual task is not wired to the maintained native Ray entry"),
+            "daft": "visual SemBench binding pending; native provider support must be checked separately from CLIP",
             "imlane": "current author bridge visual binding not established",
             "kalypso": "current author bridge visual binding not established"},
         results={name: None for name in ("lotus-native", "ray-data", "daft", "imlane", "kalypso")},
