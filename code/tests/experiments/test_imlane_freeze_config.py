@@ -189,3 +189,21 @@ print(json.dumps(dict(columns=m.columns,requests=r,tokens=t)))'''
         pd.DataFrame(columns=['title','text']).to_csv(self.root/'lizzy_caplan_text_data.csv', index=False)
         with self.assertRaisesRegex(ValueError, 'nonempty original input'):
             entry.freeze_config(self.seed)
+
+    def test_native_sql_gate_compares_original_cells_separately_from_transport(self):
+        from tests.baselines.text import qualify_imlane_movie_filter as gate
+        pd.DataFrame({'reviewId':['duplicate'] * 7, 'id':['taken_3'] * 7,
+                      'reviewText':['same prompt'] * 7}).to_csv(self.root/'Reviews.csv',index=False)
+        config = entry.freeze_config(dict(self.seed,schema=entry.MOVIE_SCHEMA,query_id='2'))
+        query, _, _, requests, tokens, rows = entry.prepare_query(config)
+        reference = dict(messages=[r['messages'] for r in requests], texts=['True'] * 7,
+            source_columns=['reviewId','reviewText'], labels_and_texts=[('duplicate','same prompt')] * 7,
+            evidence={}, result={'fixture':True}, quality={})
+        with patch.object(gate, 'reference', return_value=reference):
+            actual = gate.prepare_fixture(config, self.root/'reference')
+            self.assertEqual([r['token_ids'] for r in actual['rows']], tokens)
+            self.assertEqual([r['title'] for r in actual['rows']], [r['title'] for r in rows])
+            self.assertEqual([r['text'] for r in actual['rows']], [r['text'] for r in rows])
+            reference['labels_and_texts'][0] = ('changed','same prompt')
+            with self.assertRaises(AssertionError):
+                gate.prepare_fixture(config, self.root/'reference')

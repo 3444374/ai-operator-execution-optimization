@@ -70,15 +70,20 @@ async def replay(config, originals, phase, output):
     return result
 
 
+def check_source_rows(query, rows, frozen):
+    """Keep historical task cells separate from native transport metadata."""
+    label, text = frozen['source_columns']
+    assert [(str(row[label]), str(row[text])) for _, row in query.operation.frame.iterrows()] == frozen['labels_and_texts']
+    assert [row['title'] for row in rows] == [str(record.source_index) for record in query.operation.records]
+    assert [json.loads(row['text']) for row in rows] == [record.values for record in query.operation.records]
+
+
 async def replay_saved_filter(config, frozen, phase, output):
     query, method, prepared, requests, tokens, rows = binding.prepare_query(config)
     count = config['max_model_calls']
     assert [row['messages'] for row in requests] == frozen['messages']
     assert [row['source_position'] for row in rows] == list(range(count))
-    label, text = frozen['source_columns']
-    assert [(str(row[label]), str(row[text])) for _, row in query.operation.frame.iterrows()] == frozen['labels_and_texts']
-    assert [row['title'] for row in rows] == [str(record.source_index) for record in query.operation.records]
-    assert [json.loads(row['text']) for row in rows] == [record.values for record in query.operation.records]
+    check_source_rows(query, rows, frozen)
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     assert tokens == [tokenizer.apply_chat_template(value, tokenize=True, add_generation_prompt=True)
                       for value in frozen['messages']]
