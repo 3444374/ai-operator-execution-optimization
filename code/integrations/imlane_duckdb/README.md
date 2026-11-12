@@ -312,8 +312,17 @@ Medical Q1 的 `--original-run` 指向冻结原件 `model-output/run/cold`，依
 `--case complete`、`missing-row`、`duplicate-id`。完整门必须真实执行原 DSO/SQL/Arrow/IPC，
 核对 1200 次、原 Series 序列化／质量和 sink→ACK；两个反例须在 prediction 前失败且零请求。
 复用 build 时必须匹配当前 driver_source/kernel，否则只重链薄 driver，不重编 DSO。
-本机未链接 Linux DSO，目标门仍 pending。目标第一轮仅独立 cold 1200/hardcap1200，
-无 warmup/retry，不自动暖跑；实际冷起点与 ready 后完整 sink 事件各自计时，禁止估减旧时长。
+冻结源码 `70a153810cbe901ae3d4ee24c9af5cbe9c966c5c` 已独立通过上述Linux门，并完成一次
+cold1200/hardcap1200、warmup0、retry0；1200条实际完整消息/token逐条一致，完整原Series
+结果40行，precision=0.5、recall=0.4、F1=0.4444444444444445。完整sink、ACK和退出／资源
+清理通过不表示质量满分；历史旧GPU只有token长度的限制不变。
+原件包 `imlane-medical-q1-70a-1111-r1-originals.tar.gz` 的SHA256为
+`fdc5f863bc386c6ed28defbcac85b8440e83f9d20c435c3d95c1286f76b899d3`；仓库外
+`imlane-medical-q1-binding-20261111/target-results-r1/LOCAL-AUDIT.json` 汇总逐条核验，
+原件内 `run-r1/cpu-host-r2/FINAL.json`、`run-r1/gpu-host/FINAL.json` 保留原源码和退出资格。
+上述成绩仅归70a原冻结源；当前组合未作目标执行，Q9维护CLI的Linux完整门仍pending。
+本机未链接Linux DSO，不由CPU预演或旧v4目标结果转授资格。实际冷起点与ready后完整sink
+事件各自计时，禁止估减旧时长。
 
 ## Medical Q4 原版 Filter 接线
 
