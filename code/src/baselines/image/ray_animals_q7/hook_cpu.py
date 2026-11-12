@@ -26,6 +26,7 @@ def main():
     from src.experiments.cell_budget import CellBudgetLedger
     root=args.output.resolve();root.mkdir(exist_ok=False)
     budget=AttemptBudget('q7-hook-cpu',128)
+    (root/'RUN-BOUND.json').write_text(json.dumps(dict(budget_id=budget.budget_id,physical_attempt_limit=128)))
     ledger=CellBudgetLedger.create(root/'logical-unit.sqlite',budget,deadline_utc=time.time()+600)
     ledger.reserve_unit(budget.budget_id,128);unit=ledger.claim_shared_unit(budget.budget_id)
     keys=dict(Q7_SOURCE=os.environ['Q7_SOURCE'],Q7_CONFIG=os.environ['Q7_CONFIG'],

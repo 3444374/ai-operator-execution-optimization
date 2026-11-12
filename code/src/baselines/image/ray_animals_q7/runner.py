@@ -90,6 +90,9 @@ def native_stage(root, stage, bound):
                  _temp_dir=str(Path(os.environ['RAY_TMPDIR']) / 'ray'))
         with gzip.open(root / f'input-{stage}.json.gz', 'rt') as stream:
             rows = json.load(stream)
+        from .binding import rows_per_pass
+        if len(rows) != rows_per_pass(bound['physical_attempt_limit']):
+            raise ValueError('Native Q7 stage differs from the frozen complete source size')
         with observed_builder():
             event(root, 'native_pipeline_entered', stage=stage)
             predictions = execute(rows, bound['model'])
@@ -138,7 +141,8 @@ def run_query(root, bound, supervise_stage=None):
         first_engine_accept_monotonic_ns=None, stage_lifecycle=[],
         lifecycle='two sequential native workers; final owner released after complete original City sink',
         source_to_sink_scope='fresh source, both startups, required transport and first-stage cleanup; excludes final teardown, audit, evaluation and persistence',
-        request_span_is_GPU_time=False, warmup=0, retries=0, logical_occurrences=128)
+        request_span_is_GPU_time=False, warmup=0, retries=0,
+        logical_occurrences=bound['physical_attempt_limit'])
 
     def confirm(receipt, current):
         required = ('worker_exit_zero', 'physical_idle', 'resource_passed', 'owned_processes_exited', 'private_sockets_clear')
@@ -205,7 +209,8 @@ def run_query(root, bound, supervise_stage=None):
             final_close_finished_monotonic_ns=close['finished_monotonic_ns'])
 
     try:
-        result, quality, passes, timing = run(dataset, execute, on_result_ready=accept)
+        result, quality, passes, timing = run(dataset, execute, on_result_ready=accept,
+            physical_attempt_limit=bound['physical_attempt_limit'])
         if report['timing']['sink_ready_monotonic_ns'] is None:
             raise RuntimeError('Original Q7 query omitted its complete memory-sink callback')
         report.update(status='completed', quality=quality, passes=passes)
@@ -260,8 +265,10 @@ def main():
     root = args.output.resolve()
     event(root, 'runner_entered', stage=args.native_stage)
     bound = json.loads((root / 'RUN-BOUND.json').read_text())
-    if bound['physical_attempt_limit'] != 128 or not (root / 'logical-unit.sqlite').is_file():
-        raise ValueError('Supervisor must reserve and claim one shared 128-call unit before launch')
+    from .binding import rows_per_pass
+    rows_per_pass(bound['physical_attempt_limit'])
+    if not (root / 'logical-unit.sqlite').is_file():
+        raise ValueError('Supervisor must reserve and claim one shared 2N-call unit before launch')
     os.environ.update(Q7_SOURCE=bound['source'], Q7_OUTPUT=str(root),
                       Q7_BUDGET_ID=bound['budget_id'], Q7_CONFIG=bound['config'])
     if args.native_stage is None:

@@ -23,8 +23,9 @@ def build(model):
 
 def execute(rows,model):
     import ray.data
-    assert len(rows)==len({r['call_id'] for r in rows})==64
+    count=len(rows)
+    assert count>0 and len({r['call_id'] for r in rows})==count
     predictions=build(model)(ray.data.from_items(rows)).materialize().take_all()
-    assert len(predictions)==len({r['call_id'] for r in predictions})==64
+    assert len(predictions)==len({r['call_id'] for r in predictions})==count
     assert {r['call_id'] for r in predictions}=={r['call_id'] for r in rows}
     return predictions

@@ -1,6 +1,6 @@
 """Q7 thin binding: original LOTUS query owns both filters and ordinary sink.
 
-The caller supplies the qualified native Ray executor and global 128-call guard.
+The caller supplies the qualified native Ray executor and shared two-pass guard.
 """
 from copy import deepcopy
 import hashlib
@@ -13,27 +13,36 @@ def message_digest(message):
                                      separators=(',', ':')).encode()).hexdigest()
 
 
+def rows_per_pass(physical_attempt_limit):
+    if type(physical_attempt_limit) is not int or physical_attempt_limit <= 0 or physical_attempt_limit % 2:
+        raise ValueError('Q7 requires a finite positive 2N physical attempt limit')
+    return physical_attempt_limit // 2
+
+
 def reconcile(rows, predictions):
     expected = [row['call_id'] for row in rows]
     received = [row['call_id'] for row in predictions]
-    if len(expected) != 64 or len(set(expected)) != 64:
-        raise ValueError('each original Q7 Filter requires exactly 64 unique occurrences')
-    if len(received) != 64 or len(set(received)) != 64 or set(received) != set(expected):
+    if not expected or len(set(expected)) != len(expected):
+        raise ValueError('each original Q7 Filter requires unique source occurrences')
+    if len(received) != len(expected) or len(set(received)) != len(expected) or set(received) != set(expected):
         raise ValueError('missing, duplicate or unknown native outcome')
     by_id = {row['call_id']: row['generated_text'] for row in predictions}
     return [by_id[key] for key in expected]
 
 
 class TwoPassBinding:
-    def __init__(self, execute):
+    def __init__(self, execute, occurrence_count):
+        if type(occurrence_count) is not int or occurrence_count <= 0:
+            raise ValueError('Q7 needs the positive frozen source occurrence count')
         self.execute = execute
+        self.occurrence_count = occurrence_count
         self.passes = []
         self.messages = []
 
     def __call__(self, messages):
         stage = len(self.passes)
-        if stage >= 2 or len(messages) != 64 or any(p['status'] != 'complete' for p in self.passes):
-            raise ValueError('Q7 budget is two passes of 64, without retries or warmup')
+        if stage >= 2 or len(messages) != self.occurrence_count or any(p['status'] != 'complete' for p in self.passes):
+            raise ValueError('Q7 requires two full frozen-source passes, without retries or warmup')
         rows = [dict(call_id=f'q7-pass-{stage}-row-{i}', messages=deepcopy(message))
                 for i, message in enumerate(messages)]
         # Spend before dispatch: a failed stage must not be retried on this object.
@@ -50,7 +59,7 @@ class TwoPassBinding:
             outcome['message_sha256'] = [message_digest(message) for message in messages]
 
 
-def run(dataset, execute, *, on_result_ready=None):
+def run(dataset, execute, *, on_result_ready=None, physical_attempt_limit=None):
     """Native execution must already enforce the process-wide public-generate cap.
 
     Original runner calls the original parser and full City intersection itself.
@@ -61,8 +70,10 @@ def run(dataset, execute, *, on_result_ready=None):
     from lotus.types import LMOutput
     from src.baselines.image.sembench_animals import run_original_query, evaluate_original
 
-    dataset.preflight(7)
-    binding = TwoPassBinding(execute)
+    source = dataset.preflight(7)
+    if physical_attempt_limit is not None and rows_per_pass(physical_attempt_limit) != source['rows']:
+        raise ValueError('Q7 physical attempt limit differs from the complete frozen source')
+    binding = TwoPassBinding(execute, source['rows'])
     class NativeLM(LM):
         def __call__(self, messages, *args, **kwargs):
             return LMOutput(outputs=binding(messages))

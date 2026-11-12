@@ -32,7 +32,12 @@ def main():
     assert importlib.metadata.version('vllm') == expected_vllm
     messages = json.loads(gzip.decompress((ROOT / 'MESSAGES-PRIVATE.json.gz').read_bytes()))
     occurrences = json.loads((ROOT / 'OCCURRENCES.json').read_text())
-    assert len(messages) == len(occurrences) == 128
+    captured = json.loads((ROOT / 'CPU-NATIVE-CAPTURE.json').read_text())
+    count = captured['preflight']['rows']
+    total = 2 * count
+    assert type(count) is int and count > 0
+    assert len(messages) == len(occurrences) == total
+    assert [row['stage'] for row in occurrences] == [0] * count + [1] * count
     attempts = []
 
     def forbidden(*args, **kwargs):
@@ -59,8 +64,8 @@ def main():
         prepared_images = asyncio.run(collect(image.udf(batch)))
         prompts = asyncio.run(collect(chat.udf(batch)))
         tokens = asyncio.run(collect(tokenize.udf(prompts)))
-        assert [value['__idx_in_batch'] for value in prompts] == list(range(128))
-        assert [value['__idx_in_batch'] for value in tokens] == list(range(128))
+        assert [value['__idx_in_batch'] for value in prompts] == list(range(total))
+        assert [value['__idx_in_batch'] for value in tokens] == list(range(total))
         config = AutoConfig.from_pretrained(MODEL, local_files_only=True, trust_remote_code=False)
         supported = ModelRegistry.get_supported_archs()
         assert all((architecture in supported for architecture in config.architectures))
@@ -92,28 +97,28 @@ def main():
             assert set(first) == set(second)
             assert all((torch.equal(first[key], second[key]) for key in first))
             details.append(dict(row_id=row['row_id'], raw_template_token_ids=ids, expanded_processor_token_ids=first['input_ids'].tolist()[0], image_grid_thw=first['image_grid_thw'].tolist(), pixel_values_shape=list(first['pixel_values'].shape), pixel_values_dtype=str(first['pixel_values'].dtype), pixel_values_sha256=sha(first['pixel_values'].numpy().tobytes()), raw_token_ids_scope='native Ray TokenizeUDF before image-pad expansion;not equal-by-definition to expanded model inputs', expanded_image_pad_tokens=int((first['input_ids'] == reference.tokenizer.convert_tokens_to_ids('<|image_pad|>')).sum())))
-        assert len(details) == 128 and (not attempts) and (not torch.cuda.is_initialized()) and ray.is_initialized()
+        assert len(details) == total and (not attempts) and (not torch.cuda.is_initialized()) and ray.is_initialized()
         import sys, time
         sys.path.insert(0, os.environ['Q7_SOURCE'] + '/code')
         from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
         from src.experiments.cell_budget import CellBudgetLedger
-        allowance = AttemptBudget('CPU-RAY-ANIMALS-Q7-boundary128', 128)
-        ledger = CellBudgetLedger.create(ROOT / 'CPU-ONLY-shared-128.sqlite', allowance, deadline_utc=time.time() + 600)
-        ledger.reserve_unit(allowance.budget_id, 128)
+        allowance = AttemptBudget('CPU-RAY-ANIMALS-Q7-boundary-' + str(total), total)
+        ledger = CellBudgetLedger.create(ROOT / ('CPU-ONLY-shared-' + str(total) + '.sqlite'), allowance, deadline_utc=time.time() + 600)
+        ledger.reserve_unit(allowance.budget_id, total)
         unit = ledger.claim_shared_unit(allowance.budget_id)
-        for index in range(128):
+        for index in range(total):
             unit.reserve(sha(str(index).encode()))
         try:
-            unit.reserve(sha(b'129th'))
+            unit.reserve(sha(b'over-budget'))
         except BudgetExhausted:
             pass
         else:
-            raise AssertionError('129th software attempt accepted')
-        assert unit.attempts == 128 and unit.remaining == 0
+            raise AssertionError('software attempt beyond 2N accepted')
+        assert unit.attempts == total and unit.remaining == 0
         image_config = reference.image_processor.to_dict()
         import importlib.metadata, inspect
         sdk_paths = {cls.__name__: Path(inspect.getfile(cls)) for cls in (PrepareImageUDF, ChatTemplateUDF, TokenizeUDF)}
-        result = dict(status='passed', rows=128, original_LOTUS_message_template_tokens_match=128, actual_Ray_native_image_decode_matches_original_RGB=128, processor_grid_pixels_and_expanded_token_inputs_match=128, processor_class=type(reference).__name__, image_processor_class=type(reference.image_processor).__name__, original_image_processor_config=image_config, no_resize_or_template_override=True, native_stages=stages, engine_kwargs_declared=engine_kwargs, engine_parameters_not_runtime_measured=True, processor_config=engine_cfg.model_dump(), model_architectures=config.architectures, architectures_registered=True, architecture_registration_is_not_actual_GPU_compatibility_test=True, software_guard129_rejected=True, actual_shared_ledger_CPU_boundary128=True, actual_GPU_pre_generate_hook_not_executed=True, image_stage_precedes_chat_template=True, original_wire_messages_not_modified=True, HF_template_mutation_observed=sum((batch[i]['messages'] != messages[i] for i in range(128))), model_constructor_attempts=0, actual_model_calls=0, CUDA_initialized=False, Ray_CPU_runtime_started=True, Ray_GPUs=0, engine_restarts=0, engine_task_retries=0, versions={name: importlib.metadata.version(name) for name in ('ray', 'vllm', 'torch', 'transformers', 'Pillow')}, sdk_hashes={name: sha(path.read_bytes()) for name, path in sdk_paths.items()}, processor_metadata_sha256={name: sha((Path(MODEL) / name).read_bytes()) for name in ('config.json', 'preprocessor_config.json', 'chat_template.json')})
+        result = dict(status='passed', rows=total, original_LOTUS_message_template_tokens_match=total, actual_Ray_native_image_decode_matches_original_RGB=total, processor_grid_pixels_and_expanded_token_inputs_match=total, processor_class=type(reference).__name__, image_processor_class=type(reference.image_processor).__name__, original_image_processor_config=image_config, no_resize_or_template_override=True, native_stages=stages, engine_kwargs_declared=engine_kwargs, engine_parameters_not_runtime_measured=True, processor_config=engine_cfg.model_dump(), model_architectures=config.architectures, architectures_registered=True, architecture_registration_is_not_actual_GPU_compatibility_test=True, software_guard_next_attempt_rejected=True, actual_shared_ledger_CPU_boundary=total, actual_GPU_pre_generate_hook_not_executed=True, image_stage_precedes_chat_template=True, original_wire_messages_not_modified=True, HF_template_mutation_observed=sum((batch[i]['messages'] != messages[i] for i in range(total))), model_constructor_attempts=0, actual_model_calls=0, CUDA_initialized=False, Ray_CPU_runtime_started=True, Ray_GPUs=0, engine_restarts=0, engine_task_retries=0, versions={name: importlib.metadata.version(name) for name in ('ray', 'vllm', 'torch', 'transformers', 'Pillow')}, sdk_hashes={name: sha(path.read_bytes()) for name, path in sdk_paths.items()}, processor_metadata_sha256={name: sha((Path(MODEL) / name).read_bytes()) for name in ('config.json', 'preprocessor_config.json', 'chat_template.json')})
         (ROOT / 'TOKEN-PIXEL-DETAILS.json').write_text(json.dumps(details, indent=2) + '\n')
     assert not ray.is_initialized() and (not attempts)
     result['Ray_CPU_shutdown_confirmed'] = True
