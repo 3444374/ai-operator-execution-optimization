@@ -24,8 +24,9 @@ v1 另有 cascade 接点，当前 v2 没有该分支。[代码与 CPU 验证](..
 
 本分支另有默认关闭的完整请求排序、图片 URI 留存选择，以及表示寿命／供给等待诊断。
 [实现与本地证据](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
-区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备和 CPU 检查；这些排序／媒体／供给策略的真实 GPU 与完整查询收益、
-encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
+区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备、CPU 检查与准确 b1d965f 的 MMF GPU 对照。
+[原配置服务器回执](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md#server-qualification-20261111)
+保留严格 token 46/48 与该 head 的 v1 决策缺项，不转授后继配置资格。完整查询收益、encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 
 <a id="current-refactor-status"></a>
 <a id="refactor-completion-checklist"></a>
