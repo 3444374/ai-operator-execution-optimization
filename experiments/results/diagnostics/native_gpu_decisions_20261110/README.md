@@ -1,5 +1,8 @@
 # 原生 GPU 批决策的被动观察与诊断
 
+后续准确 `b1d965f` 的服务器 CPU、MMF GPU 与 trace 导出见[同分支主报告](../semloom_mechanism_prototypes_20261110/README.md#server-qualification-20261111)；
+下文保留原 CPU 切片身份，实际模块化 runner 的 v1 决策缺项未被后续 trace 自动补齐。
+
 本切片实现研究观察代码，不改变请求、调度选择或引擎容量。来源为 main
 `70ee0970260a710efee73e5cc3db841abed75ead` 上的资源观察器及 vLLM 0.25.1 官方源码。
 研究安排见 [PR #96](https://github.com/3444374/ai-operator-execution-optimization/pull/96) 中的数据组织计划；

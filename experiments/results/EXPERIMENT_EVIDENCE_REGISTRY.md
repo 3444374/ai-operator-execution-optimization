@@ -1,5 +1,14 @@
 # 实验与机制证据台账
 
+## 2026-11-12：原型分支的准确服务器回执补记
+
+[准确 b1d965f 的原回执](diagnostics/semloom_mechanism_prototypes_20261110/README.md#server-qualification-20261111)
+补记当次 64 项服务器 CPU、每臂 48 请求的 MMF GPU 与零模型 trace 导出。
+完整提示／返回文本／关系回放相同，但输出 token 46/48，未取得严格全等或性能优势；
+模块化 runner 的 v1 决策缺项及 CUDA trace 版本／覆盖限制保留，不将后续整合配置的 48/48 转授。
+本次仅回查公开执行回执，不是新增运行或私有原始包复验。
+
+
 ## 2026-11-10：请求排序与图片留存的本地机制原型
 
 [主报告](diagnostics/semloom_mechanism_prototypes_20261110/README.md)记录原 Q9 请求的模拟窗口回放、

@@ -1,7 +1,8 @@
 # 完整请求排序、媒体留存与供给诊断
 
-本轮交付两个默认关闭的机制原型及对应诊断代码。来源是本地源码、原 Q9 请求回放、
-生成图片的实际 LOTUS 准备函数和 CPU 软件检查；模型调用为 0，没有 GPU 或完整查询性能结果。
+初始切片交付两个默认关闭的机制原型及对应诊断代码。来源是本地源码、原 Q9 请求回放、
+生成图片的实际 LOTUS 准备函数和 CPU 软件检查；该阶段模型调用为 0。
+后续准确 `b1d965f` 的服务器 CPU／MMF GPU 回执见文末，严格输出 token 未全等，仍无性能优势结论。
 研究安排见[机制实施计划](https://github.com/3444374/ai-operator-execution-optimization/blob/fa7d2166cc0f3b610a21af1c7f5a92f9d23af4f8/experiments/plans/数据组织.md#gpu-implementation-starts)，
 此前的[原生批决策观察](../native_gpu_decisions_20261110/README.md)继续保留独立身份。
 
@@ -90,3 +91,41 @@ LRU、消费者价值与简单留存的准备计数相同，前两者均未产�
 
 供给诊断尚无真实队列／GPU 联合轨迹；消费者驱动的供给量、阶段混合、encoder／KV 留存、准备位置、
 多实例与投机物理准备仍属于后续实施。当前结果不把三条主线或八条路线标为全部完成。
+
+<a id="server-qualification-20261111"></a>
+## 准确 b1d965f 的服务器资格回执
+
+2026-11-12 对实现与方案复核时，将原 PR 的三份执行回执补入主报告。
+[回执副本](raw/server-qualification-receipts.json)固定原文与链接；本次仅同步已有结果，
+没有新增模型调用，也没有重新取得原回执所述私有原始包。以下结果绑定
+`b1d965fea7f84b19cb9f61974bdb263de8d854c3`，不能直接授予后续源码／参数组合。
+
+[服务器 CPU](https://github.com/3444374/ai-operator-execution-optimization/pull/98#issuecomment-6783607702)：
+64 项通过、0 失败／错误／跳过，是当次 55 项目标、8 项请求组织回归与 1 项事件 sink 的集合，
+不是历史次数累加。实际 LOTUS 图片准备与固定 vLLM 0.25.1 原函数 CPU 分支均执行；
+后者使用 fixture dispatcher，未创建模型。Python 3.12.3、LOTUS 1.2.4、Pillow 12.2.0、
+Transformers 4.57.6，CPU 0–7；零模型／Ray runtime／GPU，进程、SHM 与 lease 收尾通过。
+
+[MMF GPU 对照](https://github.com/3444374/ai-operator-execution-optimization/pull/98#issuecomment-6784858383)：
+16 个源 occurrence，经项目 Map→Map→Filter 产生每臂 48 次实际请求，合计 96 次，无额外预热或重试。
+FIFO 与 prefix_length 使用独立冷模型、相同 C4/B1、4096 token 额度、Qwen2.5-7B BF16、
+原 8-token 生成／seed／换行停止。它不是原 SemBench 查询成绩。
+
+- 两臂完整提示 token、调用身份、父关联、返回文本和 finish reason 均为 48/48 相同，原方法回放各返回 7 行。
+- **输出 token 数组仅 46/48 严格相同**：首个 Map 的两个 occurrence 末 token 为 271 与 151645 的差异保留。
+  原 tokenizer 解码不同，换行停止／特殊结束处理使返回文本相同；不能据文本相同宣称 token 全等。
+- 初始传输顺序确有改变；应用批数 15／16，原生迭代成员样本 116／127；两臂各观察 2080 cached、1646 computed prompt tokens。
+- 单次 evaluate 区间 43.526／44.911 s，含冷引擎路径；不作纯 GPU 时间、稳态吞吐或收益结论。
+- GPU、进程和 SHM 恢复；每臂 4 个无活跃引用的私有 socket 节点由外层 helper 清理，不能写成 owner 自动回收。
+  两次零模型的前置路径失败亦保留。
+
+[原 trace 离线导出](https://github.com/3444374/ai-operator-execution-optimization/pull/98#issuecomment-6789187821)
+新增 0 次模型调用：全导出内 kernel 数 42714／46194、成功 cudaGraphLaunch 87／97，
+实际 native marker 关联 114/116、125/127，未关联的各两个是初始化 warmup。
+这些是整份 trace 计数，不是等工作量的查询时间区间。真实 runner 是模块化
+`vllm.v1.worker.gpu.model_runner`，本 head 的 monolithic-v1 graph／cascade 决策字段未被观察。
+驱动 13.2 与 tracing library 13.0 的版本警告、部分进程 NVTX／OSRT 警告及缺失 drop counter 保留；
+四个观察 sink 零 drop 不等于完整 CUPTI 捕获。
+
+后续 #101 的 batch-invariant 48/48 诊断属于另一整合源码和配置，不能覆盖这里的 46/48。
+本候选仍保持显式、Draft；完整查询入口、实际 Q2b 消费者寿命、供给控制和稳定收益仍待完成。

@@ -8,12 +8,13 @@ CPU、软件替身、真实 IPC、真实 Ray、模型功能和性能分别解释
 <a id="native-gpu-decision-observation"></a>
 本分支增加 vLLM 0.25.1 v1 的被动批决策观察与离线诊断，支持实际成员、前缀／cascade、
 graph／padding 及采集缺项核对；[代码与 CPU 验证](../experiments/results/diagnostics/native_gpu_decisions_20261110/README.md)
-说明范围。真实 GPU 开销、请求全链关联、kernel 费用与候选优化收益尚未验证。
+说明原 CPU 范围；[后续准确来源 GPU 回执](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md#server-qualification-20261111)
+保留模块化 runner 的缺项、trace 覆盖限制与严格 token 未全等，尚不支持优化收益。
 
 本分支另有默认关闭的完整请求排序、图片 URI 留存选择，以及表示寿命／供给等待诊断。
 [实现与本地证据](../experiments/results/diagnostics/semloom_mechanism_prototypes_20261110/README.md)
-区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备和 CPU 检查；真实 GPU、完整查询收益、
-encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
+区分 Core 接线、原请求离线回放、实际 LOTUS 图片准备、CPU 检查及准确 b1d965f 的 MMF GPU 对照。
+该对照返回文本一致、严格 token 46/48；完整查询收益、encoder／KV 留存及动态实际工作供给策略尚未验证或实现。
 
 <a id="current-refactor-status"></a>
 <a id="refactor-completion-checklist"></a>
