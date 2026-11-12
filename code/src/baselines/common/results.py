@@ -47,10 +47,10 @@ def validate_results(
             )
 
 
-def _quantile(values: list[float], probability: float) -> float:
-    if not values:
+def _quantile(ordered: list[float], probability: float) -> float:
+    """Interpolate an already sorted latency distribution."""
+    if not ordered:
         return 0.0
-    ordered = sorted(values)
     position = (len(ordered) - 1) * probability
     lower = math.floor(position)
     upper = math.ceil(position)
@@ -82,7 +82,7 @@ def summarize_results(
         )
     else:
         jct_s = 0.0
-    latencies = [result.latency_s for result in observed]
+    latencies = sorted(result.latency_s for result in observed)
     endpoint_counts = Counter(
         result.endpoint_index for result in observed
     )
