@@ -30,7 +30,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 |---|---|---|---|---|---|
 | 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；Cars/E-Commerce Filter 有软件检查，真实数据/SQL待验；原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接，软件检查；Linux/模型待验，非作者 Join 算法复现 | 原 CP＋Filter 已接，完整原题／原作者方法与 planner 软件检查；作者环境／模型待验 |
-| 文本完整排名；Movie Q9 TopK profile | 原 quick TopK 的显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 作者 insertion／merge full TopK 已接，原方法／完整 sink 软件检查；作者环境／模型待验 |
+| 文本完整排名；Movie Q9 TopK profile | 原 quick TopK 的显式 resident 已接线，软件检查；不借用 Q9 Map 资格 | 未接线 | 未接线 | 未接线 | 作者 insertion／merge full TopK 已接，原方法／完整 sink 软件检查；11eff原作者CPU门通过，模型待验 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -263,7 +263,8 @@ Kalypso 的[原生完整排名](src/baselines/text/frameworks/kalypso_native/REA
 复用维护 CLI、原查询和字段交接，把完整 source 一次交作者 `SemTopK(k=N)`；保留其 insertion／merge、
 5 token A/B 判定、blocking plan 与原调度，不把它命名为 LOTUS quick 算法。预算为完整比较上界，
 实际调用另记；空／单行不虚构请求。原字段、重复发生项、7／8行算法切换、完整原结果与评分、
-原 planner／本地 tokenizer context 门及失败路径有软件检查；新作者环境和模型资格 pending。
+原 planner／本地 tokenizer context 门及失败路径有软件检查。冻结 `11eff9cd7` 已通过 Linux5项软件
+及原作者0／1／8行CPU门（8行56个有向比较完整token），模型调用0、清理通过，原件已核；实际模型资格仍 pending。
 连同受影响 Map／Filter／Join、owner、HTTP／时钟及原题共114项不同本机检查为111通过、
 3跳过（独立Daft SDK及未设置的MMQA／Medical可选资产变量），0真实模型。
 

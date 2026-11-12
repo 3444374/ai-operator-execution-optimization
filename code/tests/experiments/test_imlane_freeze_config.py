@@ -302,3 +302,40 @@ print(json.dumps(dict(columns=m.columns,requests=r,tokens=t)))'''
             reference['labels_and_texts'][0] = ('changed','same prompt')
             with self.assertRaises(AssertionError):
                 gate.prepare_fixture(config, self.root/'reference')
+
+    def test_native_boolean_sql_gate_binds_saved_join_occurrences_and_full_relation(self):
+        import copy
+        from tests.baselines.text import qualify_imlane_movie_filter as gate
+        from src.baselines.text.sembench_prepared import result_value
+        from src.infrastructure.private_artifacts import json_metric
+
+        pd.DataFrame(dict(reviewId=[1,1,2],id=['ant_man_and_the_wasp_quantumania']*3,
+            reviewText=['same','same','other'],scoreSentiment=['POSITIVE','POSITIVE','NEGATIVE'],
+            unused_source_note=['RELATION_ONLY_']*3)).to_csv(self.root/'Reviews.csv',index=False)
+        config=entry.freeze_config(dict(self.seed,schema=entry.JOIN_SCHEMA,scenario='movie',query_id='5'))
+        query,method,prepared,requests,tokens,rows=entry.prepare_query(config)
+        texts=['True' if i%2 else 'False' for i in range(len(rows))]
+        result,relation=finish_relation(query,method,prepared,[dict(call_id=r['call_id'],generated_text=text)
+            for r,text in zip(prepared,texts,strict=True)])
+        frozen=dict(input_sha256=config['input_sha256'],calls=prepared,token_ids=tokens,texts=texts,
+            relation=result_value(relation['operator']['frame']),result=result_value(result),
+            quality=json_metric(query.evaluate(result)),evidence=dict(origin='synthetic CPU fixture',models=0))
+        path=self.root/'saved-replies.json';path.write_text(json.dumps(frozen))
+        actual=gate.prepare_fixture(config,saved_reference=path)
+        self.assertEqual(len(actual['rows']),9)
+        self.assertEqual([r['generated_text'] for r in actual['rows']],texts)
+        self.assertEqual([r['token_ids'] for r in actual['rows']],tokens)
+        self.assertEqual(actual['original_operator_relation'],frozen['relation'])
+        self.assertIn('unused_source_note:left',frozen['relation']['columns'])
+        self.assertNotIn('RELATION_ONLY_',json.dumps(requests))
+        self.assertEqual(len({r['occurrence_id'] for r in actual['rows']}),9)
+        self.assertEqual(actual['rows'][0]['messages'],actual['rows'][1]['messages'])
+        self.assertNotEqual(actual['rows'][0]['generated_text'],actual['rows'][1]['generated_text'])
+        for change in (lambda f:f.update(input_sha256={'Reviews.csv':'changed'}),
+                       lambda f:f['calls'][0].update(source_position=1),
+                       lambda f:f['calls'][0].update(messages_json='[]'),
+                       lambda f:f['token_ids'][0].append(999),
+                       lambda f:f['texts'].pop()):
+            broken=copy.deepcopy(frozen);change(broken);path.write_text(json.dumps(broken))
+            with self.assertRaisesRegex(ValueError,'source files|complete source occurrence'):
+                gate.prepare_fixture(config,saved_reference=path)

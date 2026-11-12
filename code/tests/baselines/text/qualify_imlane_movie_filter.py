@@ -6,6 +6,7 @@ the native driver, UDF, actual SQL, source, full sink, ACK and audits remain rea
 """
 import argparse
 import csv
+import json
 from pathlib import Path
 import sys
 from unittest.mock import patch
@@ -17,8 +18,23 @@ from tests.baselines.text.replay_imlane_movie_filters import reference, bridge_q
 from tests.baselines.text.replay_imlane_medical_filter import check_source_rows
 
 
-def prepare_fixture(config, original_run):
+def prepare_fixture(config, original_run=None, *, saved_reference=None):
     query, method, prepared, requests, tokens, rows = binding.prepare_query(config)
+    if saved_reference is not None:
+        path=Path(saved_reference)
+        frozen=read_json(path,max_bytes=path.stat().st_size)
+        if frozen['input_sha256']!=config['input_sha256']:
+            raise ValueError('saved Boolean replies belong to different source files')
+        if ([r['source_position'] for r in frozen['calls']]!=[r['source_position'] for r in prepared]
+                or [json.loads(r['messages_json']) for r in frozen['calls']]!=[r['messages'] for r in requests]
+                or frozen['token_ids']!=tokens or len(frozen['texts'])!=len(rows)
+                or any(type(text) is not str for text in frozen['texts'])):
+            raise ValueError('saved Boolean replies must bind every complete source occurrence/message/token array')
+        return dict(rows=[dict(r,token_ids=t,generated_text=text)
+                    for r,t,text in zip(rows,tokens,frozen['texts'],strict=True)],
+                    original_reference=dict(saved_reference=file_identity(path),evidence=frozen['evidence']),
+                    original_result=frozen['result'],original_quality=frozen['quality'],
+                    original_operator_relation=frozen['relation'],models=0,software_fixture=True)
     if config['schema'] == binding.MEDICAL_SCHEMA:
         from tests.baselines.text.replay_imlane_medical_filter import reference as medical_reference
         original_run = Path(original_run)
@@ -42,16 +58,16 @@ def run(args):
     if sys.platform != 'linux':
         raise RuntimeError('native Filter DSO/SQL gate requires Linux; local parser tests are not SQL qualification')
     config, _generation = binding.configuration(read_json(args.config))
-    if not (config['schema'] == binding.MOVIE_SCHEMA or
+    if args.saved_reference is None and not (config['schema'] == binding.MOVIE_SCHEMA or
             (config['schema'], config['query_id']) == (binding.MEDICAL_SCHEMA, '1')):
-        raise ValueError('this gate requires one explicitly bound Movie Filter or Medical Q1 query')
+        raise ValueError('this source requires a complete saved Boolean query reference')
     expected = config['max_model_calls']
     # Fail stale native driver before any owner or software service allocation.
     binding.verified_build(args.build_record)
     root = args.output.resolve(); new_private_directory(root)
     config['model_service'] = dict(model_python=sys.executable,model=config['tokenizer'],
         served_model_name='imlane-zero-model-filter',dtype='bfloat16',engine_options={})
-    fixture = prepare_fixture(config,args.original_run)
+    fixture = prepare_fixture(config,args.original_run,saved_reference=args.saved_reference)
     fixture_path = root/'fixture.json';write_private_json(fixture_path,fixture)
     args.output = root/'worker'
     real_spawn, real_config = model_service.spawn, model_provider.configuration
@@ -99,6 +115,10 @@ def run(args):
         assert worker['budget']['consumed_requests']==expected
         assert worker['result'] == fixture['original_result']
         assert worker['quality'] == fixture['original_quality']
+        if 'original_operator_relation' in fixture:
+            semantic_path=args.output/'semantic-audit.json'
+            semantic=read_json(semantic_path,max_bytes=semantic_path.stat().st_size)
+            assert semantic['operator_relation']==fixture['original_operator_relation']
         assert worker['native_alive_after_sink'] and worker['sink_release']['outcome']=='complete'
         assert len(software['calls'])==len({c['occurrence_id'] for c in software['calls']})==expected
     else:
@@ -121,8 +141,12 @@ def run(args):
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
-    for name in ('config','original-run','output','build-record','author-root','method-python'):
+    for name in ('config','output','build-record','author-root','method-python'):
         parser.add_argument('--'+name,type=Path,required=True)
+    reference=parser.add_mutually_exclusive_group(required=True)
+    reference.add_argument('--original-run',type=Path)
+    reference.add_argument('--saved-reference',type=Path,
+        help='complete source/message/token/answer/relation fixture for a prepared Boolean query, including Join')
     parser.add_argument('--case',choices=('complete','missing-row','duplicate-id'),default='complete')
     parser.add_argument('--kind',choices=('thread','process'),default='thread')
     parser.add_argument('--threads',type=int)
