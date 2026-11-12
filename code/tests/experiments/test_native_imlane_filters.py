@@ -126,10 +126,10 @@ class FilterWorkerTests(unittest.TestCase):
                     if self.closed: return
                     self.closed=True; events.append('close'); clock[0]+=5_000_000_000
                     if close_failure: raise RuntimeError('close failed')
-            def prepare(_):
+            def prepare(_query, _columns):
                 self.assertEqual(events,['start','ready']); events.append('source'); clock[0]+=2_000_000_000
                 rows=[dict(occurrence_id='r',source_position=0,title='original airline',text='raw',messages=[])]
-                return SimpleNamespace(describe=lambda:{}), SimpleNamespace(columns=['Airlines']), [], [], [[1]], rows
+                return SimpleNamespace(columns=['Airlines']), [], [], rows
             def run(_args, report, **kwargs):
                 self.assertEqual(kwargs['query_started_ns'],190_000_000_000 + preflight_seconds * 1_000_000_000)
                 clock[0]+=3_000_000_000; events.append('sink')
@@ -144,10 +144,12 @@ class FilterWorkerTests(unittest.TestCase):
                 if persistence_failure: raise OSError('relation persistence failed')
                 return real_persist(*args, **kwargs)
             def preflight(*_):
+                self.assertEqual(events, [])
                 clock[0] += preflight_seconds * 1_000_000_000
+                return SimpleNamespace(describe=lambda:{}), SimpleNamespace(columns=['Airlines']), [], [], [[1]], []
             with patch.object(entry,'verified_build',return_value=native_build), \
-                    patch.object(entry,'_source_query',side_effect=preflight), \
-                    patch.object(entry,'prepare_query',side_effect=prepare), \
+                    patch.object(entry,'prepare_query',side_effect=preflight), \
+                    patch.object(entry,'_prepare_requests',side_effect=prepare), \
                     patch.object(entry,'run_relation_query',side_effect=run), \
                     patch.object(entry,'persist_relation_observation',side_effect=persist), \
                     patch.object(entry,'time',SimpleNamespace(monotonic_ns=lambda:clock[0],monotonic=time.monotonic,time=time.time)):
@@ -181,6 +183,8 @@ class FilterWorkerTests(unittest.TestCase):
         self.assertIsNone(error);self.assertEqual(report['model_startup_seconds'],90)
         self.assertEqual(report['ready_source_to_sink_seconds'],5)
         self.assertEqual(report['cold_worker_entry_to_sink_seconds'],95)
+        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v2')
+        self.assertEqual(report['source_started_ns'], report['query_started_monotonic_ns'])
         self.assertEqual(events,['start','ready','source','sink','audit','close'])
 
     def test_source_preflight_belongs_to_cold_not_ready_query_or_startup(self):

@@ -175,7 +175,11 @@ Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两
 LOTUS resident、Ray／Daft prepared、LOTUS 图像和 MMQA 聚合新增
 `query_clock_version=sembench.source_to_sink.v2`：起点在各自额外预检和配置准备之后，
 完整查询真实读取及最终关系处理仍计入；旧宽时钟不回填。冷模型／已就绪外部服务条件仍不同，
-IMLane／Kalypso 的旧时钟尚未统一，见[时钟范围](src/baselines/README.md#完整查询时钟与仍未统一的路径)。
+维护版 IMLane Filter 与 Kalypso Movie Filter／Map 也已移出额外预检：前者在起点前准备源码、
+审计 token、预算及上下文检查，区间内保留执行消息、native SQL 和原完整 sink；后者前置
+manifest／源码绑定，仍新鲜读取原 Reviews CSV、生成作者必需输入并执行原关系。
+Kalypso 另保留 caller→sink，不改旧 receipt 或估算扣除。受影响软件检查通过，目标真实代表
+查询待验；其余专用／私有入口的旧时钟仍按[时钟范围](src/baselines/README.md#完整查询时钟与仍未统一的路径)分列。
 
 Kalypso Movie Q8/Q9/Q10 现由同一个 Map 接点绑定原题，保留作者提示、动态输出上限、
 length→8192 重试、原 parser 和完整关系后处理。Q10 另绑定原 Movies 评价文件；调用数从原题选择取得，

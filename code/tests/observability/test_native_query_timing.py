@@ -71,6 +71,31 @@ class MemorySinkTests(unittest.TestCase):
                 comparison_timing=dict(complete=True,driver_entered_ns=2_000_000_000,
                     API_returned_ns=29_000_000_000)))
 
+    def test_versioned_source_excludes_preflight_and_keeps_legacy_caller_interval(self):
+        q=self.query()
+        q['backend_report']['memory_sink_timing'].update(
+            query_clock_version='sembench.source_to_sink.v2',source_started_ns=3_000_000_000)
+        result=query_timing(q)
+        self.assertEqual(result['source_to_sink_seconds'],1)
+        self.assertEqual(result['caller_to_memory_sink_seconds'],3)
+        self.assertEqual(result['source_started_ns'],3_000_000_000)
+        self.assertEqual(result['query_clock_version'],'sembench.source_to_sink.v2')
+
+    def test_versioned_source_never_falls_back_to_submission_when_missing_or_invalid(self):
+        for source in (None,True,0,1_500_000_000,5_000_000_000):
+            with self.subTest(source=source):
+                q=self.query()
+                q['backend_report']['memory_sink_timing'].update(
+                    query_clock_version='sembench.source_to_sink.v2',source_started_ns=source)
+                self.assertIsNone(query_timing(q)['source_to_sink_seconds'])
+
+    def test_unknown_version_never_relabels_the_legacy_interval(self):
+        q=self.query()
+        q['backend_report']['memory_sink_timing']['query_clock_version']='unknown'
+        result=query_timing(q)
+        self.assertIsNone(result['source_to_sink_seconds'])
+        self.assertIn('unrecognized',result['source_to_sink_unavailable_reason'])
+
     def test_audit_and_event_delivery_do_not_extend_memory_sink(self):
         q=self.query()
         first=query_timing(q)

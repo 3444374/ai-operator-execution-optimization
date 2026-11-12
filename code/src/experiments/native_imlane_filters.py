@@ -92,13 +92,20 @@ def freeze_config(value):
 
 
 def prepare_query(config):
+    """Validate source and build audit token IDs before starting the native owner."""
     from transformers import AutoTokenizer
     config, generation = configuration(config)
     query = _source_query(config, generation)
-    method, prepared, requests = prepare(query, prompt_columns=config['prompt_columns'])
+    method, prepared, requests, rows = _prepare_requests(query, config['prompt_columns'])
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     tokens = [tokenizer.apply_chat_template(row['messages'], tokenize=True, add_generation_prompt=True)
               for row in requests]
+    return query, method, prepared, requests, tokens, rows
+
+
+def _prepare_requests(query, prompt_columns):
+    """Build the actual native inputs without reloading source code or audit tokens."""
+    method, prepared, requests = prepare(query, prompt_columns=prompt_columns)
     rows = []
     for record, request in zip(query.operation.records, requests, strict=True):
         # Keep the existing three-string native ABI. These two fields carry
@@ -108,7 +115,7 @@ def prepare_query(config):
             title=str(record.source_index),
             text=json.dumps(record.values, ensure_ascii=False, allow_nan=False, sort_keys=True),
             messages=request['messages']))
-    return query, method, prepared, requests, tokens, rows
+    return method, prepared, requests, rows
 
 
 def check(config):
@@ -184,14 +191,20 @@ def run_worker(args, config, *, service_factory=ModelService):
     previous = {n: signal.signal(n, args.stop_budget.signal) for n in (signal.SIGTERM, signal.SIGINT)}
     report = dict(schema=config['schema'], status='failed', variant='original-author', query_id=config['query_id'],
         worker_entry_monotonic_ns=entered, retries=0, extra_warmup=0,
+        query_clock_version='sembench.source_to_sink.v2', source_started_ns=None,
         outer_host_lease_required=True, physical_gpu_exit_confirmed=None,
         build_record=file_identity(Path(args.build_record)))
     primary = service = ledger = unit = result = None
     try:
-        # Reject unsupported task shapes before starting a model. This source
-        # preflight is part of the cold worker interval; the query still makes
-        # its own fresh preparation after the model is ready.
-        _source_query(config, generation)
+        # Source binding and token-reference work belong to preflight. The
+        # measured query regenerates its execution messages, and the original
+        # sink still performs the real data scan as in the prepared Ray/Daft paths.
+        checked = prepare_query(config)
+        query, tokens = checked[0], checked[4]
+        report.update(source=query.describe(), effective_prompt_columns=list(checked[1].columns),
+                      source_preflight_finished_ns=time.monotonic_ns())
+        del checked
+        window.check()
         for name in ('model-calls', 'model-service'):
             (args.output / name).mkdir(mode=0o700)
         limit = config['max_model_calls']
@@ -215,17 +228,17 @@ def run_worker(args, config, *, service_factory=ModelService):
         with service:
             report.update(model_ready_observed_ns=time.monotonic_ns(), model_owner=service.ready_info)
             report['model_startup_seconds'] = report['model_ready_observed_ns'] / 1e9 - service.report['started_monotonic']
+            if max(map(len, tokens)) + generation.max_tokens > service.ready_info['max_model_len']:
+                raise ValueError('full Filter prompt and output exceed the actual model context')
+            report['preflight_finished_ns'] = time.monotonic_ns()
             started = time.monotonic_ns()
             report['query_started_monotonic_ns'] = started
-            query, method, prepared, requests, tokens, rows = prepare_query(config)
-            report['source'] = query.describe()
-            report['effective_prompt_columns'] = list(method.columns)
+            report['source_started_ns'] = started
+            method, prepared, requests, rows = _prepare_requests(query, config['prompt_columns'])
             write_private_json(args.output / 'messages.json', dict(rows=rows))
             with open_private_text(args.output / 'input.csv') as stream:
                 writer = csv.writer(stream); writer.writerow(('occurrence_id', 'title', 'text', 'source_position'))
                 writer.writerows((r['occurrence_id'], r['title'], r['text'], r['source_position']) for r in rows)
-            if max(map(len, tokens)) + generation.max_tokens > service.ready_info['max_model_len']:
-                raise ValueError('full Filter prompt and output exceed the actual model context')
             relation = FilterRelation(query, method, prepared, requests, tokens, rows)
             args.startup_timeout_s = window.query_deadline - time.monotonic()
             command = [build['binary_path'], '--input', str(args.output / 'input.csv'),
@@ -271,9 +284,10 @@ def run_worker(args, config, *, service_factory=ModelService):
             report['cold_worker_entry_to_sink_seconds'] = (report['full_sink_observed_monotonic_ns'] - entered) / 1e9
             report['ready_source_to_sink_seconds'] = report['source_to_sink_seconds']
         report['deadline'] = window.report()
-        report['timing_scope'] = ('ready_source_to_sink: fresh single-query CSV/prompt preparation after owner ready '
-            'through full original memory sink, including required native transport; ACK, audit, evaluation and '
-            'close follow. cold_worker_entry_to_sink additionally includes worker preflight and model startup; '
+        report['timing_scope'] = ('ready_source_to_sink v2: actual message/native-input preparation, native SQL, '
+            'original CSV scan and complete memory sink after owner ready; source binding/configuration, '
+            'tokenizer/audit-token preparation, context and budget checks precede the start. ACK, audit, '
+            'evaluation and close follow. cold_worker_entry_to_sink additionally includes preflight and model startup; '
             'host imports/preflight/lease before this worker remain excluded, not silently reconstructed.')
         try:
             persist_relation_observation(args.output, report, result, primary=primary)

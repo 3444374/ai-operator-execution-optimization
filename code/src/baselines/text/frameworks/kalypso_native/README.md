@@ -7,7 +7,8 @@
 `NativeQueryDriver.query()` 在原生 HTTP 响应解析、发生项索引／模型／返回数量校验，以及原
 `MovieTask.result_frame()` 的完整投影或聚合完成后，立即记录
 `backend_report.memory_sink_timing.memory_sink_ready_ns`，随后发布 `memory_sink_ready` 事件。
-统一查询时间从外层 `query_start_ns` 到这个客户端单调时钟；不从旧 `answer_ready_s` 扣除估计开销。
+维护版 Filter／Movie Map 的 v2 查询时间从额外预检后的 `source_started_ns` 到这个客户端单调时钟；
+外层 `query_start_ns` 到 sink 另存 `caller_to_memory_sink_seconds`，不从旧 `answer_ready_s` 扣除估计开销。
 作者 HTTP handler 会等待完整 `processor.execute()` 后才返回所有存活 context，客户端只恢复
 原生 `idx` 对应的发生项，不改变 Filter parser、调用预算、HTTP 模型路径、pin 或 KV 策略。
 
@@ -21,6 +22,13 @@ trace 完整发生项、request ID 和 model UID 核对在 sink 后执行，审�
 但最终查询仍失败，不能据此产生合格成绩。旧 `result_ready` 仍位于审计和编码完成之后；历史
 时长不改写。`HTTP-clock.json` 新版 `semloom.kalypso_http_clock.v2` 只计响应读取／关闭，明确
 排除 JSON 解析和文件持久化。
+
+`memory_sink_timing` 仍用现有 v1 receipt schema，迁移路径额外记录
+`query_clock_version="sembench.source_to_sink.v2"` 和实测 source 起点。Filter 在此之前验证
+manifest、物化文件和原始来源，然后由绑定 reader 在区间内真实扫描原 Reviews CSV，保留
+声明的 prefix 与行类型；不是返回预检缓存行。原文件的事后完整性和标签核对仍在 sink 后。
+Map 在预检阶段绑定原查询，区间内执行原查询的读取、必需输入文件、原生请求与完整关系。
+未知版本或缺失起点明确留空；没有该字段的旧 receipt 保持原 caller 区间，不回填为 v2。
 
 现有私有 Map／MMQA 查询重载 `query()` 并继承 `post()`，后者默认仍同步保存 HTTP 证据。
 这些入口未迁移时不能使用本次内存 sink 资格；只在迁移的 query 内开启延迟持久化。退役该兼容

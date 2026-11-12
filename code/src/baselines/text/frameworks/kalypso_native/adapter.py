@@ -333,15 +333,19 @@ class NativeQueryDriver:
         directory=self.output/spec['query_id'];directory.mkdir(mode=0o700)
         with self.query_evidence(spec,directory,
                 sink_scope='complete native HTTP relation plus original Movie projection/aggregation in memory',
-                source_scope='fresh manifest validation/read and author-required native-input.csv materialization') as (report,artifacts,timing):
+                source_scope='fresh original Movie CSV scan and author-required native-input.csv materialization') as (report,artifacts,timing):
             eligible=None
             try:
-                with query_phase(timing,'source_and_required_input'):
+                with query_phase(timing,'source_preflight'):
                     if sha(spec['manifest'])!=spec['manifest_sha256']:
                         raise ValueError('Fixed input manifest changed')
                     source=MovieRecordSource.from_manifest(spec['manifest'])
-                    rows=source.rows()
+                    read_rows=source.bind_query_rows()
                     task=MovieTask.from_config(spec['task'])
+                timing.update(query_clock_version='sembench.source_to_sink.v2',
+                              source_started_ns=time.monotonic_ns())
+                with query_phase(timing,'source_and_required_input'):
+                    rows=read_rows()
                     eligible=[r for r in rows if task.accepts(r)]
                     if len(eligible)!=spec['expected_calls']:
                         raise ValueError('Unexpected ordinary predicate cardinality')
@@ -385,7 +389,8 @@ class NativeQueryDriver:
                     artifacts['quality.json']=quality
                     report.update(quality=quality,calls=dict(expected=len(eligible),native_completed=len(apis)),
                         source_prefix_rows=len(rows),ordinary_predicate_rows=len(eligible),
-                        scan_pass_count='not instrumented; existing input validator may reread inside the query clock',
+                        scan_pass_count=1,
+                        scan_pass_count_scope='original CSV scan inside versioned query; preflight and post-sink source audits are separate',
                         native_API_units=apis,native_server_latency_sec=response.get('latency_sec'),
                         scheduling_owner='author Kalypso/vLLM; adapter has no row dispatch loop',
                         MFU=dict(status='unavailable',reason='Fixed vLLM 0.13.0rc4 exports no verified native FLOPs numerator'),

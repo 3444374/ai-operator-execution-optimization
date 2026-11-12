@@ -46,7 +46,7 @@ class KalypsoMemorySinkTests(unittest.TestCase):
         self.actions.append((name,self.clock()))
         return self.clock()
 
-    def fixture(self, *, trace_error=None, save_error=None, transport_error=None):
+    def fixture(self, *, trace_error=None, save_error=None, transport_error=None, source_preflight_seconds=0):
         stack=ExitStack()
         self.addCleanup(stack.close)
         original_open=Path.open
@@ -55,6 +55,8 @@ class KalypsoMemorySinkTests(unittest.TestCase):
         original_frame=MovieTask.result_frame
         original_encode=MovieTask.encode_result
         original_reconcile=adapter.reconcile
+        from src.baselines.text.movie_records import MovieRecordSource
+        original_source=MovieRecordSource.from_manifest
         clock=self.clock
 
         def open_path(path, *args, **kwargs):
@@ -97,6 +99,10 @@ class KalypsoMemorySinkTests(unittest.TestCase):
             self.actions.append(('evaluate',clock()))
             clock.advance(23)
             return dict(original_metric=dict(f1_score=1.0))
+
+        def source(*args):
+            clock.advance(source_preflight_seconds)
+            return original_source(*args)
 
         def save(path, value):
             self.actions.append(('persist:'+path.name,clock()))
@@ -142,6 +148,7 @@ class KalypsoMemorySinkTests(unittest.TestCase):
             patch.object(MovieTask,'encode_result',encode),
             patch.object(adapter,'read_trace',trace),
             patch.object(adapter,'reconcile',reconcile),
+            patch.object(MovieRecordSource,'from_manifest',side_effect=source),
             patch.object(sembench_movie,'evaluate_original',evaluate),
         ):
             stack.enter_context(context)
@@ -161,7 +168,7 @@ class KalypsoMemorySinkTests(unittest.TestCase):
             self.assertLess(names.index('memory_sink_ready'),names.index(name),name)
         self.assertLess(names.index('encode'),names.index('result_ready'))
         self.assertLess(names.index('result_ready'),names.index('evaluate'))
-        expected=dict(source_and_required_input=2,native_HTTP_and_JSON_parse=16,
+        expected=dict(source_preflight=0,source_and_required_input=2,native_HTTP_and_JSON_parse=16,
             original_relation=11,trace_audit=30,result_encoding=19,quality_evaluation=23,
             audit_persistence=176)
         self.assertEqual({name:value['elapsed_s'] for name,value in report['memory_sink_timing']['phases'].items()},expected)
@@ -172,6 +179,30 @@ class KalypsoMemorySinkTests(unittest.TestCase):
         self.assertEqual(report['calls'],dict(expected=2,native_completed=2))
         self.assertEqual(report['quality']['row_audit']['true_positive'],1)
         self.assertFalse(driver.defer_http_evidence)
+
+    def test_source_preflight_has_its_own_event_and_is_not_subtracted_afterwards(self):
+        from src.observability.native_query_timing import query_timing
+
+        report=self.fixture(source_preflight_seconds=17).query(self.spec,self.emit)
+        receipt=report['memory_sink_timing']
+        self.assertEqual(receipt['source_started_ns'],17_000_000_000)
+        self.assertEqual(receipt['memory_sink_ready_ns'],46_000_000_000)
+        timing=query_timing(dict(query_start_ns=0,backend_report=report))
+        self.assertEqual(timing['source_to_sink_seconds'],29)
+        self.assertEqual(timing['caller_to_memory_sink_seconds'],46)
+
+    def test_bound_query_reader_scans_original_csv_without_hashing_or_cached_rows(self):
+        from src.baselines.text import movie_records
+
+        source=movie_records.MovieRecordSource.from_manifest(self.manifest)
+        expected=source.rows()
+        read=source.bind_query_rows()
+        with patch.object(movie_records,'_sha256',side_effect=AssertionError('query scan reran preflight')):
+            self.assertEqual(read(),expected)
+        path=Path(json.loads(self.manifest.read_text())['original_csv'])
+        path.write_text(path.read_text().replace(expected[0]['reviewText'],'changed query text'))
+        with self.assertRaisesRegex(ValueError,'scan differs'):
+            read()
 
     def test_trace_failure_preserves_sink_raw_HTTP_and_original_exception_with_recording_failure(self):
         primary=LookupError('original trace failure')

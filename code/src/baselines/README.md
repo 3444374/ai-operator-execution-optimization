@@ -587,7 +587,7 @@ LOTUS／Palimpzest 的逐题方法或脚本定义查询，ThalamusDB／BigQuery 
 
 ### 完整查询时钟与仍未统一的路径
 
-五个入口显式记录 `query_clock_version=sembench.source_to_sink.v2`，同时保留 worker 进入、预检结束和
+已迁移的维护入口显式记录 `query_clock_version=sembench.source_to_sink.v2`，同时保留 worker 进入、预检结束和
 sink 的实测时间戳。LOTUS resident 在输入／预算核对后、原查询真实 CSV 扫描前开始；
 LOTUS 图像及 MMQA 聚合在本地客户端和输入／叶级预检后、完整原查询读取前开始。
 Ray／Daft prepared 路径在配置／输入核对和预算准备后开始，包含必要的消息准备、原生执行和
@@ -596,8 +596,13 @@ Ray／Daft prepared 路径在配置／输入核对和预算准备后开始，包
 这些版本化起点不等于所有运行配置已经可直接排名：Ray／Daft 单冷和 LOTUS resident 的首次惰性
 加载仍在区间内，LOTUS 外部服务则已就绪；模型启动条件必须匹配并独立记录，不能借同一字段名
 把不同 profile 混算。旧 `query_seconds`／外层生命周期区间仍可能包含预检、审计和关闭。
-当前 IMLane Filter 的 `prepare_query` 仍混合读取、身份核对与 tokenizer 准备；Kalypso 的旧 caller→sink
-仍包含 manifest／source 核对及必需输入文件准备。它们没有取得 v2 资格，不从已有宽时钟回填新值。
+IMLane Filter 现在把源码／输入、tokenizer 与审计 token、预算和实际上下文检查放在起点之前，
+执行消息和必需 CSV、原生 SQL、原查询实际扫描及完整 sink 留在区间内；worker 进入到 sink
+另计预检和模型启动。Kalypso 维护版 Filter 把 manifest／来源核对前置，区间内新鲜扫描原
+Reviews CSV，并生成作者必需输入；Map 也在 `make_query` 前置后开始原查询实际读取。
+两者由 receipt 的 `source_started_ns` 和显式版本计算，外层 caller→sink 另存
+`caller_to_memory_sink_seconds`；旧 receipt 保留旧值，不从宽区间估算扣除成本。
+其余 IMLane 专用入口、Kalypso 未迁移私有查询和旧时钟仍未取得此起点口径。
 默认 isolated 记录图继续明确留空统一 sink 指标；多算子、Join、TopK 支持以实际后端接点核对，
 不以时钟字段、软件夹具或逐题计划代替执行能力。
 

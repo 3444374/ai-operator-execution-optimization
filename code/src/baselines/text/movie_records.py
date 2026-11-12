@@ -106,6 +106,14 @@ def _read_csv(path, columns, max_rows):
 def _original_prefix(source, max_rows, expected_digest):
     if source.is_symlink() or _sha256(source) != expected_digest:
         raise ValueError("Movie input CSV SHA256 differs from the expected source")
+    result = _read_original_prefix(source, max_rows)
+    if _sha256(source) != expected_digest:
+        raise ValueError("Movie input CSV changed during preparation or preflight")
+    return result
+
+
+def _read_original_prefix(source, max_rows):
+    """Read the actual source; file identity validation belongs to its caller."""
     selected, references, source_rows = [], [], 0
     with _csv_reader(source) as reader:
         required = ("reviewId", "id", "reviewText", "scoreSentiment")
@@ -131,8 +139,6 @@ def _original_prefix(source, max_rows, expected_digest):
                 {key: record[key] for key in REFERENCE_COLUMNS[:-1]},
                 scoreSentiment=row["scoreSentiment"],
             ))
-    if _sha256(source) != expected_digest:
-        raise ValueError("Movie input CSV changed during preparation or preflight")
     return selected, references, source_rows
 
 
@@ -318,6 +324,28 @@ class MovieRecordSource:
 
     def rows(self):
         return self._load()[1]
+
+    def bind_query_rows(self):
+        """Validate the input now and return its fresh original-CSV query reader.
+
+        Execution consumes a new scan, not cached preflight rows. The existing
+        labeled_frame audit still verifies the signed source after the sink.
+        """
+        manifest, expected, _ = self._load()
+        path = Path(manifest['original_csv'])
+
+        def read():
+            if path.is_symlink():
+                raise ValueError('Movie query input changed to a symbolic link')
+            records, _, count = _read_original_prefix(path, manifest['max_rows'])
+            if manifest['role'] in ('sembench_movie_subset', 'sembench_movie_official'):
+                for record in records:
+                    record['reviewId'] = int(record['reviewId'])
+            if count != manifest['source_rows'] or records != expected:
+                raise ValueError('Movie query scan differs from its validated source')
+            return records
+
+        return read
 
     def labeled_frame(self):
         _, records, references = self._load()

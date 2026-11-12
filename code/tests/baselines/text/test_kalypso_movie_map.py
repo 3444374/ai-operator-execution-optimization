@@ -265,10 +265,12 @@ class OriginalMapSizeContracts(unittest.TestCase):
                     self.assertEqual(pd.read_csv(payload['data_path'])['data'].tolist(),sample.reviewText.tolist())
                     clock.advance(3);return response
                 original_prepare=movie_map.prepare
+                original_make_query=movie_map.make_query
                 original_parse=postprocessors.map_postprocess
                 original_execute=movie_map.SemBenchTextQuery.execute
                 original_evaluate=movie_map.SemBenchTextQuery.evaluate
                 def prepare(*args):clock.advance(2);return original_prepare(*args)
+                def make_query(*args):clock.advance(17);return original_make_query(*args)
                 def parse(*args):clock.advance(5);return original_parse(*args)
                 def execute(owner,*args):
                     result=original_execute(owner,*args);clock.advance(4);return result
@@ -282,6 +284,7 @@ class OriginalMapSizeContracts(unittest.TestCase):
                 with patch.object(adapter,'load_dependencies',return_value=save), \
                         patch.object(movie_map.time,'monotonic_ns',clock), \
                         patch.object(movie_map,'prepare',prepare), \
+                        patch.object(movie_map,'make_query',make_query), \
                         patch.object(postprocessors,'map_postprocess',parse), \
                         patch.object(movie_map.SemBenchTextQuery,'execute',execute), \
                         patch.object(movie_map.SemBenchTextQuery,'evaluate',evaluate), \
@@ -294,10 +297,12 @@ class OriginalMapSizeContracts(unittest.TestCase):
                 self.assertEqual(report['physical_native_calls'],count)
                 self.assertEqual(report['physical_call_cap'],2*count)
                 timing=report['memory_sink_timing']
-                self.assertEqual(timing['memory_sink_ready_ns'],14_000_000_000)
+                self.assertEqual(timing['source_started_ns'],17_000_000_000)
+                self.assertEqual(timing['memory_sink_ready_ns'],31_000_000_000)
                 self.assertEqual(timing['phases']['original_query']['elapsed_s'],14)
-                self.assertEqual(actions[0],('memory_sink_ready',14_000_000_000))
-                self.assertTrue(all(at>=14_000_000_000 for name,at in actions if name in ('trace','evaluate','persist')))
+                self.assertEqual(timing['phases']['source_preflight']['elapsed_s'],17)
+                self.assertEqual(actions[0],('memory_sink_ready',31_000_000_000))
+                self.assertTrue(all(at>=31_000_000_000 for name,at in actions if name in ('trace','evaluate','persist')))
                 self.assertEqual(timing['trace_audit_status'],'passed')
 
 

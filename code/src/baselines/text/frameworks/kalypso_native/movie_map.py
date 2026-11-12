@@ -115,6 +115,8 @@ class MapDriver(native.NativeQueryDriver):
                 source_scope='fresh original query source plus author-required CSV and prompt table') as (report,artifacts,timing):
             timing['phase_overlap']='original_query includes input, HTTP, parser and original relational work; do not add nested phase durations'
             native_report={};responses=[]
+            with native.query_phase(timing,'source_preflight'):
+                query=make_query(self.cfg,spec['query_id'],spec['task'])
             def execute(operation,unused_original):
                 with native.query_phase(timing,'source_and_required_input'):
                     values,path=prepare(self.cfg,spec,directory,operation)
@@ -130,8 +132,9 @@ class MapDriver(native.NativeQueryDriver):
                     completed=[replace(r,values={**r.values,operation.stage.method.output_column:text}) for r,text in zip(operation.records,parsed,strict=True)]
                     native_report.update(rows=values,raw_outputs=texts,latency_s=response['latency_sec'])
                     return dict(frame=operation.result_frame(completed),calls=[])
+            timing.update(query_clock_version='sembench.source_to_sink.v2',
+                          source_started_ns=time.monotonic_ns())
             with native.query_phase(timing,'original_query'):
-                query=make_query(self.cfg,spec['query_id'],spec['task'])
                 frame,_=query.execute(execute)
                 if len(responses)!=1:raise ValueError('Binding requires one original native Map query')
             timing['memory_sink_ready_ns']=time.monotonic_ns()

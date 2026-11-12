@@ -138,29 +138,38 @@ def timed_driver_type(base,store):
 def _memory_sink_timing(query, report):
     """Use the adapter's explicit in-memory sink, including after later failure."""
     result=dict(memory_sink_ready_ns=None,source_to_sink_seconds=None,
-                source_to_sink_unavailable_reason=None,memory_sink_scope=None)
+                source_to_sink_unavailable_reason=None,memory_sink_scope=None,
+                query_clock_version=None,source_started_ns=None,caller_to_memory_sink_seconds=None)
     receipt=report.get('memory_sink_timing')
     if not isinstance(receipt,dict) or receipt.get('schema')!='semloom.kalypso_memory_sink.v1':
         result['source_to_sink_unavailable_reason']='explicit memory-sink receipt unavailable; legacy result_ready is not substituted'
         return result
-    start=query.get('query_start_ns')
+    submitted=query.get('query_start_ns')
+    version=receipt.get('query_clock_version')
+    if version not in (None,'sembench.source_to_sink.v2'):
+        result['source_to_sink_unavailable_reason']='unrecognized query clock version; legacy submission is not substituted'
+        return result
+    start=submitted if version is None else receipt.get('source_started_ns')
     sink=receipt.get('memory_sink_ready_ns')
-    if not all(type(value) is int and value>=0 for value in (start,sink)) or sink<start:
+    if (not all(type(value) is int and value>=0 for value in (submitted,start,sink))
+            or not submitted<=start<=sink):
         result['source_to_sink_unavailable_reason']='missing or invalid source/memory-sink clock ordering'
         return result
     limits=[query.get('query_result_ready_ns'),query.get('query_terminal_ns')]
     api=report.get('comparison_timing')
     if isinstance(api,dict) and api.get('complete'):
         entered=api.get('driver_entered_ns')
-        if type(entered) is int and sink<entered:
-            result['source_to_sink_unavailable_reason']='memory sink precedes driver entry'
+        if type(entered) is int and (sink<entered or version is not None and start<entered):
+            result['source_to_sink_unavailable_reason']='source or memory sink precedes driver entry'
             return result
         limits.append(api.get('API_returned_ns'))
     if any(type(value) is int and sink>value for value in limits):
         result['source_to_sink_unavailable_reason']='memory sink follows a later query boundary'
         return result
     result.update(memory_sink_ready_ns=sink,source_to_sink_seconds=(sink-start)/1e9,
-                  memory_sink_scope=receipt.get('sink_scope'))
+                  memory_sink_scope=receipt.get('sink_scope'),query_clock_version=version,
+                  source_started_ns=None if version is None else start,
+                  caller_to_memory_sink_seconds=(sink-submitted)/1e9)
     return result
 
 
