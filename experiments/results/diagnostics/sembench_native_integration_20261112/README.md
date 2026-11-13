@@ -1401,6 +1401,79 @@ Daft编码失败继续保存失败报告，有主异常则保留；已完成的�
 包括原Movie回归与已有runner测试，不与前74或分任务计数累加。结果SHA-256为`6170c38bf9fd7df4290c77e3bd994185ad184f23a922535e2309a6cf5ad3f9f9`。
 真实MMQA Extract模型／质量／物理清理仍待验证，不借用旧LOTUS或Movie模型资格。
 
+<a id="native-q1-f596-model"></a>
+## f596 独立原生 Q1 的完整推理与最终结果
+
+`native-ray-daft-q1-f596dd-qualification-20261113-r1`固定
+`f596dda765b32bf5e6ca7508b2958d06c48ce442`和c814，原Reviews 2000行／11列，重复发生项保留。
+两个原生系统各提交／终态2000、不同call_id及永久预算sequence均完整，closed无退款、未知／重试／额外查询预热为0。
+保存的完整预测与实际原生输出逐项对应，最后才按原源顺序取五条；两个head5结果相同，原precision／recall／F1均为1。
+这只评价最终五条。额外全2000分类诊断正确Ray 1597、Daft 1593，kept为1108／1106；
+不能把head5 F1当作全量分类准确率或两系统逐行等价。这里读取保存的评分，不重跑模型、解析分类或评分。
+
+Ray `native_ray.source_to_sink.v1`为`97.108214333`秒，Daft `native_daft.source_to_sink.v1`为
+`66.858933088`秒，纳秒事件差已核；都含原生启动与各自observer或packet／digest／IPC成本。
+Daft预检／tokenizer加载在外，两者sink后的关闭、审计、评分／持久化不回填区间。
+Ray sink先于shutdown、Daft sink先于ACK释放再关闭均已核；外层最终owned进程、GPU空闲、socket／SHM及租约清理通过，
+driver内部physical exit字段仍为None。原生Ray 2.56.1／vLLM 0.22.0和Daft 0.7.21／vLLM 0.25.1及容量差异保留，
+prefix／持久编译缓存与原生内部初始化未清除；不称硬件冷、同owner暖、matched性能排名或纯GPU／成本测量。
+
+3464个payload及归档3465个常规成员（另一个为清单）逐件字节／SHA匹配，1158个f596源码blob、
+4个c814原查询／评价／gold参考与预算SQLite及关联事件已核。具体首次失败回执在该具名原件中未定位：
+6份host FINAL均passed／failure=null，泛化“失败回执保留”标记不能替代具名证据；此缺口保持pending，
+不编造首次失败，也不宣称全历史无失败。核验记录SHA-256为
+`1041924c070eb2ca0633eff328b50a1df6012b6eb24f4a1e63481eecce35bd40`。
+这是原JSON工程对照的Q1单冷功能资格，不授予后续Q1/Q2空表修复、MMQA或新图像路径目标资格。
+
+<a id="native-animals-json-filter"></a>
+## 独立原生 Animals Filter 复用 Ray runner
+
+同一任务工厂增加manifest源，单个`AnimalsFilterTask`覆盖原Q1/Q3/Q7/Q10；Ray保持一个系统runner，
+以原生PrepareImageStage承载独立JSON keep消息的文本＋PNG内容数组，不导入LOTUS提示或解析。
+Q1/Q3/Q10是完整N行zebra Filter后原COUNT、City或City／StationID分组取最大；
+Q7的zebra和impala都处理同一完整N行，真实读图／解码／RGB／PNG各做一遍，共2N独立请求，
+分别取城市集合后交集排序，空city表保持。2N平铺在一个原生图的批调度不是LOTUS两次顺序LM批次的复现，工程身份分列。
+
+准备接口复用原AnimalsDataset的manifest角色／身份、原图及RGB额外核验，冻结Species供后置原SQL评分；
+查询内仍鲜读manifest和各次实际图像bytes、RGB转换／PNG编码，不resize、不拿标签入模。
+post-sink核当前身份及实际消费bytes快照，变图后恢复也不能把实际错误输入冒充原件。
+重复图片仍是独立发生项，不以64或唯一图片数限制算法；当前官方数据身份仍为原sf64，65项软件fixture不代表全8718图已接或验。
+
+Ray按实际image_url消息要求有效的既有prepare_image_stage，保留原生bool／dict.enabled默认语义；
+未启用时在predict前失败，不以模板占位符假装传入像素。配置必须真实绑定VLM及匹配tokenizer／processor；
+本批不添加wrapper尚未支持的新MM stage字段。Daft当前本地vllm-prefix字符串profile在check明确拒绝content-parts，
+run在任何模板渲染／worker启动前检查实际整批非文本parts，拒绝图像而不丢弃／flatten，
+允许纯文本内容数组原样交tokenizer渲染，未为图片边界额外限制文本输入；
+另一个LOTUS＋Daft附着服务profile不为本组合授予视觉资格。
+
+完整原函数／真实SDK软件参考核原结果、评分及RGB→PNG消息；Q7第一遍全阴性仍保留第二遍完整N请求，
+两遍实际读取快照均检查。首轮fixture未初始化、第二轮原Q10无ORDER BY并列gold导致元数据顺序断言失败均保留，
+只修新fixture，不改原查询／评分。最终组合114项结果见[下节](#native-mmqa-filter-family)；新Ray VLM、processor像素／token及物理清理、warm／公平性能仍待验。
+
+<a id="native-mmqa-filter-family"></a>
+## MMQA 完整文本 Filter 家族
+
+同一MMQA任务模块新增一个`MMQATextFilterTask`和小型家族工厂，共用原有两系统runner、
+独立JSON keep提示骨架／严格关联、源快照和官方评价。Q3a–g完整读取lizzy_caplan_text_data的title＋text，
+条件分别为comedy、science fiction、romance、horror、heist、romantic comedy、biographical comedy，
+不能改复合genre为“或”，也没有Q4的24-title预选。Q6a–c完整读取tampa_international_airport的
+Airlines＋Destinations，条件分别为Frankfurt、Germany、Europe；即使原gold相同，每题仍独立处理实际全部N行。
+
+完整Filter后只投影原title或Airlines列，不做head／去重／reset_index，source dtype、原索引、重复与空值保持，
+空源／全阴性也是原列的空DataFrame。模型evidence的缺值明确转空字符串，原输出源值不变；
+每变体只在sink后读自己的固定JSON并用原评分，重复导致recall/F1>1的原行为不钳制。
+现有Extract类、源快照类及旧Extract测试逐字未改，未复制逐题执行器或新增调度／缓存层。
+
+私有候选MMQA完整模块18项通过、0skip，其中旧Extract10项、新Filter8项；
+一套差分方法实际跑10题×四场景=40子例，调用完整c814原函数及真实SDK软件答复，
+比较空源、全False、全True、混合索引的完整列／dtype／index／重复／null。
+全部十变体fresh进程经任务工厂／真实原评分，并禁止LOTUS／semantic_methods／实验与测试依赖及网络。
+root在8d071干净导出整合十个源／测试文件，任务、工厂与两系统消费者五个完整模块114项全部通过，
+0skip／模型／GPU。该数包含旧Movie／Extract与分任务检查，不与前90项、11项、18项或消费者6项累加；
+结果SHA-256为`2dcbf8e7f62421f8628cf57232817fd4c11bc109f86873c2b68e61bbb50e8c62`。整合时按实际image模态与非text parts建立拒绝边界，
+纯文本数组仍原样交tokenizer渲染；整批拒绝检查先于任何模板调用，配置与真实消息分别检查。
+真实模型与物理清理仍待各自目标验收。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -1437,6 +1510,7 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | a1105 LOTUS Animals Q10参考恢复包 | 3110267 | 1370 | `e45b1773729537c2a97155837a4d601388a5cca0e9735b3dd604e86fdcc4efcc` |
 | 7fb4 独立原生Ray／Daft Movie Q8 | 3738751 | 1669 | `e1e87b4b76bf6e8c763440ca61c06b0335a21f5720068ca3e0ae5a21cf535659` |
 | f83b 独立原生Ray／Daft Movie Q10 | 6977259 | 3407 | `91775f68b25259c7b5f27b2e3678d29d51d50f3240e5dc9ed1510af653e65b90` |
+| f596 独立原生Ray／Daft Movie Q1 | 7036724 | 3464 | `af47bc3acf443b5ed3032223a05115862321a7833e024b2f3179adcd9aa25a54` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

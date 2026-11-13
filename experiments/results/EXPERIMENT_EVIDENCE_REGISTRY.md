@@ -118,6 +118,20 @@ Q1/Q4沿同一任务工厂及Ray／Daft runner，保留原Series／分组、空�
 五场景完整原函数／真实SDK软件差分与fresh禁LOTUS证明通过，提示／JSON物化仍为独立工程语义。
 干净组合四模块90项全部通过、0skip／模型／GPU，含旧回归，不累加分任务或前74项；真实目标资格pending。
 
+[f596独立原生Q1模型](diagnostics/sembench_native_integration_20261112/README.md#native-q1-f596-model)
+各原2000发生项／终态，最后head5原F1=1；全量分类正确1597／1593另记，不把最终五行当作全量质量。
+3464payload、1158源码blob、4个官方参考与真实关联／永久预算／完成时清理已核，不重跑模型或评分。
+单冷含启动／内部I/O、无同owner暖或排名；具名首次失败回执未定位，来源缺口保持，不编造或转授后续组合。
+
+[独立Animals图像Filter](diagnostics/sembench_native_integration_20261112/README.md#native-animals-json-filter)
+Q1/Q3/Q7/Q10共用任务及同一Ray runner，Q7两遍完整图像处理／2N请求后城市交集，明确独立JSON及原生批调度身份。
+Daft本地字符串profile按实际内容形状拒绝图像，不静默丢图或借用附着服务资格；新组合VLM／物理清理仍pending。
+
+[MMQA完整文本Filter家族](diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-filter-family)
+Q3a–g／Q6a–c全部N行、两列证据、原投影／dtype／索引／重复／空值及各变体gold，复用同一任务类／系统runner。
+40个原完整函数／SDK软件差分与十变体fresh禁LOTUS评分通过，旧Extract类／测试逐字保持。
+与Animals消费者合并后，五个完整模块114项全部通过、0skip／模型／GPU，不累加前90或分任务计数；目标模型资格仍pending。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

@@ -216,11 +216,13 @@ Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不�
 仍未取得资格。保留每个系统自己的依赖版本，不以迁移到统一 vLLM 为前提。
 
 <a id="independent-native-text"></a>
-### 独立原生 Ray／Daft 文本任务
+### 独立原生 Ray／Daft 任务
 
 [独立任务层](text/sembench_native_text.py)定义Movie Filter／Map的源、条件、最终关系和原官方评分，
 同类算子共用项目JSON提示／解析，不导入LOTUS SDK、提示构造器或解析代码。
 同一配置工厂的`scenario=mmqa`接[文本Extract任务](text/sembench_native_mmqa.py)Q1/Q4；
+同模块的一个Filter类接Q3a–g、Q6a–c完整家族，分别对全部lizzy文本的title＋text或机场表的Airlines＋Destinations推理，
+再投影原title／Airlines列，保留dtype、索引、重复和空值，不套Q4的片名条件或合并Q6a/b推理。
 缺省scenario仍为movie，不另建系统runner。Q1先抽取全部文本行的director，沿原left join及Role筛选返回
 带原索引的Series；Q4沿原片名集合筛选、genres逗号展开及groupby生成完整genre／movies_in_genre表。
 仅text进入项目JSON消息，重复发生项分别推理，模型输出JSON null显式物化为字符串`None`；
@@ -254,6 +256,17 @@ sink后评价只使用快照及其字节摘要，不让gold进入模型消息或
 [后续Map组合验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-map-runners)保留具体提示身份、原后处理、完整空表及失败来源，不与前批计数累加。
 [Q10分组与gold边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-q10-runners)复用同一原生图，不增加题目专用runner。
 [Join与计时组合](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-join-resident-accounting)记录完整配对、提前预算检查和resident统计后移；只授予其实际软件范围。
+
+同一工厂还绑定[Animals图像Filter](image/sembench_native_animals.py)Q1/Q3/Q7/Q10，Ray沿现公开processor的
+`prepare_image_stage`接PNG内容数组；模型／tokenizer／processor须实际支持视觉，不从文本模型取得资格。
+原manifest身份与Species金标在额外预检冻结，真实manifest读、每次图像读取／RGB转换／PNG编码仍在查询内；
+Q7的zebra与impala两次Filter都处理完整N行，保留两遍实际图像处理，2N独立请求由同一原生图调度，
+分别取城市集合、交集排序；这是独立JSON工程对照，未复现LOTUS两个顺序LM批次的调度。
+其余三题沿原COUNT或城市／站点分组取最大，金标只供sink后原SQL／评分。重复图片分别请求，未增加64行执行上限。
+现官方输入身份仍为既有sf64 manifest，其他规模软件fixture不代表全8718图目录已接入或验证。
+当前Daft本地字符串profile在check及模板渲染前明确拒绝图像等非文本内容，纯文本数组原样交tokenizer渲染，不静默丢图；
+已有LOTUS＋Daft外部服务profile仍为另一身份，不能转授这里。
+代码及软件范围见[图像接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-animals-json-filter)，目标VLM／物理清理及性能仍待验。
 现有Ray外部HTTP Q3继续保留其外部模型所有权，身份更正为LOTUS-compatible工程路径，不能重复统计为独立原生语义baseline。
 
 <a id="ray-native-prepared-sembench"></a>

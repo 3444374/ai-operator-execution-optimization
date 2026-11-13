@@ -60,7 +60,7 @@ request_budget是已claim的永久额度。名称中的Map是既有运输schema�
 复用保存答复，不重新运行AI图。历史Q3失败仍见[原诊断报告](../../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)。
 
 <a id="independent-native-text-runners"></a>
-## 独立原生文本任务 runner
+## 独立原生任务 runner
 
 [Ray模板](../configs/sembench_native_ray.example.json)和[Daft模板](../configs/sembench_native_daft.example.json)
 通过同一任务工厂绑定Movie Q1–Q4 Filter、Q5–Q7 exact pair Join、Q8分类Map、显式Q9评分Map和Q10分组平均；
@@ -78,11 +78,23 @@ Q5–Q7沿同一配置选择题号：完整N²有向配对含self／重复review
 
 同一模板可改为`scenario="mmqa"`、`query="Q1"`或`"Q4"`、`data_dir="<MMQA_TEXT_DIRECTORY>"`，
 并移除Movie的reviews_csv／movies_csv／ranking字段；未写scenario的现有Movie配置保持兼容。
+同一mmqa配置亦可选Q3a–g或Q6a–c；前者完整读取lizzy_caplan_text_data.csv并将title／text入模，
+后者完整读取tampa_international_airport.csv并将Airlines／Destinations入模，保留原投影／索引／重复及变体自己的gold。
+均为全部N行一次Filter，没有Q4的24片名预筛选；Q6a/b原gold相同也不共用预测。
 Q1读取ben_piazza.csv与ben_piazza_text_data.csv，模型处理全部文本行，left join后按原Role筛选，
 完整结果是保留原索引的director Series；Q4读取lizzy_caplan_text_data.csv，按原片名集合筛选并完整展开／分组genres。
 模型只收到text，返回单字段director或genres的JSON，str／null按任务合同物化；不把Title／Role或gold放入模型。
 两题复用原MMQA评分桥，Series仅在sink外评价转换为原CSV往返列形状；报告保留Series的name／index／data／dtype。
 实际请求数由鲜读源决定，例子预算不构成行数上限；空关系的原错误保留，不将其伪报成功空表。
+
+Ray的同一模板另可声明`scenario="animals"`，query选择Q1、Q3、Q7或Q10之一，
+填写manifest路径与manifest_digest（该manifest JSON内的sha256值），移除reviews_csv／movies_csv／ranking／data_dir。
+使用真实视觉模型及匹配的tokenizer／processor，原生`processor_options.prepare_image_stage=true`；
+现wrapper不接受has_image／prepare_multimodal_stage字段。模型前置预检与Species冻结在计时外，
+每遍真实图像读取／RGB→PNG仍在source→sink；Q7实际2N请求，第一遍全阴性也不能少做第二遍。
+Q1/Q3/Q10各N请求，沿原完整COUNT／分组结果及评分；不以head1或唯一图片数缩小额度。
+本地Daft字符串profile的check会明确拒绝该内容形状，run也会在任何模板渲染／worker启动前拒绝；
+不能据另一个LOTUS＋Daft外部服务profile的视觉能力假装此路径可用。
 
 ```bash
 PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_ray check --config "$RAY_CONFIG"
