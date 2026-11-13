@@ -16,6 +16,8 @@
 [Kalypso系统runner](diagnostics/sembench_native_integration_20261112/README.md#kalypso-system-runner-review)
 另记录19d候选的四算子生命周期收拢、退役旧调用及独立审查修补：后验审计失败仍保存完整结果，
 62个不同软件用例为60通过、2个tokenizer未绑定跳过，0模型／GPU；旧Movie入口及多阶段范围仍分别保留。
+旧Movie records/prefix与新原题字段绑定是同系统的不同前端合同，未静默合并；旧profile的后验失败结果留证另以23项CPU核对，
+与前述检查有重叠，不累加通过数，不转授模型或性能资格。
 
 [独立原生IMLane Q3](diagnostics/sembench_native_integration_20261112/README.md#native-imlane-q3-cf220)
 另整合cf220的同字节源码与30项本地软件检查。协调者已报告同源Linux SQL及120次真实终态，

@@ -643,6 +643,14 @@ E-Commerce Q12、Cars Q3、Medical Q9，以及Q5单请求和多层长摘要。
 新Kalypso生产／测试源码逐字等于该导出；原owner工作树未改。模型／GPU／外部服务启动均为0，
 原来的作者环境／真实模型成绩仍只属于其冻结来源。
 
+对仍维护的Movie Q1–Q4另核实：旧profile使用manifest的有限prefix、原样`cfg.native_instruction`、
+扁平结果和`row_audit`，新field-bound Filter使用原题文件与字段绑定，两者不能按同题号静默替换。
+它们是同一Kalypso系统的前端profile，不另计系统baseline。旧`NativeQueryDriver.query`也有已完成sink
+但trace失败时缺结果的遗留行为；另一个最小修补仅把原结果编码移到sink之后、trace之前。
+旧提示／prefix／schema／分派／owner不变，23项相关CPU全过，受控source→sink仍为29秒，
+首次12项的1个顺序断言失败和2个缺结果错误保留。此23项与前述62项有重叠，不累加为新全树通过数，
+也不授予新模型／性能资格。
+
 <a id="native-imlane-q3-cf220"></a>
 ## 独立原生 IMLane Movie Q3 的查询时钟
 

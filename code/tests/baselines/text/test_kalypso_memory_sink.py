@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from src.baselines.text import sembench_movie
 from src.baselines.text.frameworks.kalypso_native import adapter
@@ -181,6 +181,7 @@ class KalypsoMemorySinkTests(unittest.TestCase):
         for name in ('read_trace','reconcile','encode','evaluate','persist:request.json',
                      'persist:occurrences.json','persist:response.body','persist:HTTP-clock.json'):
             self.assertLess(names.index('memory_sink_ready'),names.index(name),name)
+        self.assertLess(names.index('encode'),names.index('read_trace'))
         self.assertLess(names.index('encode'),names.index('result_ready'))
         self.assertLess(names.index('result_ready'),names.index('evaluate'))
         expected=dict(source_preflight=0,source_and_required_input=2,native_HTTP_and_JSON_parse=16,
@@ -222,10 +223,13 @@ class KalypsoMemorySinkTests(unittest.TestCase):
     def test_trace_failure_preserves_sink_raw_HTTP_and_original_exception_with_recording_failure(self):
         primary=LookupError('original trace failure')
         driver=self.fixture(trace_error=primary,save_error=OSError('request evidence unavailable'))
+        driver.close=Mock(side_effect=AssertionError('query must not close the external model owner'))
         with self.assertRaises(LookupError) as caught:
             driver.query(self.spec,self.emit)
         self.assertIs(caught.exception,primary)
         self.assertEqual(primary.query_report['status'],'failed')
+        self.assertEqual(primary.query_report['result'],dict(reviewId=['1']))
+        self.assertNotIn('quality',primary.query_report)
         timing=primary.query_report['memory_sink_timing']
         self.assertEqual(timing['memory_sink_ready_ns'],29_000_000_000)
         self.assertEqual(timing['trace_audit_status'],'failed')
@@ -239,6 +243,7 @@ class KalypsoMemorySinkTests(unittest.TestCase):
         persisted=json.loads((self.directory/'memory-sink-timing.json').read_text())
         self.assertEqual(persisted['memory_sink_ready_ns'],timing['memory_sink_ready_ns'])
         self.assertEqual(persisted['evidence_write_errors'],['OSError'])
+        driver.close.assert_not_called()
 
     def test_HTTP_failure_has_no_sink_and_retains_request_clock_without_replay(self):
         primary=TimeoutError('native response outcome unknown')
@@ -247,6 +252,7 @@ class KalypsoMemorySinkTests(unittest.TestCase):
             driver.query(self.spec,self.emit)
         self.assertIs(caught.exception,primary)
         self.assertIsNone(primary.query_report['memory_sink_timing']['memory_sink_ready_ns'])
+        self.assertNotIn('result',primary.query_report)
         self.assertEqual([name for name,at in self.actions].count('POST'),1)
         self.assertNotIn('memory_sink_ready',[name for name,at in self.actions])
         self.assertTrue((self.directory/'request.json').is_file())
@@ -270,6 +276,9 @@ class KalypsoMemorySinkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'model UID') as caught:
             driver.query(self.spec,self.emit)
         self.assertEqual(caught.exception.query_report['status'],'failed')
+        self.assertEqual(caught.exception.query_report['result'],dict(reviewId=['1']))
+        self.assertNotIn('quality',caught.exception.query_report)
+        self.assertFalse((self.directory/'quality.json').exists())
         self.assertEqual(caught.exception.query_report['memory_sink_timing']['trace_audit_status'],'failed')
         self.assertIn('memory_sink_ready',[name for name,at in self.actions])
         self.assertNotIn('result_ready',[name for name,at in self.actions])

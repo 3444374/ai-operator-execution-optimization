@@ -408,3 +408,10 @@ SemBench runner 完成或多阶段已支持。新结构的 CPU 生命周期检�
 四算子及owner相关62个不同软件用例为60通过、2个可选tokenizer未绑定跳过；5项定向检查包含其中。
 原四个算子Driver类及调用已退役，无转发壳；[准确恢复来源](../../../../../../experiments/reproduction/native_baselines/README.md#retired-kalypso-operator-drivers)与失败记录保留。
 这些修改不改变作者方法或source→sink起止，模型／GPU及多阶段资格仍未授予。
+
+旧Movie Q1–Q4具名为`Movie records/prefix＋configured condition` profile：manifest绑定有限prefix，
+`cfg.native_instruction`原样送作者Filter，结果是原扁平schema并含`row_audit`。
+新`SemBench field-bound Filter`绑定完整原题文件与字段条件，两者的模型消息不能由题号相同推断为相同，
+不能直接改分派再删除旧实现；它们属于同一Kalypso系统的两种前端合同，不是两套系统baseline。
+旧profile也已把结果编码放到sink后、trace核查前，后验失败保留原扁平结果和主异常，不产成功quality；
+23项相关CPU检查通过，受控完整查询仍为29秒，0模型／GPU。其余输入、提示、原评分、分派和外部关闭归属保持。

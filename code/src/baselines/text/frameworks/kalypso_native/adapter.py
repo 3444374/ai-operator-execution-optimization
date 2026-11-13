@@ -366,6 +366,8 @@ class NativeQueryDriver:
                     frame=task.result_frame(rows,response_decisions(eligible,response,self.cfg['model']))
                 timing['memory_sink_ready_ns']=time.monotonic_ns()
                 emit('memory_sink_ready')
+                with query_phase(timing,'result_encoding'):
+                    report['result']=task.encode_result(frame)
                 with query_phase(timing,'trace_audit'):
                     timing['trace_audit_status']='running'
                     events=read_trace(self.cfg['native_trace'],spec['query_id'])
@@ -377,8 +379,6 @@ class NativeQueryDriver:
                         raise ValueError('Request IDs reused or loaded model UID changed across complete queries')
                     self.request_ids.update(ids)
                     timing['trace_audit_status']='passed'
-                with query_phase(timing,'result_encoding'):
-                    report['result']=task.encode_result(frame)
                 emit('result_ready')
                 with query_phase(timing,'quality_evaluation'):
                     labeled=source.labeled_frame()
