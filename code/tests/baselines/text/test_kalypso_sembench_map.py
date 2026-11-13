@@ -109,6 +109,31 @@ class OriginalMapContracts(unittest.TestCase):
             with self.subTest(query=query_id),self.assertRaisesRegex(ValueError,'ordinary text Map'):
                 sembench_inputs.make_query(self.cfg,'q',dict(map_spec(),query=query_id))
 
+    def test_empty_original_frontier_preserves_zero_rows_without_native_retries(self):
+        self.source.iloc[3:].to_parquet(self.helper.data/'styles_details.parquet',index=False)
+        self.freeze_source()
+        spec=map_spec(0);unit=dict(call_cap=0,queries=[spec]);self.cfg['units']=[unit]
+        self.assertEqual(native_server.physical_call_caps(unit),{'q':0})
+        query=sembench_inputs.make_query(self.cfg,'q',spec)
+        expected,_=self.helper._reference(query,[])
+        response,events=movie_tests.trace(0);response['latency_sec']=.1
+        with patch.object(adapter,'load_dependencies',return_value=lambda p,v:p.write_text(json.dumps(v))), \
+                patch.object(adapter,'read_trace',return_value=events):
+            driver=KalypsoRunner(self.cfg,unit,self.helper.data/'zero-run',lambda *a:response)
+            driver.model_uid='u';report=driver.query(spec,lambda event:None)
+        self.assertEqual(report['result'],expected.to_dict(orient='split'))
+        self.assertEqual(report['physical_native_calls'],0)
+        self.assertEqual(report['physical_call_cap'],0)
+        self.assertEqual(report['native_API_units'],[])
+        if os.environ.get('SEMLOOM_NATIVE_TEST_KALYPSO_CHECKOUT'):
+            from tests.baselines.text.kalypso_join_author import empty_cpu_plan
+            with patch.object(movie_map_inputs,'binding',return_value={'explicit_CPU_fixture':True}):
+                frozen=movie_map_inputs.prepare_inputs(self.cfg,unit,self.helper.data/'zero-cpu-inputs')
+                self.cfg['native_cpu_inputs']={key:frozen[key] for key in ('manifest','sha256')}
+                cpu=empty_cpu_plan(os.environ['SEMLOOM_NATIVE_TEST_KALYPSO_CHECKOUT'],self.cfg,
+                    self.helper.data/'zero-cpu',kind='map')
+            self.assertIsNone(cpu['plans'][0]['max_prompt_tokens'])
+
     def test_explicit_movie_query_reuses_the_existing_map_policy(self):
         spec=dict(map_spec(),scenario='movie',query='Q9')
         cfg=dict(self.cfg,source_data_sha256={'Reviews.csv':adapter.sha(self.helper.data/'Reviews.csv')})

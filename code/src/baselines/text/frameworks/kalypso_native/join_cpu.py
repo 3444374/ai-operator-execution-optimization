@@ -42,7 +42,7 @@ def check(cfg,output,executor,manager,planner_class,data,max_model_len):
         (output/(spec['query_id']+'-native-prompts.json')).write_text(json.dumps(previews,ensure_ascii=False,indent=2)+'\n')
         plans.append(dict(query_id=spec['query_id'],left_rows=len(table['left']),right_rows=width,
             logical_occurrences=len(pairs),physical_call_cap=len(pairs),plan_segments=len(plan),
-            max_prompt_tokens=max(row['prompt_tokens'] for row in previews)))
+            max_prompt_tokens=max((row['prompt_tokens'] for row in previews),default=None)))
     return dict(status='passed_real_native_CPU_Join_planning_no_model_execution',plans=plans,
         frozen_input_binding=manifest['binding'],frozen_input_manifest_sha256=cfg['native_cpu_inputs']['sha256'],
         native_retry='none; native CartesianProduct and one Filter per pair',CPU_numeric_KV_budget_GiB=6,performance_claim=False)

@@ -96,6 +96,29 @@ class NativeFilterContracts(unittest.TestCase):
         self.assertEqual(report['result'],result_value(expected))
         self.assertEqual(report['quality']['native_nonliteral_verdicts'],0)
 
+    def test_empty_original_frontier_completes_with_no_model_calls(self):
+        import pandas as pd
+        path=self.helper.data/'lizzy_caplan_text_data.csv'
+        pd.read_csv(path).iloc[:0].to_csv(path,index=False)
+        cfg,unit,spec=self.bound('mmqa','3a')
+        unit['call_cap']=0
+        self.assertEqual(native_server.physical_call_caps(unit),{'q':0})
+        query=sembench_inputs.make_query(cfg,'q',spec,kind='filter')
+        expected,_=self.helper._reference(query,[])
+        report,_=self.run_query(cfg,unit,spec,[])
+        self.assertEqual(report['result'],result_value(expected))
+        self.assertEqual(report['physical_native_calls'],0)
+        self.assertEqual(report['physical_call_cap'],0)
+        self.assertEqual(report['native_API_units'],[])
+        if os.environ.get('SEMLOOM_NATIVE_TEST_KALYPSO_CHECKOUT'):
+            from tests.baselines.text.kalypso_join_author import empty_cpu_plan
+            with patch.object(movie_map_inputs,'binding',return_value={'explicit_CPU_fixture':True}):
+                frozen=movie_map_inputs.prepare_inputs(cfg,unit,self.helper.data/'zero-cpu-inputs')
+                cfg['native_cpu_inputs']={key:frozen[key] for key in ('manifest','sha256')}
+                cpu=empty_cpu_plan(os.environ['SEMLOOM_NATIVE_TEST_KALYPSO_CHECKOUT'],cfg,
+                    self.helper.data/'zero-cpu',kind='filter')
+            self.assertIsNone(cpu['plans'][0]['max_prompt_tokens'])
+
     def test_wrong_model_audit_retains_sink_and_does_not_publish_a_success(self):
         cfg,unit,spec=self.bound('medical','1')
         with self.assertRaisesRegex(ValueError,'Owner') as caught:

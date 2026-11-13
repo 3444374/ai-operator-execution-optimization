@@ -24,6 +24,10 @@
 整合后的198个不同软件方法为194通过、4项环境／真实输入未绑定跳过；首失败和定向复核保留，
 0模型／GPU，真实Ray／VLM及剩余空分支、完整多批物理清理不由软件检查授予。
 
+[Kalypso零发生项](diagnostics/sembench_native_integration_20261112/README.md#kalypso-empty-frontier)
+修正无依据的正数frontier限制、空trace／owner检查和CPU空统计；82个不同软件方法为80通过、
+2项真实tokenizer未绑定跳过，首失败保留。原数据选择／关系／评分和作者算法不变，未运行模型／GPU或服务器。
+
 [LOTUS外部服务生命周期](diagnostics/sembench_native_integration_20261112/README.md#lotus-service-query-lifecycle)
 另记录视觉与Q5共用worker、原题对象及旧调用删除：七个原查询／原评分软件差分、配置／时钟表征，
 删除后105项检查为104通过、1个真实资产未绑定跳过，0模型／GPU／外部网络；旧来源及失败继续保留。

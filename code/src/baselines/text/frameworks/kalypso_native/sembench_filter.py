@@ -38,7 +38,7 @@ class FilterOperation(NativeOperation):
         self.decisions = native.reconcile(self.rows, self.response, events, self.cfg['model'])
         self.ends = [e for e in events if e['event'] == 'native_API_end']
         ids = {e['request_id'] for e in self.ends}
-        if ids & self.driver.request_ids or {e['model_uid'] for e in self.ends} != {self.driver.model_uid}:
+        if ids & self.driver.request_ids or any(e['model_uid'] != self.driver.model_uid for e in self.ends):
             raise ValueError('Owner or request IDs changed')
         self.driver.request_ids.update(ids)
         self.artifacts['decisions.json'] = self.decisions

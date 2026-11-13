@@ -95,8 +95,9 @@ def main():
                     messages=prompt if i<2 else None))
             (a.output/f'{profile}-q{q}-native-prompts.json').write_text(json.dumps(previews,ensure_ascii=False,indent=2)+'\n')
             plans.append(dict(profile=profile,task=f'movie-q{q}',source_rows=len(rows),eligible_rows=len(contexts),
-                max_prompt_tokens=max(x['prompt_tokens'] for x in previews),plan_segments=len(plan),
-                pin=False,unpin=False,model=chat.model,sampling=cfg['native_sampling']))
+                max_prompt_tokens=max((x['prompt_tokens'] for x in previews),default=None),plan_segments=len(plan),
+                pin=False,unpin=False,model=chat.model if previews else None,
+                sampling=cfg['native_sampling'] if previews else None))
     prior=Path(cfg['prior_model_receipt_path'])
     assert hashlib.sha256(prior.read_bytes()).hexdigest()==cfg['prior_model_receipt_sha256']
     assert not torch.cuda.is_initialized()

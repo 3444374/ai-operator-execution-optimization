@@ -123,6 +123,29 @@ class NativeJoinContracts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'ordinary text Join'):
                 sembench_inputs.make_query(cfg,'q',dict(spec,query=number),kind='join')
 
+    def test_empty_original_join_frontier_has_zero_calls_and_keeps_the_original_sink(self):
+        import pandas as pd
+        path=self.helper.data/'styles_details.parquet'
+        frame=pd.read_parquet(path);frame['price']=9000;frame.to_parquet(path,index=False)
+        cfg,unit,spec=self.bound('ecomm','7')
+        unit['call_cap']=0
+        self.assertEqual(native_server.physical_call_caps(unit),{'q':0})
+        query=sembench_inputs.make_query(cfg,'q',spec,kind='join')
+        expected,_=self.helper._join_reference(query,[])
+        report,_,messages=self.run_query(cfg,unit,spec,[])
+        self.assertEqual(report['result'],result_value(expected))
+        self.assertEqual(report['physical_native_calls'],0)
+        self.assertEqual(report['physical_call_cap'],0)
+        self.assertEqual(messages,{})
+        self.assertEqual(Path(cfg['native_trace']).read_bytes(),b'')
+        from tests.baselines.text.kalypso_join_author import empty_cpu_plan
+        with patch.object(join_inputs,'binding',return_value={'explicit_CPU_fixture':True}):
+            frozen=join_inputs.prepare_inputs(cfg,unit,self.helper.data/'zero-cpu-inputs')
+            cfg['native_cpu_inputs']={key:frozen[key] for key in ('manifest','sha256')}
+            cpu=empty_cpu_plan(os.environ['SEMLOOM_NATIVE_TEST_KALYPSO_CHECKOUT'],cfg,
+                self.helper.data/'zero-cpu',kind='join')
+        self.assertIsNone(cpu['plans'][0]['max_prompt_tokens'])
+
     @unittest.skipUnless(os.environ.get('SEMLOOM_NATIVE_TEST_TOKENIZER'),'requires an existing local tokenizer')
     def test_native_planner_full_pair_token_preflight_and_context_boundary(self):
         from transformers import AutoTokenizer

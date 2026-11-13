@@ -75,6 +75,8 @@ UDF/provider同步回执与指纹仍在COUNT内，不能标为统一v3；原生v
 未设置可选真实资产环境变量导致的测试 skip 只记“本次未验证”，不能据此记“缺数据”。
 “原版阻塞”限于已固定接口或失败证据；“未接线”不能改记成整个原生系统不支持。
 表外题目仍按官方实现和实际接点核定，不能因为原题文件可读就算已经接入。
+Kalypso维护的Filter／Map／Join已允许原题选出零发生项，保留零调用预算、空trace、完整原sink及CPU空计划；
+来源和80通过／2项tokenizer未绑定的软件检查见[空输入边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-empty-frontier)。
 
 剩余工作按共同边界闭合：已接线原函数处理真实中间关系，额外预检之外的完整查询计时按版本
 记录，再用真实资产及代表查询验收。完整 SemBench 入口及已核活动服务器绑定走共享路径。

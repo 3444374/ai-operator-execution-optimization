@@ -375,7 +375,7 @@ class NativeQueryDriver:
                     artifacts['decisions.json']=decisions
                     apis=[e for e in events if e.get('event')=='native_API_end']
                     ids={e['request_id'] for e in apis}
-                    if ids&self.request_ids or {e.get('model_uid') for e in apis}!={self.model_uid}:
+                    if ids&self.request_ids or any(e.get('model_uid')!=self.model_uid for e in apis):
                         raise ValueError('Request IDs reused or loaded model UID changed across complete queries')
                     self.request_ids.update(ids)
                     timing['trace_audit_status']='passed'

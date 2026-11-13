@@ -137,7 +137,7 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 新配置除了现有 owner／模型／输入绑定，还必须有：
 
 - 每题 `task` 为 `movie-q8`、`movie-q9` 或 `movie-q10`，`expected_calls=N` 必须等于该份冻结输入经原题选择后的
-  非零发生项数，`max_native_calls=2*N`。unit 的 `call_cap` 仍显式声明有限总预算，
+  发生项数（允许零），`max_native_calls=2*N`。unit 的 `call_cap` 仍显式声明有限非负总预算，
   外层 owner 验证它与逐题预算之和；不得按历史样本量猜测 N 或静默扩大预算。
 - `sembench` 指向固定 c814 原查询／评价器，`data_dir` 指向完整 Movie CSV；
   `source_data_sha256` 绑定完整 `Reviews.csv`；Q10 还必须绑定原评价所需 `Movies.csv`，
@@ -388,6 +388,15 @@ TopK 分支。`expected_rows=N` 是原筛选后的全部 occurrence，`expected_
 其他来源／后端／组合树另验；源／模型／缓存与未观测指标以冻结回执为准，不作性能排名。
 与受影响的 Map／Filter／Join、owner、HTTP／时钟和原题共114项不同本机检查为111通过、
 3跳过（独立Daft SDK及未设置的MMQA／Medical可选资产变量），0真实模型。
+
+<a id="empty-original-frontier"></a>
+## 原题的空输入边界
+
+Filter／Map／Join按原查询选出的发生项或候选对可以为零；对应查询及全空unit允许有限零调用额度。
+原生semantic-query仍读取真实输入并返回完整关系，每次generate前的预算检查不变，零额度不允许额外模型调用。
+服务在安装观察器时创建空trace，不把“没有API事件”解释成缺文件，也不伪造终态或model UID。
+已有实际事件仍逐一核owner和请求身份；CPU计划没有请求时最大prompt长度为`None`，不填虚构token数。
+空关系继续交原题和评分处理；这些无模型软件检查不代表新的模型质量或性能资格。
 
 ## 系统查询生命周期
 

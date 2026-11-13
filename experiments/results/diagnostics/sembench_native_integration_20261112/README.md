@@ -710,6 +710,21 @@ E-Commerce Q12、Cars Q3、Medical Q9，以及Q5单请求和多层长摘要。
 指向删除前的`1c321afef`。新共用入口的实际服务、tokenizer／processor、模型质量及资源退出仍按准确来源另验，
 不能把该重构或此前冻结成绩视为新源码目标通过。
 
+<a id="kalypso-empty-frontier"></a>
+## Kalypso 原题零发生项
+
+固定作者05024和原SemBench查询，原生CSV source可以为空；旧接入却要求正数逻辑／物理额度，
+后验owner集合比较又将零API事件误判为model UID变化，CPU最大prompt统计也无法处理空列表。
+现在允许有限零额度，仍在generate前阻止任何超额调用；观察器安装时创建真正的空trace，
+逐事件owner检查保留，没有构造假的成功终态。无请求的最大prompt、模型／采样观察保持`None`。
+
+三个原题空frontier回归先失败，修后Filter／Map／Join的原关系和预算通过；临时原schema数据经
+现行CPU输入冻结、固定作者方法／规划器及显式软件KV依赖完成空计划，未加载权重或CUDA。
+受影响11模块82个不同方法最终80通过、2个未绑定真实tokenizer门跳过。
+首次扩展CPU夹具漏提供`vllm.kalypso.context.RETRY_TASK`，仅补夹具后定向重跑该方法；首次输出保留，
+其余79项通过保持，不累计重复次数。既有正数输入、原生length retry、错误／身份与sink留证检查保持。
+真实服务器、非空模型和新计时资格不由这组无模型结果授予。
+
 <a id="kalypso-system-runner-review"></a>
 ## Kalypso 系统 runner 与完整结果保留
 

@@ -92,7 +92,7 @@ class MapOperation(NativeOperation):
         events += native.read_trace(Path(self.cfg['native_trace']).with_name('map-trace.jsonl'), qid)
         _, self.ends = reconcile(self.response, events, qid, self.spec['expected_calls'])
         ids = {e['request_id'] for e in self.ends}
-        if ids & self.driver.request_ids or {e['model_uid'] for e in self.ends} != {self.driver.model_uid}:
+        if ids & self.driver.request_ids or any(e['model_uid'] != self.driver.model_uid for e in self.ends):
             raise ValueError('Owner or request IDs changed')
         self.driver.request_ids.update(ids)
         self.artifacts['native-map.json'] = dict(

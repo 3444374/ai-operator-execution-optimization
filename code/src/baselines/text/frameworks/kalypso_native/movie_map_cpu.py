@@ -66,7 +66,7 @@ def check(cfg,output,executor,manager,planner_class,data,max_model_len,*,kind='m
                 prompt_tokens=len(ids),token_ids=ids,first_max_tokens=chat.max_tokens))
         (output/(spec['query_id']+'-native-prompts.json')).write_text(json.dumps(previews,indent=2)+'\n')
         plans.append(dict(query_id=spec['query_id'],logical_occurrences=len(rows),physical_call_cap=caps[spec['query_id']],
-            plan_segments=len(plan),max_prompt_tokens=max(r['prompt_tokens'] for r in previews)))
+            plan_segments=len(plan),max_prompt_tokens=max((r['prompt_tokens'] for r in previews),default=None)))
     return dict(status='passed_real_native_CPU_text_planning_no_model_execution',plans=plans,
         frozen_input_binding=manifest['binding'],frozen_input_manifest_sha256=cfg['native_cpu_inputs']['sha256'],
         native_retry=('original length-to8192 branch, at most two calls per occurrence' if kind=='map' else 'none'),

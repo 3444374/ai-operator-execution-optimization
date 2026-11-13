@@ -51,7 +51,7 @@ class MovieMapContracts(unittest.TestCase):
 
     def test_logical_and_physical_budgets_stay_distinct(self):
         for task in native_server.MOVIE_MAP_QUERIES:
-            for count in (1,7,13,256):
+            for count in (0,1,7,13,256):
                 original=unit(count,task);before=copy.deepcopy(original)
                 self.assertEqual(native_server.physical_call_caps(original),dict(cold=2*count,warm=2*count))
                 self.assertEqual(original,before)
@@ -59,7 +59,7 @@ class MovieMapContracts(unittest.TestCase):
             changed=unit();changed['queries'][0][key]=value
             with self.assertRaises(ValueError):native_server.physical_call_caps(changed)
         with self.assertRaises(ValueError):native_server.physical_call_caps(dict(unit(),call_cap=float('inf')))
-        for count in (0,-1,True,7.0,float('inf')):
+        for count in (-1,True,7.0,float('inf')):
             with self.subTest(count=count),self.assertRaises(ValueError):
                 native_server.physical_call_caps(unit(count))
         filtered=dict(call_cap=7,queries=[dict(query_id='q',task='movie-q4',expected_calls=7)])

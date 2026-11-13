@@ -166,25 +166,27 @@ def physical_call_caps(unit):
                 raise ValueError('TopK requires its full finite comparison upper bound, not one call per row')
             caps[query['query_id']]=cap
             continue
-        if type(logical) is not int or logical<=0:
-            raise ValueError('Native query needs a finite positive logical occurrence count')
+        if type(logical) is not int or logical<0:
+            raise ValueError('Native query needs a finite nonnegative logical occurrence count')
         cap=query.get('max_native_calls',logical)
         if query.get('task') in MAP_TASKS:
             if cap!=2*logical:
                 raise ValueError('Map requires twice the logical occurrence count as its physical call cap')
         elif cap!=logical:
             raise ValueError('Only Map binds a native length retry allowance')
-        if type(cap) is not int or cap<=0 or query['query_id'] in caps:
+        if type(cap) is not int or cap<0 or query['query_id'] in caps:
             raise ValueError('Invalid or duplicate native query budget')
         caps[query['query_id']]=cap
-    if type(unit['call_cap']) is not int or unit['call_cap']<=0:
-        raise ValueError('Native unit needs a finite positive physical call cap')
+    if type(unit['call_cap']) is not int or unit['call_cap']<0:
+        raise ValueError('Native unit needs a finite nonnegative physical call cap')
     return caps
 
 
 def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_class=None):
     directory=Path(directory)
     allowed=physical_call_caps(unit)
+    trace=directory/'native-trace.jsonl'
+    trace.touch(mode=0o600,exist_ok=True)
     counters=dict(reserved_calls=0,cap=unit['call_cap'],query_calls=dict.fromkeys(allowed,0),
                   observation_errors=[],model_uid=None)
     from src.infrastructure.redact import redact_json_values
@@ -193,7 +195,7 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         try:
             row=dict(event=name,monotonic_ns=time.monotonic_ns(),pid=os.getpid())
             row.update(fields)
-            with (directory/'native-trace.jsonl').open('a') as stream:
+            with trace.open('a') as stream:
                 stream.write(json.dumps(redact_json_values(row),ensure_ascii=False)+'\n')
         except Exception as error:
             counters['observation_errors'].append(type(error).__name__)
