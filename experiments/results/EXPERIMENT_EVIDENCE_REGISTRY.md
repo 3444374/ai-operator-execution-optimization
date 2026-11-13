@@ -13,6 +13,11 @@
 实际observer同步事件／输出写盘仍在区间内，故改独立`lotus_ray.source_to_sink.v1`并撤回早期统一v3可比性声明，
 冻结旧字段／时长不回填，不从旧成绩相减。新目标SDK／tokenizer／模型及物理清理仍待验。
 
+[原生分组并发边界](diagnostics/sembench_native_integration_20261112/README.md#ray-query-concurrency)
+修复实际groupby线程下的批次ID与lazy runtime初始化竞态，只同步登记／生命周期而保留预测并发。
+首次失败保留，受控新旧15／15通过；整合后105个受影响软件用例为102通过、3项环境／输入未绑定跳过，
+两批检查重叠、不累加，真实SDK／模型资格不转授。
+
 [LOTUS外部服务生命周期](diagnostics/sembench_native_integration_20261112/README.md#lotus-service-query-lifecycle)
 另记录视觉与Q5共用worker、原题对象及旧调用删除：七个原查询／原评分软件差分、配置／时钟表征，
 删除后105项检查为104通过、1个真实资产未绑定跳过，0模型／GPU／外部网络；旧来源及失败继续保留。

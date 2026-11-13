@@ -253,6 +253,9 @@ TopK另含`native_stats`。首算子保留旧记录ID，后续记录加`operator
 `bind_original_execution()`则不截获算子，直接运行完整原函数；`make_query_lm`按实际LM批次使用
 `query_id-batch-N-row-M`关联原生预测。默认`bind_execution()`仍服务尚未迁移的单算子记录图，
 不假定它们自动具备多阶段能力。结果写盘、额外审计和评价均在完整sink之后。
+原生groupby线程共享LM时，批次号在登记锁内分配，编号表示登记顺序；每批原生报告保留
+`input_call_ids`，不按两个报告列表的追加顺序猜关联。Ray首次初始化及关闭由同一runtime锁保护，
+初始化失败保留原异常而不重试；锁不包住预测，不改变原算法的并发执行。
 
 [LOTUS原题对象](sembench_lotus.py)由原生LOTUS服务与上述Ray查询任务共同使用，
 接收已有输入快照，拥有原函数、真实后续关系、输入复核和原评分，不拥有模型／预算／时钟。

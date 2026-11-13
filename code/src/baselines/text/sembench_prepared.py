@@ -1,4 +1,4 @@
-"""Original single-operator semantics around identity-keyed native predictions.
+"""Original query LM and typed prepared-operator prediction boundaries.
 
 This is source/prompt/parser/sink wiring, not a model executor. The native
 framework receives complete messages or serialized prompts and owns scheduling.
@@ -7,6 +7,7 @@ framework receives complete messages or serialized prompts and owns scheduling.
 from copy import deepcopy
 from dataclasses import replace
 import json
+from threading import Lock
 
 from src.infrastructure.private_artifacts import content_digest, json_metric
 from src.semantic_methods.lotus.record_method import LotusRecordMethod
@@ -26,13 +27,11 @@ def make_query_lm(query, predict, *, max_ctx_len=None, tokenizer=None):
     from lotus.types import LMOutput
 
     batches = []
+    batch_lock = Lock()
 
     class QueryLM(LM):
         def __call__(self, messages, show_progress_bar=True, progress_bar_desc='', **kwargs):
-            index = len(batches)
-            requests = [dict(call_id=f'{query.query_id}-batch-{index}-row-{position}',
-                             messages=deepcopy(message))
-                        for position, message in enumerate(messages)]
+            requests = [dict(messages=deepcopy(message)) for message in messages]
             sampling = dict(query.generation.kwargs(), **kwargs)
             if sampling.get('logprobs') is False:
                 sampling['logprobs'] = None
@@ -41,8 +40,13 @@ def make_query_lm(query, predict, *, max_ctx_len=None, tokenizer=None):
                 sampling.pop('response_format')
             batch = dict(requests=requests, operator_kwargs=deepcopy(kwargs),
                 sampling_params=deepcopy(sampling), status='submitted')
-            # Retain submitted batches on failure; no retry or fallback is made.
-            batches.append(batch)
+            # Grouped native operators may call this LM from several threads.
+            # Register identities together; prediction remains concurrent.
+            with batch_lock:
+                index = len(batches)
+                for position, request in enumerate(requests):
+                    request['call_id'] = f'{query.query_id}-batch-{index}-row-{position}'
+                batches.append(batch)
             try:
                 native = predict(requests, sampling_params=sampling)
                 batch['native'] = native

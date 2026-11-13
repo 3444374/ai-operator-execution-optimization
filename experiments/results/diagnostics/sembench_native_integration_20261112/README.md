@@ -634,6 +634,20 @@ MMQA Q5接到既有`SemBenchTextQuery → OriginalLotusQuery → native_ray_semb
 其余328项通过结果保留，计数按用例ID去重，不累计各批次数。模型／GPU／真实外部服务请求0；
 实际Ray SDK、目标tokenizer／模型加载、完整Q5模型质量及物理清理仍待目标环境验证。
 
+<a id="ray-query-concurrency"></a>
+## 原生分组调用的并发身份与 runtime
+
+固定LOTUS1.2.4的`SemTopKDataframe`在groupby分支使用`ThreadPoolExecutor.map`共用LM。
+源码核对及受控交错复现两个共同缺口：QueryLM先读`len(batches)`、复制消息后才追加，
+可产生相同批次ID；Ray在`init`返回前发布runtime，其他线程可能先读取尚未建立的版本字段。
+现在只锁批次登记及runtime初始化／关闭，模型预测和原生图仍并行；失败初始化不重试，
+失败批报告保留实际`input_call_ids`，完成和报错关联不依靠并发追加顺序。
+
+首次五项复现为1通过、3失败、1错误；修后新五项和旧Ray API十项15／15通过。
+整合后全新导出另验七个受影响模块105项，102通过、3项独立Daft SDK或真实输入未绑定跳过；
+保留前述重叠计数，不累加。Barrier验证预测确实重叠、单次init／close、唯一ID、
+失败和正常兄弟批独立关联及原参数；不将软件Ray替身当作真实SDK／模型或物理清理资格。
+
 <a id="lotus-service-query-lifecycle"></a>
 ## LOTUS 外部服务的同一查询生命周期
 

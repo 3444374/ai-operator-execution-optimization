@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from functools import partial
 import sys
+from threading import Lock
 import time
 
 
@@ -77,25 +78,37 @@ class _NativeQueryOwner:
         self.runtime_options = deepcopy(runtime_options)
         self.engine_runtime_env = deepcopy(engine_runtime_env)
         self._ray = None
+        self._runtime_lock = Lock()
+        self._startup_error = None
         self._closed = False
         self.report = dict(batches=[], events={}, ray_driver_disconnected=None,
             model_process_exit_confirmed=None, scheduler_owner='Ray Data LLM processor',
             lifecycle='query-owned runtime; native processor per prediction batch; model reuse unverified')
 
     def _start(self, events):
-        if self._ray is not None:
-            events['runtime_start_ns'] = self.report['events']['runtime_start_ns']
-            return
-        import ray
-        import ray.data
+        with self._runtime_lock:
+            if self._closed:
+                raise RuntimeError('native Ray query owner is closed')
+            if self._ray is not None:
+                events['runtime_start_ns'] = self.report['events']['runtime_start_ns']
+                if self._startup_error is not None:
+                    raise self._startup_error
+                return
+            import ray
+            import ray.data
 
-        if ray.is_initialized():
-            raise RuntimeError('native full-query binding requires an isolated Ray worker')
-        self._ray = ray
-        self.report['events']['runtime_start_ns'] = time.monotonic_ns()
-        events['runtime_start_ns'] = self.report['events']['runtime_start_ns']
-        ray.init(**{'address': 'local', **self.runtime_options})
-        self.report['ray_version'] = ray.__version__
+            if ray.is_initialized():
+                raise RuntimeError('native full-query binding requires an isolated Ray worker')
+            # Keep cleanup ownership even when native initialization fails.
+            self._ray = ray
+            self.report['events']['runtime_start_ns'] = time.monotonic_ns()
+            events['runtime_start_ns'] = self.report['events']['runtime_start_ns']
+            try:
+                ray.init(**{'address': 'local', **self.runtime_options})
+                self.report['ray_version'] = ray.__version__
+            except BaseException as error:
+                self._startup_error = error
+                raise
 
     def predict(self, requests, *, sampling_params):
         if self._closed:
@@ -104,7 +117,7 @@ class _NativeQueryOwner:
         expected = [row['call_id'] for row in source]
         if len(set(expected)) != len(expected):
             raise ValueError('native Ray requests require unique occurrence call IDs')
-        report = dict(predictions=[], events={}, ray_driver_disconnected=None,
+        report = dict(predictions=[], input_call_ids=expected, events={}, ray_driver_disconnected=None,
             model_process_exit_confirmed=None, scheduler_owner='Ray Data LLM processor',
             first_engine_accept_ns=None, kernel_seconds=None,
             retry_policy=dict(max_restarts=0, max_task_retries=0),
@@ -151,27 +164,28 @@ class _NativeQueryOwner:
         return report
 
     def close(self):
-        self._closed = True
-        if self._ray is None:
-            return
-        events = self.report['events']
-        events['close_started_ns'] = time.monotonic_ns()
-        try:
-            self._ray.shutdown()
-            self.report['ray_driver_disconnected'] = not self._ray.is_initialized()
-            if not self.report['ray_driver_disconnected']:
-                raise RuntimeError('Ray remains initialized after shutdown')
-        except BaseException as error:
-            self.report['close_error_type'] = type(error).__name__
-            raise
-        finally:
-            events['close_finished_ns'] = time.monotonic_ns()
-            for batch in self.report['batches']:
-                batch['events'].update(close_started_ns=events['close_started_ns'],
-                    close_finished_ns=events['close_finished_ns'])
-                batch['ray_driver_disconnected'] = self.report['ray_driver_disconnected']
-                if 'close_error_type' in self.report:
-                    batch['close_error_type'] = self.report['close_error_type']
+        with self._runtime_lock:
+            self._closed = True
+            if self._ray is None:
+                return
+            events = self.report['events']
+            events['close_started_ns'] = time.monotonic_ns()
+            try:
+                self._ray.shutdown()
+                self.report['ray_driver_disconnected'] = not self._ray.is_initialized()
+                if not self.report['ray_driver_disconnected']:
+                    raise RuntimeError('Ray remains initialized after shutdown')
+            except BaseException as error:
+                self.report['close_error_type'] = type(error).__name__
+                raise
+            finally:
+                events['close_finished_ns'] = time.monotonic_ns()
+                for batch in self.report['batches']:
+                    batch['events'].update(close_started_ns=events['close_started_ns'],
+                        close_finished_ns=events['close_finished_ns'])
+                    batch['ray_driver_disconnected'] = self.report['ray_driver_disconnected']
+                    if 'close_error_type' in self.report:
+                        batch['close_error_type'] = self.report['close_error_type']
 
 
 @contextmanager
