@@ -52,6 +52,10 @@
 仅补既有模块测试与fixture比较，生产零修改；整合独立12／12通过，包含前8项，不重复累加。
 覆盖单图／双图、原关系连接、完整候选及LIMIT前输入；重复ID／小gold的原评分异常与完整sink保留，
 未知请求总数的空查询仍如实记录已分配owner。0模型／真实SQL／GPU，不授予目标质量或性能资格。
+[IMLane prepared CSV实际记录边界](diagnostics/sembench_native_integration_20261112/README.md#imlane-csv-record-envelope)
+记录4073服务器在prediction前触发默认2MiB的0模型失败，以及按本次CSV最大记录字节绑定reader的薄driver修复。
+整合独立9／9本地检查通过，包含实际本机DuckDB读回与软件build；固定072f的7件源码身份核对，额外扫描保留在完整区间。
+原服务器全包尚待恢复，Linux作者SQL／IPC／ACK、薄driver重链和真实VLM待验，不从软件读回授予模型资格。
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

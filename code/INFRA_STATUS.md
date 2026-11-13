@@ -90,6 +90,10 @@ LOTUS＋IMLane的完整原题profile已整合原生多模态载体和逐批采�
 后续输入类别也无需生产修改；受影响原题模块12／12通过，包含前8项，不重复累加。
 单图／双图、源连接、完整候选、LIMIT前输入及原评分失败见[输入类别验证](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-original-input-kinds)，真实SQL／VLM资格仍待验。
 
+4073的Animals Q7服务器原SQL读取在prediction前触发默认2MiB单行限制，0模型调用，不能解释为系统不支持视觉。
+现prepared薄driver按实际最大CSV记录字节绑定reader值，9／9本地读取／build检查通过；原失败保留，
+薄driver重链、Linux SQL／IPC／ACK及真实VLM仍待复验，见[实际输入边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-csv-record-envelope)。
+
 Kalypso现行runner的独立时钟已被公共读取器识别，真实起止及旧receipt不改写；受影响76项为74通过／2项真实tokenizer未绑定。
 同次固定源码核对澄清了纯文本与真正图像／Extract多阶段的接点边界，见[共同边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-query-scope-clock)，没有为此新增逐题或阶段框架。
 

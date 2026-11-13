@@ -7,11 +7,14 @@
 
 #include <cerrno>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <ctime>
 #include <dlfcn.h>
 #include <fcntl.h>
+#include <fstream>
 #include <iostream>
+#include <limits>
 #include <limits.h>
 #include <map>
 #include <stdexcept>
@@ -64,6 +67,32 @@ std::string literal(const std::string &text) {
     std::string out = "'";
     for (char value : text) out += value == '\'' ? "''" : std::string(1, value);
     return out + "'";
+}
+
+int64_t csv_maximum_record_bytes(const std::string &path) {
+    std::ifstream input(path, std::ios::binary);
+    if (!input) throw std::runtime_error("cannot open prepared CSV for record sizing");
+    int64_t longest = 0, length = 0;
+    bool quoted = false;
+    char value;
+    // csv.writer doubles embedded quotes; only an unquoted LF ends a record.
+    // Count raw bytes (including CRLF), without retaining records or fields.
+    while (input.get(value)) {
+        if (length == std::numeric_limits<int64_t>::max() - 1)
+            throw std::runtime_error("prepared CSV record size cannot fit DuckDB BIGINT");
+        ++length;
+        if (length > longest) longest = length;
+        if (value == '"') quoted = !quoted;
+        if (value == '\n' && !quoted) length = 0;
+    }
+    if (input.bad()) throw std::runtime_error("cannot read prepared CSV for record sizing");
+    return longest;
+}
+
+std::string prepared_source(const std::string &path, int64_t maximum_line_size) {
+    return "read_csv(" + literal(path) +
+        ", header=true, auto_detect=false, delim=',', columns={'call_id':'VARCHAR','messages_json':'VARCHAR'}, "
+        "force_not_null=['call_id','messages_json'], maximum_line_size=" + std::to_string(maximum_line_size) + ")";
 }
 
 auto query(duckdb::Connection &connection, const std::string &sql) {
@@ -137,9 +166,10 @@ void execute(const std::map<std::string, std::string> &args, Json &report, bool 
         ALIAS, unexpected_local_call, duckdb::LogicalType::INVALID, kind, DEFAULT_PREDICTION_BATCH_SIZE);
     report.update(Json{{"kind", args.at("--kind")}, {"duckdb_threads", database.NumberOfThreads()},
         {"registered_batch_size", DEFAULT_PREDICTION_BATCH_SIZE}, {"return_type", "VARCHAR"}});
-    query(connection, "CREATE VIEW prepared AS SELECT * FROM read_csv(" + literal(args.at("--input")) +
-        ", header=true, auto_detect=false, delim=',', columns={'call_id':'VARCHAR','messages_json':'VARCHAR'}, "
-        "force_not_null=['call_id','messages_json'])");
+    const auto record_bytes = csv_maximum_record_bytes(args.at("--input"));
+    const auto maximum_line_size = record_bytes + 1;
+    report["input_csv"] = Json{{"maximum_record_bytes", record_bytes}, {"maximum_line_size", maximum_line_size}};
+    query(connection, "CREATE VIEW prepared AS SELECT * FROM " + prepared_source(args.at("--input"), maximum_line_size));
     auto counts = query(connection, "SELECT count(*), count(DISTINCT call_id) FROM prepared");
     const auto rows = counts->GetValue<int64_t>(0, 0);
     if (counts->GetValue<int64_t>(1, 0) != rows) throw std::runtime_error("native occurrences are not unique");

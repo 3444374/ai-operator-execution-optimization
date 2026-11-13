@@ -571,6 +571,14 @@ worker已移除纯文本类型限制，将同一完整对象交`generate`，保�
 独立`lotus_imlane.source_to_sink.v1`含必要SQL／ACK／scope关闭、provider配置／指纹／回执I/O，
 完整原函数返回后才核对／评分／最终关闭；零/no-op没有READY前提。不是统一v3性能成绩。
 
+薄driver的prepared CSV读取按本次输入的最大记录字节数加1设置`maximum_line_size`，
+不受DuckDB默认2MiB单行值限制。顺序扫描仅保留字节计数与引号状态，保留UTF-8／CSV双引号及合法多行ID，
+不缓存整条消息或整文件，不改图像或拆批；`input_csv`记录实际record字节与派生reader值。
+该额外扫描仍计入完整source→sink，原projection计时不变，不能事后扣减。
+[读取器回归](../../tests/baselines/text/test_imlane_csv_input.py)使用本机DuckDB，
+[4073服务器原失败及修复边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-csv-record-envelope)分别保留。
+新源码须重链薄driver并生成新build record；原VARCHAR-owned DSO不改。真实Linux SQL／IPC／ACK通过后再验VLM，不能凭本地reader通过跳过。
+
 ## LOTUS quick TopK 与 VARCHAR prediction
 
 [TopK配置](../../configs/sembench_imlane_topk.example.json)复用上面的`native_imlane_sembench`

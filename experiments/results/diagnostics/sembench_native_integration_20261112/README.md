@@ -1022,6 +1022,35 @@ create＋reserve_unit后在新输出slot、相同15永久上界执行，源码�
 资源／租约清理通过。1368份payload加清单与归档逐字节核对，1144个source Git blob由本会话复核等于
 准确3500提交，未重跑模型。冻结原件及失败不改成当前新组合或正式性能资格。
 
+<a id="imlane-csv-record-envelope"></a>
+## IMLane prepared CSV 的实际记录边界
+
+协调回执`imlane-visual-q7-4073f0a-native-qualification-20261113-r1`固定4073f0a5e：
+110CPU与128条原像素／native CPU消息门通过，但真实作者SQL在prediction前读取CSV失败；
+默认maximum_line_size=2097152字节，小于实际2293907字节。软件generate及真实模型调用均0，完整sink未到达。
+本会话核对本地BLOCKER／HANDOFF／FREEZE的来源一致，原关键文件SHA已留；完整远端原件包仍待原测试会话恢复，
+不将此写成全部payload已本地复核。首次私有guard失败、当前SQL失败和原预算保持，资源／租约释放由协调回执报告。
+
+固定作者072f的7件CSV源码Git blob／SHA已独立核对：0不表示无限，行长比较无该特例，
+原错误建议实际长度加1；reader buffer另有独立默认值。修复仅在现有sembench.cpp薄driver顺序测量CSV最大记录的真实字节数，
+将该值加1传给maximum_line_size；按既有csv.writer双引号合同保留引号内LF，不解析字段／物化消息／缓存整文件，
+也不按整文件大小放大buffer。报告input_csv保存实际record字节及reader值，无题号／图像或任意更大常量。
+
+完整source→sink包含这次额外顺序扫描，原native_projection_seconds起止、prediction SQL、Arrow／UDF／IPC／ACK、
+原图尺寸、原消息、原批次及模型配置不变，没有估算扣减。旧build record因源码不符仍被拒绝，须仅重链薄driver，保留原DSO身份。
+同次窄范围只读核查未在后续uint64 wire帧／Arrow消息解码发现另一个固定字节cap；这不是实际大消息SQL／模型资格。
+
+ROOT从干净aab09192f导出叠加唯一C++及测试文件，独立9／9通过、0skip，结果SHA为
+`a650ee093a3421fb1bfae841092c28ef6d527854567477a360ecd416fd48aeda`。
+测试编译实际标准C++ helper／reader表达式，以本机DuckDB2.0.0复现2293907字节记录的旧默认失败，再原样读回；
+同时覆盖UTF-8、引号／多行ID、尾行、很多短行、空输入、坏CSV与既有3项build身份行为。
+图像URI在此只是CSV字节fixture，不授予图像解码或VLM资格。首轮Mac ifstream将目录视为EOF的fixture假设失败保留；
+随后要求测量报错或由原DuckDB拒绝非法source，未为测试添加生产兜底。
+
+本地未编译完整Linux driver、未重编DSO、未执行原作者SQL／IPC／模型／GPU。
+下一步由原测试会话在核现有Ray Q7作业／租约后，重链并以原完整消息验真实SQL／IPC／ACK，再按原计划验VLM；
+不得缩图、改源、拆批绕过，也不重跑旧模型成绩掩盖失败。当前仍不能称Animals Q7的IMLane模型或整套接入完成。
+
 <a id="kalypso-query-scope-clock"></a>
 ## Kalypso 原题范围与独立时钟读取
 
