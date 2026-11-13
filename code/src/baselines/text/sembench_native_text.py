@@ -543,3 +543,19 @@ def movie_text_task(reviews_csv, query='Q3', execution_id='native-movie-filter',
     if query in ('8', '9', '10'):
         return MovieMapTask(reviews_csv, query, execution_id, ranking=ranking, movies_csv=movies_csv)
     raise ValueError('implemented Movie text bindings are Q1–Q8, explicit Q9-map and Q10')
+
+
+TASK_SOURCE_FIELDS = frozenset({'reviews_csv', 'movies_csv', 'ranking', 'data_dir'})
+
+
+def task_from_config(config):
+    """Bind one implemented task family from the system runner's configuration."""
+    scenario = config.get('scenario', 'movie')
+    sources = {name: config[name] for name in TASK_SOURCE_FIELDS if name in config}
+    if scenario == 'movie':
+        return movie_text_task(query=config['query'], execution_id=config['query_id'], **sources)
+    if scenario == 'mmqa':
+        from .sembench_native_mmqa import MMQATextExtractTask
+
+        return MMQATextExtractTask(query=config['query'], execution_id=config['query_id'], **sources)
+    raise ValueError('independent native text scenarios are movie and mmqa')

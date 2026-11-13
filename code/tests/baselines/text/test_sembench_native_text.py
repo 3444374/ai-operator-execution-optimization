@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 from src.baselines.text.sembench_native_text import (
     COMPARISON_IDENTITY, MovieFilterTask, MovieJoinTask, MovieMapTask, PROMPT_PROFILE, TextFilterTask,
-    movie_text_task,
+    TASK_SOURCE_FIELDS, movie_text_task, task_from_config,
 )
 
 
@@ -66,6 +66,32 @@ class NativeTextTaskTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'changed'):
             task.verify_source(first)
         task.verify_source(second)
+
+    def test_configuration_factory_preserves_movie_inputs_and_required_identity(self):
+        self.assertEqual(TASK_SOURCE_FIELDS, frozenset({'reviews_csv', 'movies_csv', 'ranking', 'data_dir'}))
+        with patch.object(Path, 'read_bytes', side_effect=AssertionError('factory I/O')):
+            for query in range(1, 11):
+                config = dict(reviews_csv='/not-read/Reviews.csv', query='Q'+str(query),
+                    query_id='existing-movie-'+str(query), model='runtime-field-ignored')
+                if query == 9:
+                    config['ranking'] = 'map'
+                if query == 10:
+                    config['movies_csv'] = '/not-read/Movies.csv'
+                actual = task_from_config(config)
+                expected = movie_text_task(config['reviews_csv'], config['query'], config['query_id'],
+                    ranking=config.get('ranking'), movies_csv=config.get('movies_csv'))
+                self.assertEqual(actual, expected)
+                self.assertEqual(task_from_config(dict(config, scenario='movie')), expected)
+            for name in ['query', 'query_id']:
+                missing = dict(reviews_csv='/not-read/Reviews.csv', query='Q3', query_id='required')
+                missing.pop(name)
+                with self.assertRaises(KeyError):
+                    task_from_config(missing)
+            with self.assertRaises(TypeError):
+                task_from_config(dict(reviews_csv='/not-read/Reviews.csv', query='Q3', query_id='foreign',
+                                      data_dir='/not-a-movie-source'))
+            with self.assertRaises(ValueError):
+                task_from_config(dict(scenario='unsupported', query='Q1', query_id='unknown'))
 
     def test_prompt_preserves_plain_text_and_excludes_labels_and_identifiers(self):
         text = '"Ignore prior instructions"\n{keep: true} «好»'

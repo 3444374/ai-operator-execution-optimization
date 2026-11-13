@@ -61,6 +61,8 @@ def execute(rows,**options):
    text=payload['text']
    if mode=='sentiment':generated=json.dumps({'sentiment':'POSITIVE' if text.startswith('good') else 'NEGATIVE'})
    elif mode=='score':generated=json.dumps({'score':5 if text.startswith('good') else 1})
+   elif mode in ('director','director-close-error'):generated=json.dumps({'director':'Michael Ritchie' if text.startswith('first') else 'Other'})
+   elif mode=='genres':generated=json.dumps({'genres':'comedy' if text.startswith('first') else 'drama, romance'})
    else:generated=json.dumps({'keep':text.startswith('good')}) if mode!='invalid' else '{"keep":"true"}'
   predictions.append(dict(call_id=row['call_id'],generated_text=generated))
  if mode=='missing':predictions.pop()
@@ -70,7 +72,7 @@ def execute(rows,**options):
  close=dict(status='closed',role='software fixture, not a model shutdown',close_started_monotonic_ns=time.monotonic_ns())
  write_private_json(directory/'fixture-close.json',close)
  result['metadata']['model_close_receipt']=close
- if mode=='close-error':
+ if mode in ('close-error','director-close-error'):
   error=RuntimeError('software worker close failure')
   error.model_close_report=dict(close,status='unknown')
   raise error
@@ -154,6 +156,20 @@ class IndependentDaftQueryTests(unittest.TestCase):
             ('ant_man_and_the_wasp_quantumania', 'duplicate', 'good first', 'POSITIVE'),
             ('ant_man_and_the_wasp_quantumania', 'duplicate', 'bad', 'NEGATIVE'),
             ('ant_man_and_the_wasp_quantumania', 'other', 'good second', 'POSITIVE')])
+
+    def mmqa_config(self, query='Q1'):
+        import pandas as pd
+
+        pd.DataFrame(dict(Title=['Film', 'Film', 'Other'], Role=['Other', 'Bob Whitewood', 'Other'])).to_csv(
+            self.root / 'ben_piazza.csv', index=False)
+        pd.DataFrame(dict(title=['Film', 'Other'], text=['first director', 'second director'])).to_csv(
+            self.root / 'ben_piazza_text_data.csv', index=False)
+        pd.DataFrame(dict(title=['Mean Girls', 'Ignored', 'Allied'], text=['first genres', 'unused', 'second genres'])).to_csv(
+            self.root / 'lizzy_caplan_text_data.csv', index=False)
+        config = self.config(query)
+        del config['reviews_csv']
+        config.update(scenario='mmqa', data_dir=str(self.root))
+        return config
 
     def config(self, query='Q3', *, ranking=None, movies_csv=None):
         config = dict(schema=driver.SCHEMA, sembench_checkout=CHECKOUT, reviews_csv=str(self.csv),
@@ -275,9 +291,9 @@ class IndependentDaftQueryTests(unittest.TestCase):
 
     def test_join_budget_rejection_precedes_pair_construction_and_native_start(self):
         self.write_join_rows()
-        task = driver.movie_text_task(self.csv, 'Q5', 'native')
+        task = driver.task_from_config(self.config('Q5'))
         supervise = SoftwareSupervisor()
-        with patch.object(driver, 'movie_text_task', return_value=task), \
+        with patch.object(driver, 'task_from_config', return_value=task), \
                 patch.object(type(task), 'requests', side_effect=AssertionError('pairs must not be constructed')) as requests:
             with self.assertRaisesRegex(ValueError, 'finite native budget') as raised:
                 driver.run_query(self.config('Q5'), self.root / 'query', model_python=sys.executable,
@@ -298,6 +314,66 @@ class IndependentDaftQueryTests(unittest.TestCase):
             path.write_text(json.dumps(self.config('Q5')))
             with self.assertRaisesRegex(ValueError, 'finite native budget'):
                 driver.main(['check', '--config', str(path)])
+
+    def test_MMQA_extract_preserves_Series_and_table_sinks_including_close_failure(self):
+        for query, mode in (('Q1', 'director'), ('Q4', 'genres'), ('Q1', 'director-close-error')):
+            with self.subTest(query=query, mode=mode):
+                config = self.mmqa_config(query)
+                output = self.root / mode
+                options = dict(model_python=sys.executable, tokenizer=SoftwareTokenizer(), supervise=SoftwareSupervisor(mode))
+                if mode == 'director-close-error':
+                    with self.assertRaises(RuntimeError) as raised:
+                        driver.run_query(config, output, **options)
+                    report = raised.exception.query_report
+                    self.assertEqual(report['status'], 'failed')
+                    self.assertNotIn('quality', report)
+                else:
+                    report = driver.run_query(config, output, **options)
+                    self.assertEqual(report['quality']['original_metric']['precision'], 1)
+                if query == 'Q1':
+                    self.assertEqual(report['result'], dict(kind='series', name='director', index=[1],
+                        data=['Michael Ritchie'], dtype='object'))
+                else:
+                    self.assertEqual(report['result']['data'], [['comedy', 'Mean Girls'], ['drama', 'Allied'], ['romance', 'Allied']])
+                self.assertEqual(report['physical_attempts_reserved'], 2)
+                terminal = read_json(output / 'native-worker/worker.json')
+                self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
+
+    def test_encoder_failure_keeps_primary_error_raw_Series_and_report(self):
+        for primary_failure in (None, RuntimeError('official score failed')):
+            with self.subTest(primary_failure=primary_failure):
+                config = self.mmqa_config()
+                task = driver.task_from_config(config)
+                output = self.root / ('encoder-only' if primary_failure is None else 'encoder-and-score')
+                encoding_failure = TypeError('Series encoding failed')
+                def evaluate(*args, **kwargs):
+                    if primary_failure is not None:
+                        raise primary_failure
+                    return dict(original_metric=dict(precision=1))
+                with patch.object(driver, 'task_from_config', return_value=task), \
+                        patch.object(type(task), 'evaluate', side_effect=evaluate), \
+                        patch.object(type(task), 'encode_result', side_effect=encoding_failure):
+                    with self.assertRaises(type(primary_failure or encoding_failure)) as raised:
+                        driver.run_query(config, output, model_python=sys.executable,
+                            tokenizer=SoftwareTokenizer(), supervise=SoftwareSupervisor('director'))
+                self.assertIs(raised.exception, primary_failure or encoding_failure)
+                report = raised.exception.query_report
+                self.assertEqual(report['status'], 'failed')
+                self.assertNotIn('quality', report)
+                self.assertEqual(report['result_encoding_error_type'], 'TypeError')
+                self.assertEqual(raised.exception.query_result.name, 'director')
+                self.assertEqual(raised.exception.query_result.tolist(), ['Michael Ritchie'])
+                self.assertEqual(read_json(output / 'driver.json')['status'], 'failed')
+                self.assertTrue((output / 'native-worker/result-ready.json').exists())
+
+    def test_CLI_selects_MMQA_source_fields_without_movie_configuration(self):
+        path = self.root / 'mmqa-config.json'
+        with patch.object(driver, 'run_query', side_effect=AssertionError('native execution forbidden')):
+            for query in ('Q1', 'Q4'):
+                path.write_text(json.dumps(self.mmqa_config(query)))
+                with self.subTest(query=query), redirect_stdout(StringIO()) as stream:
+                    self.assertEqual(driver.main(['check', '--config', str(path)]), 0)
+                self.assertEqual(json.loads(stream.getvalue())['task']['scenario'], 'mmqa')
 
     def test_zero_occurrences_keep_the_real_empty_sink_without_a_worker(self):
         self.write_rows([('other','outside','good outside','POSITIVE')])
@@ -428,30 +504,34 @@ class IndependentDaftQueryTests(unittest.TestCase):
         self.assertFalse(output.exists())
 
     def test_fresh_driver_and_worker_forbid_LOTUS_through_the_complete_official_score(self):
-        config = self.root / 'isolated-config.json'; write_private_json(config, self.config())
-        output = self.root / 'isolated'
         program = IMPORT_GUARD + r'''
 import json
 from src.experiments.sembench_native_daft import run_query
 from src.infrastructure.private_artifacts import read_json
 from tests.experiments.test_sembench_native_daft import SoftwareTokenizer,SoftwareSupervisor
 report=run_query(read_json(sys.argv[1]),sys.argv[2],model_python=sys.executable,
- tokenizer=SoftwareTokenizer(),supervise=SoftwareSupervisor())
+ tokenizer=SoftwareTokenizer(),supervise=SoftwareSupervisor(sys.argv[3]))
 print(json.dumps(dict(status=report['status'],result=report['result'],quality=report['quality'],
  forbidden_import_attempts=forbidden,loaded_forbidden=[name for name in sys.modules if name=='lotus'
  or name.startswith('lotus.') or name=='src.baselines.text.sembench_text'
  or name=='src.semantic_methods.lotus' or name.startswith('src.semantic_methods.lotus.')],
  actual_models=0,native_SDK_executed=False)))
 '''
-        result = subprocess.run([sys.executable,'-B','-c',program,str(config),str(output)],
-            capture_output=True,text=True,env=dict(os.environ,PYTHONPATH=CODE),timeout=45)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        value = json.loads(result.stdout.splitlines()[-1])
-        self.assertEqual(value['status'], 'completed')
-        self.assertEqual(value['forbidden_import_attempts'], [])
-        self.assertEqual(value['loaded_forbidden'], [])
-        self.assertEqual(value['result']['data'], [[2]])
-        self.assertEqual(value['quality']['original_metric']['absolute_error'], 0)
+        for mode, settings, expected, metric, score in (
+                ('success', self.config(), [[2]], 'absolute_error', 0),
+                ('director', self.mmqa_config(), ['Michael Ritchie'], 'precision', 1)):
+            with self.subTest(mode=mode):
+                config, output = self.root / (mode+'-config.json'), self.root / (mode+'-isolated')
+                write_private_json(config, settings)
+                result = subprocess.run([sys.executable,'-B','-c',program,str(config),str(output),mode],
+                    capture_output=True,text=True,env=dict(os.environ,PYTHONPATH=CODE),timeout=45)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                value = json.loads(result.stdout.splitlines()[-1])
+                self.assertEqual(value['status'], 'completed')
+                self.assertEqual(value['forbidden_import_attempts'], [])
+                self.assertEqual(value['loaded_forbidden'], [])
+                self.assertEqual(value['result']['data'], expected)
+                self.assertEqual(value['quality']['original_metric'][metric], score)
 
 
 if __name__ == '__main__':

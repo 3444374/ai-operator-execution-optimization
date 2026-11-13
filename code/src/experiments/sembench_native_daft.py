@@ -1,4 +1,4 @@
-"""Independent Movie JSON tasks over Daft's native AI prompt graph.
+"""Independent SemBench JSON tasks over Daft's native AI prompt graph.
 
 The JSON task semantics are an engineering comparison shared with other
 native systems, not an author method or a LOTUS prompt/parser implementation.
@@ -12,7 +12,7 @@ import math
 from pathlib import Path
 import time
 
-from src.baselines.text.sembench_native_text import movie_text_task
+from src.baselines.text.sembench_native_text import TASK_SOURCE_FIELDS, task_from_config
 from src.baselines.text.sembench_source import verify_checkout
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
@@ -27,20 +27,19 @@ SCHEMA = 'semloom.sembench_native_daft.v1'
 
 
 def configuration(config):
-    fields = {'schema', 'sembench_checkout', 'reviews_csv', 'query', 'query_id', 'model',
+    fields = {'schema', 'sembench_checkout', 'query', 'query_id', 'model',
               'sampling_params', 'engine_kwargs', 'provider_options', 'max_model_calls',
               'query_timeout_s', 'cleanup_s', 'stop_grace_s'}
     if (type(config) is not dict or not fields <= config.keys()
-            or config.keys() - fields - {'ranking', 'movies_csv'} or config['schema'] != SCHEMA):
-        raise ValueError('an explicit independent native Daft Movie JSON configuration is required')
-    task = movie_text_task(config['reviews_csv'], config['query'], config['query_id'],
-                           ranking=config.get('ranking'), movies_csv=config.get('movies_csv'))
+            or config.keys() - fields - {'scenario'} - TASK_SOURCE_FIELDS or config['schema'] != SCHEMA):
+        raise ValueError('an explicit independent native Daft JSON configuration is required')
+    task = task_from_config(config)
     for name in ('sampling_params', 'engine_kwargs', 'provider_options'):
         if type(config[name]) is not dict:
             raise ValueError(name + ' must be an explicit native object')
     if (type(config['sampling_params'].get('n')) is not int or config['sampling_params']['n'] != 1
             or config['sampling_params'].get('response_format') != task.response_format):
-        raise ValueError('native Movie tasks require n=1 and the independent JSON object response format')
+        raise ValueError('native JSON tasks require n=1 and the independent JSON object response format')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s'):
         value = config[name]
         if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
@@ -176,7 +175,16 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
             report['status'] = 'failed'
             report.pop('quality', None)
         if frame is not None:
-            report['result'] = task.encode_result(frame)
+            try:
+                report['result'] = task.encode_result(frame)
+            except BaseException as error:
+                report.update(status='failed', result_encoding_error_type=type(error).__name__)
+                report.pop('quality', None)
+                if primary is None:
+                    primary = error
+                    report.update(error_type=type(error).__name__, error=redact_text(str(error)))
+                else:
+                    primary.add_note('native result encoding failed: ' + redact_text(str(error)))
         report['logical_model_requests'] = len(requests)
         try:
             _save_artifact(directory / 'driver.json', report, primary=primary)
@@ -186,6 +194,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
             report.pop('quality', None)
         if primary is not None:
             primary.query_report = report
+            if frame is not None:
+                primary.query_result = frame
             raise primary
     return report
 

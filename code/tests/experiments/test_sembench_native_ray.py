@@ -65,6 +65,9 @@ class RunnerTests(unittest.TestCase):
                 if evaluation_error:
                     raise ValueError('official evaluator failed')
                 return dict(score=1)
+            @staticmethod
+            def encode_result(result):
+                return result.to_dict(orient='split')
         return Task()
 
     def run_fixture(self, state, **task_options):
@@ -77,6 +80,15 @@ class RunnerTests(unittest.TestCase):
             reviewId=['duplicate', 'duplicate', 'other'], reviewText=['good first', 'bad', 'good second'],
             scoreSentiment=['POSITIVE', 'NEGATIVE', 'POSITIVE'])).to_csv(source, index=False)
         return source
+
+    def mmqa_source(self):
+        pd.DataFrame(dict(Title=['Film', 'Film', 'Other'], Role=['Other', 'Bob Whitewood', 'Other'])).to_csv(
+            self.root / 'ben_piazza.csv', index=False)
+        pd.DataFrame(dict(title=['Film', 'Other'], text=['first director', 'second director'])).to_csv(
+            self.root / 'ben_piazza_text_data.csv', index=False)
+        pd.DataFrame(dict(title=['Mean Girls', 'Ignored', 'Allied'], text=['first genres', 'unused', 'second genres'])).to_csv(
+            self.root / 'lizzy_caplan_text_data.csv', index=False)
+        return self.root
 
     def test_native_processor_and_complete_sink_before_close(self):
         with recorded_processor({'0': '{"keep":true}', '1': '{"keep":false}'}) as state:
@@ -323,6 +335,57 @@ class RunnerTests(unittest.TestCase):
                 entry.main(['check', '--config', str(path)])
 
     @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_MMQA_extract_preserves_Series_and_table_sinks_including_close_failure(self):
+        from src.baselines.text.sembench_native_text import task_from_config
+
+        data = self.mmqa_source()
+        for query, close_error in (('Q1', None), ('Q4', None), ('Q1', RuntimeError('native close failed'))):
+            with self.subTest(query=query, close_error=close_error):
+                case = query + ('-close' if close_error else '')
+                root = self.root / case
+                root.mkdir()
+                ledger = CellBudgetLedger.create(root / 'budget.sqlite',
+                    AttemptBudget(case, 2), deadline_utc=time.time() + 120)
+                ledger.reserve_unit('query', 2)
+                config = dict(self.config, budget=dict(path=str(ledger.path), id=case, limit=2, unit_id='query'))
+                task = task_from_config(dict(scenario='mmqa', data_dir=str(data), query=query, query_id='extract'))
+                replies = ({'extract-row-0': '{"director":"Michael Ritchie"}', 'extract-row-1': '{"director":"Other"}'}
+                    if query == 'Q1' else {'extract-row-0': '{"genres":"comedy"}', 'extract-row-2': '{"genres":"drama, romance"}'})
+                with recorded_processor(replies, close_error=close_error):
+                    if close_error:
+                        with self.assertRaisesRegex(RuntimeError, 'native close failed') as raised:
+                            run_query(task, config, root / 'query', checkout=os.environ['SEMBENCH_CHECKOUT'])
+                        report = raised.exception.query_report
+                        self.assertEqual(report['status'], 'failed')
+                        self.assertNotIn('quality', report)
+                    else:
+                        report = run_query(task, config, root / 'query', checkout=os.environ['SEMBENCH_CHECKOUT'])
+                        self.assertEqual(report['quality']['original_metric']['precision'], 1)
+                if query == 'Q1':
+                    self.assertEqual(report['result'], dict(kind='series', name='director', index=[1],
+                        data=['Michael Ritchie'], dtype='object'))
+                else:
+                    self.assertEqual(report['result']['data'], [['comedy', 'Mean Girls'], ['drama', 'Allied'], ['romance', 'Allied']])
+                self.assertEqual(report['physical_attempts_reserved'], 2)
+                self.assertIsNotNone(report['sink_ready_ns'])
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_CLI_selects_MMQA_source_fields_without_movie_configuration(self):
+        from src.experiments import sembench_native_ray as entry
+
+        base = dict(self.config, schema='semloom.sembench_native_ray.v1', scenario='mmqa',
+            data_dir=str(self.mmqa_source()), query_id='CLI', sembench_checkout=os.environ['SEMBENCH_CHECKOUT'])
+        path = self.root / 'mmqa-config.json'
+        before = self.ledger.snapshot()
+        with patch.object(entry, 'run_query', side_effect=AssertionError('native execution forbidden')):
+            for query in ('Q1', 'Q4'):
+                path.write_text(json.dumps(dict(base, query=query)))
+                with self.subTest(query=query), redirect_stdout(StringIO()) as output:
+                    self.assertEqual(entry.main(['check', '--config', str(path)]), 0)
+                self.assertEqual(json.loads(output.getvalue())['task']['scenario'], 'mmqa')
+        self.assertEqual(self.ledger.snapshot(), before)
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
     def test_CLI_checks_without_claiming_budget_or_starting_native_execution(self):
         from src.experiments import sembench_native_ray as entry
 
@@ -417,6 +480,7 @@ if os.environ.get('SEMBENCH_CHECKOUT'):
     suite.addTest(RunnerTests('test_map_tasks_reuse_the_native_processor_and_complete_official_sinks'))
     suite.addTest(RunnerTests('test_Q10_scores_all_reviews_then_groups_movies_before_official_evaluation'))
     suite.addTest(RunnerTests('test_join_tasks_predict_all_pairs_before_original_ID_filter_and_sink'))
+    suite.addTest(RunnerTests('test_MMQA_extract_preserves_Series_and_table_sinks_including_close_failure'))
 result = unittest.TextTestRunner().run(suite)
 assert not any(forbidden(name) for name in sys.modules)
 raise SystemExit(not result.wasSuccessful())

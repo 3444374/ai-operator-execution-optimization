@@ -30,7 +30,7 @@ def _sampling(config):
 def run_query(task, config, directory, *, checkout, scope=query_scope):
     """Keep fresh source, prediction, strict parsing and full sink inside one owner.
 
-    ``task`` is a neutral Movie text task. ``budget`` identifies a previously
+    ``task`` is a neutral SemBench text task. ``budget`` identifies a previously
     reserved permanent unit; native AsyncLLM.generate charges each occurrence.
     Sampling and engine settings are explicit and retain native Ray execution.
     """
@@ -119,7 +119,7 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
                 failed(error, 'budget finalization')
         try:
             if result is not None:
-                report['result'] = json_metric(result.to_dict(orient='split'))
+                report['result'] = task.encode_result(result)
             if native is not None:
                 write_private_json(directory / 'native-predictions.json', native)
                 report['native'] = {key: value for key, value in native.items() if key != 'batches'}
@@ -146,11 +146,10 @@ def main(argv=None):
     config = read_json(args.config)
     if config.get('schema') != 'semloom.sembench_native_ray.v1':
         raise ValueError('an explicit independent native Ray configuration is required')
-    from src.baselines.text.sembench_native_text import movie_text_task
+    from src.baselines.text.sembench_native_text import task_from_config
     from src.baselines.text.sembench_source import verify_checkout
     verify_checkout(config['sembench_checkout'])
-    task = movie_text_task(config['reviews_csv'], config['query'], config['query_id'],
-                           ranking=config.get('ranking'), movies_csv=config.get('movies_csv'))
+    task = task_from_config(config)
     if args.action == 'check' or not args.execute_model:
         _sampling(config)
         task.prepare_evaluation()
