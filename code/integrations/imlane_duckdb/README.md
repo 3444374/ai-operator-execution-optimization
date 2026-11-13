@@ -18,7 +18,7 @@
 | [qualify_varchar.py](qualify_varchar.py)、[C++ driver](varchar_qualification.cpp)、[fixture](varchar_fixture.py) | 零模型 VARCHAR 的真实 DSO／PROCESS／THREAD 资格入口；原作者与 schema-child 工程版分开记录 |
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 | [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
-| [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | 完整 LOTUS 原题及既有 Map／Extract／TopK profile 的模型 owner、预算、完整 sink 与监督；旧 Q1 配置仅作格式兼容 |
+| [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | 完整 LOTUS 原题及既有 Map／Extract／TopK profile 的模型 owner、预算、完整 sink 与监督；任务由显式task声明 |
 | [native_imlane_topk.py](../../src/experiments/native_imlane_topk.py) | 原 LOTUS quick 比较批次交既有 VARCHAR prediction；完整原排名／评分不变 |
 | [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 复用 SemBench 捕获的单 Filter；源规模与预算从本次输入冻结，原版 TINYINT、完整原查询 sink 后 ACK |
 
@@ -502,9 +502,12 @@ Q3 的旧 `168bc` project resident bridge 只供软件 CPU 答复引用；本次
 
 `native_imlane_sembench`的`semloom.imlane.prepared_text.v1`配置用`task.scenario/query`及可选
 `scale_factor`选择已接入的原题。现有[Q1模板](../../configs/sembench_imlane_mmqa_q1.example.json)
-已迁到此格式；换任务同时冻结对应输入SHA和实际N个发生项的预算，不固定题号、25行或模型输出长度。
+已迁到此格式；换任务同时冻结对应输入SHA及覆盖实际N个发生项的有限预算，不固定题号、25行或模型输出长度。
 本接点接受原单Map／Extract和下述原Q5聚合；Filter、Join和TopK继续复用现有接点，其他混合图仍未由此支持。
-旧`semloom.imlane.mmqa_q1.v1`只保留其已承诺的Q1／25项配置校验，归一到同一实现，没有第二套执行器。
+旧Q1专用schema及默认task、25次／8192输出的特殊校验已删除；现行调用显式声明task，
+预算允许声明大于N的有限上界，实际发生项与原消息不增加；不足N仍在模型启动前拒绝。
+旧运行从[准确来源](../../../experiments/reproduction/native_baselines/README.md#retired-imlane-q1-schema)恢复，
+不修改其冻结配置、历史服务器helper或原结果，也不保留另一条长期兼容分支。
 
 复用`SemBenchTextQuery`、prepared formatter、原parser／完整关系和评分；Extract的JSON约束由
 原任务产生，即使公共generation未写response_format，也会传入实际原生structured_outputs。

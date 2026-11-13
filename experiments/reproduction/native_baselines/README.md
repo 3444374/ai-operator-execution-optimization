@@ -12,6 +12,19 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-imlane-q1-schema"></a>
+## 旧 IMLane Q1 专用配置
+
+`native_imlane_sembench.py`不再接受旧`semloom.imlane.mmqa_q1.v1`、默认Q1 task及其固定25次／8192输出校验。
+现行[prepared text模板](../../../code/configs/sembench_imlane_mmqa_q1.example.json)已使用显式`task`的共享schema，
+Map／Extract预算是覆盖全部实际发生项的有限上界；完整原函数使用已有`semloom.imlane.lotus_query.v1`。
+当前仓库的worker fixture已迁移共享schema，没有另设Q1 executor或新兼容壳。
+
+恢复旧行为使用完整`9486be0401b48e906aa0204f8c3d5f84a6abcd44`树及当次原配置／build记录，
+不要把单个旧模块接回当前树。旧服务器qualification helper和成功／失败证据保持原版本；
+新候选须改用显式task配置，不能直接把旧Q1配置交给新入口。当前行为与验证见
+[共享任务收尾](../../results/diagnostics/sembench_native_integration_20261112/README.md#imlane-shared-task-profile)。
+
 <a id="retired-lotus-service-query-runners"></a>
 ## 旧 LOTUS 视觉与 Q5 服务入口恢复
 

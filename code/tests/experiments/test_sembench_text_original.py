@@ -159,6 +159,28 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                 query.verify_source()
                 self.assertEqual(len(bound.audit()['calls']), count)
 
+    def test_imlane_varchar_budget_allows_explicit_headroom_for_actual_occurrences(self):
+        from src.experiments import native_imlane_sembench as entry
+        from transformers import AutoTokenizer
+
+        tokenizer = Mock()
+        tokenizer.apply_chat_template.return_value = [1, 2]
+        for scenario, key in (('movie', '8'), ('mmqa', '1')):
+            with self.subTest(scenario=scenario, query=key):
+                original = self._query(scenario, key)
+                count = len(original.operation.records)
+                value = json.loads((entry.CODE / 'configs/sembench_imlane_mmqa_q1.example.json').read_text())
+                value.update(task=dict(scenario=scenario, query=key), query_id=original.query_id,
+                    sembench_checkout=CHECKOUT, data_dir=str(self.data), generation=asdict(self.generation),
+                    max_model_calls=count + 7,
+                    input_sha256={name: row['sha256'] for name, row in original.files.items()})
+                with patch.object(AutoTokenizer, 'from_pretrained', return_value=tokenizer):
+                    query, _, prepared, requests, tokens = entry.prepare_query(value)
+                self.assertEqual(len(prepared), count)
+                self.assertEqual(len(requests), count)
+                self.assertEqual(tokens, [[1, 2]] * count)
+                self.assertEqual(len(query.operation.records), count)
+
     def test_imlane_varchar_rejects_wrong_task_kind_or_incomplete_frozen_allowance(self):
         from src.experiments import native_imlane_sembench as entry
         from transformers import AutoTokenizer

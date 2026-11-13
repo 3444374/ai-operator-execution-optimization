@@ -35,7 +35,6 @@ from src.infrastructure.private_artifacts import (
 from src.infrastructure.redact import redact_text
 from src.serving.backends.vllm_protocol import GenerationSpec
 
-SCHEMA = 'semloom.imlane.mmqa_q1.v1'
 TEXT_SCHEMA = 'semloom.imlane.prepared_text.v1'
 TOPK_SCHEMA = 'semloom.imlane.lotus_topk.v1'
 QUERY_SCHEMA = 'semloom.imlane.lotus_query.v1'
@@ -53,17 +52,15 @@ def _aggregation(value):
 def configuration(value):
     fields = {'schema', 'query_id', 'sembench_checkout', 'data_dir', 'input_sha256', 'model_name',
               'tokenizer', 'generation', 'model_service', 'max_model_calls', 'query_timeout_s',
-              'cleanup_s', 'stop_grace_s', 'request_timeout_s'}
-    task_profile = isinstance(value, dict) and value.get('schema') in (TEXT_SCHEMA, TOPK_SCHEMA, QUERY_SCHEMA)
+              'cleanup_s', 'stop_grace_s', 'request_timeout_s', 'task'}
     aggregate = isinstance(value, dict) and _aggregation(value)
-    if (type(value) is not dict or set(value) != fields | ({'task'} if task_profile else set())
-            | ({'token_counter'} if aggregate else set())
-            or value['schema'] not in (SCHEMA, TEXT_SCHEMA, TOPK_SCHEMA, QUERY_SCHEMA)):
+    if (type(value) is not dict or set(value) != fields | ({'token_counter'} if aggregate else set())
+            or value['schema'] not in (TEXT_SCHEMA, TOPK_SCHEMA, QUERY_SCHEMA)):
         raise ValueError('explicit native IMLane query configuration required')
     task_options = {'scenario', 'query', 'scale_factor'}
-    if isinstance(value, dict) and value.get('schema') == QUERY_SCHEMA:
+    if value['schema'] == QUERY_SCHEMA:
         task_options |= {'ranking', 'visual_query', 'image_join', 'manifest', 'manifest_digest'}
-    if task_profile and (type(value['task']) is not dict or not {'scenario', 'query'} <= value['task'].keys()
+    if (type(value['task']) is not dict or not {'scenario', 'query'} <= value['task'].keys()
             or value['task'].keys() - task_options):
         raise ValueError('declare an original scenario/query task')
     if value['schema'] == QUERY_SCHEMA and any(name in value['task'] and type(value['task'][name]) is not bool
@@ -76,9 +73,6 @@ def configuration(value):
     if aggregate and (generation.response_format is not None or generation.logprobs is not None
             or generation.repetition_penalty != 1):
         raise ValueError('native aggregation uses standard generation and the original unstructured parser')
-    if value['schema'] == SCHEMA and (generation.response_format != {'type': 'json_object'} or generation.max_tokens != 8192
-            or value['max_model_calls'] != 25):
-        raise ValueError('Q1 requires original JSON Extract, max_tokens 8192 and a 25-call cap')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s', 'request_timeout_s'):
         _positive(value[name])
     AttemptBudget(value['query_id'], value['max_model_calls'])
@@ -112,7 +106,7 @@ def _aggregation_lm_options(config, generation):
 def prepare_query(config):
     from transformers import AutoTokenizer
     config, generation = configuration(config)
-    task = config.get('task', dict(scenario='mmqa', query='1'))
+    task = config['task']
     options = _aggregation_lm_options(config, generation) if _aggregation(config) else {}
     query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], task['scenario'], task['query'],
         execution_id=config['query_id'], model_name=config['model_name'], generation=generation,
@@ -132,7 +126,7 @@ def prepare_query(config):
     if query.operation is not None and query.operation.describe()['kind'] not in ('map', 'extract'):
         raise ValueError('prepared VARCHAR binds ordinary text Map/Extract; use the existing Filter/Join/TopK profiles')
     method, prepared, requests = prepare(query)
-    if config['max_model_calls'] != max(1, len(prepared)):
+    if config['max_model_calls'] < len(prepared):
         raise ValueError('declare every original Map/Extract occurrence in the finite query allowance')
     tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True,
                                                trust_remote_code=False)

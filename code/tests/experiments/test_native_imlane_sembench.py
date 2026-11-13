@@ -22,14 +22,14 @@ class WorkerBoundaryTests(unittest.TestCase):
         args = SimpleNamespace(output=root / 'worker', build_record=root / 'build.json',
             kind='thread', threads=None, executor_count=None)
         args.build_record.write_text('{}')
-        config = dict(schema=entry.SCHEMA, query_id='fixture-q1', sembench_checkout='/unused',
+        config = dict(schema=entry.TEXT_SCHEMA, task=dict(scenario='mmqa', query='1'),
+            query_id='fixture-q1', sembench_checkout='/unused',
             data_dir='/unused', input_sha256={}, model_name='openai/fixture', tokenizer='/unused',
             generation=dict(max_tokens=8192, temperature=0, top_p=1, seed=0, stop=[],
                 presence_penalty=0, frequency_penalty=0, repetition_penalty=1,
                 response_format={'type': 'json_object'}), model_service={}, max_model_calls=25,
             query_timeout_s=1200, cleanup_s=120, stop_grace_s=8, request_timeout_s=1200)
         if native_extract_format:
-            config.update(schema=entry.TEXT_SCHEMA, task=dict(scenario='mmqa', query='1'))
             config['generation'].pop('response_format')
         build = dict(binary_path='/unused/driver', kernel_path='/unused/kernel',
                      duckdb_library_path='/unused/libduckdb.so')
@@ -127,6 +127,18 @@ class WorkerBoundaryTests(unittest.TestCase):
         report, error, _, _ = self.run_fixture(native_extract_format=True)
         self.assertIsNone(error)
         self.assertEqual(report['generation']['response_format'], {'type': 'json_object'})
+
+    def test_only_explicit_shared_task_profiles_are_current(self):
+        config = json.loads((entry.CODE / 'configs/sembench_imlane_mmqa_q1.example.json').read_text())
+        config['max_model_calls'] = 31
+        config['generation']['max_tokens'] = 64
+        self.assertEqual(entry.configuration(config)[0], config)
+        with self.assertRaisesRegex(ValueError, 'explicit native IMLane query'):
+            entry.configuration(dict(config, schema='semloom.imlane.mmqa_q1.v1'))
+        missing_task = dict(config)
+        del missing_task['task']
+        with self.assertRaisesRegex(ValueError, 'explicit native IMLane query'):
+            entry.configuration(missing_task)
 
     def test_post_sink_failure_preserves_result_and_primary_error(self):
         report, error, _events, output = self.run_fixture(query_failure=True, write_failure=True)

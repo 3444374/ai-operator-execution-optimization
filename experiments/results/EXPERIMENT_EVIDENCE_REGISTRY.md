@@ -75,6 +75,11 @@
 固定system＋单user数组以外、真实服务／模型及物理清理待验；HTTP仅按批关联，远端READY／启动／显式client close未观测。
 该路径保留LOTUS语义，与前述独立JSON语义runner分列，不借用旧本地模型成绩。
 
+[IMLane共享任务配置收尾](diagnostics/sembench_native_integration_20261112/README.md#imlane-shared-task-profile)
+移除已被共享task替代的旧Q1 schema、默认题号与固定25／8192校验；Map／Extract预算允许覆盖实际N的有限余量，
+不增加实际调用。26个不同软件方法全部通过、0模型／原DSO／GPU；原关系／JSON阶段／计时不变，
+冻结服务器helper与历史成功／失败证据保留准确恢复树，不把格式收尾当作新模型资格。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

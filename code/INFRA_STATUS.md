@@ -120,6 +120,10 @@ LOTUS＋IMLane的完整原题profile已整合原生多模态载体和逐批采�
 软件资格和“统一语义工程对照”身份见[报告](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)。
 这是新语义对照，目标真实框架／模型／退出仍待验，不借用旧LOTUS组合成绩。
 
+IMLane原题runner已移除旧Q1专用schema和默认task／固定25次分支，现行Map／Extract使用显式共享task；
+预算为覆盖实际N的有限上界，允许余量但不增加调用。受影响软件验证与准确旧恢复树见
+[配置收尾](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-shared-task-profile)，旧服务器配置及模型资格保持原版本。
+
 Kalypso现行runner的独立时钟已被公共读取器识别，真实起止及旧receipt不改写；受影响76项为74通过／2项真实tokenizer未绑定。
 同次固定源码核对澄清了纯文本与真正图像／Extract多阶段的接点边界，见[共同边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-query-scope-clock)，没有为此新增逐题或阶段框架。
 

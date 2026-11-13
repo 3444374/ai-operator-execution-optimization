@@ -1159,6 +1159,23 @@ Ray包1694个payload含Ray383及旧失败IMLane4073的1311；对应4073源码114
 a110包1492个payload、恢复2643558317字节，对应源码1147个blob。归档身份见下表；
 模型结果只归各自冻结版本，不转授当前新增Daft接点或独立Ray／Daft语义runner。
 
+<a id="imlane-shared-task-profile"></a>
+## IMLane 共享任务配置与旧 Q1 分支退出
+
+在`9486be0401b48e906aa0204f8c3d5f84a6abcd44`基础上复核现行调用：Q1模板已使用
+`semloom.imlane.prepared_text.v1`，旧专用schema只在worker fixture和历史服务器qualification材料中保留。
+移除生产的旧Q1 schema、默认Q1 task及固定25次／8192输出校验；仓库worker fixture迁移到显式共享task。
+Map／Extract预算从“必须等于N”改为“有限且至少覆盖N”，实际请求、原消息、JSON阶段、评分、SQL／ACK及计时不变。
+这是共享配置与上限语义修正，不是为另一题新增runner；预算大于N不产生额外调用，不足N仍在模型启动前拒绝。
+
+干净9486导出只叠加生产模块和两份受影响测试，26个不同软件方法全部通过、0skip／模型／GPU／原DSO执行。
+涵盖Map／Extract原SDK完整关系差分、新非25规模／预算余量、旧schema与缺task拒绝、完整sink后失败留证，
+以及既有完整视觉／分支／groupby和单层／多层聚合的软件回归。
+结果摘要SHA-256为`f31c8dd3c82272db0acb7e7f01b156b2a1ffbd60db300b46de74fea600847384`。
+旧服务器helper属于冻结运行，未覆盖或重新执行；新候选必须使用显式task。
+准确恢复树和迁移说明见[退役来源](../../../reproduction/native_baselines/README.md#retired-imlane-q1-schema)。
+本批不修改build输入／DSO，不增加新的Linux SQL或模型资格。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
