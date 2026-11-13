@@ -441,5 +441,11 @@ SemBench runner 完成或多阶段已支持。新结构的 CPU 生命周期检�
 保留原返回结果且不产成功quality，不修改作者算法或重试。
 
 独立`kalypso.source_to_sink.v1`包含现存同步observer开销，额外预检和事后评分在外；
-真实作者服务、serializer、tokenizer、模型与物理退出仍待验。
+3500仅授予原sf25单层文本服务／模型功能，其他规模、多层／并发及完整离线条件仍待验。
 [原方法差分与失败记录](../../../../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#aggregate-system-runners)不授予其他连续算子或多模态支持。
+
+3500的原sf25单次真实归约与CPU门已独立验收，具体身份及未过的离线约束见[单层结果](../../../../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)。
+首次私有owner只打开未初始化的[永久账本](../../../../experiments/cell_budget.py)而失败，未创建模型／client且调用0；
+正确前置为该owner按既有create／reserve_unit初始化后再claim，不是修改SemAgg，也不在adapter中自动重建账本。
+HF offline本身不控制LiteLLM价格表请求；本轮未启用其local cost map及完整INET guard，全离线资格保持失败，
+价格未知不填零，不重跑原模型来抹掉失败。

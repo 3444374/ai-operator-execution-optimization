@@ -935,7 +935,7 @@ provider模块socket命名空间后通过，原失败保留。provider单项最�
 
 独立`lotus_imlane.source_to_sink.v1`从需要模型时READY后的fresh source到完整原内存sink，
 含必要SQL／ACK／scope关闭、provider配置／指纹／回执I/O；事后token／关联／源审计、评分、最终模型关闭在外。
-zero/no-op无READY前提，不伪造统一v3或减掉估算成本。groupby／其他factory路由、本轮未测原题、
+zero/no-op无READY前提，不伪造统一v3或减掉估算成本。初始110没有授予groupby（后续验证见下）／其他factory路由、
 Linux真实SQL／VLM／物理清理均未授予资格；807的单叶真实结果只属于其旧冻结来源。
 
 <a id="imlane-807-single-leaf"></a>
@@ -956,6 +956,47 @@ ready-source→完整sink为5.09760984秒，含启动worker→同sink为45.61262
 复核等于准确807提交，未重跑模型；本轮准备路径失败、stale console的051标签及ACK检查把纯文本当JSON的
 错误原件保留，源码与断言实际都绑定807。当前冻结sf25输入只有单叶，不能据此授多层或并发资格，
 更不授新完整视觉profile或整套SemBench通过。
+
+<a id="imlane-branches-groupby"></a>
+## IMLane 原分支 Join 与 groupby
+
+基于4073f0a5e只补既有完整query测试，生产runner无需修改。两项新方法通过后，整合独立执行受其RNG／比较
+helper影响的原题模块8／8通过、0skip，结果SHA为`bd45811b0e6a1c51f5426e466986bc649672249caca72dc2a3e50ddf254b1cf5`；前110与本8有重叠，不能相加为118项资格。
+
+实际原Q10三批各5的Filter后两批各2的Join；原Q11四批各5的Filter后两分支与最终Join的批次为2／1／2。
+完整结果、原评分及消息multiset与原服务软件参考一致；SDK未将多列声明全入模的事实继续披露。
+原Q14运行真实SDK ThreadPoolExecutor的4个group线程，两实callback在fixture barrier相遇，未替换执行器或线程容量；
+SQLPredictions作用域最大同时1，实际LM批次5／8／1／1／1／1、永久attempt1..17连续，provider路径／call_id唯一。
+每批sink→ACK→driver退出及SQL scope关闭、完整原sink／最终模型关闭顺序通过。
+
+两次对照前记录／回设实际NumPy RNG快照，不改生产算法。Q14结果为原query返回的id列且官方指标为F1；
+按原GenericRunner不写pandas index的关系值／重复次数和原评分比较，实际原index仍保留，不拿线程结束顺序当语义。
+Q10／Q11及所有旧case保持精确完整结果断言。组内模型错误经实际worker/provider逻辑触发ModelBatchError，
+所有SQL scope关闭、最终模型只关闭一次，失败LM批次保留，不产完整sink或成功quality。
+数据、renderer／generate与SQL仍是明确软件fixture；没有真实模型／SQL／GPU，不授予并发SQL、多Job或目标性能结论。
+
+<a id="kalypso-3500-single-reduction"></a>
+## Kalypso 原Q5 单次真实归约及环境缺口
+
+`kalypso-aggregate-3500ef7-native-qualification-20261113-r1`固定3500ef740／作者05024，
+20／20 CPU及实际作者planner／初始完整token门通过，原sf25源25行选16发生项；一次真实SemAgg归约终态，
+未知／重试／额外语义预热0，原F1=1。它不同于LOTUS层次算法，只授予单层功能，不授多层／并发或真暖。
+
+Qwen2.5-7B-Instruct BF16、原作者vLLM0.13.0rc4分支、原引擎defaults：context32768、max_num_seqs256、
+batch tokens2048、GPU利用率配置0.9、prefix cache开启；SemAgg并发8、max_tokens8192，原seed42／
+frequency0.5／repetition1.3保持，未为统一而换成LOTUS采样。逻辑APIprompt3552／completion5，金额及kernel未知。
+独立kalypso.source_to_sink.v1的ready源到完整sink0.943170746秒，owner含启动57.489038759秒，
+模型服务启动40.207198926秒、额外source preflight14.48238821秒分列，未扣减旧成绩，不与其他独立时钟排名。
+
+首次私有owner调用CellBudgetLedger构造器时文件尚未初始化，0次调用且未创建model/client；按原接口
+create＋reserve_unit后在新输出slot、相同15永久上界执行，源码／生成不变。不是生产SemAgg初始化缺陷，
+不应添加“文件没有就自动创建／重置”回退。原失败、未消费14预留及全部终态证据保留。
+另外HF offline已设置但私有owner缺local price-map配置／严格INET guard，LiteLLM价格表联网超时；
+全离线资格明确失败，真实价格不可用，不以功能成功掩盖。后续owner应设已有LITELLM_LOCAL_MODEL_COST_MAP=True
+及现有外网guard，不重复此模型运行来抹失败。
+
+资源／租约清理通过。1368份payload加清单与归档逐字节核对，1144个source Git blob由本会话复核等于
+准确3500提交，未重跑模型。冻结原件及失败不改成当前新组合或正式性能资格。
 
 ## 原件恢复与独立核验
 
@@ -986,6 +1027,7 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 051639最小CPU＋模型 | 3930503 | 1578 | `a6d9e929568bad9f9f8e74ddcb9d3cdf406f06aa6d76147a4872834b4ed572e0` |
 | 051639 Ray Animals Q1 sf64 | 84905964 | 1431 | `8ce429180056911dc8e0d7e2ce67a0eda19a045fd85dc7cfc27e7818dad4fa02` |
 | 807224 IMLane Q5单叶 | 3741666 | 1367 | `e648fc1de0bcee4f4aad4cf0ca678f8b32bb7c12e498ac7dc6684c1a702361b0` |
+| 3500 Kalypso Q5单层 | 3129361 | 1368 | `3549da07180f31519880da6412f7dacec24547ddad33f300dfbc4de54bc320f0` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

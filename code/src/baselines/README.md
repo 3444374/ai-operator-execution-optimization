@@ -184,6 +184,12 @@ Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON �
 原LOTUS拥有分块、token计数、摘要依赖、parser和最终`_output`；动态总数保持未知，有限预算按实际调用扣除。
 现有字符串prompt provider尚无逐行图像carrier；TopK取消项保持停止，其他多模态／分组查询不由该路径授予支持。
 
+已查固定Daft0.7.21内置provider没有逐行raw conversation入口；`prompt(list[Expression])`是同一user的内容parts，
+不是多轮消息。OpenAI／LM Studio可构造固定system＋单user并支持图像bytes/File，但会重建对话；
+受限消息形态是否与原LOTUS完整内容／顺序等价尚未实现或验证，不能把`data:image`字符串当图像代替。
+自定义Prompter可保持Daft调度，但属于新增provider工程变体；当前vLLM字符串profile不借用该能力。
+原Extract的JSON object还需chat-completions原文本返回，不能用Pydantic parse的结构返回冒充原parser。
+
 每批原生READY后，driver将预测交回原题；随后原题产生下一批或完整sink，显式ACK才允许当前worker关闭。
 中间worker必须先关闭再启动下一批，最后worker在完整sink之后关闭；不存在自建模型池或跨批复用声明。
 原worker未开启`wait_for_result_release`时保留旧合同。结果改为v2，`native-lm-batches.json`保留

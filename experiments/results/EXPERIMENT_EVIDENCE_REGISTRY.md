@@ -45,6 +45,13 @@
 [807224原Q5工程版单叶](diagnostics/sembench_native_integration_20261112/README.md#imlane-807-single-leaf)
 31项LinuxCPU、1次真实请求、原F1=1，1367份原件核验；cold／ready区间、工程版身份与多层／并发未验分列。
 
+[IMLane分支／groupby](diagnostics/sembench_native_integration_20261112/README.md#imlane-branches-groupby)
+原Q10/Q11多分支与Q14四个原生group线程在既有runner软件通过，无生产修改；受影响模块8／8，通过范围与前110重叠。
+原RNG／官方无index关系、SDK选列限制、唯一预算／provider与失败清理各自保留，0模型／SQL／GPU。
+[3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
+20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
+全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。
+
 [Kalypso零发生项](diagnostics/sembench_native_integration_20261112/README.md#kalypso-empty-frontier)
 修正无依据的正数frontier限制、空trace／owner检查和CPU空统计；82个不同软件方法为80通过、
 2项真实tokenizer未绑定跳过，首失败保留。原数据选择／关系／评分和作者算法不变，未运行模型／GPU或服务器。

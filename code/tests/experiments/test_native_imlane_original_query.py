@@ -3,6 +3,7 @@ import asyncio
 from collections import Counter
 from copy import deepcopy
 import json
+import threading
 from pathlib import Path
 from types import SimpleNamespace as NS
 import unittest
@@ -83,14 +84,25 @@ class OriginalQueryTests(unittest.TestCase):
             return await worker.ModelWorker({},model,asyncio.Event(),budget=unit).batch(request)
         return lambda request,unit:asyncio.run(execute(request,unit))
 
-    def compare(self,scenario,query,inputs,*,mode='success'):
+    def compare(self,scenario,query,inputs,*,mode='success',ordered_result=True):
+        import numpy as np
+        state=np.random.get_state()
+        self.addCleanup(np.random.set_state,state)
+        self.last_rng_state=[state[0],state[1].tolist(),int(state[2]),int(state[3]),float(state[4])]
         service,config=self.config(scenario,query,inputs)
         reference=fixture.NativeHTTPReplies(self,scenario,query=query,mode=mode)
         expected,_,_=self.visual.invoke(service,inputs,reference,allowance=64)
         actual=fixture.NativeHTTPReplies(self,scenario,query=query,mode=mode)
+        np.random.set_state(state)
         report=self.native.invoke(config,reply_batch=self.replies(actual))
         self.assertEqual(report['status'],'completed')
-        self.assertEqual(report['result'],expected['result'])
+        if ordered_result:
+            self.assertEqual(report['result'],expected['result'])
+        else:
+            # SemBench scores/writes values without the pandas index. Preserve
+            # actual indices in both reports; tied duplicate positions may vary.
+            self.assertEqual(report['result']['columns'],expected['result']['columns'])
+            self.assertCountEqual(report['result']['data'],expected['result']['data'])
         self.assertEqual(report['quality'],expected['quality'])
         self.assertEqual(Counter(content_digest(r['body']['messages']) for r in actual.requests),
                          Counter(content_digest(r['body']['messages']) for r in reference.requests))
@@ -110,6 +122,95 @@ class OriginalQueryTests(unittest.TestCase):
             self.assertEqual(provider['sampling_params'],metadata['native_sampling'])
             self.assertEqual(provider['receipt_dir'],metadata['directory'])
         return report,actual,config
+
+    def assert_native_batches(self,report):
+        batches=read_json(self.native.last.output/'original-lm-batches.json')
+        ids=[row['call_id'] for batch in batches for row in batch['requests']]
+        self.assertEqual(len(ids),len(set(ids)))
+        self.assertEqual(len(ids),report['model_calls'])
+        attempts=[call['response']['budget_attempt'] for call in report['ipc']['calls']]
+        self.assertEqual(sorted(attempts),list(range(1,len(ids)+1)))
+        self.assertEqual(len(report['provider_batches']),len(report['prediction_batches']))
+        for provider,sql in zip(report['provider_batches'],report['prediction_batches'],strict=True):
+            self.assertEqual(sql['status'],'completed')
+            self.assertLessEqual(sql['full_sink_observed_monotonic_ns'],sql['sink_release']['published_monotonic_ns'])
+            self.assertLessEqual(sql['sink_release']['published_monotonic_ns'],sql['driver_exit_observed_monotonic_ns'])
+            self.assertEqual(sql['input_rows'],sum(len(read_json(path)['calls']) for path in
+                Path(provider['directory']).glob('*.terminal.json')))
+        return batches
+
+    def test_original_branch_joins_keep_all_filters_actual_inputs_and_full_relations(self):
+        for query,filters in (('Q10',3),('Q11',4)):
+            with self.subTest(query=query):
+                report,_,_=self.compare('ecomm',query,self.visual.ecomm_outfit_inputs(query))
+                batches=self.assert_native_batches(report)
+                self.assertEqual([len(batch['requests']) for batch in batches[:filters]],[5]*filters)
+                self.assertEqual(len(report['semantic']['native_join_inputs']),2 if query=='Q10' else 3)
+                self.assertTrue(all(not call['all_declared_columns_selected'] for call in
+                    report['semantic']['native_join_inputs']))
+                self.assertIsNone(report['source']['expected_model_calls'])
+                self.assertIsNone(report['source']['maximum_model_calls'])
+                print('CPU_BRANCH_QUERY',query,'batch_sizes',[len(batch['requests']) for batch in batches],
+                      'result',report['result'])
+
+    def test_groupby_topk_threads_share_serial_sql_and_failed_groups_keep_original_failure(self):
+        from src.experiments import native_imlane_topk as carrier_sql
+        from integrations.imlane_duckdb.model_provider import ModelBatchError
+        main=threading.get_ident()
+        lock=threading.Lock();gate=threading.Barrier(2)
+        stats=dict(active=0,maximum=0,group_entries=0,group_threads=set(),sql_threads=set())
+        original_make=entry.make_query_lm;original_sql=carrier_sql.SQLPredictions.__call__
+        def make(query,predict,**options):
+            def observed(requests,**kwargs):
+                group=threading.get_ident()!=main
+                with lock:
+                    if group:
+                        stats['group_entries']+=1;stats['group_threads'].add(threading.get_ident())
+                    synchronize=group and stats['group_entries']<=2
+                # Only the first two real SDK worker callbacks rendezvous,
+                # outside the product's SQL lock. No SDK executor is replaced.
+                if synchronize:gate.wait(timeout=5)
+                return predict(requests,**kwargs)
+            return original_make(query,observed,**options)
+        def sql(owner,requests):
+            with lock:
+                stats['active']+=1;stats['maximum']=max(stats['maximum'],stats['active'])
+                stats['sql_threads'].add(threading.get_ident())
+            try:return original_sql(owner,requests)
+            finally:
+                with lock:stats['active']-=1
+        with patch.object(entry,'make_query_lm',side_effect=make),patch.object(carrier_sql.SQLPredictions,'__call__',sql):
+            report,_,config=self.compare('ecomm','Q14',self.visual.ecomm_outfit_inputs('Q14'),ordered_result=False)
+        self.assertGreaterEqual(len(stats['group_threads']),2)
+        self.assertTrue(stats['group_threads']<=stats['sql_threads'])
+        self.assertEqual(stats['maximum'],1);self.assertEqual(stats['active'],0)
+        self.assertEqual(stats['group_entries'],4)
+        batches=self.assert_native_batches(report)
+        self.assertEqual([len(batch['requests']) for batch in batches[:2]],[5,8])
+        self.assertEqual(sorted(len(batch['requests']) for batch in batches[2:]),[1,1,1,1])
+        print('CPU_GROUPBY_QUERY',json.dumps(dict(rng_state=self.last_rng_state,
+            native_group_callbacks=stats['group_entries'],group_worker_threads=len(stats['group_threads']),
+            maximum_simultaneous_sql_scopes=stats['maximum'],batch_sizes=[len(b['requests']) for b in batches],
+            result_values=report['result']['data']),sort_keys=True))
+        policy=fixture.NativeHTTPReplies(self,'ecomm',query='Q14')
+        response=policy.respond
+        def fail_group(request):
+            body=json.loads(request.content)
+            if 'Document 1' in json.dumps(body) and 'Document 2' in json.dumps(body):
+                raise RuntimeError('software original group model failure')
+            return response(request)
+        with patch.object(policy,'respond',side_effect=fail_group),self.assertRaises(ModelBatchError):
+            self.native.invoke(config,reply_batch=self.replies(policy))
+        failed=read_json(self.native.last.output/'worker.json')
+        self.assertEqual(failed['status'],'failed');self.assertNotIn('quality',failed)
+        self.assertNotIn('full_sink_observed_monotonic_ns',failed)
+        calls=read_json(self.native.last.output/'original-lm-batches.json')
+        self.assertTrue(any(call['status']=='failed' for call in calls))
+        events=self.native.last.events
+        self.assertEqual(sum(name=='sql-open' for name,_ in events),sum(name=='sql-close' for name,_ in events))
+        self.assertEqual(sum(name=='model-close' for name,_ in events),1)
+        self.assertLessEqual(max(stamp for name,stamp in events if name=='sql-close'),
+                             next(stamp for name,stamp in events if name=='model-close'))
 
     def test_complete_profile_requires_plain_base_without_changing_legacy_configuration(self):
         _,config=self.config('mmqa','Q2b',self.visual.mmqa_inputs())

@@ -57,9 +57,9 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 | 原关系连接后单图或双图 Filter；Medical Q3/Q8/Q9 | 原脚本／原生视觉服务／原评分已接线，db3fe Linux52通过；已查作者checkout缺原图，sf20 Q3原连接0行不授予视觉资格，非空输入／processor／VLM待验 | 三题原函数已接，非空／双图及小gold原失败的软件差分通过；真实数据与Ray VLM待验 | 未接线 | 共用原题factory可绑定，本批该题未验；双图processor／SQL／VLM另验 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 完整原函数已接，单算子及非空描述／图像Join、图像self-join软件差分通过；真实资产／Ray VLM待验，SDK选列限制保留 | 未接线 | 共用原题factory可绑定，本批这些题未验；真实资产／SQL／VLM另验，SDK选列限制保持 | 未接线 |
 | 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线；空路径已实机执行，参考非空Extract组件5次真实请求已验；实际Join→非空Extract及旧原答关联仍有缺口 | 完整原函数、原生JSON及query owner已接；临时2图／5表行的10→5和10→0软件原题差分通过；真实多阶段模型／质量／清理待验 | 未接线 | 完整原函数／QueryLM／原JSON阶段已接，非空4→4软件差分；真实SQL／VLM／质量及物理清理待验 | 未接线 |
-| 原分层 Aggregate；MMQA Q5 | 同一原生服务runner已接线，真实sf25软件回放按原来源分列 | 原函数／token计数／层次与query owner已接；051639的sf25单叶1次真实请求、F1=1，当前多层／并发模型及物理清理仍待验 | 原完整函数／实际多批层次算法已接，原生CPU图与软件差分；目标模型／tokenizer与物理清理待验 | 原LOTUS层次over VARCHAR工程变体已接；807224的原sf25单叶31项LinuxCPU／1次真实模型F1=1；当前多批／视觉／物理清理另验，非作者聚合算法 | 原SemAgg已接同一runner，保留作者分块／BlockingExecutor／归并和零单行行为；原方法软件差分，真实服务／模型待验，算法不与LOTUS等同 |
+| 原分层 Aggregate；MMQA Q5 | 同一原生服务runner已接线，真实sf25软件回放按原来源分列 | 原函数／token计数／层次与query owner已接；051639的sf25单叶1次真实请求、F1=1，当前多层／并发模型及物理清理仍待验 | 原完整函数／实际多批层次算法已接，原生CPU图与软件差分；目标模型／tokenizer与物理清理待验 | 原LOTUS层次over VARCHAR工程变体已接；807224的原sf25单叶31项LinuxCPU／1次真实模型F1=1；当前多批／视觉／物理清理另验，非作者聚合算法 | 原SemAgg同一runner已接；3500原sf25 CPU20／1次真实归约F1=1；私有owner离线资格失败，原失败保留，多层／并发未验，算法不与LOTUS等同 |
 | 文本 Filter 后对实际保留行作图像 Extract；E-Commerce Q12 | 原函数及原生服务完整接线；临时数据软件验证，真实数据／VLM待验 | 完整原函数已接，4→3非空Extract及原空路径KeyError软件差分通过；真实数据／Ray VLM待验 | 未接线 | 完整原函数已接，4→3实际survivors及原空错误软件差分；真实资产／SQL／VLM待验 | 未接线 |
-| 多分支 Filter／Join 及分组 TopK；E-Commerce Q10/Q11/Q14 | 原完整函数已接线，软件原生图检查；多列 Join 受当前SDK选列限制，真实数据／VLM待验 | 原非空分支／Join和原groupby线程已接并作软件差分；各分支空组合与目标待验，多列Join限制保留 | 未接线 | 共用原题factory可绑定，分支／groupby本批未验；一次一个SQL scope，真实资产／模型待验 | 未接线 |
+| 多分支 Filter／Join 及分组 TopK；E-Commerce Q10/Q11/Q14 | 原完整函数已接线，软件原生图检查；多列 Join 受当前SDK选列限制，真实数据／VLM待验 | 原非空分支／Join和原groupby线程已接并作软件差分；各分支空组合与目标待验，多列Join限制保留 | 未接线 | 原Q10/Q11分支及Q14四个原group线程的软件差分通过，SQL/config scope保持串行、预算连续；真实资产／模型／物理清理待验 | 未接线 |
 
 表中LOTUS＋Ray／Daft使用原LOTUS提示、解析和算法，不因为底层使用原生AI API就再统计为独立语义baseline。
 独立Ray保留HTTP Q3项目合同；Daft旧独立Q3已退役，当前prepared native AI carrier不另算一套非LOTUS完整baseline。原生IMLane查询按实际任务合同分列；IMLane的
@@ -84,6 +84,8 @@ IMLane原版Filter／exact Join也已移除非空限制：实际零发生项走S
 正预算与实际N分开，38项软件验收通过，Linux薄driver须重链、真实空SQL仍待验，见[零发生项](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-zero-occurrences)。
 
 LOTUS＋IMLane的完整原题profile已整合原生多模态载体和逐批采样；110项受影响软件检查全部通过，代表原题／未验factory路由／真实模型分别标注，见[完整查询](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-original-query)。
+
+后续分支／groupby只需补软件覆盖、无生产修改；受影响原题模块8／8通过，原多列SDK限制、线程关系与目标未验边界见[分支验证](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-branches-groupby)。
 
 剩余工作按共同边界闭合：已接线原函数处理真实中间关系，额外预检之外的完整查询计时按版本
 记录，再用真实资产及代表查询验收。完整 SemBench 入口及已核活动服务器绑定走共享路径。
