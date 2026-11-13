@@ -54,7 +54,7 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
         execution_enabled=False, model_calls=0, requests_reserved=0, requests_claimed=0,
         native_lotus_query="original query/evaluator and native SDK service entry wired; service qualification pending",
         baseline_states={
-            "lotus-native": "run_sembench_lotus_image_query.py binds the original SDK; actual VLM service not checked here",
+            "lotus-native": "run_sembench_lotus_query.py binds the original SDK; actual VLM service not checked here",
             "ray-data": ray_binding,
             "daft": "visual SemBench binding pending; native provider support must be checked separately from CLIP",
             "imlane": "current author bridge visual binding not established",

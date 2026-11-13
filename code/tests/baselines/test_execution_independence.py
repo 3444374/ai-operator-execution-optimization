@@ -33,7 +33,7 @@ for name in (
     'src.baselines.image.sembench_animals',
     'src.baselines.image.sembench_mmqa',
     'src.experiments.sembench_image_query',
-    'src.experiments.sembench_lotus_image_query',
+    'src.experiments.sembench_lotus_query',
     'src.baselines.text.sembench_source',
     'src.baselines.text.sembench_mmqa',
     'src.baselines.text.sembench_text',

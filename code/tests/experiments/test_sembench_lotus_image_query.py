@@ -165,8 +165,8 @@ class NativeHTTPReplies:
 class NativeLotusImageQueryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        from src.experiments import sembench_lotus_image_query
-        cls.entry = sembench_lotus_image_query
+        from src.experiments import sembench_lotus_query
+        cls.entry = sembench_lotus_query
         cls.checkout = Path(CHECKOUT)
         animals.verify_animals_checkout(cls.checkout)
 

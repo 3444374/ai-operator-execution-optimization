@@ -5,7 +5,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from src.baselines.image.sembench_original import OriginalVisualQuery
+from src.baselines.sembench_lotus import OriginalLotusQuery
 from src.baselines.text.sembench_text import capture_first_operator
 from tests.experiments import test_sembench_lotus_image_query as fixture
 
@@ -24,7 +24,7 @@ class OriginalVisualBindingTests(unittest.TestCase):
     def bind(self, scenario, query, arguments, **config):
         config, _ = self.source.config(scenario, query, **config)
         checked = self.source.entry.check(config, self.source.checkout, **arguments)['inputs']
-        return OriginalVisualQuery(self.source.checkout, scenario, query, inputs=checked, **arguments)
+        return OriginalLotusQuery(self.source.checkout, scenario, query, inputs=checked, **arguments)
 
     def test_binding_uses_checked_snapshot_without_repeating_table_reads_or_describe(self):
         import pandas as pd
@@ -54,7 +54,7 @@ class OriginalVisualBindingTests(unittest.TestCase):
                         name = 'describe_inputs' if scenario == 'mmqa' else 'describe_visual_inputs'
                         stack.enter_context(patch.object(module, name,
                             side_effect=AssertionError('binding repeated preflight')))
-                    task = OriginalVisualQuery(self.source.checkout, scenario, query, inputs=checked, **arguments)
+                    task = OriginalLotusQuery(self.source.checkout, scenario, query, inputs=checked, **arguments)
                 self.assertIs(task.inputs, checked)
                 kind, frame, args, kwargs = capture_first_operator(task.execute)
                 calls = len(frame) * len(args[0]) if kind == 'join' else len(frame)

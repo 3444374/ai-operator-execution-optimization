@@ -83,9 +83,9 @@ class NativeMMQAAggregateTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from src.baselines.text.sembench_source import verify_checkout
-        from src.experiments import sembench_lotus_mmqa_aggregate
+        from src.experiments import sembench_lotus_query
 
-        cls.entry, cls.checkout = sembench_lotus_mmqa_aggregate, verify_checkout(CHECKOUT)
+        cls.entry, cls.checkout = sembench_lotus_query, verify_checkout(CHECKOUT)
 
     def setUp(self):
         from tokenizers import Tokenizer, models, pre_tokenizers
@@ -136,7 +136,7 @@ class NativeMMQAAggregateTests(unittest.TestCase):
         return directory
 
     def config(self, **changes):
-        value = dict(schema=self.entry.SCHEMA, query_id="cpu-mmqa-q5", model_name="openai/local-aggregate-fixture",
+        value = dict(schema=self.entry.AGGREGATE_SCHEMA, query_id="cpu-mmqa-q5", model_name="openai/local-aggregate-fixture",
             api_base="http://localhost:18474/v1", api_key_env=KEY_ENV,
             generation=dict(max_tokens=32, temperature=0, top_p=1, seed=0),
             native_lm_max_batch_size=1, native_lm_max_ctx_len=32768, query_timeout_s=60,

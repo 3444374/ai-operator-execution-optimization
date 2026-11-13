@@ -251,8 +251,10 @@ TopK另含`native_stats`。首算子保留旧记录ID，后续记录加`operator
 `query_id-batch-N-row-M`关联原生预测。默认`bind_execution()`仍服务尚未迁移的单算子记录图，
 不假定它们自动具备多阶段能力。结果写盘、额外审计和评价均在完整sink之后。
 
-[视觉原题对象](image/sembench_original.py)由原生LOTUS服务与上述Ray查询任务共同使用，
+[LOTUS原题对象](sembench_lotus.py)由原生LOTUS服务与上述Ray查询任务共同使用，
 接收已有输入快照，拥有原函数、真实后续关系、输入复核和原评分，不拥有模型／预算／时钟。
+外部服务上的视觉／多模态查询和MMQA Q5共用[同一查询生命周期](../experiments/sembench_lotus_query.py)；
+Q5保留原层次聚合及tokenizer预检，不再独立复制查询worker。旧入口从[准确来源](../../../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)恢复。
 MMQA不再另设cached CSV reader来准备首阶段后重跑恢复；被替代的`load_data`接线已移除。
 typed callback中的`operation.frame`保留原dtype；记录字段不是原生图像payload的替身。
 
@@ -455,7 +457,7 @@ Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 �
 ### Medical 原图像查询
 
 同一[Medical任务绑定](text/sembench_medical.py)把原Q3／Q8／Q9脚本接到既有
-[LOTUS视觉服务入口](../experiments/sembench_lotus_image_query.py)，不另建执行器。
+[LOTUS视觉服务入口](../experiments/sembench_lotus_query.py)，不另建执行器。
 配置使用`scenario=medical`、所选题及`scale_factor`（默认11112），`data_dir`为原场景根目录。
 保留`data/patient_data[_N].csv`、原题所需`image_x_ray_data[_N].csv`／`image_skin_data[_N].csv`
 及实际图像；`patient_data_with_labels[_N].csv`只用于原评价，标签不进入模型消息。
@@ -510,7 +512,7 @@ Q10 的字符串 Extract 仍不属于该原版 TINYINT 接点，不借用工程�
 
 ### Cars 原图像查询
 
-同一 [Cars 任务绑定](text/sembench_cars.py)运行原 Q3／Q8，复用[原生视觉服务](../experiments/sembench_lotus_image_query.py)
+同一 [Cars 任务绑定](text/sembench_cars.py)运行原 Q3／Q8，复用[原生视觉服务](../experiments/sembench_lotus_query.py)
 的 LM、预算、观测、完整 sink 和 v3 时钟。设置 `scenario=cars`、所选题和可选 `scale_factor`（默认157376），
 `--data-dir` 仍指向作者场景根。原函数读取 `data/sf_N/` 的车辆及 `image_car_data_N.csv`，
 按原 `image_path` 读取图像；迁移数据路径须在正式运行前固定，执行器不改写这些路径。
@@ -555,7 +557,7 @@ IMLane Q1 已接同一原版 TINYINT Filter；Q3/Q5 的字符串输出仍未由�
 ### E-Commerce 原完整多模态查询
 
 同一[E-Commerce 任务绑定](text/sembench_ecomm.py)也绑定官方 Q2／Q4／Q6／Q8–Q14，使用现有
-[LOTUS 视觉服务入口](../experiments/sembench_lotus_image_query.py)，设置 `scenario=ecomm` 和所选 `query`
+[LOTUS 视觉服务入口](../experiments/sembench_lotus_query.py)，设置 `scenario=ecomm` 和所选 `query`
 并提供作者数据目录。Q12 原函数继续拥有 Parquet 读取、普通选择／合并、文本 Filter、对实际保留行的
 图像 Extract，以及最终 JSON Series；没有复制题目执行器，也不通过单算子 prepared 桥执行。
 Q2／Q13 的图像 Filter、Q4 的 Extract、Q6 的 Map、Q8 的描述／图像 Join 和 Q9 的图像 self-join
@@ -585,7 +587,7 @@ Q10／Q11 的多分支 Filter／Join、Q14 的分组 TopK 也直接运行原函�
 ### MMQA Q5 原分层聚合
 
 [Q5 适配](text/sembench_mmqa_aggregate.py)保留 `_execute_q5` 的片名筛选、原 `sem_agg` 层次和 `_output` 评价，
-独立[原生入口](../../scripts/experiments/run_sembench_lotus_mmqa_aggregate.py)直接使用 LOTUS LM 与外部文本服务。
+[同一原生服务入口](../../scripts/experiments/run_sembench_lotus_query.py)直接使用 LOTUS LM 与外部文本服务。
 它不经过仅接单个 F/M/E 的记录入口。原 sf25 的25行中，Q5 选16行，正文12403个 UTF-8 字节；
 Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求时，总量才精确为1；
 多首层分块的总量还依赖真实摘要长度，`check` 不把它猜成固定次数或逐行16次。
@@ -646,7 +648,7 @@ Qwen2-VL-2B-Instruct 的配置、processor、索引及两个权重分片齐全�
 Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一个合法第一，不强求某一结果帧或同时输出全部第一。
 
 当前 `serving/backends/vllm_protocol.py` 的记录模型通道只接文本，sync 引擎也按 token-only 渲染；
-[原生 LOTUS 视觉运行入口](../../scripts/experiments/run_sembench_lotus_image_query.py)已将这些原查询直接接到原 LM SDK 的 OpenAI-compatible 服务。
+[原生 LOTUS 视觉运行入口](../../scripts/experiments/run_sembench_lotus_query.py)已将这些原查询直接接到原 LM SDK 的 OpenAI-compatible 服务。
 原生 SDK 保留 PNG 消息、并发批调用、`zs-cot` 和 Extract `json_object`，不用 prepared-call seam 或文本 IPC。
 本地多模态 IPC owner 仍未接通；本次服务入口的真实模型、processor／generation 与物理服务关闭待机器验证。
 原生 LOTUS 也可由原 LM SDK 直接访问独立官方 VLM 兼容服务，复用现有 `native_http_observer.observe_native_httpx`

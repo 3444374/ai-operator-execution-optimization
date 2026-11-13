@@ -9,11 +9,10 @@
 | 任务 | 入口 | 范围 |
 |---|---|---|
 | 单次 Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](experiments/run_lotus_records_movie.py) | `check/run` 使用现有方法与执行工厂；Q4 计算原 positivity ratio |
-| 原生 LOTUS 视觉运行 | [run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py) | 已有原生 VLM 服务上的完整查询、原评价和逐 POST 预算；[配置](#sembench-native-vlm-run) |
+| 原生 LOTUS 外部服务查询 | [run_sembench_lotus_query.py](experiments/run_sembench_lotus_query.py) | 图像／多模态原题与 Q5 共用完整查询生命周期；[视觉配置](#sembench-native-vlm-run)、[聚合配置](#sembench-native-mmqa-aggregate) |
 | SemBench 图像准备 | [check_sembench_image_query.py](experiments/check_sembench_image_query.py) | 只读输入和像素身份／调用预算，不启动模型；[范围](#sembench-image-preparation) |
 | Cars 原 CSV 准备 | [prepare_sembench_cars_inputs.py](data/prepare_sembench_cars_inputs.py) | 从现成四表元数据调用原分层抽样，无图音下载；[来源与范围](../src/baselines/README.md#cars-original-csv-preparation) |
 | LOTUS原题与后端选择 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询／评价；原生Ray可运行实际多批和MMQA Join→Extract，其他接点保留各自已接形态；[范围和限制](../src/baselines/README.md#additional-sembench-text) |
-| 原生 LOTUS MMQA Q5 聚合 | [run_sembench_lotus_mmqa_aggregate.py](experiments/run_sembench_lotus_mmqa_aggregate.py) | 原分层聚合、无模型首层预检、外部服务及逐 POST 预算；[配置](#sembench-native-mmqa-aggregate) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 旧 Movie Filter、原题文本 Filter／Map／Join 及[原生完整排名 TopK](../src/baselines/text/frameworks/kalypso_native/README.md#原生完整排名-topk)共用维护 CLI；保留原关系、评分和各原生算法，目标资格按源码分列 |
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
@@ -115,7 +114,7 @@ LITELLM_LOCAL_MODEL_COST_MAP=True PYTHONHASHSEED=3 PYTHONPATH=code "$DRIVER_PYTH
 该回放不使用模型答案，不能报告真实质量或延迟；目标 `run` 仍需精确源码、模型/输入绑定与外层监督。
 LOTUS resident 可显式设置 `model_initialization=before_queries`，先初始化同一原生模型，
 再执行 `ready_first/ready_repeat`，不发额外预热查询；省略时仍是查询内惰性启动的 `cold/warm`。
-E-Commerce Q2／Q4／Q6／Q8–Q14 使用[完整 LOTUS 视觉服务入口](../src/experiments/sembench_lotus_image_query.py)，
+E-Commerce Q2／Q4／Q6／Q8–Q14 使用[完整 LOTUS 视觉服务入口](../src/experiments/sembench_lotus_query.py)，
 设置 `scenario=ecomm`、所选 `query` 和 `--data-dir`；沿用配置模板、预付预算与外层服务监督。
 真实中间关系交给原生后续算子，不进入单算子文本 CLI；Q12 上界为2N，其余预检记录首算子下界，
 完整调用由永久预算封顶。Q1／Q3／Q5／Q7 仍使用文本入口；不为每题增加执行器。
@@ -173,9 +172,11 @@ CLI 只允许四种已接通对照；Kalypso Map／MMQA／Medical 不设替代�
 <a id="sembench-native-mmqa-aggregate"></a>
 ## 原生 LOTUS MMQA Q5 聚合入口
 
-[run_sembench_lotus_mmqa_aggregate.py](experiments/run_sembench_lotus_mmqa_aggregate.py)调用完整原 Q5 和原 `sem_agg`，
+[run_sembench_lotus_query.py](experiments/run_sembench_lotus_query.py)调用完整原 Q5 和原 `sem_agg`，
 使用已由宿主管理的文本模型服务；`check` 截止于原 SDK 首个 LM 调用之前，记录首层完整消息、token 计数与分块。
 它不请求模型、不 claim 额度，也不代表服务已就绪。原生 SDK 批处理、层次归并和最终评价保持。
+该入口与视觉查询共用一次准备、执行完整原函数、收结果和审计的生命周期；两类既有配置schema保持。
+旧两个CLI已删除，历史命令按[准确来源](../../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)恢复。
 
 配置见[示例](../configs/sembench_lotus_mmqa_aggregate.example.json)，复制到 Git 外填写实际模型、
 服务、`native_lm_max_ctx_len` 及本地 `token_counter`。上下文与 `service_profile.max_model_len` 一致；
@@ -183,10 +184,10 @@ tokenizer JSON 的路径／摘要、ID／revision 与所声明服务绑定，仍
 示例的批大小只属于 LM 客户端，示例数值不是硬件校准或新增默认容量。
 
 ```sh
-PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_mmqa_aggregate.py check \
+PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_query.py check \
   --config "$NATIVE_AGG_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" --data-dir "$MMQA_TEXT_DIR"
 
-PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_mmqa_aggregate.py run --execute-model \
+PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_query.py run --execute-model \
   --config "$NATIVE_AGG_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" --data-dir "$MMQA_TEXT_DIR" \
   --output-dir "$NEW_PRIVATE_QUERY_DIR"
 ```
@@ -225,7 +226,7 @@ Q7 改读 `tampa_international_airport.csv`，仍用同一 `images/`；原代码
 <a id="sembench-native-vlm-run"></a>
 ## 原生 LOTUS 视觉运行
 
-[run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py)直接调用 LOTUS 的原 LM、
+[run_sembench_lotus_query.py](experiments/run_sembench_lotus_query.py)直接调用 LOTUS 的原 LM、
 原算子与原 SemBench 查询／评价；支持 Animals Q1/Q3/Q7/Q10、MMQA Q2a/Q2b/Q7、E-Commerce Q2/Q4/Q6/Q8–Q14。
 Cars Q3／Q8 复用相同入口，配置 `scenario=cars` 和可选 `scale_factor`（默认157376）；
 `--data-dir` 指向含 `data/sf_N/` 与 `data/full_data/` 的原场景根，CSV 内图像路径须事先绑定可读原件。
@@ -243,11 +244,11 @@ API key 从 `api_key_env` 指定的环境变量读取，不能写入配置；本
 启动服务的 host owner 核对实际值并负责最终 GPU 清理。原生 SDK 的 `native_lm_max_batch_size` 与引擎容量分开。
 
 ```bash
-python code/scripts/experiments/run_sembench_lotus_image_query.py check \
+python code/scripts/experiments/run_sembench_lotus_query.py check \
   --config "$NATIVE_VLM_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" \
   --manifest "$ANIMALS_MANIFEST" --manifest-digest "$ANIMALS_MANIFEST_DIGEST"
 
-python code/scripts/experiments/run_sembench_lotus_image_query.py run --execute-model \
+python code/scripts/experiments/run_sembench_lotus_query.py run --execute-model \
   --config "$NATIVE_VLM_CONFIG" --sembench-checkout "$SEMBENCH_CHECKOUT" \
   --manifest "$ANIMALS_MANIFEST" --manifest-digest "$ANIMALS_MANIFEST_DIGEST" \
   --output-dir "$NEW_QUERY_DIR"

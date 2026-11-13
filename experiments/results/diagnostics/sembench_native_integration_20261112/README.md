@@ -598,6 +598,33 @@ LOTUS＋Ray／Daft与不经LOTUS执行的原生系统路径按语义和执行归
 v2及单副本输出的受影响40项另通过，属于上述191个用例，不累加通过数。
 整体接入仍有[当前缺口](../../../../code/INFRA_STATUS.md#current-refactor-status)。
 
+<a id="lotus-service-query-lifecycle"></a>
+## LOTUS 外部服务的同一查询生命周期
+
+视觉／多模态完整原题与MMQA Q5聚合改为同一`sembench_lotus_query` worker／CLI，
+原查询对象收拢到`baselines.sembench_lotus.OriginalLotusQuery`，与LOTUS＋Ray任务共同使用。
+原函数、算子、数据读取、实际后续关系、评分及两种既有配置schema保持；Q5的tokenizer预检和
+原层次聚合仍有自己的明确分支，没有变成逐题执行器或新增查询语言。
+完整sink事件、源到sink的v3时钟、各自旧`query_seconds`／`elapsed_seconds`区间保持，
+额外预检、后置身份核对、结果编码、原评分与写盘不混入v3。
+
+删除旧两个CLI／worker及旧视觉原题对象前，七个完整原查询软件差分覆盖Animals Q7、MMQA Q2b、
+E-Commerce Q12、Cars Q3、Medical Q9，以及Q5单请求和多层长摘要。
+原消息／有效采样参数、原生LM批形状、完整结果和原评价一致；三个受控时钟profile的旧区间也一致。
+十二个无效配置保持原异常类型／文字，两个有效配置归一结果相同。删除后全新隔离导出中，
+105项检查为104通过、1个未绑定真实sf25输入跳过；不累加为新增105个用例或整个分支资格。
+本次模型／GPU／真实外部网络请求均为0。
+
+在整合IMLane Q3和此次任务对象迁移后，全新HEAD导出覆盖全部选定源码并移除旧模块，
+16个受影响模块共245个不同软件用例：241通过、4跳过；四项为独立Daft SDK及三份本次未绑定的
+真实输入，不作为缺数据结论。该组合检查包括上述105项及先前公共边界／IMLane检查，不能把各批计数相加。
+已取消Daft动作的三个未提交草稿未进入导出，未新增对应文件；末尾空行修正不改执行AST，其余源码与被测导出逐字一致。
+
+现行导入、CLI、测试与文档已迁移；已核活动仓库外工具和本地执行进程没有旧调用，
+冻结实验包及原失败记录保持。[准确恢复来源](../../../reproduction/native_baselines/README.md#retired-lotus-service-query-runners)
+指向删除前的`1c321afef`。新共用入口的实际服务、tokenizer／processor、模型质量及资源退出仍按准确来源另验，
+不能把该重构或此前冻结成绩视为新源码目标通过。
+
 <a id="native-imlane-q3-cf220"></a>
 ## 独立原生 IMLane Movie Q3 的查询时钟
 

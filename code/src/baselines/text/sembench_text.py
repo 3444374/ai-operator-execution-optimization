@@ -307,9 +307,9 @@ class SemBenchTextQuery:
             names = [TEXT_FILE]
         elif image_join:
             from src.baselines.image.sembench_mmqa import describe_inputs
-            from src.baselines.image.sembench_original import OriginalVisualQuery
+            from src.baselines.sembench_lotus import OriginalLotusQuery
             inputs = describe_inputs(self.checkout, self.data_dir, query)
-            self.visual_task = OriginalVisualQuery(self.checkout, scenario, query,
+            self.visual_task = OriginalLotusQuery(self.checkout, scenario, query,
                 inputs=inputs, data_dir=self.data_dir)
             names = [Path(self.visual_inputs['table']['path']).name]
         elif query == '1':

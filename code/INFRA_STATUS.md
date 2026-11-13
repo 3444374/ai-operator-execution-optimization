@@ -38,7 +38,7 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 | 原生执行与生命周期 | LOTUS＋Ray以query级runtime接实际多批native processor，在完整sink后关闭，不声称跨批模型复用；新多批目标清理待验。Daft的原生collect、IMLane多SQL批次及Kalypso作者服务各有真实owner，不能借用Ray生命周期资格；按实际API完成阶段交接、失败与最后资源释放。 |
 | 完整查询计时 | 现有 v3 时钟保留真实源读取、原生准备、必要阶段交接、解析和最终内存 sink；额外身份／token 预检与结果审计在区间外。冷启动、服务 ready 后查询和组件时间继续分列，不能靠旧数值相减或单阶段成绩补出完整查询时间。 |
 | 验证与数据 | 先以原函数／SDK 差分覆盖共同执行边界，再对有真实输入且后端支持的完整代表查询验模型、结果关联和物理清理。数据缺口、原生接口限制、代码未接线和目标待验各自保留，见下表与所属原报告；不重复已完成模型请求来增加通过数。 |
-| 替代与调用迁移 | 旧 Ray／Daft Q3 专项图和旧 IMLane `Q1Relation` 已退出现行调用；保留的 HTTP、records、作者算法和不同生命周期对照须按真实职责判断，不能仅凭同题号删除。新增替代路径验证后，继续反查脚本、配置、测试及活动仓库外调用，迁移完才删除本次替代实现。 |
+| 替代与调用迁移 | 旧 Ray／Daft Q3 专项图和旧 IMLane `Q1Relation` 已退出现行调用。LOTUS外部服务的视觉查询与Q5聚合已共用查询生命周期和原题对象，原两个CLI／worker及旧视觉对象已迁移删除，[恢复来源](../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)保留。HTTP、records、作者算法和不同生命周期对照按真实职责保留；其他替代路径也须迁移完调用再删除。 |
 
 下表随本页 Git 提交版本化，固定 SemBench `c814e380`。LOTUS 方法接点使用1.2.4；
 论文环境1.1.3与官方GenericLotusRunner默认approximate分别记录，不推断论文每题policy。

@@ -17,7 +17,7 @@ LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当�
 | 完整查询矩阵／连续查询 | [run_movie_records_matrix.py](scripts/experiments/run_movie_records_matrix.py) | 显式 backend、生命周期、额度与时钟 |
 | 原生 LOTUS 对照 | [lotus_native_local.py](src/baselines/text/frameworks/lotus_native_local.py) | 原算子／LM／LiteLLM batch_completion；仅 provider 使用现有模型 IPC |
 | 独立 Kalypso 对照 | [作者适配说明](src/baselines/text/frameworks/kalypso_native/README.md) | 保留作者服务、参数与调度；不是 LOTUS 后端 |
-| 原生 LOTUS 图像查询 | [run_sembench_lotus_image_query.py](scripts/experiments/run_sembench_lotus_image_query.py) | 已有独立 VLM 服务上的原查询、评价、逐 POST 预算和查询监督 |
+| 原生 LOTUS 外部服务查询 | [run_sembench_lotus_query.py](scripts/experiments/run_sembench_lotus_query.py) | 图像／多模态原题与 Q5 原分层聚合共用查询生命周期、原评价和逐 POST 预算 |
 | SemBench 图像准备 | [check_sembench_image_query.py](scripts/experiments/check_sembench_image_query.py) | Animals、MMQA、E-Commerce、Cars和Medical已接视觉题的输入／预算检查；[实际资格](INFRA_STATUS.md)按路径区分 |
 | LOTUS CLIP 检索 | [run_lotus_image_retrieval.py](scripts/experiments/run_lotus_image_retrieval.py) | 原检索方法与明确的图像执行 owner |
 | DuckDB＋作者 IMLane Q3 准备 | [构建与接线](integrations/imlane_duckdb/README.md) | 隔离构建与 PROCESS／THREAD 软件CPU链路已验证；模型和额外输入／错误场景仍待验证 |

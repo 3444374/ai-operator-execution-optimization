@@ -7,6 +7,12 @@
 188通过、3个环境／资产未绑定跳过，0模型／GPU。临时Q2b的非空／空第二阶段与8行quick多批
 只授予对应软件接线范围；各系统原生路径和LOTUS组合身份分列，旧目标成绩不转授新公共边界。
 
+[LOTUS外部服务生命周期](diagnostics/sembench_native_integration_20261112/README.md#lotus-service-query-lifecycle)
+另记录视觉与Q5共用worker、原题对象及旧调用删除：七个原查询／原评分软件差分、配置／时钟表征，
+删除后105项检查为104通过、1个真实资产未绑定跳过，0模型／GPU／外部网络；旧来源及失败继续保留。
+与公共边界及IMLane Q3的最终组合检查共245个不同用例，241通过、4个环境／输入未绑定跳过，
+该计数包含前述检查，不能累加；取消的Daft动作及三份草稿未进入验证导出。
+
 [独立原生IMLane Q3](diagnostics/sembench_native_integration_20261112/README.md#native-imlane-q3-cf220)
 另整合cf220的同字节源码与30项本地软件检查。协调者已报告同源Linux SQL及120次真实终态，
 COUNT相对误差50%，packet摘要仍计时；138份原件已核SHA及保存IPC／原parser／官方评分，

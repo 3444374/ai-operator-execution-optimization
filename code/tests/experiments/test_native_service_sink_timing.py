@@ -11,8 +11,8 @@ from unittest.mock import patch
 
 from src.baselines.image import sembench_animals, sembench_mmqa
 from src.baselines.text.frameworks import lotus_native_join
-from src.experiments import sembench_lotus_image_query as image
-from src.experiments import sembench_lotus_mmqa_aggregate as aggregate
+from src.experiments import sembench_lotus_query as image
+from src.experiments import sembench_lotus_query as aggregate
 from src.experiments import native_http_observer
 from src.experiments.native_service_query import NativeServiceCalls, native_query_settings
 from src.observability import buffered_events
@@ -42,7 +42,7 @@ class ServiceFixture:
         counts = [1] if kind == "aggregate" else [2, len(self.rows)] if kind == "mmqa" else [len(self.rows)]
         self.stages = [dict(input_occurrences=count, post_attempts=count) for count in counts]
         self.requests = set(range(sum(counts)))
-        self.config = dict(query_id="fixture", scenario="mmqa" if kind == "mmqa" else "animals",
+        self.config = dict(schema=aggregate.AGGREGATE_SCHEMA if kind == "aggregate" else image.VISUAL_SCHEMA, query_id="fixture", scenario="mmqa" if kind == "mmqa" else "animals",
             query="Q2b" if kind == "mmqa" else "Q1", model_name="openai/fixture",
             generation={}, service_profile={}, query_timeout_s=60)
 
@@ -107,8 +107,8 @@ class ServiceFixture:
         finally:
             self.step("observer teardown", 7)
 
-    def run(self):
-        entry = aggregate if self.kind == "aggregate" else image
+    def run(self, *, entry=None, audit_name="NativeServiceCalls"):
+        entry = (aggregate if self.kind == "aggregate" else image) if entry is None else entry
         writer = SimpleNamespace(close=self.close, snapshot=self.writer_snapshot)
         audit = SimpleNamespace(lm_calls=self.stages, requests=self.requests, snapshot=self.snapshot,
             observe_lm=lambda *a, **k: nullcontext(), record=lambda event: None,
@@ -123,7 +123,7 @@ class ServiceFixture:
                 patch.object(entry, "time", clock),
                 patch.object(entry, "check", self.check),
                 patch.object(entry, "_make_lm", self.make_lm),
-                patch.object(entry, "NativeServiceCalls" if self.kind == "aggregate" else "_NativeCalls", return_value=audit),
+                patch.object(entry, audit_name, return_value=audit),
                 patch.object(buffered_events, "BufferedEvents", return_value=writer),
                 patch.object(native_http_observer, "observe_native_httpx", self.observe),
                 patch.object(engine, "lm_report", self.lm_report),

@@ -12,6 +12,25 @@
 本页保存各次准确源码的恢复方法；实现现状见[代码状态](../../../code/INFRA_STATUS.md#current-refactor-status)。
 较早小节的失败记录按当时来源保留，不代表后续版本仍处于同一状态。
 
+<a id="retired-lotus-service-query-runners"></a>
+## 旧 LOTUS 视觉与 Q5 服务入口恢复
+
+当前[同一LOTUS外部服务入口](../../../code/scripts/experiments/run_sembench_lotus_query.py)运行完整原查询，
+共用准备、逐POST预算、内存sink、评分与审计生命周期；视觉和Q5既有配置schema及原生策略保持。
+原题对象迁至[baselines/sembench_lotus.py](../../../code/src/baselines/sembench_lotus.py)，不拥有模型或调度。
+已迁移生产脚本、测试和现行文档；已核的活动仓库外工具无旧调用，冻结实验包不改写。
+
+下列五个被替代文件均可从准确提交`1c321afef8cf79cfcaf93e6e8d29a9db41699b07`按原路径`git show`恢复，
+不保留自动转发入口，也不把新共用worker的检查当作旧模型运行的来源：
+
+- `code/src/experiments/sembench_lotus_image_query.py`
+- `code/src/experiments/sembench_lotus_mmqa_aggregate.py`
+- `code/scripts/experiments/run_sembench_lotus_image_query.py`
+- `code/scripts/experiments/run_sembench_lotus_mmqa_aggregate.py`
+- `code/src/baselines/image/sembench_original.py`
+
+历史运行继续使用其归档中的source binding、配置和原始计时；恢复旧入口不授权自动运行模型。
+
 <a id="retired-daft-q3-native-binding"></a>
 ## 旧 Daft Q3 专项原生图恢复
 
