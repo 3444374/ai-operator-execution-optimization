@@ -174,6 +174,11 @@ Cars原2026常量／两种权重、E-Commerce重复索引后写及原ARI错误�
 同任务／两runner扩Q7，保price<=500后的N²含self配对、原重复index标签普通回连与字符串ID，不称作者Join方法。
 四模块111项及两driver各九发生项的软件检查通过，0模型；旧scalar行为保持，真实资产／模型待验。
 
+[独立Daft附加服务会话](diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)
+同一runner／builtin OpenAI graph执行两轮fresh任务，共享永久HTTP预算及既有worker／ACK；四模块120项全过、0模型／SDK部署。
+offline四函数逐字保持，外部服务由外层拥有；缺真实模型身份warm=None，实际SDK／模型／cache及性能待验。
+原JSONL缺口如实披露，核验使用worker.json HTTP原件，不借旧冷成绩或同endpoint授予暖轮。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

@@ -138,7 +138,31 @@ model为服务ID，model_source为实际模型路径；processor_options只接ba
 Python调用`run_serve_session(..., identity_snapshot=host_probe)`可接已有host监督：回调须当场返回
 observed_monotonic_ns、node_id、replica_actor_id、replica_pid／replica_create_time，及非空model_processes的pid／create_time。
 无此真实探针的CLI报告warm_qualified=None；仅复用Python对象、application名或actor PID不足以证明模型复用。
-当前只有[软件验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)，SDK部署／真实模型／物理退出尚待服务器统一安排；Daft同owner暖轮仍未接。
+当前只有[软件验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)，SDK部署／真实模型／物理退出尚待服务器统一安排；Daft附加服务接点见下节，实际同owner暖轮也待验。
+
+<a id="native-daft-attached-session"></a>
+### Daft builtin OpenAI 连续查询
+
+同一Daft runner的[附加服务模板](../configs/sembench_native_daft_attached_session.example.json)选择独立schema与attached-session动作，
+保原独立JSON任务／官方评分，用同一外部模型服务完成两次fresh source查询；每轮创建并退出自己的原生客户端worker。
+模型服务由既有外层监督预先准备、记录配置／启动和最终清理，driver不启动、重启或终止服务。
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_daft check --config "$DAFT_ATTACHED_CONFIG"
+PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_daft attached-session --config "$DAFT_ATTACHED_CONFIG" --model-python "$DAFT_NATIVE_PYTHON" --execute-model --output-dir "$NEW_PRIVATE_OUTPUT"
+```
+
+缺execute标志只作CPU输入检查，不建预算或worker。native_openai只保存base_url_env／api_key_env名字，真实endpoint和key留仓库外环境；
+engine_kwargs为空，模型容量由外部服务拥有；provider_options保留原生SDK设置。模板4096次HTTP／128输出token和时限仅作显式示例，
+须按两轮实际N加SDK重试声明，既有预算每次POST前永久扣额、不退款，unknown／失败／超额阻断下一轮。
+每批须同system与内容布局；user字符串转单text part数组的native编码明确披露，目标renderer／token等价未验，
+不同system的Animals Q7不能塞成单批。每轮source→完整sink包括packet／native graph／HTTP观测／IPC，
+最后ACK、客户端退出、原评价和写盘在sink后；服务启动未由本driver测量，保留None，不事后扣除旧冷成绩。
+Python可用run_attached_session(..., identity_probe=host_probe)：当场返回observed_monotonic_ns、host_id、service_pid／service_create_time，
+及非空model_processes列表的pid／create_time，四次新鲜观测须一致。CLI无probe时warm_qualified=None，
+即使PID一致也不证明cache／权重或进程内重构状态；真实模型资格与性能仍另验。
+本profile使用worker.json.native_api原始HTTP指纹／答复和永久预算，已知可选JSONL writer缺口明确记录，不假称完整JSONL。
+[软件验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)没有启动服务／模型／GPU。
 
 ## Movie session 配置
 

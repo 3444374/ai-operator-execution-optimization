@@ -1633,6 +1633,9 @@ Daft实际完整token ID数组未保存，保持未知。两条执行路径和�
 空Extract批次不存在的metadata，抛KeyError。该批次按既有predict合同直接返回空predictions，不创建原生worker，
 因此审计现在直接跳过无请求批次；没有虚构native metadata或改变原查询／parser／计时。
 完整原结果与运行成功分开，首轮failed_zero_model_probe及其已完成sink保留，不重写为原轮成功。
+该空sink验收对象是现固定image/sembench_mmqa._native_query_api的exact＋空Extract schema兼容接线：
+它已有零行Extract补output_cols的行为；固定raw c814配LOTUS1.2.4零答复在投影处可抛KeyError。
+HTTP审计修复没有补列或改该既有合同，不把此空sink称为未修改raw SDK空关系行为；后续独立JSON多阶段将保留具名合同。
 
 新增受控Q2b回归先复现同一KeyError；修复后按原函数／原评分核完整空sink，LM发生项为4→0，
 只有一个软件worker、四次软件HTTP终态，无第二worker／模型请求，最后ACK在sink之后。
@@ -1687,6 +1690,33 @@ SHA-256为`99636258cb7b068bb03696291ff3ddfebf2374470ee1bb229ca4c44290d29cdc`，�
 证据SHA-256为`6ecc3283a8b91b06b9999b44f1606ea4fc6edb8e7f2c6c5ba4b3aafd2eca69e1`。
 复制的私有helper首次报告标签错误写成six-flow，实际计数是一题／两系统；仅更正派生metadata，原报告保留，未重跑模型或评分。
 本轮原生SDK／模型及真实E-Commerce资产未授资格，原来源配额／完整输入缺口保持。
+
+<a id="native-daft-attached-session"></a>
+## 独立原生 Daft 附加服务的连续查询
+
+同一sembench_native_daft runner新增attached-session动作及独立schema，直接复用中性native_daft_query的messages packet、
+builtin OpenAI graph、HTTP observer、监督与ACK；未导入LOTUS语义、未新增provider／server／执行调度框架。
+四个offline函数configuration／check／_render／run_query逐字保持；新profile拓扑和旧offline冷成绩分开，不追授暖轮。
+
+两次fresh任务读取与完整sink各自直接计时，一个永久有限HTTP ledger贯穿两轮，真实POST及SDK重试都扣额，
+不退款；unknown／missing terminal／预算不足／client或ACK失败／已知owner变化时停止下一轮。
+每轮worker持有最后结果直到driver形成完整内存sink后ACK，才退出；外部服务不属于该worker的清理进程集合。
+packet、native graph／HTTP及同步观测、IPC在query内，最后客户端退出、原评分、消息审计及写盘在sink后，
+service startup／ready在driver中未测则为None。有效消息SHA与HTTP消息＋输出multiset后置核对，重复发生项仍保留，
+逐行关系由native call_id投影关联，不宣称重复HTTP的逐发生项一一映射。
+
+每批native OpenAI prompt只支持静态system及同内容布局；字符串显式转单text part数组，目标renderer／token等价保持未知。
+Python接口可接既有外层host probe，观测服务及非空实际模型子进程PID／创建时间，时间戳须落在本次同步观测区间。
+四次完整身份相同且两轮有HTTP工作才给同owner复用标记；无probe／陈旧／仅endpoint为None，CLI没有probe。
+相同PID不能证明实际权重、cache状态或进程内重构，target_native_model_qualified仍为False，真实暖轮／性能待目标验证。
+
+主线程在66f0bdaac clean导出整合两文件及配置模板，四完整模块120项全通过、0skip／模型／GPU，
+结果SHA-256为`4487688e541a93bc29cc5b22e84db6a10a9fe77ebbcd7d597b9247700e14d809`，包含旧offline、任务工厂、E-Commerce配对与Ray回归，不与此前111或分任务29累加。
+新增九项使用真实中性worker subprocess／ACK＋软件HTTPX，核fresh源4→5、共享预算、503重试、unknown即使有sink也阻断、
+缺旧身份／owner变化、gold缺失、有限额度、主异常与完整raw结果保留，fresh进程禁LOTUS／engine仍用原官方评分。
+首轮软件child／fresh脚本漏json import的红已保留，只修fixture；最初JSONL存在性期待也更正。
+既有可选native trace writer会吞掉含monotonic_ns的HTTP事件，因此本profile明确只使用完整worker.json.native_api原件及prepared消息，
+不使用或宣称完整JSONL，也未为此扩写共享观测工程。真实Daft SDK graph／外部服务／模型尚未在本批运行。
 
 ## 原件恢复与独立核验
 

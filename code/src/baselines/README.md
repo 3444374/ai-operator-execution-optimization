@@ -265,6 +265,11 @@ E-Commerce Q7复用同一任务的exact pair分支，原price<=500后N²含self�
 以Ray2.56.1公开Serve deployment和Data processor执行两次fresh完整查询；部署启动、两轮查询和关闭分别记录。
 它改变执行拓扑，不能继承offline单冷成绩。实际模型子进程与replica的新鲜身份、未变constructor事件缺失时，
 `warm_qualified=None`；CLI没有host身份探针，不能授予真暖资格。接口与目标待验范围见[会话接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)。
+同一Daft runner另接[attached-session模板](../../configs/sembench_native_daft_attached_session.example.json)，
+复用builtin OpenAI messages graph、既有worker／ACK及永久HTTP预算，两次fresh完整查询使用各自客户端worker。
+外部模型服务由调用者拥有，driver不创建或关闭；同system／content layout的原生限制保持，混合system的Animals Q7不适用单批接点。
+HTTP原件／完整输出及新鲜服务和模型子进程身份在sink后核；缺probe或只复用endpoint时warm=None。
+现只软件验收，目标SDK、renderer／token、模型及物理服务生命周期另验，见[范围](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)。
 生成参数和预算必须显式声明，JSON约束来自本工程对照合同，不能套给LOTUS原Filter。
 Q10另显式给Movies.csv供原评分；两系统调用同一任务准备接口，在source计时和模型启动前冻结gold，
 sink后评价只使用快照及其字节摘要，不让gold进入模型消息或真实查询输入。缺数据在模型前失败，无额外gold缓存或重试层。
