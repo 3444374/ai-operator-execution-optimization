@@ -30,8 +30,8 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
         production_core_used=False, result_cache_enabled=False, warmup_calls=0,
         lifecycle='single cold native instance', requested_generate_retries=0,
         performance_claim=False, physical_gpu_exit_confirmed=None,
-        timing_scope='prepared execution and original fresh CSV scan/parser/full sink; native cold startup included; '
-                     'source/config preflight, budget claim, audit, evaluation, persistence and ray.shutdown excluded',
+        timing_scope='prepared execution/image reads and original fresh source/parser/full sink; native cold startup included; '
+                     'source/image identity/config preflight, budget claim, audit, evaluation, persistence and ray.shutdown excluded',
         strict_controller_unavailable_reason='worker API does not observe earliest host/controller code',
         engine_accept_ns=None, kernel_seconds=None)
     primary = None
@@ -42,8 +42,8 @@ def run_query(config, checked_query, engine, resources, directory, *, execute=ex
         query = SemBenchTextQuery(checked_query.checkout, checked_query.data_dir,
             checked_query.scenario, checked_query.query, execution_id=checked_query.query_id,
             model_name=checked_query.model_name, generation=checked_query.generation,
-            scale_factor=config.get('scale_factor'))
-        if query.files != checked_query.files:
+            scale_factor=config.get('scale_factor'), image_join=checked_query.visual_inputs is not None)
+        if query.files != checked_query.files or query.visual_inputs != checked_query.visual_inputs:
             raise ValueError('native Ray fresh source differs from checked input identity')
         report['query'] = query.describe()
         spec = config['ray_native']

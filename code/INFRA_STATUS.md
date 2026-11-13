@@ -32,8 +32,9 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接；8667样本真实SQL／模型已验，完整输入另验，非作者 Join 算法复现 | 原 CP＋Filter 已接；4f12样本作者模型已验，其他来源／输入另验 |
 | 文本完整排名；Movie Q9 TopK profile | 原 quick TopK显式resident已接；cb754的完整256真实模型已验，原parser回退保留；其他来源另验 | 未接线 | 未接线 | LOTUS quick over VARCHAR工程变体已接，原题／Arrow／provider软件检查；11f的8行Linux SQL／renderer门及ecbd的8行13次真实比较通过，full256待验，非作者TopK算法 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
+| 单个图像／文本 exact Join；MMQA Q2a/Q7 | 原函数／原生视觉服务已接线，目标按来源分列 | 共用prepared Join与原图像stage已接线，90项不同本地软件检查通过；目标processor／完整token／VLM待验 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
-| 原关系连接后单图或双图 Filter；Medical Q3/Q8/Q9 | 原脚本／原生视觉服务／原评分已接线，52项不同本地软件检查通过；真实图像／目标renderer／VLM待核 | 未接线 | 未接线 | 未接线 | 未接线 |
+| 原关系连接后单图或双图 Filter；Medical Q3/Q8/Q9 | 原脚本／原生视觉服务／原评分已接线，db3fe Linux52通过；已查作者checkout缺原图，sf20 Q3原连接0行不授予视觉资格，非空输入／processor／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线；空路径已实机执行，参考非空Extract组件5次真实请求已验；实际Join→非空Extract及旧原答关联仍有缺口 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 原分层 Aggregate；MMQA Q5 | 独立原 SDK 查询已接线，真实 sf25 软件回放通过 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -57,7 +58,8 @@ Animals 的 Ray 零模型捕获／processor门也已按原题元数据消费一�
 及Q1官方sf64的64次真实调用，count=3、原误差0；冷source→sink包含原生启动，其他单遍题不转授。
 现有四题随后共用v3起点，输入／像素／源码预检及LOTUS客户端构造在真实manifest扫描前，
 原生启动和必要阶段间清理仍在完整sink区间内；35项不同本地软件检查通过、0模型，
-新时钟目标验收pending，历史真实模型记录不回填。原入口至sink宽时钟独立保留。
+78d随后通过Linux35及原sf64四题完整软件捕获，共320个软件发生项、0模型／0Ray runtime；
+两个预检前harness失败保留。新时钟真实模型仍待验，历史模型记录不回填，原入口至sink宽时钟独立保留。
 原生LOTUS服务观察已按SDK输入顺序返回的completion ID关联HTTP尝试，解决重复输入不同答复的
 逐发生项观测缺口；本机56通过／1资产未绑定跳过，冻结40c477的Linux57项全部通过，0模型。
 旧Q2b的325次Join、空Extract、F1=0及103发生项原答关联缺口保留；不回填旧日志或授予非空第二阶段GPU资格。

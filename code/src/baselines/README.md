@@ -199,6 +199,15 @@ Ray Data LLM processor 拥有图、chat template、tokenization、batching、模
 不调用 SemLoom Core、原自写记录链或 HTTP 替代模型。
 该接口也支持单个 exact Join；TopK、Aggregate 和混合多算子不从此路径取得支持。
 
+同一入口可显式运行MMQA原Q2a／Q7图像Join：配置`scenario=mmqa`及所选题，
+在`ray_native.processor_options`中设置`prepare_image_stage=true`，绑定实际VLM／processor环境。
+共享任务读取原CSV和`images/`，保留原目录顺序、左右关系及L×R预算；原函数仍拥有Join和最后投影。
+普通无歧义列名及`:left/:right`引用均按原字段绑定；原`ReasoningStrategy.ZS_COT`在准备和结果恢复时保留。
+完整原PNG消息直接交Ray原生图像准备、chat template、tokenization和vLLM actor，不把图片路径当普通文本。
+像素／编码身份在源起点前和sink后核对，worker也核对已检查的图像快照；实际读图和PNG准备仍在完整区间内。
+该显式图像能力不开放普通记录图、其他后端或Q2b的Join→Extract。当前90项不同软件检查通过；
+原生Ray图像processor／完整token／目标VLM资格仍待验，冷模型启动仍计入查询。
+
 [查询编排](../experiments/native_ray_sembench.py)重新读取已核输入，按 occurrence `call_id` 接收完整预测。
 `materialize().take_all()` 后，在 `ray.shutdown()` 前执行原 parser 和完整关系查询；
 原查询返回的内存结果立即标记 `sink_ready_ns`。`source_to_sink_seconds` 包含本轮新鲜 source/prepare、
@@ -643,7 +652,8 @@ evaluator 和目标 Ray／GPU 新终点后来已由 `909f842c` 完成独立资�
 旧结果包含最后关闭，不能减去估计清理时间回填新口径。
 
 Ray／Daft 的 CLIP 图仍是独立嵌入路径；Q7 的资格不扩大为其他 VLM Join／Extract 支持。
-视觉预检对Animals明确报告已有Ray VLM Filter接点，其余任务仍按实际未接线状态报告；预检不授予模型资格。
+视觉预检分别报告Animals的Ray VLM Filter、MMQA Q2a／Q7的显式Ray图像Join及其余未接线范围；
+预检不授予模型资格，Q2b后续Extract不由单Join扩展取得支持。
 已安装Daft0.7.21源码中，当前`vllm-prefix-caching`接点使用单个文本表达式，`prompt()`明确拒绝
 多消息列表、system_message及return_format；现用prepared路径已将原消息渲染为完整文本，不受此列表限制。
 原Extract的JSON约束继续经sampling_params的structured_outputs传递，不依赖return_format。

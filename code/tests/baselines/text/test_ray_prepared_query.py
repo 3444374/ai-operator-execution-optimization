@@ -31,6 +31,7 @@ class RayPreparedTests(unittest.TestCase):
         query.checkout = query.data_dir = root
         query.files = {}
         query.scenario, query.query, query.model_name = 'movie', '10', 'CPU-only'
+        query.visual_inputs = None
         query.generation = None
         query.describe = lambda: {'expected_model_calls': 0 if empty else 2}
         query.evaluate = lambda result: {'fixture': 'quality'}

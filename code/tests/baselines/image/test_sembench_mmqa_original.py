@@ -133,6 +133,139 @@ class OriginalMMQAImageTests(unittest.TestCase):
         self.assertEqual(set(result["image_id"]), {GOLD_IMAGE})
         self.assertEqual(evaluate_original(CHECKOUT, "2a", result)["original_metric"]["f1_score"], 1)
 
+    def prepared_image_join(self, query_id):
+        import pandas as pd
+        from PIL import Image
+        from src.baselines.text.sembench_text import SemBenchTextQuery
+        from src.baselines.text.sembench_prepared import prepare
+        from src.serving.backends.vllm_protocol import GenerationSpec
+
+        if query_id == '7':
+            pd.DataFrame(dict(Airlines=['DomesticOnly', 'OtherAirline', 'OtherAirline'],
+                              Destinations=['Chicago', 'London', 'Berlin'])).to_csv(
+                                  self.data / 'tampa_international_airport.csv', index=False)
+        expected, batches = self._run(query_id)
+        query = SemBenchTextQuery(CHECKOUT, self.data, 'mmqa', query_id,
+            execution_id='image-join-'+query_id, model_name='openai/local-image-fixture',
+            generation=GenerationSpec(max_tokens=8192, stop=()), image_join=True)
+        lm, prepared, requests = prepare(query)
+        responses = []
+        for row in requests:
+            parts = [part for message in row['messages'] if isinstance(message['content'], list)
+                     for part in message['content'] if part['type'] == 'image_url']
+            self.assertEqual(len(parts), 1)
+            with Image.open(io.BytesIO(base64.b64decode(parts[0]['image_url']['url'].split(',', 1)[1]))) as image:
+                blue = image.convert('RGB').getpixel((0, 0)) == (0, 0, 255)
+            responses.append(dict(call_id=row['call_id'], generated_text=
+                'Reasoning:\nsoftware answer\nAnswer: ' + str(blue)))
+        return query, lm, prepared, requests, responses, expected, batches[0][0]
+
+    def test_prepared_image_joins_keep_original_cot_pngs_order_relations_and_gold(self):
+        from src.baselines.text.sembench_prepared import finish, result_value
+
+        for query_id in ('2a', '7'):
+            with self.subTest(query=query_id):
+                query, lm, prepared, requests, responses, expected, messages = self.prepared_image_join(query_id)
+                self.assertEqual([row['messages'] for row in requests], messages)
+                self.assertEqual(query.operation.strategy.name, 'ZS_COT')
+                self.assertEqual(len(requests), 10 if query_id == '2a' else 6)
+                self.assertEqual(len({row['call_id'] for row in requests}), len(requests))
+                self.assertTrue(query.describe()['visual_inputs']['exact_join_candidates'])
+                sinks = []
+                result, semantic = finish(query, lm, prepared, responses[::-1],
+                    execute_query=query.bind_execution(), on_result_ready=lambda frame:sinks.append(frame))
+                self.assertEqual(result_value(result), result_value(expected))
+                self.assertEqual(len(sinks), 1)
+                self.assertEqual(query.evaluate(result), evaluate_original(CHECKOUT, query_id, expected))
+                self.assertTrue(semantic['native_join_inputs'][0]['all_declared_columns_selected'])
+
+    def test_native_ray_image_join_driver_retains_complete_sink_before_close_and_exact_budget(self):
+        from src.baselines.text.sembench_prepared import result_value
+        from src.experiments import native_ray_sembench as driver
+        from src.experiments.attempt_ledger import AttemptBudget
+        from src.experiments.cell_budget import CellBudgetLedger
+        from src.serving.backends.vllm_protocol import EngineSpec
+        from tests.baselines.text.ray_native_fixtures import recorded_processor
+
+        for query_id in ('2a', '7'):
+            with self.subTest(query=query_id):
+                query, _, _, requests, responses, expected, messages = self.prepared_image_join(query_id)
+                root = self.data / ('ray-driver-'+query_id); root.mkdir()
+                budget = dict(path=str(root/'budget.sqlite'),id='image-join',limit=len(requests),unit_id='query')
+                ledger = CellBudgetLedger.create(Path(budget['path']),
+                    AttemptBudget(budget['id'],budget['limit']),deadline_utc=None)
+                ledger.reserve_unit('query',len(requests))
+                config = dict(profile={},budget=budget,
+                    ray_native=dict(engine_kwargs={},processor_options=dict(prepare_image_stage=True)))
+                engine = EngineSpec(model_path='CPU-no-model',model_python='unused',driver_python='unused')
+                with recorded_processor({row['call_id']:row['generated_text'] for row in responses}) as sdk:
+                    report = driver.run_query(config,query,engine,None,root)
+                self.assertEqual(report['status'],'completed')
+                self.assertEqual(report['result'],result_value(expected))
+                self.assertEqual([row['messages'] for row in sdk.requests],messages)
+                self.assertTrue(sdk.configs[0]['prepare_image_stage'])
+                self.assertEqual(report['physical_attempts_reserved'],len(requests))
+                self.assertEqual(report['native_observation']['unknown_attempts'],[])
+                self.assertLessEqual(report['sink_ready_ns'],report['native']['events']['close_started_ns'])
+                self.assertFalse(sdk.initialized)
+
+    def test_prepared_image_join_requires_native_image_stage_and_rejects_second_operator(self):
+        from src.baselines.text.sembench_text import SemBenchTextQuery
+        from src.experiments.sembench_text_query import check, query_from_config
+        from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
+
+        generation = GenerationSpec(max_tokens=8192, stop=())
+        base = dict(scenario='mmqa', query='2a', query_id='image-stage-check',
+            model_name='openai/local-image-fixture', backend='ray-data', profile={})
+        config = dict(base, ray_native=dict(engine_kwargs={},processor_options=dict(prepare_image_stage=True)))
+        query = query_from_config(config, CHECKOUT, self.data, generation)
+        engine = EngineSpec(model_path='/tmp/unused', model_python='/tmp/unused',
+            driver_python='/tmp/unused', max_model_calls=10)
+        self.assertEqual(check(config, query, engine)['query']['expected_model_calls'], 10)
+        for backend in ('daft', 'imlane', 'lotus-native'):
+            with self.subTest(backend=backend), self.assertRaises(ValueError):
+                check(dict(base,backend=backend),query,engine)
+        with self.assertRaisesRegex(ValueError, 'native Ray image'):
+            check(dict(base,ray_native=dict(processor_options={})),query,engine)
+        with self.assertRaises(ValueError):
+            query_from_config(base, CHECKOUT, self.data, generation)
+        with self.assertRaisesRegex(ValueError, 'Q2a/Q7'):
+            SemBenchTextQuery(CHECKOUT, self.data, 'mmqa', '2b', execution_id='unsupported-chain',
+                model_name='openai/local-image-fixture', generation=generation, image_join=True)
+
+    def test_prepared_image_join_detects_changed_pixels_before_native_execution(self):
+        from PIL import Image
+        from src.baselines.text.sembench_text import SemBenchTextQuery
+        from src.serving.backends.vllm_protocol import GenerationSpec
+
+        query = SemBenchTextQuery(CHECKOUT, self.data, 'mmqa', '2a', execution_id='image-identity',
+            model_name='openai/local-image-fixture', generation=GenerationSpec(), image_join=True)
+        Image.new('RGB', (5, 3), (0, 255, 0)).save(self.data / 'images' / GOLD_IMAGE)
+        with self.assertRaisesRegex(ValueError, 'image Join input'):
+            query.bind_execution()
+
+    def test_ray_worker_rejects_images_changed_since_checked_snapshot_before_budget_claim(self):
+        from PIL import Image
+        from src.experiments import native_ray_sembench as driver
+        from src.experiments.attempt_ledger import AttemptBudget
+        from src.experiments.cell_budget import CellBudgetLedger
+        from src.serving.backends.vllm_protocol import EngineSpec
+
+        query, _, _, requests, _, _, _ = self.prepared_image_join('2a')
+        root = self.data/'changed-image-worker';root.mkdir()
+        budget = dict(path=str(root/'budget.sqlite'),id='changed-image',limit=len(requests),unit_id='query')
+        ledger = CellBudgetLedger.create(Path(budget['path']),
+            AttemptBudget(budget['id'],budget['limit']),deadline_utc=None)
+        ledger.reserve_unit('query',len(requests))
+        config = dict(profile={},budget=budget,
+            ray_native=dict(engine_kwargs={},processor_options=dict(prepare_image_stage=True)))
+        Image.new('RGB',(5,3),(0,255,0)).save(self.data/'images'/GOLD_IMAGE)
+        with self.assertRaisesRegex(ValueError,'fresh source differs'):
+            driver.run_query(config,query,EngineSpec(model_path='unused',model_python='unused',
+                driver_python='unused'),None,root,
+                execute=lambda *args,**kwargs:self.fail('changed image allocated native graph'))
+        self.assertEqual(ledger.snapshot()['units'][0]['claimed'],0)
+
     def test_all_visual_joins_request_native_zero_shot_cot(self):
         import pandas as pd
         from lotus.templates.task_instructions import cot_prompt_formatter
@@ -260,6 +393,9 @@ class OriginalMMQAImageTests(unittest.TestCase):
         self.assertEqual(report["requests_claimed"], 0)
         self.assertEqual(report["inputs"]["maximum_model_calls"], 10)
         self.assertTrue(all(value is None for value in report["results"].values()))
+        self.assertIn('image Join wired', report['baseline_states']['ray-data'])
+        mixed = check(CHECKOUT, 'mmqa', '2b', data_dir=self.data)
+        self.assertIn('not wired', mixed['baseline_states']['ray-data'])
 
     def test_check_cli_writes_private_report_and_keeps_source_bytes(self):
         from src.experiments.sembench_image_query import main

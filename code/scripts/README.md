@@ -83,6 +83,10 @@ Ray 的原生完整查询使用 [ray_native 配置](../configs/sembench_ray_nati
 的 `--config / --sembench-checkout / --data-dir / --tokenizer / --reference / --output-dir` 参数。
 保存答复按 occurrence 绑定，不能把模型答复按并发抵达顺序或提示去重后分配。
 计时、原生版本、预算与退出条件见 [Ray 内存 sink](../src/baselines/README.md#ray-native-prepared-sembench)。
+MMQA Q2a／Q7图像Join也使用这个既有CLI：在仓库外Ray原生配置中选择`scenario=mmqa`、
+`query=2a/7`、实际VLM，并设置`ray_native.processor_options.prepare_image_stage=true`。
+`--data-dir`指向原CSV及`images/`的场景根；预算按原L×R候选发生项，不能按图片数或唯一文本数计数。
+使用`check/run`和现有监督；普通文本`fixture`不声明图像Join资格，Q2b混合链仍未接线。
 
 ```sh
 PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py prepare-mmqa-text \

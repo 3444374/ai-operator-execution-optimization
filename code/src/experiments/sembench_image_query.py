@@ -43,14 +43,20 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
             scale_factor=FULL_SCALE_FACTOR if scale_factor is None else scale_factor)
     else:
         raise ValueError("visual preparation supports animals, mmqa, ecomm, cars and medical")
+    ray_binding = "this visual task is not wired to the maintained native Ray entry"
+    if scenario == 'animals':
+        ray_binding = "native Animals VLM Filter entry wired; this input/service is not qualified by preflight"
+    elif scenario == 'mmqa':
+        from src.baselines.image.sembench_mmqa import SINGLE_JOIN_QUERY_IDS
+        if str(query).lower().removeprefix('q') in SINGLE_JOIN_QUERY_IDS:
+            ray_binding = "native Ray prepared image Join wired with prepare_image_stage; native processor/model qualification pending"
     return dict(schema="semloom.sembench_image_query_check.v1", status="prepared_cpu_only",
         scenario=scenario, query=inputs["query"], inputs=inputs,
         execution_enabled=False, model_calls=0, requests_reserved=0, requests_claimed=0,
         native_lotus_query="original query/evaluator and native SDK service entry wired; service qualification pending",
         baseline_states={
             "lotus-native": "run_sembench_lotus_image_query.py binds the original SDK; actual VLM service not checked here",
-            "ray-data": ("native Animals VLM Filter entry wired; this input/service is not qualified by preflight"
-                         if scenario == "animals" else "this visual task is not wired to the maintained native Ray entry"),
+            "ray-data": ray_binding,
             "daft": "visual SemBench binding pending; native provider support must be checked separately from CLIP",
             "imlane": "current author bridge visual binding not established",
             "kalypso": "current author bridge visual binding not established"},

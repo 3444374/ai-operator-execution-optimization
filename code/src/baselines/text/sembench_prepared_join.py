@@ -45,7 +45,8 @@ def prepare(query):
 
     with _answers(lm, capture):
         try:
-            operation.frame.sem_join(operation.right_frame, operation.instruction)
+            operation.frame.sem_join(operation.right_frame, operation.instruction,
+                **(dict(strategy=operation.strategy) if operation.strategy is not None else {}))
         except _Prepared:
             pass
     messages, = batches

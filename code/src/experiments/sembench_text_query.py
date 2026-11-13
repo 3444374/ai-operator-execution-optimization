@@ -1,4 +1,4 @@
-"""Finite original SemBench text queries over existing native baseline operators.
+"""Finite original SemBench queries over existing native baseline operators.
 
 Run workers inside the experiment's existing host lease/resource supervisor.
 The entry creates no host lease, tuning loop, retries or performance claim.
@@ -32,7 +32,7 @@ def configuration(path):
             or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident', 'ray_native', 'ranking'}
             or value['schema'] != 'semloom.sembench_text_run.v1'
             or value['backend'] not in BACKENDS or type(value['profile']) is not dict):
-        raise ValueError('an explicit single-operator SemBench text configuration is required')
+        raise ValueError('an explicit single-operator SemBench native configuration is required')
     engine = EngineSpec.from_dict(value['engine'])
     generation_config = value['generation']
     if isinstance(generation_config, dict):
@@ -78,10 +78,16 @@ def configuration(path):
 
 def query_from_config(config, checkout, data_dir, generation):
     from src.baselines.text.sembench_text import SemBenchTextQuery
+    from src.baselines.image.sembench_mmqa import SINGLE_JOIN_QUERY_IDS
+
+    image_join = (config['scenario'] == 'mmqa'
+        and str(config['query']).lower().removeprefix('q') in SINGLE_JOIN_QUERY_IDS
+        and config.get('ray_native', {}).get('processor_options', {}).get('prepare_image_stage') is True)
 
     return SemBenchTextQuery(checkout, data_dir, config['scenario'], config['query'],
         execution_id=config['query_id'], model_name=config['model_name'],
-        generation=generation, scale_factor=config.get('scale_factor'), ranking=config.get('ranking'))
+        generation=generation, scale_factor=config.get('scale_factor'), ranking=config.get('ranking'),
+        **(dict(image_join=True) if image_join else {}))
 
 
 def check(config, query, engine):
@@ -93,12 +99,16 @@ def check(config, query, engine):
                              + ' requires the explicit native LOTUS resident owner')
     elif kind not in (None, 'filter', 'map', 'extract') and not native_ray_join:
         raise ValueError('unsupported semantic operator for this text entry: ' + kind)
-    expected = query.describe()['expected_model_calls']
+    description = query.describe()
+    if description.get('visual_inputs') is not None and not (config['backend'] == 'ray-data' and 'ray_native' in config
+            and config['ray_native']['processor_options'].get('prepare_image_stage') is True):
+        raise ValueError('prepared image Join requires the explicit native Ray image preparation stage')
+    expected = description['expected_model_calls']
     if engine.max_model_calls is None or engine.max_model_calls < expected:
         raise ValueError('engine.max_model_calls must cover the complete original operator')
     if engine.max_model_len is not None and query.generation.max_tokens > engine.max_model_len:
         raise ValueError('generation exceeds the explicit model context limit')
-    return dict(status='checked_cpu_only', inference_calls=0, query=query.describe(),
+    return dict(status='checked_cpu_only', inference_calls=0, query=description,
         backend=config['backend'], engine=asdict(engine), generation=asdict(query.generation),
         effective_operator_generation=(None if query.operation is None else
                                        asdict(query.operation.generation)),

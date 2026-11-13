@@ -469,6 +469,54 @@ Cars／Medical的CSV读取也共用同一段服务编排，随后7项受影响�
 `medical-visual-native-r3-shared-csv`，
 可向接入会话取脱敏原件；临时患者／图像只作软件fixture，真实资产、目标renderer及VLM仍待核。
 
+## 78d／db3fe 的目标软件验收和资产范围
+
+78d冻结`78d192af5ef07ffd098224c77c14b7e74f77b112`。35／35项Linux检查通过、0跳过，
+随后原sf64的Q1／Q3／Q7／Q10完整捕获分别有64／64／128／64个软件答复。
+四题原消息／PNG像素／发生项及完整sink与直接原SDK一致，源、sink、审计与评价时间戳顺序保持；
+模型调用、Ray runtime和GPU预算均0。私有测试清单重复方法名、预检日志名冲突两次失败在实际测试前发生，
+原件保留，只有后续正常测试体计通过；不改历史模型成绩或授予新v3模型时钟资格。
+
+db3fe冻结`db3feadc2b520e9335871e072f727e49e4c31c39`。52／52项Linux软件检查通过、0跳过／0模型。
+已有Medical CSV及原作者checkout的限定只读查找未取得非空原视觉输入：sf20的Q3原连接为0行，
+Q8／Q9及其他已查规模缺原图／所需资产。没有运行processor或完整token／context门，没有下载或造数据。
+零行只能说明该原查询切片为空，不授予视觉资格；限定目录未找到资产也不能推断整个服务器都没有。
+图像准备和真实VLM仍pending，不能记成原生系统不支持。
+
+两包全部payload、清单与归档摘要由接入会话独立核验，并读取四份捕获与Medical原输入检查。
+私有原件按运行标识向服务器协调会话获取：
+
+| 运行标识 | payload数 | 归档字节数 | SHA256 |
+|---|---:|---:|---|
+| baseline-78d192-ray-animals-clock-cpu-20261113-r1 | 1279 | 412800418 | `d69df19963def0d4a437bcc698b6e21921f899336dc368eb86996bd18c724ed2` |
+| baseline-db3fea-medical-image-cpu-20261113-r1 | 1206 | 3388445 | `6e3737d980fcc09b5b44c453a397d8da25aeffba769aec34b1495b9e60d5874b` |
+
+<a id="ray-mmqa-image-join"></a>
+## Ray 单次图像 Join 的原生接线
+
+MMQA Q2a／Q7复用已有`SemBenchTextQuery`任务绑定、prepared Join和Ray LLM processor，
+显式启用其图像stage；原脚本、ZS_COT策略、原PNG格式、左右输入顺序、L×R发生项及原评分保留。
+普通无歧义字段名由各自原表识别，`:left/:right`仍保留原标签；不按提示文本或图片值去重。
+SDK的多列选列限制照实报告。任务图像快照在源前及sink后核对，worker核对原检查快照后才领取预算；
+真实数据／图像读取、准备和冷Ray／模型启动保留在v3区间内，完整原sink后才审计、评价和关闭。
+其余后端及Q2b的Join→Extract没有借单Join获得支持，也未增加逐题执行器。
+
+90项不同本地软件检查通过、0模型／0真实Ray runtime，干净导出排除取消的三文件草稿。
+新图像关系10／6个发生项分别直接与原SDK消息／CoT／结果／评价差分；软件Ray图验证完整sink先于关闭、
+原native图像flag、精确预算和未知终态为空，图片变化在预算领取前停止。既有文本Join／F/M/E、
+原生owner及错误边界同时覆盖。真实native processor／完整token及VLM仍待目标验收，
+软件时钟和评分不作新模型成绩。
+
+首轮暴露旧桥拒绝原题无后缀字段、旧测试夹具漏新输入状态及检查顺序的问题；修正后受影响44项通过。
+补充测试选择器误选一个helper，原11项测试已通过但进程失败；纠正选择器后11项复核通过，失败保留。
+之后组合门暴露Ray替身用`patch.dict(sys.modules)`恢复整个模块表，移除了刚加载的igraph评分依赖，
+导致后续原评价重新初始化失败。改用既有`module_entries`只恢复指定SDK模块，旧机制直接删除；
+35项组合复核通过，不改评分器／模型／解析或隐藏原失败。该测试修复单独提交`f281d1b79`。
+输入状态只由图像快照表示，移除重复模式状态后，42项受影响组合检查通过。
+日志身份为`ray-image-join-r1-clean`、`r2-source-shape`、`r3-full-driver-and-text`、
+`r4-fixed-selector`、`r5-capability-state`、`r6-worker-identity`、`r7-sdk-module-scope`及`r8-single-input-state`，
+均保留在接入会话私有证据中；重复复核不累加为新测试数。
+
 <a id="lotus-native-join-projection"></a>
 ## LOTUS 多列 Join 的原生选列限制
 

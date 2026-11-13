@@ -14,6 +14,7 @@ import time
 _PROCESSOR_OPTIONS = frozenset((
     "batch_size", "concurrency", "max_concurrent_batches",
     "chat_template_stage", "tokenize_stage", "detokenize_stage",
+    "prepare_image_stage",
 ))
 _USAGE_FIELDS = (
     "num_input_tokens", "num_generated_tokens", "request_id", "batch_uuid",

@@ -1,8 +1,8 @@
-"""Original single-operator SemBench text queries and their input boundary.
+"""Original single-operator SemBench text and explicit image Join input boundaries.
 
 The upstream query still owns selection and relational postprocessing. An
-execution adapter binds its one accessor; exact Join and TopK require the
-explicit original LOTUS resident owner, separate from prepared Filter/Map/Extract.
+execution adapter binds its one accessor. Prepared image Join is explicitly
+selected; it does not broaden the text record graphs' modality support.
 """
 
 from contextlib import contextmanager
@@ -93,6 +93,7 @@ class JoinOperation:
     instruction: str
     records: tuple[RecordOccurrence, ...]
     columns: tuple[str, ...]
+    strategy: object = None
 
     def describe(self):
         left_count, right_count = len(self.frame), len(self.right_frame)
@@ -102,6 +103,7 @@ class JoinOperation:
             model_columns=list(self.columns),
             model_columns_scope='declared instruction references; native_join_inputs reports actual SDK projection',
             instruction=self.instruction, result_cache=False, cascade=False,
+            **(dict(strategy=self.strategy.name) if self.strategy is not None else {}),
             source_pair_order='left-major; original positions, including same IDs and text')
 
 
@@ -125,32 +127,44 @@ def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
     from lotus.types import SerializationFormat
 
     if lotus.settings.serialization_format != SerializationFormat.DEFAULT:
-        raise ValueError('this record bridge uses original LOTUS DEFAULT text serialization')
+        raise ValueError('this record bridge uses original LOTUS DEFAULT serialization')
     if kind == 'join':
         import pandas as pd
-        values = _operator_arguments(args, kwargs, ('other', 'join_instruction'))
+        from lotus.types import ReasoningStrategy
+        values = _operator_arguments(args, kwargs, ('other', 'join_instruction'), ('strategy',))
+        strategy = values.get('strategy')
+        if strategy not in (None, ReasoningStrategy.ZS_COT):
+            raise ValueError('this Join binding supports ordinary or native zero-shot CoT strategy')
         if not isinstance(values['other'], pd.DataFrame):
             raise ValueError('ordinary exact Join requires one right frame and its original instruction')
         right_frame = values['other']
         columns = lotus.nl_expression.parse_cols(values['join_instruction'])
-        left = [column for column in columns if column.endswith(':left')]
-        right = [column for column in columns if column.endswith(':right')]
+        left = {column: column[:-5] for column in columns if column.endswith(':left')}
+        right = {column: column[:-6] for column in columns if column.endswith(':right')}
+        for column in columns:
+            if column in left or column in right:
+                continue
+            if column in frame.columns and column not in right_frame.columns:
+                left[column] = column
+            elif column in right_frame.columns and column not in frame.columns:
+                right[column] = column
         if (not columns or len(left) + len(right) != len(columns)
-                or any(column[:-5] not in frame.columns for column in left)
-                or any(column[:-6] not in right_frame.columns for column in right)):
-            raise ValueError('ordinary exact Join requires explicit :left/:right references to present source columns')
+                or not left or not right
+                or any(column not in frame.columns for column in left.values())
+                or any(column not in right_frame.columns for column in right.values())):
+            raise ValueError('ordinary exact Join requires unambiguous references to present left/right source columns')
         if generation.response_format is not None or generation.logprobs is not None:
             raise ValueError('ordinary Join uses the original Boolean answers without helper sampling')
         records = []
-        right_rows = list(right_frame[[column[:-6] for column in right]].iterrows())
-        for left_position, (left_index, left_row) in enumerate(frame[[column[:-5] for column in left]].iterrows()):
+        right_rows = list(right_frame[list(right.values())].iterrows())
+        for left_position, (left_index, left_row) in enumerate(frame[list(left.values())].iterrows()):
             for right_position, (right_index, right_row) in enumerate(right_rows):
                 records.append(RecordOccurrence(query_id + f'-pair-{left_position}-{right_position}', len(records),
                     f'{left_index}:{right_index}',
-                    {**{column: str(left_row[column[:-5]]) for column in left},
-                     **{column: str(right_row[column[:-6]]) for column in right}}))
+                    {**{label: str(left_row[column]) for label, column in left.items()},
+                     **{label: str(right_row[column]) for label, column in right.items()}}))
         return JoinOperation(frame.copy(deep=True), right_frame.copy(deep=True), model_name, generation,
-                             values['join_instruction'], tuple(records), tuple(left + right))
+                             values['join_instruction'], tuple(records), tuple(left) + tuple(right), strategy)
     if kind == 'topk':
         if len(args) != 1 or kwargs != dict(K=len(frame), method='quick', return_stats=True):
             raise ValueError('ordinary quick TopK with K=N and original statistics is required')
@@ -241,15 +255,18 @@ class SemBenchTextQuery:
     """A finite frozen input snapshot and the unchanged original query/evaluator."""
 
     def __init__(self, checkout, data_dir, scenario, query_id, *, execution_id,
-                 model_name, generation, scale_factor=None, ranking=None):
+                 model_name, generation, scale_factor=None, ranking=None, image_join=False):
         from .sembench_medical import FULL_SCALE_FACTOR, TEXT_QUERY_IDS as MEDICAL_QUERY_IDS, text_files
         from .sembench_mmqa import TEXT_QUERY_IDS as MMQA_QUERY_IDS
         from .sembench_ecomm import TEXT_QUERY_IDS as ECOMM_QUERY_IDS, TEXT_FILE
         from .sembench_cars import FULL_SCALE_FACTOR as CARS_SCALE, TEXT_QUERY_IDS as CARS_QUERY_IDS, text_files as cars_files
+        from src.baselines.image.sembench_mmqa import SINGLE_JOIN_QUERY_IDS
 
         query = str(query_id).lower().removeprefix('q')
+        if image_join and not (scenario == 'mmqa' and query in SINGLE_JOIN_QUERY_IDS):
+            raise ValueError('the prepared image Join binding supports original MMQA Q2a/Q7')
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
-                or (scenario == 'mmqa' and query in MMQA_QUERY_IDS)
+                or (scenario == 'mmqa' and query in MMQA_QUERY_IDS) or image_join
                 or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)
                 or (scenario == 'ecomm' and query in ECOMM_QUERY_IDS)
                 or (scenario == 'cars' and query in CARS_QUERY_IDS)):
@@ -266,6 +283,7 @@ class SemBenchTextQuery:
         self.ranking = ranking or 'map'
         self.model_name, self.generation = model_name, generation
         self.data_dir = Path(data_dir).resolve()
+        self.visual_inputs = None
         self.evaluation_files = set()
         if scenario == 'movie':
             names = ['Reviews.csv'] + (['Movies.csv'] if query == '10' else [])
@@ -287,6 +305,10 @@ class SemBenchTextQuery:
                 self.evaluation_files.add(full_cars)
         elif scenario == 'ecomm':
             names = [TEXT_FILE]
+        elif image_join:
+            from src.baselines.image.sembench_mmqa import describe_inputs
+            self.visual_inputs = describe_inputs(self.checkout, self.data_dir, query)
+            names = [Path(self.visual_inputs['table']['path']).name]
         elif query == '1':
             names = ['ben_piazza.csv', 'ben_piazza_text_data.csv']
         elif query.startswith('3') or query == '4':
@@ -344,6 +366,9 @@ class SemBenchTextQuery:
         if self.scenario == 'ecomm':
             from .sembench_ecomm import bind_original_query
             return bind_original_query(self.checkout, self.query, self._load, data_dir=self.data_dir)
+        if self.visual_inputs is not None:
+            from src.baselines.image.sembench_mmqa import bind_original_query
+            return bind_original_query(self.checkout, self.data_dir, self.query, load_data=self._load)
         from .sembench_mmqa import bind_original_query
         return bind_original_query(self.checkout, self.query, self._load)
 
@@ -355,6 +380,7 @@ class SemBenchTextQuery:
         return dict(schema='semloom.sembench_text_query.v1', sembench_commit=SEMBENCH_COMMIT,
             scenario=self.scenario, query='Q' + self.query, query_id=self.query_id,
             files=self.files, operation=operation,
+            **(dict(visual_inputs=self.visual_inputs) if self.visual_inputs is not None else {}),
             **(dict(ranking=self.ranking) if self.scenario == 'movie' and self.query == '9' else {}),
             **(dict(scale_factor=self.scale_factor, scale_unit='patient rows; model rows are query-specific')
                if self.scenario == 'medical' else {}),
@@ -392,6 +418,10 @@ class SemBenchTextQuery:
             expected_identity = dict(sha256=identity['sha256'], bytes=identity['bytes'])
             if file_identity(path) != expected_identity:
                 raise ValueError('SemBench input changed after preflight')
+        if self.visual_inputs is not None:
+            from src.baselines.image.sembench_mmqa import describe_inputs
+            if describe_inputs(self.checkout, self.data_dir, self.query) != self.visual_inputs:
+                raise ValueError('MMQA image Join input or image order changed after preflight')
 
     def bind_execution(self):
         """Check source before timing and bind a real scan of the original query.
@@ -454,5 +484,8 @@ class SemBenchTextQuery:
             from .sembench_ecomm import evaluate_original, TEXT_FILE
             return evaluate_original(self.checkout, self.query, result, data_dir=self.data_dir,
                                      source_identity=self.files[TEXT_FILE])
+        if self.visual_inputs is not None:
+            from src.baselines.image.sembench_mmqa import evaluate_original
+            return evaluate_original(self.checkout, self.query, result)
         from .sembench_mmqa import evaluate_original
         return evaluate_original(self.checkout, self.query, result)
