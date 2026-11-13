@@ -1333,6 +1333,39 @@ Ray保存实际完整输入／输出token数组；Daft保存实际prompt SHA、t
 只复核缺项，最终45个不同CPU方法通过。query内部physical exit仍不明，独立host guard补证owned进程、
 GPU空闲、socket／SHM及租约释放通过；这些结果不授予Join、Q10或后续候选整体模型资格。
 
+<a id="native-q10-f83b-model"></a>
+## f83b 独立原生 Ray／Daft Q10 全源分组
+
+具名运行`native-ray-daft-q10-f83b2c-qualification-20261113-r1`固定在
+`f83b2cc9ae292a202b36f0094fbcaf9e0ab3b25c`及原c814查询／评分，沿同一独立JSON评分Map。
+Reviews原2000行／11列，所有2000发生项逐条推理，不以1864个不同消息去重，最后按原规则得到105组。
+Movies原116行作为计时前冻结的gold，仅事后评分；原evaluator按有效ID交集105组评价，不能把116当源分组数。
+两系统各2000次实际终态，永久账本closed、无退款、无未知／重试／额外查询预热；
+实际原始答复逐组核完整均值／两位舍入，不重跑模型或评分。原Spearman为Ray
+`0.4083424225290053`、Daft `0.4068781478274947`，Kendall分别`0.2773157705052932`、`0.27392553979454326`。
+1973／2000原始JSON字符串相同，27条score及19组均值不同；不声称结果等价，也不外推其他题。
+
+Ray的`native_ray.source_to_sink.v1`为`86.528661014`秒，Daft的`native_daft.source_to_sink.v1`
+为`71.394418457`秒，均为鲜读到完整内存关系的单冷查询，包含各自原生模型启动。
+Ray保留预算／同步observer写盘，Daft保留packet／digest／IPC／原生证据I/O；
+sink后关闭分别`1.442937471`／`3.4895760491490364`秒，监督总时长分别`92.13058116380125`／`85.29243813920766`秒，
+组件不相减制造暖成绩。当前每查询fresh模型owner，同owner暖轮入口尚未接，复用tokenizer或Python实例不能替代。
+
+Ray 2.56.1／vLLM 0.22.0与Daft 0.7.21／vLLM 0.25.1的默认容量差异保留；
+模型绑定Qwen2.5-7B-Instruct BF16、完整权重manifest与`a09a35458c702b33eeacc393d103063234e8bc28`来源，
+本地模型构造revision参数为None，不称远程revision参数已设。两边请求n=1、max_tokens=8192、temperature=0、
+top_p=1、seed=0、stop=[]、presence/frequency/repetition为0/0/1及JSON object；结果缓存关闭、prefix开启，
+原生初始化和内部预热保留，编译／磁盘缓存未清除。输入2000个原JSON／模板及CPU token数组已核；
+Ray实际输入／输出token数组保存，Daft仅有实际prompt SHA／token长度／输出SHA，不能推其完整数组。
+权重身份复用Q8完整SHA及未变的inode／size／mtime，小文件重新hash；本轮核验未重传、重hash或加载全部权重。
+kernel／纯GPU成本及全actor线程实况未知；此处为统一JSON工程语义功能资格，不是作者原版或性能排名。
+
+56项CPU通过，首次私有控制器r1/r2未执行、r3 SHA匹配后执行；错误SCP目标被自动审查拦截、
+随后正确目标成功及额外inactive Ray socket清理均留在原件。最终owned进程、GPU空闲、SHM及租约闭合。
+独立核验3407个payload、1158个f83b源码Git对象、4个c814参考、bundle及15个packet成员，
+恢复字节一致；核验记录SHA-256为`989b03b7289f4f7333ba43f2360c8999d8ba16071a10e9913a97c073db5f26dd`。
+原归档身份见下表，后续代码组合／其他题／暖轮／公平性能仍须自身验证。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -1368,6 +1401,7 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | a1105 LOTUS Movie Q8首／暖轮 | 4256954 | 1315 | `5a4c447d64fa58ce56a66abb584640bcfe0020bb604d5811d7ad728e873017b4` |
 | a1105 LOTUS Animals Q10参考恢复包 | 3110267 | 1370 | `e45b1773729537c2a97155837a4d601388a5cca0e9735b3dd604e86fdcc4efcc` |
 | 7fb4 独立原生Ray／Daft Movie Q8 | 3738751 | 1669 | `e1e87b4b76bf6e8c763440ca61c06b0335a21f5720068ca3e0ae5a21cf535659` |
+| f83b 独立原生Ray／Daft Movie Q10 | 6977259 | 3407 | `91775f68b25259c7b5f27b2e3678d29d51d50f3240e5dc9ed1510af653e65b90` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

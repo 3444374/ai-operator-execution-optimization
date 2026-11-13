@@ -96,7 +96,7 @@ Q8虽旧receipt标v3，仍含中间relation深拷贝／stage统计；Q10独立se
 [独立原生Q10分组Map](diagnostics/sembench_native_integration_20261112/README.md#independent-native-q10-runners)
 复用同一评分任务及Ray／Daft runner，保留全源Map、原默认3、分组／两位舍入及两种原空结果形态。
 共同任务准备在模型／扣额／source计时前冻结Movies金标，评分只消费快照；缺gold提前失败，模型消息无标签。
-三个受影响模块56个不同软件方法全部通过、0模型／GPU；包括前45项，不累加。真实Q10模型／质量／物理退出仍待验。
+三个受影响模块56个不同软件方法全部通过、0模型／GPU；包括前45项，不累加。后续f83b真实Q10资格另列。
 
 [独立Join与resident统计后移](diagnostics/sembench_native_integration_20261112/README.md#native-join-resident-accounting)
 同一任务／runner接Q5–Q7完整N²后过滤与LIMIT，消息构造前统一计数；不称作者Join算法。
@@ -107,6 +107,11 @@ resident F/M/E完整统计移到fullsink后，保留原失败／晚到成本；�
 同2000源、两系统各120真实终态，原始JSON及解析sentiment逐行相同；官方计数误差4.0431%，额外正确113／120。
 1669份payload、1158源码blob与原生事件／独立清理已核，首次辅助失败保留；无warm／正式排名。
 Daft未保存完整token ID数组，不能由原文一致推其token IDs相同；原vLLM版本／启动及内部I/O差异保持，不授予其他题或新计时路径资格。
+
+[f83b独立原生Q10模型](diagnostics/sembench_native_integration_20261112/README.md#native-q10-f83b-model)
+原2000条全量Map、各2000终态／105组，官方Spearman Ray 0.408342、Daft 0.406878；27条预测及19组均值不同。
+3407份payload、1158源码blob、4个官方参考与永久预算／独立清理核验，未重跑模型或评分；首次辅助失败保留。
+仅具名JSON工程对照的单冷完整查询，内部观测与模型版本／容量有差异，同owner暖轮未接，不排名或转授当前新候选。
 
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
