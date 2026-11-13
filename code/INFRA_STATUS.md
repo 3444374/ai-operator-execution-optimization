@@ -144,6 +144,8 @@ f596的Q1具名模型已完成各2000终态及原最终head5，但最终F1不能
 后续608e20的Q9 Map各256、原last-wins评分与8d071的MMQA Q1 sf25各25真实终态已核；
 MMQA原Series索引[8]及后置F1=1不表示全部25条抽取正确，Ray首轮外层清理失败及精确恢复／未知原因保留。
 见[Q9 Map](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q9map-608e20-model)与[MMQA Q1](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-q1-8d071-model)，不转授当前新族、视觉或warm。
+LOTUS＋Daft的Q2b空Join后零请求Extract不创建native worker，后置HTTP审计已按该正常合同跳过空批；
+五模块53项软件通过，原首轮审计KeyError与已完成空sink保留，模型资格待验，见[修复记录](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-empty-native-successor)。
 独立Medical Q1/Q4/Q10由同一任务类与原两系统runner接全量文本，原普通Join／Series／重复加权平均和诊断关系保持；
 原gold在模型前冻结，原评分的小写转换不污染完整sink。七模块139项及六条实际driver软件流程通过，非本组合模型资格，
 见[Medical家族](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-medical-text-family)。

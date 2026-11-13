@@ -1626,6 +1626,20 @@ Daft实际完整token ID数组未保存，保持未知。两条执行路径和�
 本机两份详证SHA-256分别为`8103b51c15698408737e16a5d2d987a8042b3f877d9cccf00fb7319ba2e5d30c`、
 `5850641377bb8002af1912c312712bf738afa546929a17fa1cb69bb6c8e57080`。
 
+<a id="daft-empty-native-successor"></a>
+## LOTUS＋Daft 正常空批次的后置审计
+
+服务器冻结6c75efdf的零模型Q2b探针令Join全False，原查询已完成内存空结果，后置HTTP审计却读取
+空Extract批次不存在的metadata，抛KeyError。该批次按既有predict合同直接返回空predictions，不创建原生worker，
+因此审计现在直接跳过无请求批次；没有虚构native metadata或改变原查询／parser／计时。
+完整原结果与运行成功分开，首轮failed_zero_model_probe及其已完成sink保留，不重写为原轮成功。
+
+新增受控Q2b回归先复现同一KeyError；修复后按原函数／原评分核完整空sink，LM发生项为4→0，
+只有一个软件worker、四次软件HTTP终态，无第二worker／模型请求，最后ACK在sink之后。
+原Q12空survivor的原KeyError仍保持失败，不用统一空表掩盖不同原题行为。
+干净导出五个完整模块53项全通过、0skip／模型／GPU，含真实Daft0.7.21图＋软件API旧回归，结果SHA-256为
+`3d4a778a4918d7dd0ba5e911cddb542009b86ba0f82c9564659a27c965cdeac6`。这只关闭空批次正常语义缺口，Q2b实际VLM／非空Extract及性能资格仍另验。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

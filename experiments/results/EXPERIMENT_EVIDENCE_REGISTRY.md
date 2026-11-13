@@ -161,6 +161,10 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 1579／1289payload及源码、关联、永久预算和清理已核；前者无损复用旧图像字节运输，不复用旧LOTUS答复。
 单冷含初始化、无真暖／排名／后续组合资格；首轮运输／核验失败及Daft实际完整token数组缺口保留。
 
+[LOTUS＋Daft空批次审计](diagnostics/sembench_native_integration_20261112/README.md#daft-empty-native-successor)
+原Q2b完整空sink后的metadata KeyError已零模型复现，审计跳过未创建worker的空批；4→0发生项、完整结果／评分／ACK核对。
+五完整模块53项全过、0模型，首轮失败保留；不改变原Q12空Extract错误或授予Q2b真实非空Extract资格。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

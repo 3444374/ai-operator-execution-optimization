@@ -77,6 +77,8 @@ def _audit_attached_batches(batches, model):
     attempts = unresolved = 0
     response_ids, occurrences = [], []
     for index, batch in enumerate(batches):
+        if not batch['requests']:
+            continue
         api = batch['native']['metadata']['native_api']
         calls = api['requests']
         encoded = [dict(batch_index=index, call_id=row['call_id'],
