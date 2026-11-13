@@ -14,6 +14,7 @@ import time
 
 from src.baselines.text.sembench_prepared import make_query_lm, audit_query_batches, result_value
 from src.baselines.text.sembench_text import SemBenchTextQuery
+from src.baselines.text.frameworks.daft_sembench_native import effective_openai_messages
 from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.native_daft_query import supervised_run, _save_artifact, native_openai_options
@@ -74,16 +75,21 @@ def _query(config, generation):
 def _audit_attached_batches(batches, model):
     """Check native HTTP receipts after the original complete memory sink."""
     attempts = unresolved = 0
-    response_ids = []
-    for batch in batches:
+    response_ids, occurrences = [], []
+    for index, batch in enumerate(batches):
         api = batch['native']['metadata']['native_api']
         calls = api['requests']
-        expected = Counter(content_digest(row['messages']) for row in batch['requests'])
+        encoded = [dict(batch_index=index, call_id=row['call_id'],
+            original_messages_sha256=content_digest(row['messages']),
+            effective_messages_sha256=content_digest(effective_openai_messages(row['messages'])))
+            for row in batch['requests']]
+        occurrences.extend(encoded)
+        expected = Counter(row['effective_messages_sha256'] for row in encoded)
         successful = [call for call in calls if call['error_type'] is None
                       and call['http_status'] is not None and 200 <= call['http_status'] < 300]
         if (Counter(call['messages_sha256'] for call in successful) != expected
                 or any(call['messages_sha256'] not in expected or call['model'] != model for call in calls)):
-            raise ValueError('native OpenAI attempts differ from the original complete message batch')
+            raise ValueError('native OpenAI attempts differ from the effective complete message batch')
         response_ids.extend(call['response']['id'] for call in successful)
         attempts += api['reserved_attempts']
         unresolved += api['unresolved']
@@ -91,7 +97,8 @@ def _audit_attached_batches(batches, model):
         raise ValueError('native OpenAI completions require distinct response IDs')
     return dict(reserved_attempts=attempts, successful_responses=len(response_ids),
         unresolved_attempts=unresolved, raw_HTTP_call_id_association_available=False,
-        result_row_association='native Daft call_id projection; HTTP receipt association is per message batch')
+        message_occurrences=occurrences,
+        result_row_association='native Daft call_id projection; HTTP receipt association is per encoded message batch')
 
 
 def run_query(config, directory, *, model_python, tokenizer=None, supervise=supervised_run,
@@ -132,6 +139,10 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
         physical_gpu_exit_confirmed=None, performance_claim=False, native_batches=[])
     if attached:
         report.update(provider='Daft builtin OpenAI over attached vLLM-compatible API',
+            message_encoding='daft.openai.system_single_user.parts.v1',
+            target_renderer_equivalence_verified=None,
+            message_encoding_difference='user string becomes one text content part; existing content-part arrays stay unchanged; '
+                'target renderer/token equivalence has not been verified',
             model_process_owned=False, model_ready_before_source=None,
             service_startup_in_query_seconds=None,
             lifecycle='one original query; isolated native API-client worker per sequential LM batch; remote service externally owned',

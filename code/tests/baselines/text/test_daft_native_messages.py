@@ -15,6 +15,8 @@ import json
 import os
 from pathlib import Path
 import socket
+import subprocess
+import sys
 import threading
 import traceback
 from types import SimpleNamespace as NS
@@ -27,6 +29,30 @@ from src.infrastructure.private_artifacts import content_digest
 
 PROOF = os.environ.get('SEMLOOM_DAFT_MESSAGES_PROOF')
 PROOF_SHA256 = '5b7cb315bb9a83fe2e25b036a9c276fda81f83223504610c7146f2b3ed30f85f'
+
+
+class EffectiveMessageTests(unittest.TestCase):
+    def test_encoding_is_explicit_nonmutating_and_does_not_import_the_native_SDK(self):
+        script = '''
+import importlib.abc,sys
+class RejectSDK(importlib.abc.MetaPathFinder):
+    def find_spec(self,name,*args):
+        if name.split('.')[0] in {'daft','openai','lotus','vllm','torch'}:
+            raise AssertionError('pure message encoding imported '+name)
+sys.meta_path.insert(0,RejectSDK())
+from src.baselines.text.frameworks.daft_sembench_native import effective_openai_messages
+messages=[{'role':'system','content':'system'}, {'role':'user','content':'  original \\n文本  '}]
+effective=effective_openai_messages(messages)
+assert messages[1]['content']=='  original \\n文本  '
+assert effective==[messages[0], {'role':'user','content':[{'type':'text','text':messages[1]['content']}]}]
+effective[1]['content'][0]['text']='changed'
+assert messages[1]['content']=='  original \\n文本  '
+array=[{'role':'system','content':'system'}, {'role':'user','content':[{'type':'text','text':'original'}]}]
+assert effective_openai_messages(array)==array
+assert effective_openai_messages([messages[0],{'role':'user','content':''}])[1]['content']==[{'type':'text','text':''}]
+'''
+        completed = subprocess.run([sys.executable, '-B', '-c', script], capture_output=True, text=True)
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
 
 
 class SoftwareClient:
@@ -157,6 +183,65 @@ class NativeMessageBatchTests(unittest.TestCase):
         self.assertEqual(seen, [result])
         self.assertNotIn('software-only', json.dumps(result))
 
+    def test_string_and_array_users_keep_text_and_distinct_original_effective_identities(self):
+        text = '  Context:\noriginal 文本\n\nClaim: unchanged?  '
+        rows = [self.request('string', text=text), self.request('array', text=text)]
+        rows[0]['messages'][1]['content'] = text
+        original = deepcopy(rows)
+        effective = binding.effective_openai_messages(rows[0]['messages'])
+        SoftwareClient.expected = {content_digest(effective): 'same raw response'}
+        result = self.execute(rows)
+        self.assertEqual(rows, original)
+        self.assertEqual(result['predictions'], [dict(call_id=row['call_id'], generated_text='same raw response')
+                                                for row in rows])
+        self.assertEqual([call['messages'] for call in SoftwareClient.calls], [effective, effective])
+        metadata = result['metadata']
+        self.assertEqual(metadata['message_encoding'], 'daft.openai.system_single_user.parts.v1')
+        self.assertIsNone(metadata['target_renderer_equivalence_verified'])
+        identities = [dict(call_id=row['call_id'],
+            original_messages_sha256=content_digest(row['messages']),
+            effective_messages_sha256=content_digest(binding.effective_openai_messages(row['messages'])),
+            user_string_wrapped=index == 0) for index, row in enumerate(rows)]
+        self.assertNotEqual(identities[0]['original_messages_sha256'], identities[0]['effective_messages_sha256'])
+        self.assertEqual(identities[1]['original_messages_sha256'], identities[1]['effective_messages_sha256'])
+        self.assertNotIn('message_identities', metadata)
+
+    def test_original_formatters_keep_plain_text_then_image_JSON_batches(self):
+        from PIL import Image
+        from lotus.templates.task_instructions import filter_formatter, extract_formatter
+
+        stream = BytesIO()
+        Image.new('RGB', (3, 2), 'red').save(stream, 'PNG')
+        uri = 'data:image/png;base64,' + base64.b64encode(stream.getvalue()).decode('ascii')
+        filters = [dict(call_id='filter-' + str(i), messages=filter_formatter(NS(),
+            dict(text='[Description]: original ' + str(i), image={}), 'Keep the described product.'))
+            for i in range(2)]
+        extracts = [dict(call_id='extract-survivor', messages=extract_formatter(NS(),
+            dict(text='[Id]: 1\n[Description]: original survivor', image=dict(Images=uri)),
+            dict(generated_json='Extract the unchanged product identity.')))]
+        original = deepcopy((filters, extracts))
+        self.assertTrue(all(isinstance(row['messages'][1]['content'], str) for row in filters))
+        self.assertIsInstance(extracts[0]['messages'][1]['content'], list)
+        plain = dict(max_tokens=32, repetition_penalty=1, logprobs=None, response_format=None)
+        structured = dict(plain, response_format=dict(type='json_object'))
+        expected_text = ['True', 'False', '{"generated_json":"original survivor"}']
+        SoftwareClient.expected = {content_digest(binding.effective_openai_messages(row['messages'])): value
+            for row, value in zip(filters + extracts, expected_text, strict=True)}
+        first = self.execute(filters, plain)
+        second = self.execute(extracts, structured)
+        self.assertEqual((filters, extracts), original)
+        self.assertEqual([row['generated_text'] for result in (first, second) for row in result['predictions']],
+                         expected_text)
+        calls = SoftwareClient.calls
+        self.assertEqual(Counter(content_digest(call['messages']) for call in calls),
+                         Counter(content_digest(binding.effective_openai_messages(row['messages']))
+                                 for row in filters + extracts))
+        self.assertTrue(all(call['response_format'] is None for call in calls[:2]))
+        self.assertEqual(calls[2]['response_format'], {'type': 'json_object'})
+        self.assertEqual([part['image_url']['url'] for part in calls[2]['messages'][1]['content']
+                          if part['type'] == 'image_url'], [uri])
+        self.assertEqual(first['metadata']['message_encoding'], second['metadata']['message_encoding'])
+
     @unittest.skipUnless(PROOF, 'requires the explicitly bound frozen original-batch proof JSON')
     def test_four_frozen_original_visual_batches_keep_messages_bytes_and_raw_replies(self):
         from PIL import Image
@@ -208,13 +293,14 @@ class NativeMessageBatchTests(unittest.TestCase):
 
     def test_unsupported_shapes_and_duplicate_ids_fail_before_constructing_a_client(self):
         values = []
-        row = self.request(); row['messages'][1]['content'] = 'unqualified original string'; values.append([row])
+        row = self.request(); row['messages'][1]['content'] = {'unsupported': 'content'}; values.append([row])
         row = self.request(); row['messages'][0]['role'] = 'assistant'; values.append([row])
         values.append([self.request(), self.request()])
         row = self.request('other'); row['messages'][0]['content'] = 'different system'; values.append([self.request(), row])
         row = self.request('other'); row['messages'][1]['content'].append(dict(type='text', text='another part'))
         values.append([self.request(), row])
         values.append([self.request(text='http://localhost/image.png')])
+        row = self.request(); row['messages'][1]['content'] = 'http://localhost/image.png'; values.append([row])
         for image in (dict(url='http://localhost/image.png'), dict(url='data:image/jpeg;base64,AA=='),
                       dict(url='data:image/png;base64,AA=='), dict(url='data:image/png;base64,!'),
                       dict(url='data:image/png;base64,AA==', detail='high')):

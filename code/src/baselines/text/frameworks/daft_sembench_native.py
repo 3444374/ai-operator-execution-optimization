@@ -72,8 +72,29 @@ def native_sampling_params(sampling_params):
     return SamplingParams(**options)
 
 
+def effective_openai_messages(messages):
+    """Describe builtin OpenAI's explicit single-user content encoding.
+
+    This preserves text and roles, not the raw message JSON representation.
+    Renderer/token equivalence for a target service requires separate validation.
+    No native SDK is imported here, so the driver can audit the same encoding.
+    """
+    from copy import deepcopy
+
+    if (len(messages) != 2 or any(set(message) != {'role', 'content'} for message in messages)
+            or messages[0]['role'] != 'system' or not isinstance(messages[0]['content'], str)
+            or messages[1]['role'] != 'user'
+            or not isinstance(messages[1]['content'], (str, list))
+            or isinstance(messages[1]['content'], list) and not messages[1]['content']):
+        raise ValueError('native message batches support system text and one user string or content-parts array')
+    effective = deepcopy(messages)
+    if isinstance(effective[1]['content'], str):
+        effective[1]['content'] = [dict(type='text', text=effective[1]['content'])]
+    return effective
+
+
 def _message_columns(requests):
-    """Bind the static-system content-parts shape supported by native prompt."""
+    """Bind supported single-user messages to native content-part columns."""
     import base64
     import binascii
     from daft.ai.openai.protocols.prompter import OpenAIPrompter
@@ -84,17 +105,13 @@ def _message_columns(requests):
         if not isinstance(call_id, str) or not call_id or call_id in seen:
             raise ValueError('native message batches require unique nonempty call_id values')
         seen.add(call_id)
-        if (len(messages) != 2 or any(set(message) != {'role', 'content'} for message in messages)
-                or messages[0]['role'] != 'system' or not isinstance(messages[0]['content'], str)
-                or messages[1]['role'] != 'user' or not isinstance(messages[1]['content'], list)
-                or not messages[1]['content']):
-            raise ValueError('native message batches support system text and one user content-parts array')
+        effective = effective_openai_messages(messages)
         if system is None:
             system = messages[0]['content']
         elif system != messages[0]['content']:
             raise ValueError('native prompt requires one static system message per batch')
         parts, kinds = [], []
-        for part in messages[1]['content']:
+        for part in effective[1]['content']:
             kind = part.get('type')
             if kind == 'text' and set(part) == {'type', 'text'} and isinstance(part['text'], str):
                 text = part['text']
@@ -149,6 +166,8 @@ def execute_prepared_messages(requests, *, model, sampling_params, provider_opti
     result = dict(predictions=[], metadata=metadata)
     try:
         system, rows = _message_columns(requests)
+        metadata.update(message_encoding='daft.openai.system_single_user.parts.v1',
+            target_renderer_equivalence_verified=None)
         effective = deepcopy(sampling_params)
         if 'repetition_penalty' in effective:
             penalty = effective.pop('repetition_penalty')
