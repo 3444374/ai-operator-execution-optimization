@@ -125,6 +125,7 @@ class RayPreparedTests(unittest.TestCase):
         query.files = {}
         query.scenario, query.query, query.model_name = 'movie', '10', 'CPU-only'
         query.visual_inputs = None
+        query.visual_query = False
         query.aggregate_task = None
         query.lm_options = {}
         from src.serving.backends.vllm_protocol import GenerationSpec

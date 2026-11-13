@@ -29,7 +29,7 @@ def configuration(path):
     required = {'schema', 'scenario', 'query', 'query_id', 'backend', 'model_name',
                 'generation', 'engine', 'resources', 'profile'}
     if (type(value) is not dict or not required <= value.keys()
-            or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident', 'ray_native', 'ranking', 'token_counter'}
+            or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident', 'ray_native', 'ranking', 'token_counter', 'manifest', 'manifest_digest'}
             or value['schema'] != 'semloom.sembench_text_run.v1'
             or value['backend'] not in BACKENDS or type(value['profile']) is not dict):
         raise ValueError('an explicit SemBench LOTUS query/backend configuration is required')
@@ -79,8 +79,20 @@ def configuration(path):
 def query_from_config(config, checkout, data_dir, generation):
     from src.baselines.text.sembench_text import SemBenchTextQuery
     from src.baselines.image.sembench_mmqa import IMAGE_QUERY_IDS
+    from src.baselines.text.sembench_cars import VISUAL_QUERY_IDS as CARS_VISUAL
+    from src.baselines.text.sembench_medical import VISUAL_QUERY_IDS as MEDICAL_VISUAL
+    from src.baselines.text.sembench_ecomm import VISUAL_QUERY_IDS as ECOMM_VISUAL
 
-    aggregate = config['scenario'] == 'mmqa' and str(config['query']).lower().removeprefix('q') == '5'
+    scenario, query = config['scenario'], str(config['query']).lower().removeprefix('q')
+    visual_query = (scenario == 'animals' or scenario == 'cars' and query in CARS_VISUAL
+                    or scenario == 'medical' and query in MEDICAL_VISUAL
+                    or scenario == 'ecomm' and query in ECOMM_VISUAL)
+    if visual_query and not (config['backend'] == 'ray-data' and 'ray_native' in config
+            and config['ray_native']['processor_options'].get('prepare_image_stage') is True):
+        raise ValueError('complete visual queries require explicit native Ray image preparation')
+    if scenario != 'animals' and ('manifest' in config or 'manifest_digest' in config):
+        raise ValueError('manifest and manifest_digest apply only to the Animals source')
+    aggregate = scenario == 'mmqa' and query == '5'
     lm_options = {}
     if aggregate:
         from src.baselines.text.sembench_mmqa_aggregate import load_token_counter
@@ -117,7 +129,9 @@ def query_from_config(config, checkout, data_dir, generation):
     return SemBenchTextQuery(checkout, data_dir, config['scenario'], config['query'],
         execution_id=config['query_id'], model_name=config['model_name'],
         generation=generation, scale_factor=config.get('scale_factor'), ranking=config.get('ranking'),
-        **(dict(image_join=True) if image_join else {}), **(dict(lm_options=lm_options) if aggregate else {}))
+        **(dict(image_join=True) if image_join else {}), **(dict(lm_options=lm_options) if aggregate else {}),
+        **(dict(visual_query=True, manifest=config.get('manifest'), manifest_digest=config.get('manifest_digest'))
+           if visual_query else {}))
 
 
 def check(config, query, engine):
@@ -314,7 +328,7 @@ def main(argv=None, *, controller_entry_ns=None):
     for name in ('check','fixture','run'):
         command = commands.add_parser(name)
         for field in ('config','data-dir','sembench-checkout'):
-            command.add_argument('--'+field, required=True)
+            command.add_argument('--'+field, required=field != 'data-dir')
         if name != 'check':
             command.add_argument('--output-dir', required=True)
         if name == 'fixture':
@@ -334,6 +348,8 @@ def main(argv=None, *, controller_entry_ns=None):
         print(json.dumps(report, ensure_ascii=False))
         return 0
     config, engine, generation, resources = configuration(args.config)
+    if args.data_dir is None and config['scenario'] != 'animals':
+        parser.error('--data-dir is required for this original query source')
     query = query_from_config(config,args.sembench_checkout,args.data_dir,generation)
     checked = check(config,query,engine)
     resident = config.get('lifecycle', 'isolated') == 'resident'
@@ -376,9 +392,11 @@ def main(argv=None, *, controller_entry_ns=None):
         new_private_directory(root)
         write_private_json(root/'preflight.json',checked)
         command = [sys.executable,str(Path(__file__).parents[2]/'scripts/experiments/run_sembench_text_query.py'),
-            'run','--config',str(Path(args.config).resolve()),'--data-dir',str(Path(args.data_dir).resolve()),
+            'run','--config',str(Path(args.config).resolve()),
             '--sembench-checkout',str(Path(args.sembench_checkout).resolve()),'--output-dir',str(root),
             '--execute-model','--worker']
+        if args.data_dir is not None:
+            command.extend(('--data-dir', str(Path(args.data_dir).resolve())))
         if resident:
             from src.observability.native_query_timing import resident_launch_timing
             spec = config['resident']

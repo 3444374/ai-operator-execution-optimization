@@ -256,7 +256,7 @@ class SemBenchTextQuery:
 
     def __init__(self, checkout, data_dir, scenario, query_id, *, execution_id,
                  model_name, generation, scale_factor=None, ranking=None, image_join=False,
-                 lm_options=None):
+                 lm_options=None, visual_query=False, manifest=None, manifest_digest=None):
         from .sembench_medical import FULL_SCALE_FACTOR, TEXT_QUERY_IDS as MEDICAL_QUERY_IDS, text_files
         from .sembench_mmqa import TEXT_QUERY_IDS as MMQA_QUERY_IDS
         from .sembench_ecomm import TEXT_QUERY_IDS as ECOMM_QUERY_IDS, TEXT_FILE
@@ -270,7 +270,7 @@ class SemBenchTextQuery:
                 or (scenario == 'mmqa' and query in (*MMQA_QUERY_IDS, '5')) or image_join
                 or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)
                 or (scenario == 'ecomm' and query in ECOMM_QUERY_IDS)
-                or (scenario == 'cars' and query in CARS_QUERY_IDS)):
+                or (scenario == 'cars' and query in CARS_QUERY_IDS) or visual_query):
             raise ValueError('this entry supports Movie Q1-Q10 (Q5-Q7 native Join, Q9 Map or TopK), ordinary MMQA text queries and native Q5 aggregation '
                              'plus Medical/Cars Q1/Q4/Q10 and E-Commerce Q1/Q3/Q5/Q7')
         if scenario not in ('medical', 'cars') and scale_factor is not None:
@@ -283,11 +283,48 @@ class SemBenchTextQuery:
         self.scenario, self.query, self.query_id = scenario, query, execution_id
         self.ranking = ranking or 'map'
         self.model_name, self.generation = model_name, generation
-        self.data_dir = Path(data_dir).resolve()
+        if data_dir is None and not (visual_query and scenario == 'animals'):
+            raise ValueError('data_dir is required for this original query source')
+        self.data_dir = None if data_dir is None else Path(data_dir).resolve()
+        self.visual_query = visual_query
+        self.manifest = None if manifest is None else Path(manifest).resolve()
+        self.manifest_digest = manifest_digest
         self.visual_task = None
         self.aggregate_task = None
         self.lm_options = dict(lm_options or {})
         self.evaluation_files = set()
+        if visual_query:
+            from src.baselines.sembench_lotus import OriginalLotusQuery
+
+            if (generation.repetition_penalty != 1 or generation.logprobs is not None
+                    or generation.response_format is not None):
+                raise ValueError('use native standard generation; the original Extract owns its JSON response format')
+            if scenario == 'animals':
+                from src.baselines.image.sembench_animals import AnimalsDataset
+
+                if data_dir is not None or manifest is None or manifest_digest is None:
+                    raise ValueError('Animals requires manifest and manifest_digest, without data_dir')
+                inputs = AnimalsDataset(self.checkout, self.manifest, manifest_digest).preflight(int(query))
+                files = {}
+            else:
+                if manifest is not None or manifest_digest is not None:
+                    raise ValueError('this visual query requires data_dir without an Animals manifest')
+                if scenario == 'cars':
+                    from . import sembench_cars as source
+                elif scenario == 'medical':
+                    from . import sembench_medical as source
+                elif scenario == 'ecomm':
+                    from . import sembench_ecomm as source
+                else:
+                    raise ValueError('raw original visual tasks support Animals, Cars, Medical and E-Commerce')
+                options = {} if scale_factor is None else dict(scale_factor=scale_factor)
+                inputs = source.describe_visual_inputs(self.checkout, self.data_dir, query, **options)
+                files = inputs['files']
+            self.visual_task = OriginalLotusQuery(self.checkout, scenario, query, inputs=inputs,
+                data_dir=self.data_dir, manifest=self.manifest, manifest_digest=manifest_digest)
+            self.frames, self.files, self.operation = {}, files, None
+            self._run_original = self.visual_task.execute
+            return
         if scenario == 'mmqa' and query == '5':
             from lotus.models import LM
             from . import sembench_mmqa_aggregate as aggregate
@@ -409,6 +446,18 @@ class SemBenchTextQuery:
         return self._run_original()
 
     def describe(self):
+        if self.visual_query:
+            inputs = self.visual_inputs
+            expected = inputs.get('expected_model_calls')
+            return dict(schema='semloom.sembench_text_query.v1', sembench_commit=SEMBENCH_COMMIT,
+                scenario=self.scenario, query='Q'+self.query, query_id=self.query_id,
+                files=self.files, operation=None, visual_inputs=inputs,
+                expected_model_calls=expected,
+                minimum_model_calls=inputs.get('minimum_model_calls', expected),
+                maximum_model_calls=inputs.get('maximum_model_calls', expected),
+                policy='complete original LOTUS visual query and native algorithms; '
+                       'original source policy retained; result cache disabled; no warmup or retry',
+                original_selection_and_postprocessing=True)
         if self.aggregate_task is not None:
             return dict(schema='semloom.sembench_text_query.v1', sembench_commit=SEMBENCH_COMMIT,
                 scenario=self.scenario, query='Q'+self.query, query_id=self.query_id,
@@ -481,8 +530,8 @@ class SemBenchTextQuery:
         for TopK. Later inputs come from the original query's intermediate
         relations. The default keeps the existing single-operator return shape.
         """
-        if self.aggregate_task is not None:
-            raise ValueError('native aggregation needs the complete original query LM boundary')
+        if self.aggregate_task is not None or self.visual_query:
+            raise ValueError('this task needs the complete original query LM boundary')
         self.verify_source()
         if multiple:
             return lambda execute_operator: self._execute_bound(execute_operator, multiple=True)
@@ -551,6 +600,8 @@ class SemBenchTextQuery:
     def evaluate(self, result):
         if self.aggregate_task is not None:
             return self.aggregate_task.evaluate(result)
+        if self.visual_task is not None:
+            return self.visual_task.evaluate(result)
         if self.scenario == 'movie':
             from .sembench_movie import evaluate_original
             return evaluate_original(self.checkout, int(self.query), result,
@@ -567,7 +618,5 @@ class SemBenchTextQuery:
             from .sembench_ecomm import evaluate_original, TEXT_FILE
             return evaluate_original(self.checkout, self.query, result, data_dir=self.data_dir,
                                      source_identity=self.files[TEXT_FILE])
-        if self.visual_task is not None:
-            return self.visual_task.evaluate(result)
         from .sembench_mmqa import evaluate_original
         return evaluate_original(self.checkout, self.query, result)

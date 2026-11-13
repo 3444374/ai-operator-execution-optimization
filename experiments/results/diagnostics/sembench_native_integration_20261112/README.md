@@ -647,6 +647,34 @@ MMQA Q5接到既有`SemBenchTextQuery → OriginalLotusQuery → native_ray_semb
 整合后全新导出另验七个受影响模块105项，102通过、3项独立Daft SDK或真实输入未绑定跳过；
 保留前述重叠计数，不累加。Barrier验证预测确实重叠、单次init／close、唯一ID、
 失败和正常兄弟批独立关联及原参数；不将软件Ray替身当作真实SDK／模型或物理清理资格。
+另只读核对固定Ray2.56.1的Processor、ActorPoolMapOperator、StreamingExecutor与vLLM stage：
+每次Dataset执行有独立原生pool，公开Processor没有可借用既有engine/session的句柄。
+复用Python对象／runtime不是跨独立LM批次复用模型的证据，`concurrency`也不是查询全局上限。
+正常耗尽后的graceful shutdown／UDF析构与GPU进程真正消失不同；多GPU的原生placement group
+释放还需目标状态核验。后续验收分别记录批次构造／PID、资源排队、完整sink和退出，不增加自造池或新调度。
+
+<a id="lotus-ray-original-visual"></a>
+## LOTUS＋Ray 的完整视觉原题
+
+同一`SemBenchTextQuery → OriginalLotusQuery → native_ray_sembench`路径绑定既有视觉Source，
+不再为新模态先捕获单个语义算子。Animals使用manifest及digest，Cars／Medical／E-Commerce保留原数据根；
+真实CSV／Parquet读取、ImageArray解码／PNG格式化、实际中间关系、全部原算子及最终关系后处理都在source→sink内。
+外层身份预检、设置／模块绑定在前，验证、评价、结果／driver证据写盘与runtime关闭在后；
+actor内同步observer I/O仍按独立Ray v1披露。原groupby线程通过既有`native_query_settings`取得LM，未改并发算法。
+
+临时原schema数据差分覆盖Animals四题、Cars两题、Medical三题；E-Commerce的图像Filter／Map／Extract、
+非空多字段描述Join、图像self-join、4→3实际survivor Extract、多分支Join及分组TopK。
+空Join、原空Extract的KeyError、小Medical gold与空groupby的原ValueError也保留。
+多列Join仍披露原SDK实际选列，不补造完整字段语义；Q10／Q11各中间分支为空的组合尚未逐项覆盖。
+既有MMQA typed/image_join、历史保存答复回放和相关公有API仍有实际CPU资格调用，未新增兼容壳或误删。
+
+独立审查发现新入口会接受全局JSON／logprobs等覆盖，先留三项参数失败复现，再与原服务的标准生成合同对齐：
+Extract拥有自己的JSON请求，全局选项不改变各原算子。另同步输入检查器的接线状态和Animals的CLI／supervisor／worker参数。
+初始组合197个方法中，Animals两项subtest因原gold SQL并列值无ORDER BY而行序不同失败；它们属于同一方法。
+只修正夹具比较无序金标的方式，保留原SQL、结果和评价，定向重跑该方法的四题；
+再新增一个方法补验五种未覆视觉调用形状。最终按方法ID去重198项为194通过、4项环境／真实输入未绑定跳过，
+并非重复运行次数之和，首次失败均保留。生产源与测试导出一致，未重跑模型。
+真实原始数据、Ray SDK／VLM／processor加载、完整多批模型质量、构造次数、资源排队及物理清理仍需目标验收。
 
 <a id="lotus-service-query-lifecycle"></a>
 ## LOTUS 外部服务的同一查询生命周期

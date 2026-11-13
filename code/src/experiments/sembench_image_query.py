@@ -43,7 +43,8 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
             scale_factor=FULL_SCALE_FACTOR if scale_factor is None else scale_factor)
     else:
         raise ValueError("visual preparation supports animals, mmqa, ecomm, cars and medical")
-    ray_binding = "this visual task is not wired to the maintained native Ray entry"
+    ray_binding = "complete original LOTUS visual query wired over native Ray with prepare_image_stage; " \
+        "actual VLM/processor and complete-query model qualification pending"
     if scenario == 'animals':
         ray_binding = "native Animals VLM Filter entry wired; this input/service is not qualified by preflight"
     elif scenario == 'mmqa':

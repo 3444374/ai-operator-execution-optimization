@@ -88,6 +88,13 @@ MMQA Q2a／Q2b／Q7也使用这个既有CLI：在仓库外Ray原生配置中选�
 Q2b的预算上界为2×L×R，实际Extract只消费原Join匹配行；同一query owner在完整sink后关闭。
 使用`check/run`和现有监督；普通文本`fixture`不授予新多阶段或VLM资格。
 
+Animals、Cars、Medical和E-Commerce已接视觉任务也使用该Ray原生`check/run`及显式`prepare_image_stage=true`，
+复用同一原题对象／完整查询runner。Cars／Medical／E-Commerce的`--data-dir`仍为原场景根；
+Animals配置给`manifest`及`manifest_digest`，省略`--data-dir`，worker读取同一配置。
+全局JSON格式／logprobs等不能覆盖各原算子，Extract保留自己请求的JSON格式；
+数据依赖的总调用数保持未知，使用有限engine／永久预算，实际后续关系由原函数决定。
+已验软件代表与仍待验分支见[能力表](../INFRA_STATUS.md#current-refactor-status)，不把路由存在当目标通过。
+
 原MMQA Q5分层聚合也使用同一Ray配置和`check/run`：选择`scenario=mmqa, query=Q5`，
 给出正整数`engine.max_model_len`及已有预算内的有限`engine.max_model_calls`，保留原聚合生成参数。
 另给与[服务聚合](#sembench-native-mmqa-aggregate)相同格式的`token_counter`：

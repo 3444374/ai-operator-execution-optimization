@@ -18,6 +18,12 @@
 首次失败保留，受控新旧15／15通过；整合后105个受影响软件用例为102通过、3项环境／输入未绑定跳过，
 两批检查重叠、不累加，真实SDK／模型资格不转授。
 
+[LOTUS＋Ray完整视觉原题](diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-original-visual)
+复用原Source／原函数／评分及同一query owner，接通单图算子、实际survivor Extract、分支Join和分组TopK，
+没有逐题执行器。独立审查修正全局格式覆盖；Animals无序并列金标的夹具比较单独修正，原查询／评分不变。
+整合后的198个不同软件方法为194通过、4项环境／真实输入未绑定跳过；首失败和定向复核保留，
+0模型／GPU，真实Ray／VLM及剩余空分支、完整多批物理清理不由软件检查授予。
+
 [LOTUS外部服务生命周期](diagnostics/sembench_native_integration_20261112/README.md#lotus-service-query-lifecycle)
 另记录视觉与Q5共用worker、原题对象及旧调用删除：七个原查询／原评分软件差分、配置／时钟表征，
 删除后105项检查为104通过、1个真实资产未绑定跳过，0模型／GPU／外部网络；旧来源及失败继续保留。

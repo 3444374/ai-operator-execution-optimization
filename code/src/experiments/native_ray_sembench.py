@@ -10,6 +10,7 @@ from src.baselines.text.sembench_prepared import make_query_lm, audit_query_batc
 from src.baselines.text.sembench_text import SemBenchTextQuery
 from src.infrastructure.private_artifacts import write_private_json, json_metric
 from src.infrastructure.redact import redact_text
+from .native_service_query import native_query_settings
 
 
 def run_query(config, checked_query, engine, resources, directory, *, scope=query_scope):
@@ -51,8 +52,10 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
             checked_query.scenario, checked_query.query, execution_id=checked_query.query_id,
             model_name=checked_query.model_name, generation=checked_query.generation,
             scale_factor=config.get('scale_factor'), ranking=config.get('ranking'),
-            image_join=checked_query.visual_inputs is not None,
-            **(dict(lm_options=checked_query.lm_options) if checked_query.lm_options else {}))
+            image_join=checked_query.visual_inputs is not None and not checked_query.visual_query,
+            **(dict(lm_options=checked_query.lm_options) if checked_query.lm_options else {}),
+            **(dict(visual_query=True, manifest=checked_query.manifest,
+                    manifest_digest=checked_query.manifest_digest) if checked_query.visual_query else {}))
         if query.files != checked_query.files or query.visual_inputs != checked_query.visual_inputs:
             raise ValueError('native Ray fresh source differs from checked input identity')
         report['query'] = query.describe()
@@ -79,8 +82,6 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
             raise ValueError('conflicting Ray engine settings or unsupported explicit chat template')
         engine_kwargs.update(spec['engine_kwargs'])
 
-        import lotus
-
         execute_query = query.bind_original_execution()
         owner = None
 
@@ -104,7 +105,7 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
                 processor_options=spec['processor_options'], runtime_options=config['profile'],
                 engine_runtime_env=runtime_env) as owner:
             native = owner.report
-            with lotus.settings.context(lm=lm, enable_cache=False), observe_native_join_inputs(join_inputs):
+            with native_query_settings(lm), observe_native_join_inputs(join_inputs):
                 report['source_started_ns'] = time.monotonic_ns()
                 result = execute_query()
                 report['sink_ready_ns'] = time.monotonic_ns()
@@ -113,6 +114,8 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         query.verify_source()
         if query.aggregate_task is not None:
             query.aggregate_task.validate_batch_sizes([len(batch['requests']) for batch in batches], result)
+        if query.visual_query:
+            query.visual_task.validate_batch_sizes([len(batch['requests']) for batch in batches], result)
         report['semantic'] = audit_query_batches(batches)
         report['semantic']['native_join_inputs'] = describe_native_join_inputs(join_inputs)
         report['semantic_audit_finished_ns'] = time.monotonic_ns()

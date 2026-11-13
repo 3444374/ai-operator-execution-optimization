@@ -199,8 +199,13 @@ Ray Data LLM processor 拥有图、chat template、tokenization、batching、模
 不调用 SemLoom Core、原自写记录链或 HTTP 替代模型。
 这条路径的身份是 **LOTUS＋Ray 原生执行**；它不是另一个独立 Ray 语义 baseline。
 同一个查询 owner 接受原算法实际产生的多批预测，不按题号或固定阶段数复制执行器。
+所查Ray2.56.1的[Processor](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/llm/_internal/batch/processor/base.py)
+每次Dataset调用建立新图；[原生actor pool](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/data/_internal/execution/operators/actor_pool_map_operator.py)
+属于物理算子。分组线程可同时建立多个processor，`concurrency`是每个processor的配置，
+不是查询总上限；共用runtime不保证跨批模型复用。完整sink、actor终止与GPU子进程退出须分别观测，
+多GPU还须核原生placement group释放，不能仅凭丢弃pool引用判定已清理。
 Movie Q9 quick TopK 和 MMQA Q2b Join→Extract 已通过下述完整原题软件差分；
-Aggregate 及其他尚未绑定的原题不从此取得资格。
+MMQA Q5层次聚合另按[对应tokenizer／context条件](#sembench-mmqa-aggregation)接入，实际模型资格分别核验。
 
 同一入口可显式运行MMQA原Q2a／Q2b／Q7：配置`scenario=mmqa`及所选题，
 在`ray_native.processor_options`中设置`prepare_image_stage=true`，绑定实际VLM／processor环境。
@@ -261,6 +266,11 @@ TopK另含`native_stats`。首算子保留旧记录ID，后续记录加`operator
 接收已有输入快照，拥有原函数、真实后续关系、输入复核和原评分，不拥有模型／预算／时钟。
 外部服务上的视觉／多模态查询和MMQA Q5共用[同一查询生命周期](../experiments/sembench_lotus_query.py)；
 Q5保留原层次聚合及tokenizer预检，不再独立复制查询worker。旧入口从[准确来源](../../../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)恢复。
+同一Ray完整查询入口也按既有Source的视觉能力绑定Animals、Cars、Medical和E-Commerce，
+使用该原题对象读取真实CSV／Parquet／图像，继续执行真实后续关系及原算子，不先造单算子结果。
+配置显式启用`ray_native.processor_options.prepare_image_stage=true`；Animals给`manifest`／
+`manifest_digest`且省略`--data-dir`，其他场景仍给原数据根目录。Extract自己的JSON请求保持，
+全局格式／logprobs等不覆盖原算子；未知总量保持`None`，有限`engine.max_model_calls`和永久预算约束实际调用。
 该服务查询的当前时钟为`lotus_service.source_to_sink.v1`：HTTP额度预扣、请求指纹、
 图像审计hash和事件编码／入队仍在区间内，后台写盘可能重叠；最终drain、后置审计、
 结果编码与评价在sink后。它不是统一v3口径；旧字段／数字保持原件，不事后扣除观测成本。
@@ -474,7 +484,7 @@ Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 �
 Q3／Q8先按原患者条件连接全部图像并Filter，之后才取原LIMIT 5／100；重复患者和图像不去重。
 Q9保留两表与患者的原连接，每个发生项把皮肤与X-ray两张图一起交原生Filter，预算按发生项N，
 不是按图片数2N。预检在原首算子边界取得实际行数和图像身份；真实CSV读取、图像编码和完整关系
-保留在已有v3源→sink区间内，服务启动由外部owner另记。
+保留在上述服务源→sink区间内，服务启动由外部owner另记。
 
 原MedicalEvaluator直接生成／读取金标和评分；Q3生成的Series金标通过原缓存读取接口恢复官方CSV形状，
 不重写评分。Q3／Q8的小金标无法满足原评价采样5／100时，保留原失败，不补标签或放宽限制。
@@ -522,7 +532,7 @@ Q10 的字符串 Extract 仍不属于该原版 TINYINT 接点，不借用工程�
 ### Cars 原图像查询
 
 同一 [Cars 任务绑定](text/sembench_cars.py)运行原 Q3／Q8，复用[原生视觉服务](../experiments/sembench_lotus_query.py)
-的 LM、预算、观测、完整 sink 和 v3 时钟。设置 `scenario=cars`、所选题和可选 `scale_factor`（默认157376），
+的 LM、预算、观测和完整 sink。设置 `scenario=cars`、所选题和可选 `scale_factor`（默认157376），
 `--data-dir` 仍指向作者场景根。原函数读取 `data/sf_N/` 的车辆及 `image_car_data_N.csv`，
 按原 `image_path` 读取图像；迁移数据路径须在正式运行前固定，执行器不改写这些路径。
 评价另读 `data/full_data/car_data_full.csv` 和 `image_data_full.csv`，不要求文本／音频表。
@@ -577,7 +587,7 @@ Q2／Q13 的图像 Filter、Q4 的 Extract、Q6 的 Map、Q8 的描述／图像 
 不模拟中间结果。首个 Join 的下界为真实左右规模之积，其他首算子为其输入规模。
 Q12 首阶段 N 项，后续只处理实际保留的 M 项；预算按最多2N预留，实际收费N+M，
 不把上界当成真实调用量。运行时重新读取两份 Parquet，真实图像由原 ImageArray 读取／编码；
-源码绑定及文件／像素身份校验位于 v3 查询区间外。原题在空结果或缺失 `generated_json` 时的 KeyError
+源码绑定及文件／像素身份校验位于上述服务查询区间外。原题在空结果或缺失 `generated_json` 时的 KeyError
 保留，不补造输出列或金标。Q2 的 styles 标签文件仅供评价，不加入查询读取或模型消息。
 Q4 重复 ID 导致的原 adjusted Rand index 长度错误同样保留，不去重改写原结果来修评分。
 临时数据软件检查与原始数据／真实 VLM 资格分列。
@@ -604,7 +614,7 @@ Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求�
 预检使用本地 tokenizer JSON 和原 LM 计数，记录声明的服务上下文、完整首层消息和计数来源，零模型／零额度消耗；
 本地 tokenizer 身份不代替服务端验证。运行使用既有持久预算逐 POST 消费，保留原分层归并、失败尝试和原 JSON 评价。
 该路径计时基于已就绪的外部服务，模型启动／退出另由宿主核查，不能与普通文本冷启动成绩混算。
-`sembench.source_to_sink.v3` 的 `source_to_sink_seconds` 从预检、LM／tokenizer 和原函数绑定完成后、
+上述服务`source_to_sink_seconds` 从预检、LM／tokenizer 和原函数绑定完成后、
 实际原查询读取前到完整聚合结果返回，排除重复源码 Git 校验／模块加载、observer 收尾、评价、
 结果编码和持久化；旧 `query_seconds` 保持原边界。原 sf25 保存输入的软件 SDK 回放不证明目标 tokenizer
 的首层划分，真实调用上限仍需上述目标预检，不能直接使用软件 fixture 的单请求数。
@@ -814,7 +824,8 @@ prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常�
 
 各路径同时保留worker进入、预检结束和sink的实测时间戳。部分LOTUS／旧Ray Animals／Daft／IMLane Filter／Kalypso路径
 仍按原来源保留`sembench.source_to_sink.v3`字段；它只说明该版本的外层事件，不证明内部审计I/O全已排除。
-完整LOTUS＋Ray当前使用独立`lotus_ray.source_to_sink.v1`，原生IMLane Q3使用独立v2并各自披露残余；
+完整LOTUS＋Ray当前使用独立`lotus_ray.source_to_sink.v1`，LOTUS服务使用独立`lotus_service.source_to_sink.v1`，
+原生IMLane Q3使用独立v2并各自披露残余；
 字段或版本相同均不自动授予跨系统可比性。
 共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，
 sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 视觉和 MMQA 聚合也在
