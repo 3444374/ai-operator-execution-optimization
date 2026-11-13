@@ -220,6 +220,11 @@ Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不�
 
 [独立任务层](text/sembench_native_text.py)定义Movie Filter／Map的源、条件、最终关系和原官方评分，
 同类算子共用项目JSON提示／解析，不导入LOTUS SDK、提示构造器或解析代码。
+同一配置工厂的`scenario=mmqa`接[文本Extract任务](text/sembench_native_mmqa.py)Q1/Q4；
+缺省scenario仍为movie，不另建系统runner。Q1先抽取全部文本行的director，沿原left join及Role筛选返回
+带原索引的Series；Q4沿原片名集合筛选、genres逗号展开及groupby生成完整genre／movies_in_genre表。
+仅text进入项目JSON消息，重复发生项分别推理，模型输出JSON null显式物化为字符串`None`；
+空输入缺列等原关系错误保持。Series完整sink不为写盘转形，原评分桥只在后置评价转成原CSV往返的列形状。
 Q1/Q2在全部合格源行完成Filter后取原顺序前五项；Q3为COUNT，Q4为原分母上的比例。
 Q5–Q7共用exact JSON pair任务：先完成含self／重复ID的N²有向配对，按True序列恢复Join索引后再去等ID，
 Q5/Q6最后head10，Q7完整；方向、重复与索引空洞保留，原Q5五列／Q6Q7零列空结果不统一改写。
@@ -231,7 +236,7 @@ Q10复用同一评分Map处理全部物理源行，沿原pandas分组、Python�
 
 每个系统一个runner：[Ray](../experiments/sembench_native_ray.py)使用公开LLM processor／原生AsyncLLM，
 [Daft](../experiments/sembench_native_daft.py)使用内置`vllm-prefix-caching`图和既有隔离worker／ACK关闭。
-两者只共享任务工厂、评分和观测工具；新增Map无需新增执行器，系统仍拥有批处理、调度及模型执行，没有逐题runner。
+两者只共享任务工厂、评分和观测工具；新增Map／Extract无需新增执行器，系统仍拥有批处理、调度及模型执行，没有逐题runner。
 所核固定版本公开AI接点提供生成／结构输出，未提供对应作者级语义Join／Aggregate／TopK算法；
 这里的pair predicate明确为项目exact工程方法，不把普通join/groupby/sort加prompt称作作者原算法。
 配置与CPU检查／显式运行命令见[脚本入口](../../scripts/README.md#independent-native-text-runners)。
@@ -243,7 +248,9 @@ sink后评价只使用快照及其字节摘要，不让gold进入模型消息或
 原生冷启动／预测、严格解析及完整内存sink；各自同步观测／packet I/O仍披露，最终关闭、源审计、
 原评分及结果持久化在后。失败保留已完成结果及原异常，不留成功质量标签。
 [独立软件验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)只授予其零模型范围；
-后续[7fb4 Q8](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q8-7fb4-model)已完成两系统原生图、120次真实模型及独立物理清理，其他原题／后续候选、warm与正式性能仍分别待验。
+后续[7fb4 Q8](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q8-7fb4-model)已完成两系统120次真实模型，
+[f83b Q10](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q10-f83b-model)完成各2000次及完整105组；两项均核独立物理清理。
+其他原题／后续候选、same-owner warm与正式性能仍分别待验。
 [后续Map组合验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-map-runners)保留具体提示身份、原后处理、完整空表及失败来源，不与前批计数累加。
 [Q10分组与gold边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-q10-runners)复用同一原生图，不增加题目专用runner。
 [Join与计时组合](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-join-resident-accounting)记录完整配对、提前预算检查和resident统计后移；只授予其实际软件范围。

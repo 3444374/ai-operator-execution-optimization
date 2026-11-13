@@ -1350,6 +1350,11 @@ Ray的`native_ray.source_to_sink.v1`为`86.528661014`秒，Daft的`native_daft.s
 Ray保留预算／同步observer写盘，Daft保留packet／digest／IPC／原生证据I/O；
 sink后关闭分别`1.442937471`／`3.4895760491490364`秒，监督总时长分别`92.13058116380125`／`85.29243813920766`秒，
 组件不相减制造暖成绩。当前每查询fresh模型owner，同owner暖轮入口尚未接，复用tokenizer或Python实例不能替代。
+固定SDK生命周期核查：[Ray 2.56.1](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/execution/operators/actor_pool_map_operator.py)
+为新Dataset执行建actor pool并在结束释放；[Daft 0.7.21](https://github.com/Eventual-Inc/Daft/blob/v0.7.21/src/daft-local-execution/src/streaming_sink/vllm.rs)
+的本地VLLMSink新状态创建LocalVLLMExecutor，Session只保存provider配置，当前local路径并非Ray actor。
+现profile未找到公开模型owner移交接口；重复collect缓存结果不算鲜读暖查询。
+公开Ray Serve deployment或Daft附着OpenAI兼容服务可另立持续模型profile，但会改变执行拓扑，须重新接线与验证，不能继承本轮成绩。
 
 Ray 2.56.1／vLLM 0.22.0与Daft 0.7.21／vLLM 0.25.1的默认容量差异保留；
 模型绑定Qwen2.5-7B-Instruct BF16、完整权重manifest与`a09a35458c702b33eeacc393d103063234e8bc28`来源，
@@ -1365,6 +1370,36 @@ kernel／纯GPU成本及全actor线程实况未知；此处为统一JSON工程�
 独立核验3407个payload、1158个f83b源码Git对象、4个c814参考、bundle及15个packet成员，
 恢复字节一致；核验记录SHA-256为`989b03b7289f4f7333ba43f2360c8999d8ba16071a10e9913a97c073db5f26dd`。
 原归档身份见下表，后续代码组合／其他题／暖轮／公平性能仍须自身验证。
+
+<a id="native-mmqa-text-extract"></a>
+## 独立原生文本 Extract 复用系统 runner
+
+共同配置工厂默认movie，新增mmqa后按具体任务构造器接收data_dir，Movie的reviews_csv／movies_csv／ranking
+继续原合同，不为每题复制执行器。独立`MMQATextExtractTask`Q1/Q4只发送原text列与本项目JSON指令；
+单个director／genres字段接受str或null，null明确物化为字符串`None`。提示、严格JSON解析和物化政策是
+工程对照，不导入或复制LOTUS SDK／formatter／parser，不声称作者Extract算法。
+
+Q1先对ben_piazza_text_data全部行Extract，再与ben_piazza表left merge、筛Role=Bob Whitewood，
+保留原director Series的name／index／dtype及重复、未匹配NaN。Ray改用任务编码合同，
+不在查询内转DataFrame；报告保存Series的kind／name／index／data／dtype。
+后置原评价复用既有`sembench_mmqa.evaluate_original`桥，在sink外to_frame，保持官方写CSV／读回的列形状。
+Q4保留原24片名集合谓词和重复发生项，完整genres逗号切分／strip／展开／默认groupby与title连接，
+返回原genre／movies_in_genre列，24是题目条件而非调用数上限。
+缺数据／列、无效JSON或发生项不完整均失败；原Q1空text缺director、Q4空frontier缺genre的KeyError及
+原NaN评价失败保持，不制造成功空表。gold来自固定checkout的受核查询JSON，模型消息不含标签。
+
+完整鲜读源、Extract与必要merge／筛选／展开／groupby保留在原source→sink，
+源身份审计、原评分、结果编码写盘与最终关闭位置沿各系统既有合同，不重估／扣减历史时间。
+Daft编码失败继续保存失败报告，有主异常则保留；已完成的内存Series可从异常query_result定位，
+不以兜底转型覆盖原结果。Movie既有编码和默认配置兼容，没有新调度、缓存或重试机制。
+
+任务层新增10项与工厂1项、两个runner的最小5项与fresh隔离2项分别通过，分任务计数不累加。
+软件参考直接执行固定c814完整原函数与真实LOTUS SDK的受控答复，五场景覆盖Q1重复／null／未匹配、
+空table／空text及Q4全部原24片名／重复／null与空frontier；原结果或异常一致。
+原评分的重复fixture可得到F1>1，按原实现保留，不作为模型质量成绩。
+主线程在608e20干净导出叠加八个源／测试文件，四个完整模块90项全部通过、0skip／模型／GPU，
+包括原Movie回归与已有runner测试，不与前74或分任务计数累加。结果SHA-256为`6170c38bf9fd7df4290c77e3bd994185ad184f23a922535e2309a6cf5ad3f9f9`。
+真实MMQA Extract模型／质量／物理清理仍待验证，不借用旧LOTUS或Movie模型资格。
 
 ## 原件恢复与独立核验
 

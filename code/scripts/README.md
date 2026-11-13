@@ -19,7 +19,7 @@
 | 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 文件输入与公共 CLIP 实现 |
 | CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[软件检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
 | LOTUS＋Daft完整查询 | [worker／监督入口](../src/experiments/native_daft_query.py) | 原题／LOTUS语义；本地字符串provider或外部服务图像profile；[配置与调用](#native-daft-prepared-worker) |
-| 独立原生Ray／Daft文本任务 | [Ray](../src/experiments/sembench_native_ray.py)、[Daft](../src/experiments/sembench_native_daft.py) | Movie Filter／Map／Q5–Q7 exact pair Join统一语义工程对照，原评分，无LOTUS提示／解析；[调用](#independent-native-text-runners) |
+| 独立原生Ray／Daft文本任务 | [Ray](../src/experiments/sembench_native_ray.py)、[Daft](../src/experiments/sembench_native_daft.py) | Movie Filter／Map／exact pair Join和MMQA Q1/Q4文本Extract，统一语义工程对照、原评分、无LOTUS提示／解析；[调用](#independent-native-text-runners) |
 | DuckDB＋作者IMLane Q3 | [构建／接线](../integrations/imlane_duckdb/README.md)、[软件CPU](../src/experiments/native_imlane_query.py)、[模型worker](../src/experiments/native_imlane_model_query.py) | 作者SQL／Arrow；模型worker拥有独立baseline服务，software CLI不会启动模型 |
 | 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) | [格式／NA 说明](analysis/OFFLINE_RESULTS.md) |
 | 准确历史树恢复 | [materialize_native_baseline.py](experiments/materialize_native_baseline.py) | 只还原与核验，不运行模型 |
@@ -75,6 +75,14 @@ Q10声明`query="Q10"`、`movies_csv="<FROZEN_MOVIES_CSV>"`并省略ranking；�
 Q5–Q7沿同一配置选择题号：完整N²有向配对含self／重复reviewId，随后才按原ID不等过滤，Q5/Q6最后取10项、Q7保留全部。
 这是项目exact JSON pair算法，原生API拥有推理／调度，不称作者高层Join方法。check及run均用轻量`model_request_count(source)`
 在构造N²消息前检查实际有限额度；不足不分配配对消息、不调用模型，不按N(N−1)、唯一文本或LIMIT估预算。
+
+同一模板可改为`scenario="mmqa"`、`query="Q1"`或`"Q4"`、`data_dir="<MMQA_TEXT_DIRECTORY>"`，
+并移除Movie的reviews_csv／movies_csv／ranking字段；未写scenario的现有Movie配置保持兼容。
+Q1读取ben_piazza.csv与ben_piazza_text_data.csv，模型处理全部文本行，left join后按原Role筛选，
+完整结果是保留原索引的director Series；Q4读取lizzy_caplan_text_data.csv，按原片名集合筛选并完整展开／分组genres。
+模型只收到text，返回单字段director或genres的JSON，str／null按任务合同物化；不把Title／Role或gold放入模型。
+两题复用原MMQA评分桥，Series仅在sink外评价转换为原CSV往返列形状；报告保留Series的name／index／data／dtype。
+实际请求数由鲜读源决定，例子预算不构成行数上限；空关系的原错误保留，不将其伪报成功空表。
 
 ```bash
 PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_ray check --config "$RAY_CONFIG"

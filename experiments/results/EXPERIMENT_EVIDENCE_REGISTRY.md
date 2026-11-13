@@ -113,6 +113,11 @@ Daft未保存完整token ID数组，不能由原文一致推其token IDs相同�
 3407份payload、1158源码blob、4个官方参考与永久预算／独立清理核验，未重跑模型或评分；首次辅助失败保留。
 仅具名JSON工程对照的单冷完整查询，内部观测与模型版本／容量有差异，同owner暖轮未接，不排名或转授当前新候选。
 
+[独立MMQA文本Extract](diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-text-extract)
+Q1/Q4沿同一任务工厂及Ray／Daft runner，保留原Series／分组、空关系错误及后置官方评分桥。
+五场景完整原函数／真实SDK软件差分与fresh禁LOTUS证明通过，提示／JSON物化仍为独立工程语义。
+干净组合四模块90项全部通过、0skip／模型／GPU，含旧回归，不累加分任务或前74项；真实目标资格pending。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。
