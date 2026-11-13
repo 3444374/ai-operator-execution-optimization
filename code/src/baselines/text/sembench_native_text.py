@@ -136,7 +136,10 @@ class MovieFilterTask:
             return pd.DataFrame({'positivity_ratio': [len(kept)/len(source.positions) if source.positions else 0.0]})
         return source.frame.iloc[kept[:5]][['reviewId']].reset_index(drop=True)
 
-    def evaluate(self, source, frame, *, checkout):
+    def prepare_evaluation(self):
+        return None
+
+    def evaluate(self, source, frame, *, checkout, evaluation=None):
         from .sembench_movie import evaluate_original
 
         return evaluate_original(checkout, int(self.query), frame, source.frame)
@@ -196,29 +199,41 @@ def _map_value(text, key):
 
 
 @dataclass(frozen=True)
-class MovieMapTask:
-    """Independent JSON Map bindings with the original Q8/Q9 relation sinks.
+class MovieGoldSource:
+    """The external Movie gold bytes frozen before a query starts."""
+    raw_bytes: bytes
+    frame: object
 
-    Q9's JSON envelope is this project's semantic contract. Once extracted,
-    its score follows the original query's numeric conversion, inclusive 1–5
-    range and default 3.0. Invalid JSON structure fails the query; it does not
-    silently become a neutral prediction. Q9 requires the explicit Map method.
+
+@dataclass(frozen=True)
+class MovieMapTask:
+    """Independent JSON Map bindings with the original Q8/Q9/Q10 sinks.
+
+    The scoring JSON envelope is this project's semantic contract. Extracted
+    scores follow the original numeric conversion, inclusive 1–5 range and
+    default 3.0. Invalid JSON structure fails instead of becoming a neutral
+    prediction. Q9 requires explicit Map; Q10 uses pre-query frozen Movie gold.
     """
     reviews_csv: object
     query: object = 'Q8'
     execution_id: str = 'native-movie-map'
     ranking: str | None = None
+    movies_csv: object = None
 
     def __post_init__(self):
         query = str(self.query).lower().removeprefix('q')
-        if query not in ('8', '9'):
-            raise ValueError('the original Movie text Map bindings are Q8 and Q9-map')
-        if (query == '8' and self.ranking is not None) or (query == '9' and self.ranking != 'map'):
-            raise ValueError('Movie Q9 requires explicit ranking=map; Q8 accepts no ranking')
+        if query not in ('8', '9', '10'):
+            raise ValueError('the original Movie text Map bindings are Q8, Q9-map and Q10')
+        if (query != '9' and self.ranking is not None) or (query == '9' and self.ranking != 'map'):
+            raise ValueError('Movie Q9 requires explicit ranking=map; other Map tasks accept no ranking')
+        if (query == '10') != (self.movies_csv is not None):
+            raise ValueError('only Movie Q10 requires explicit Movies.csv evaluation gold')
         if type(self.execution_id) is not str or not self.execution_id.strip():
             raise ValueError('each execution requires a nonempty occurrence identity')
         object.__setattr__(self, 'query', query)
         object.__setattr__(self, 'reviews_csv', Path(self.reviews_csv))
+        if self.movies_csv is not None:
+            object.__setattr__(self, 'movies_csv', Path(self.movies_csv))
 
     @property
     def response_format(self):
@@ -226,17 +241,23 @@ class MovieMapTask:
 
     @property
     def movie_id(self):
-        return 'taken_3' if self.query == '8' else 'ant_man_and_the_wasp_quantumania'
+        return ('taken_3' if self.query == '8' else
+                'ant_man_and_the_wasp_quantumania' if self.query == '9' else None)
 
     def read_source(self):
         import pandas as pd
 
         raw = self.reviews_csv.read_bytes()
         frame = pd.read_csv(io.BytesIO(raw))
-        label = 'scoreSentiment' if self.query == '8' else 'originalScore'
-        if not {'reviewId', 'id', 'reviewText', label} <= set(frame.columns):
+        required = {'id', 'reviewText'}
+        if self.query != '10':
+            required |= {'reviewId', 'scoreSentiment' if self.query == '8' else 'originalScore'}
+        if not required <= set(frame.columns):
+            if self.query == '10':
+                raise ValueError('Movie Q10 requires Reviews.csv id/reviewText execution columns')
             raise ValueError('Movie Map requires the original labeled Reviews.csv columns')
-        positions = tuple(position for position, movie_id in enumerate(frame['id']) if movie_id == self.movie_id)
+        positions = tuple(range(len(frame))) if self.query == '10' else tuple(
+            position for position, movie_id in enumerate(frame['id']) if movie_id == self.movie_id)
         return MovieFilterSource(raw, frame, positions)
 
     def _call_ids(self, source):
@@ -275,6 +296,8 @@ class MovieMapTask:
                 .reindex(['NEGATIVE', 'POSITIVE'], fill_value=0)
                 .rename_axis('scoreSentiment').reset_index(name='count'))
         if not ordered:
+            if self.query == '10':
+                return pd.DataFrame(columns=['movieId', 'movieScore'])
             return pd.DataFrame(columns=['reviewId', 'reviewScore'])
         scores = []
         for value in ordered:
@@ -285,12 +308,37 @@ class MovieMapTask:
                 scores.append(numeric if 1 <= numeric <= 5 else 3.0)
             except (TypeError, ValueError):
                 scores.append(3.0)
+        if self.query == '10':
+            result = []
+            for movie_id, group in source.frame.groupby('id'):
+                group_scores = [scores[position] for position in group.index]
+                result.append(dict(movieId=movie_id, movieScore=round(sum(group_scores)/len(group_scores), 2)))
+            return pd.DataFrame(result)
         return pd.DataFrame(dict(reviewId=list(source.frame.iloc[list(source.positions)]['reviewId']),
                                  reviewScore=scores))
 
-    def evaluate(self, source, frame, *, checkout):
+    def prepare_evaluation(self):
+        if self.query != '10':
+            return None
+        import pandas as pd
+
+        raw = self.movies_csv.read_bytes()
+        movies = pd.read_csv(io.BytesIO(raw))
+        if not {'id', 'audienceScore'} <= set(movies.columns):
+            raise ValueError('Movie Q10 requires Movies.csv id/audienceScore evaluation columns')
+        return MovieGoldSource(raw, movies)
+
+    def evaluate(self, source, frame, *, checkout, evaluation=None):
         from .sembench_movie import evaluate_original
 
+        if self.query == '10':
+            if evaluation is None:
+                raise ValueError('Movie Q10 requires prepare_evaluation before query execution')
+            quality = evaluate_original(checkout, 10, frame, source.frame, labeled_movies=evaluation.frame)
+            quality['gold_source'] = dict(source='Movies.csv', scope='frozen before query; post-query evaluation only',
+                sha256=hashlib.sha256(evaluation.raw_bytes).hexdigest(), bytes=len(evaluation.raw_bytes),
+                rows=len(evaluation.frame))
+            return quality
         return evaluate_original(checkout, int(self.query), frame, source.frame)
 
     @staticmethod
@@ -302,7 +350,7 @@ class MovieMapTask:
             raise ValueError('Movie Map input changed after its execution snapshot')
 
     def describe(self, source):
-        return dict(schema='semloom.native_movie_map_task.v1', query='Q'+self.query, ranking=self.ranking,
+        description = dict(schema='semloom.native_movie_map_task.v1', query='Q'+self.query, ranking=self.ranking,
             comparison_identity=COMPARISON_IDENTITY,
             prompt_profile=('semloom.native_text_map.sentiment_json.v1' if self.query == '8' else
                             'semloom.native_text_map.score_json.v1'),
@@ -315,22 +363,32 @@ class MovieMapTask:
             source=dict(sha256=hashlib.sha256(source.raw_bytes).hexdigest(), bytes=len(source.raw_bytes),
                 rows=len(source.frame), eligible_rows=len(source.positions)),
             logical_model_requests=len(source.positions), expected_model_calls=len(source.positions),
-            predicate=dict(column='id', operator='eq', value=self.movie_id),
+            predicate=None if self.query == '10' else dict(column='id', operator='eq', value=self.movie_id),
             model_columns=['reviewText'], label_scope='official post-query evaluation only',
             empty_text_policy='missing CSV reviewText becomes empty text; explicit JSON Map contract',
             sink=('complete scoreSentiment/count relation' if self.query == '8' else
                   'complete source-order reviewId/reviewScore relation'),
             sembench_commit=SEMBENCH_COMMIT, native_scheduling_owner='selected framework',
             author_original_semantic_method=False)
+        if self.query == '10':
+            description['relation_postprocessing'] = (
+                'float(textual score); inclusive 1–5 including decimals; invalid score defaults to 3.0; '
+                'default pandas groupby(id), Python sum/len and round(mean, 2), as in original Q10')
+            description['sink'] = 'complete movieId/movieScore relation; original empty/groupby behavior'
+            description['gold_scope'] = dict(source='Movies.csv', columns=['id', 'audienceScore'],
+                preparation='freeze and validate before source-to-sink', usage='post-query official evaluation only')
+        return description
 
 
-def movie_text_task(reviews_csv, query='Q3', execution_id='native-movie-filter', *, ranking=None):
+def movie_text_task(reviews_csv, query='Q3', execution_id='native-movie-filter', *, ranking=None, movies_csv=None):
     """Bind an implemented native text family without selecting a scheduler."""
     query = str(query).lower().removeprefix('q')
+    if query != '10' and movies_csv is not None:
+        raise ValueError('Movies.csv evaluation gold applies only to Movie Q10')
     if query in ('1', '2', '3', '4'):
         if ranking is not None:
             raise ValueError('Movie Filter accepts no ranking method')
         return MovieFilterTask(reviews_csv, query, execution_id)
-    if query in ('8', '9'):
-        return MovieMapTask(reviews_csv, query, execution_id, ranking=ranking)
-    raise ValueError('implemented Movie text bindings are Q1–Q4, Q8 and explicit Q9-map')
+    if query in ('8', '9', '10'):
+        return MovieMapTask(reviews_csv, query, execution_id, ranking=ranking, movies_csv=movies_csv)
+    raise ValueError('implemented Movie text bindings are Q1–Q4, Q8, explicit Q9-map and Q10')

@@ -1205,6 +1205,27 @@ float转换、合法1–5小数与非数／越界默认3.0的普通后处理。�
 后者只改fixture的浮点比较，原评分不变。分任务4项／22项与本组合重叠，不再相加。
 没有运行实际Ray／Daft模型图或新模型；Map目标质量、物理清理、完整Q9输入与公平性能均pending。
 
+<a id="independent-native-q10-runners"></a>
+## 独立原生评分 Map 的完整分组结果
+
+基于`7fb4adca49c0d6fcdfabf6787f31c1eef4aa9382`，同一`MovieMapTask`增加原Movie Q10：
+全部Reviews物理行逐条评分，保留原1–5合法小数／默认3、pandas默认groupby(id)、Python sum/len及round(mean,2)。
+重复reviewId不去重，缺id的行仍完成Map后才按原groupby丢出分组；空源保留object两列，
+非空全空id保留原零列结果，不为统一schema修饰原行为。两系统沿原runner／原生图／预算／ACK，未增加Q10执行器。
+
+配置显式给`movies_csv`，只供原Q10金标。两类task统一增加`prepare_evaluation()`：旧题无额外gold，
+Q10在模型启动、预算claim及source计时前读取并校验Movies.csv的id/audienceScore，冻结原字节与DataFrame。
+sink后原评价只使用这份快照，回执附gold字节SHA；路径后来变化不改变本轮gold，不二次读盘或静默回退。
+构造不读输入，真实Reviews读取、全部评分、分组与完整内存sink仍在查询内；gold不进入消息或查询计时。
+缺gold配置／文件／列在模型前失败，check也检查gold但不占预算／启动worker，未新增预检或缓存框架。
+
+干净7fb4导出只叠六个源／测试文件，三个完整受影响模块56个不同方法全部通过、0skip／模型／GPU。
+结果SHA-256为`5edd82baedd7ef7f9b9b79148ce2fa45bcd8e4a7c2e507c368d573b5e0938316`。
+包括既有45项与新增Q10：多电影／乱序／重复发生项、null id、合法小数／默认3、两位舍入、原空表、
+真实官方gold SQL／评分、gold冻结后路径变化、fresh进程禁止LOTUS导入及两系统完整sink／失败留证。
+分任务29项／4项均包含在组合中，不累加。真实框架整图、完整Q10模型、质量／物理退出与公平性能pending，
+不借用LOTUS＋后端的旧Q10成绩。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

@@ -222,6 +222,7 @@ Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不�
 同类算子共用项目JSON提示／解析，不导入LOTUS SDK、提示构造器或解析代码。
 Q1/Q2在全部合格源行完成Filter后取原顺序前五项；Q3为COUNT，Q4为原分母上的比例。
 Q8保留taken_3分类计数、补零及排序；Q9须显式选择Map，保留完整评分关系、合法小数及原数值默认3的后处理。
+Q10复用同一评分Map处理全部物理源行，沿原pandas分组、Python平均与两位舍入；空源及全空id的原不同结果形态保留。
 无效JSON结构仍按项目语义合同失败；Q8/Q9各有独立提示身份，均不冒称原LOTUS formatter／parser。
 重复reviewId按发生位置分别请求，不用ID去重或LIMIT提前减少语义工作。
 这是“统一语义工程对照”，不是作者原版或官方SemBench系统runner。
@@ -231,12 +232,15 @@ Q8保留taken_3分类计数、补零及排序；Q9须显式选择Map，保留完
 两者只共享任务工厂、评分和观测工具；新增Map无需新增执行器，系统仍拥有批处理、调度及模型执行，没有逐题runner。
 配置与CPU检查／显式运行命令见[脚本入口](../../scripts/README.md#independent-native-text-runners)。
 生成参数和预算必须显式声明，JSON约束来自本工程对照合同，不能套给LOTUS原Filter。
+Q10另显式给Movies.csv供原评分；两系统调用同一任务准备接口，在source计时和模型启动前冻结gold，
+sink后评价只使用快照及其字节摘要，不让gold进入模型消息或真实查询输入。缺数据在模型前失败，无额外gold缓存或重试层。
 
 独立时钟`native_ray.source_to_sink.v1`／`native_daft.source_to_sink.v1`包含fresh CSV、项目消息、
 原生冷启动／预测、严格解析及完整内存sink；各自同步观测／packet I/O仍披露，最终关闭、源审计、
 原评分及结果持久化在后。失败保留已完成结果及原异常，不留成功质量标签。
 [独立软件验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)已通过，模型调用为0；原生框架整图、真实模型、质量、物理退出及性能仍待目标验收。
 [后续Map组合验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-map-runners)保留具体提示身份、原后处理、完整空表及失败来源，不与前批计数累加。
+[Q10分组与gold边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-q10-runners)复用同一原生图，不增加题目专用runner。
 现有Ray外部HTTP Q3继续保留其外部模型所有权，身份更正为LOTUS-compatible工程路径，不能重复统计为独立原生语义baseline。
 
 <a id="ray-native-prepared-sembench"></a>

@@ -436,5 +436,173 @@ class NativeMovieMapTests(unittest.TestCase):
         self.assertIn('LOTUS imports and network denied', result.stdout)
 
 
+class NativeMovieQ10Tests(unittest.TestCase):
+    def inputs(self, rows=None):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        reviews, movies = Path(directory.name)/'Reviews.csv', Path(directory.name)/'Movies.csv'
+        self.write_csv(reviews, ['id', 'reviewId', 'reviewText'], rows if rows is not None else [
+            ('z-movie', 'duplicate', 'z1'), ('a-movie', 'duplicate', 'a1'),
+            ('z-movie', 'duplicate', 'z2'), ('z-movie', 'duplicate', 'z3'),
+            (None, 'duplicate', 'null-id'), ('middle', 'duplicate', 'm1'), ('middle', 'duplicate', 'm2'),
+        ])
+        self.write_csv(movies, ['id', 'audienceScore'], [
+            ('a-movie', 10), ('middle', 90), ('z-movie', 50), ('no-reviews', 100),
+        ])
+        return reviews, movies
+
+    @staticmethod
+    def write_csv(path, fields, rows):
+        stream = io.StringIO(newline='')
+        writer = csv.writer(stream)
+        writer.writerow(fields)
+        writer.writerows(rows)
+        path.write_bytes(stream.getvalue().encode())
+
+    @staticmethod
+    def replies(task, source, values):
+        return [dict(call_id=request['call_id'], generated_text=json.dumps(dict(score=value)))
+                for request, value in zip(task.requests(source), values, strict=True)]
+
+    def official_checkout(self):
+        checkout = os.environ.get('SEMLOOM_NATIVE_TEST_CHECKOUT')
+        if not checkout:
+            self.skipTest('bind the fixed public SemBench checkout for original evaluator checks')
+        return checkout
+
+    def test_q10_constructs_without_io_and_owns_only_its_gold_configuration(self):
+        reviews, movies = self.inputs()
+        with patch.object(Path, 'read_bytes', side_effect=AssertionError('constructor I/O')):
+            task = movie_text_task(reviews, 'Q10', 'q10', movies_csv=movies)
+            self.assertEqual(task.movies_csv, movies)
+            for query in ['Q1', 'Q2', 'Q3', 'Q4', 'Q8', 'Q9']:
+                with self.subTest(query=query), self.assertRaises(ValueError):
+                    movie_text_task(reviews, query, ranking='map' if query == 'Q9' else None, movies_csv=movies)
+            with self.assertRaises(ValueError):
+                movie_text_task(reviews, 'Q10')
+            with self.assertRaises(ValueError):
+                movie_text_task(reviews, 'Q10', ranking='map', movies_csv=movies)
+
+    def test_q10_maps_every_physical_occurrence_then_original_group_sum_and_round(self):
+        import pandas as pd
+
+        reviews, movies = self.inputs()
+        task = movie_text_task(reviews, 'Q10', 'all-rows', movies_csv=movies)
+        source = task.read_source()
+        self.assertEqual(source.positions, tuple(range(7)))
+        predictions = self.replies(task, source, [5, 2.675, 'bad', 0, 1, 4.25, 4.75])
+        self.assertEqual(len({row['call_id'] for row in predictions}), 7)
+        result = task.finish(source, reversed(predictions))
+        expected = pd.DataFrame(dict(movieId=['a-movie', 'middle', 'z-movie'], movieScore=[2.67, 4.5, 3.67]))
+        pd.testing.assert_frame_equal(result, expected)
+        with self.assertRaisesRegex(ValueError, 'every eligible occurrence'):
+            task.finish(source, predictions[:4]+predictions[5:])
+
+    def test_q10_only_requires_execution_columns_and_reuses_score_messages(self):
+        reviews, movies = self.inputs([('a', 'duplicate', 'same\n«好»')])
+        self.write_csv(reviews, ['id', 'reviewText'], [('a', 'same\n«好»')])
+        task = movie_text_task(reviews, 'Q10', movies_csv=movies)
+        source = task.read_source()
+        messages = task.requests(source)[0]['messages']
+        self.assertEqual(json.loads(messages[1]['content']), {'text': 'same\n«好»'})
+        self.assertNotIn('audienceScore', json.dumps(messages))
+        self.assertNotIn('originalScore', json.dumps(messages))
+        self.assertNotIn('reviewId', json.dumps(messages))
+        q9_source = reviews.with_name('Q9Reviews.csv')
+        self.write_csv(q9_source, ['id', 'reviewId', 'reviewText', 'originalScore'],
+            [('ant_man_and_the_wasp_quantumania', 'hidden', 'same\n«好»', '1/5')])
+        q9 = movie_text_task(q9_source, 'Q9', ranking='map')
+        self.assertEqual(messages, q9.requests(q9.read_source())[0]['messages'])
+
+    def test_q10_empty_source_and_all_null_groups_preserve_distinct_original_schemas(self):
+        import pandas as pd
+
+        for rows in [[], [(None, 'dup', 'one'), (None, 'dup', 'two')]]:
+            reviews, movies = self.inputs(rows)
+            task = movie_text_task(reviews, 'Q10', movies_csv=movies)
+            source = task.read_source()
+            result = task.finish(source, self.replies(task, source, [4]*len(rows)))
+            expected = pd.DataFrame() if rows else pd.DataFrame(columns=['movieId', 'movieScore'])
+            pd.testing.assert_frame_equal(result, expected)
+            self.assertEqual(len(task.requests(source)), len(rows))
+
+    def test_prepare_evaluation_detects_missing_or_invalid_gold_before_source_read(self):
+        reviews, movies = self.inputs()
+        task = movie_text_task(reviews, 'Q10', movies_csv=movies)
+        movies.unlink()
+        with patch.object(task.__class__, 'read_source', side_effect=AssertionError('source must not start')):
+            with self.assertRaises(FileNotFoundError):
+                task.prepare_evaluation()
+            self.write_csv(movies, ['id', 'notAudienceScore'], [('a', 10)])
+            with self.assertRaisesRegex(ValueError, 'id/audienceScore'):
+                task.prepare_evaluation()
+        for query in ['Q1', 'Q2', 'Q3', 'Q4', 'Q8', 'Q9']:
+            old = movie_text_task(reviews, query, ranking='map' if query == 'Q9' else None)
+            with patch.object(Path, 'read_bytes', side_effect=AssertionError('old task preparation I/O')):
+                self.assertIsNone(old.prepare_evaluation())
+
+    def test_q10_frozen_gold_drives_official_score_without_any_later_gold_io(self):
+        from src.baselines.text.sembench_movie import evaluate_original
+
+        reviews, movies = self.inputs()
+        task = movie_text_task(reviews, 'Q10', movies_csv=movies)
+        evaluation = task.prepare_evaluation()
+        gold_bytes = movies.read_bytes()
+        movies.write_bytes(b'changed after preparation\n')
+        read_bytes = Path.read_bytes
+        def read_without_gold(path):
+            if path == movies:
+                raise AssertionError('prepared gold was read again')
+            return read_bytes(path)
+        with patch.object(Path, 'read_bytes', read_without_gold):
+            source = task.read_source()
+            result = task.finish(source, self.replies(task, source, [5, 2.675, 'bad', 0, 1, 4.25, 4.75]))
+            quality = task.evaluate(source, result, checkout=self.official_checkout(), evaluation=evaluation)
+            metadata = task.describe(source)
+        expected = evaluate_original(self.official_checkout(), 10, result, source.frame, labeled_movies=evaluation.frame)
+        self.assertEqual(quality['original_metric'], expected['original_metric'])
+        self.assertAlmostEqual(quality['original_metric']['spearman_correlation'], 1.0)
+        self.assertEqual(quality['gold_source']['sha256'], hashlib.sha256(gold_bytes).hexdigest())
+        self.assertEqual(quality['gold_source']['bytes'], len(gold_bytes))
+        self.assertEqual(metadata['predicate'], None)
+        self.assertEqual(metadata['expected_model_calls'], 7)
+        self.assertEqual(metadata['gold_scope']['usage'], 'post-query official evaluation only')
+        with self.assertRaisesRegex(ValueError, 'prepare_evaluation'):
+            task.evaluate(source, result, checkout=self.official_checkout())
+
+    def test_q10_fresh_process_can_prepare_execute_and_score_without_lotus_or_network(self):
+        reviews, movies = self.inputs()
+        script = textwrap.dedent('''
+            import importlib.abc, json, socket, sys
+            class NoLotus(importlib.abc.MetaPathFinder):
+                def find_spec(self, fullname, path=None, target=None):
+                    blocked = ('lotus', 'semantic_methods.lotus', 'src.semantic_methods.lotus',
+                        'src.baselines.text.sembench_text', 'src.baselines.text.sembench_prepared',
+                        'src.baselines.text.sembench_movie_native', 'src.baselines.text.movie_tasks',
+                        'src.baselines.text.movie_records')
+                    if any(fullname == name or fullname.startswith(name+'.') for name in blocked):
+                        raise AssertionError('forbidden LOTUS dependency: '+fullname)
+            sys.meta_path.insert(0, NoLotus())
+            def denied(*args, **kwargs):
+                raise AssertionError('external network is forbidden')
+            socket.socket.connect = denied
+            socket.create_connection = denied
+            from src.baselines.text.sembench_native_text import movie_text_task
+            task = movie_text_task(sys.argv[1], 'Q10', movies_csv=sys.argv[2])
+            evaluation = task.prepare_evaluation()
+            source = task.read_source()
+            predictions = [dict(call_id=r['call_id'], generated_text='{"score":2.5}') for r in task.requests(source)]
+            result = task.finish(source, predictions)
+            quality = task.evaluate(source, result, checkout=sys.argv[3], evaluation=evaluation)
+            assert quality['sembench_commit'].startswith('c814e380')
+            assert quality['gold_source']['bytes'] == len(evaluation.raw_bytes)
+            print('Q10 frozen gold and original evaluation; LOTUS imports and network denied')
+        ''')
+        result = subprocess.run([sys.executable, '-c', script, str(reviews), str(movies), self.official_checkout()],
+            text=True, capture_output=True, timeout=90, env=dict(os.environ))
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.assertIn('LOTUS imports and network denied', result.stdout)
+
+
 if __name__ == '__main__':
     unittest.main()

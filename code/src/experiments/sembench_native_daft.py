@@ -31,10 +31,10 @@ def configuration(config):
               'sampling_params', 'engine_kwargs', 'provider_options', 'max_model_calls',
               'query_timeout_s', 'cleanup_s', 'stop_grace_s'}
     if (type(config) is not dict or not fields <= config.keys()
-            or config.keys() - fields - {'ranking'} or config['schema'] != SCHEMA):
+            or config.keys() - fields - {'ranking', 'movies_csv'} or config['schema'] != SCHEMA):
         raise ValueError('an explicit independent native Daft Movie JSON configuration is required')
     task = movie_text_task(config['reviews_csv'], config['query'], config['query_id'],
-                           ranking=config.get('ranking'))
+                           ranking=config.get('ranking'), movies_csv=config.get('movies_csv'))
     for name in ('sampling_params', 'engine_kwargs', 'provider_options'):
         if type(config[name]) is not dict:
             raise ValueError(name + ' must be an explicit native object')
@@ -58,6 +58,7 @@ def configuration(config):
 
 def check(config):
     task = configuration(config)
+    task.prepare_evaluation()
     source = task.read_source()
     description = task.describe(source)
     if description['expected_model_calls'] > config['max_model_calls']:
@@ -94,6 +95,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
     ledger = unit = primary = source = frame = None
     requests = []
     try:
+        evaluation = task.prepare_evaluation()
         budget = AttemptBudget(config['query_id'], config['max_model_calls'])
         ledger = CellBudgetLedger.create(directory / 'physical-budget.sqlite', budget,
                                          deadline_utc=time.time() + config['query_timeout_s'])
@@ -151,7 +153,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
         task.verify_source(source)
         report['task'] = task.describe(source)
         report['evaluation_started_ns'] = time.monotonic_ns()
-        report['quality'] = json_metric(task.evaluate(source, frame, checkout=config['sembench_checkout']))
+        report['quality'] = json_metric(task.evaluate(source, frame, checkout=config['sembench_checkout'], evaluation=evaluation))
         report['evaluation_finished_ns'] = time.monotonic_ns()
         report['status'] = 'completed'
     except BaseException as error:

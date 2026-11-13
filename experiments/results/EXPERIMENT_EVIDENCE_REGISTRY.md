@@ -86,6 +86,11 @@
 干净组合45个不同方法全部通过、0模型／GPU；分任务检查与旧Filter回归不累加，初始API红与浮点fixture失败保留。
 真实模型／质量／物理退出／公平性能pending，不能借用旧LOTUS Map或TopK成绩。
 
+[独立原生Q10分组Map](diagnostics/sembench_native_integration_20261112/README.md#independent-native-q10-runners)
+复用同一评分任务及Ray／Daft runner，保留全源Map、原默认3、分组／两位舍入及两种原空结果形态。
+共同任务准备在模型／扣额／source计时前冻结Movies金标，评分只消费快照；缺gold提前失败，模型消息无标签。
+三个受影响模块56个不同软件方法全部通过、0模型／GPU；包括前45项，不累加。真实Q10模型／质量／物理退出仍待验。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

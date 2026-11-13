@@ -67,6 +67,7 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
             primary.add_note(phase + ' also failed: ' + type(error).__name__)
 
     try:
+        evaluation = task.prepare_evaluation()
         value = config['budget']
         ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
         unit = ledger.claim_shared_unit(value['unit_id'])
@@ -102,7 +103,7 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
             raise RuntimeError('native charged submissions and confirmed terminals differ from complete occurrences')
         report['post_sink_audit_finished_ns'] = time.monotonic_ns()
         report['evaluation_started_ns'] = time.monotonic_ns()
-        report['quality'] = json_metric(task.evaluate(source, result, checkout=checkout))
+        report['quality'] = json_metric(task.evaluate(source, result, checkout=checkout, evaluation=evaluation))
         report['evaluation_finished_ns'] = time.monotonic_ns()
         report['status'] = 'completed'
     except BaseException as error:
@@ -148,9 +149,10 @@ def main(argv=None):
     from src.baselines.text.sembench_source import verify_checkout
     verify_checkout(config['sembench_checkout'])
     task = movie_text_task(config['reviews_csv'], config['query'], config['query_id'],
-                           ranking=config.get('ranking'))
+                           ranking=config.get('ranking'), movies_csv=config.get('movies_csv'))
     if args.action == 'check' or not args.execute_model:
         _sampling(config)
+        task.prepare_evaluation()
         source = task.read_source()
         if len(source.positions) > config['budget']['limit']:
             raise ValueError('the permanent native budget cannot cover the eligible source')

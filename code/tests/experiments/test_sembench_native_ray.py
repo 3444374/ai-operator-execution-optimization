@@ -36,6 +36,8 @@ class RunnerTests(unittest.TestCase):
 
     def task(self, state, *, count=2, parsing_error=False, evaluation_error=False):
         class Task:
+            def prepare_evaluation(current):
+                return None
             def read_source(current):
                 self.assertFalse(state.initialized)
                 state.events.append('source')
@@ -55,7 +57,7 @@ class RunnerTests(unittest.TestCase):
                 state.events.append('verify')
             def describe(current, source):
                 return dict(profile='project-boolean-fixture')
-            def evaluate(current, source, result, *, checkout):
+            def evaluate(current, source, result, *, checkout, evaluation=None):
                 self.assertFalse(state.initialized)
                 state.events.append('evaluate')
                 if evaluation_error:
@@ -228,6 +230,29 @@ class RunnerTests(unittest.TestCase):
                 self.assertGreaterEqual(report['evaluation_started_ns'], report['sink_ready_ns'])
 
     @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_Q10_scores_all_reviews_then_groups_movies_before_official_evaluation(self):
+        from src.baselines.text.sembench_native_text import movie_text_task
+
+        source, movies = self.root / 'Reviews.csv', self.root / 'Movies.csv'
+        pd.DataFrame(dict(id=['B', 'A', 'A'], reviewText=['Bad B', 'Good A', 'Bad A'])).to_csv(source, index=False)
+        pd.DataFrame(dict(id=['A', 'B'], audienceScore=[100, 20])).to_csv(movies, index=False)
+        ledger = CellBudgetLedger.create(self.root / 'q10-budget.sqlite',
+            AttemptBudget('Q10', 3), deadline_utc=time.time() + 120)
+        ledger.reserve_unit('query', 3)
+        config = dict(self.config, budget=dict(path=str(ledger.path), id='Q10', limit=3, unit_id='query'))
+        task = movie_text_task(source, 'Q10', 'native', movies_csv=movies)
+        with recorded_processor({f'native-row-{index}': json.dumps({'score': value})
+                                 for index, value in enumerate((1, 5, 1))}) as state:
+            report = run_query(task, config, self.root / 'query', checkout=os.environ['SEMBENCH_CHECKOUT'])
+        self.assertEqual(report['result']['data'], [['A', 3.0], ['B', 1.0]])
+        self.assertEqual(report['physical_attempts_reserved'], 3)
+        self.assertAlmostEqual(report['quality']['original_metric']['spearman_correlation'], 1)
+        self.assertNotIn('audienceScore', json.dumps(state.requests))
+        self.assertEqual([json.loads(row['messages'][1]['content'])['text']
+                          for row in state.requests], ['Bad B', 'Good A', 'Bad A'])
+        self.assertGreaterEqual(report['evaluation_started_ns'], report['sink_ready_ns'])
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
     def test_CLI_checks_without_claiming_budget_or_starting_native_execution(self):
         from src.experiments import sembench_native_ray as entry
 
@@ -244,6 +269,39 @@ class RunnerTests(unittest.TestCase):
                 with self.subTest(action=action), redirect_stdout(StringIO()) as output:
                     self.assertEqual(entry.main([action, '--config', str(path)]), 0)
                 self.assertFalse(json.loads(output.getvalue())['execution_enabled'])
+        self.assertEqual(self.ledger.snapshot(), before)
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_CLI_requires_Q10_gold_and_rejects_gold_for_other_tasks(self):
+        from src.experiments import sembench_native_ray as entry
+
+        source, movies = self.root / 'Reviews.csv', self.root / 'Movies.csv'
+        pd.DataFrame([dict(id='A', reviewText='Good')]).to_csv(source, index=False)
+        pd.DataFrame([dict(id='A', audienceScore=100)]).to_csv(movies, index=False)
+        base = dict(self.config, schema='semloom.sembench_native_ray.v1',
+            sembench_checkout=os.environ['SEMBENCH_CHECKOUT'], reviews_csv=str(source), query_id='CLI')
+        path = self.root / 'q10-config.json'
+        before = self.ledger.snapshot()
+        path.write_text(json.dumps(dict(base, query='Q10', movies_csv=str(movies))))
+        with patch.object(entry, 'run_query', side_effect=AssertionError('native execution forbidden')):
+            with redirect_stdout(StringIO()) as output:
+                self.assertEqual(entry.main(['check', '--config', str(path)]), 0)
+            self.assertEqual(json.loads(output.getvalue())['task']['query'], 'Q10')
+            for task in (dict(query='Q10'), dict(query='Q10', movies_csv=str(movies), ranking='map'),
+                         dict(query='Q3', movies_csv=str(movies)), dict(query='Q8', movies_csv=str(movies)),
+                         dict(query='Q9', ranking='map', movies_csv=str(movies))):
+                path.write_text(json.dumps(dict(base, **task)))
+                with self.subTest(task=task), self.assertRaises(ValueError):
+                    entry.main(['check', '--config', str(path)])
+        self.assertEqual(self.ledger.snapshot(), before)
+        from src.baselines.text.sembench_native_text import movie_text_task
+        missing = movie_text_task(source, 'Q10', 'missing-gold', movies_csv=self.root / 'missing-Movies.csv')
+        with recorded_processor({}) as state:
+            with self.assertRaises(FileNotFoundError) as raised:
+                run_query(missing, self.config, self.root / 'missing-gold-run',
+                          checkout=os.environ['SEMBENCH_CHECKOUT'])
+        self.assertEqual(state.events, [])
+        self.assertIsNone(raised.exception.query_report['source_started_ns'])
         self.assertEqual(self.ledger.snapshot(), before)
 
     @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
@@ -287,6 +345,7 @@ suite = unittest.TestSuite([RunnerTests('test_native_processor_and_complete_sink
 if os.environ.get('SEMBENCH_CHECKOUT'):
     suite.addTest(RunnerTests('test_neutral_movie_task_and_official_evaluator'))
     suite.addTest(RunnerTests('test_map_tasks_reuse_the_native_processor_and_complete_official_sinks'))
+    suite.addTest(RunnerTests('test_Q10_scores_all_reviews_then_groups_movies_before_official_evaluation'))
 result = unittest.TextTestRunner().run(suite)
 assert not any(forbidden(name) for name in sys.modules)
 raise SystemExit(not result.wasSuccessful())

@@ -144,7 +144,7 @@ class IndependentDaftQueryTests(unittest.TestCase):
             writer.writerow(('id','reviewId','reviewText','scoreSentiment'))
             writer.writerows(rows)
 
-    def config(self, query='Q3', *, ranking=None):
+    def config(self, query='Q3', *, ranking=None, movies_csv=None):
         config = dict(schema=driver.SCHEMA, sembench_checkout=CHECKOUT, reviews_csv=str(self.csv),
             query=query, query_id='native-daft-' + query, model='software-no-model',
             sampling_params=dict(n=1, response_format=dict(type='json_object'), max_tokens=32, temperature=0),
@@ -152,12 +152,14 @@ class IndependentDaftQueryTests(unittest.TestCase):
             stop_grace_s=.5, max_model_calls=8)
         if ranking is not None:
             config['ranking'] = ranking
+        if movies_csv is not None:
+            config['movies_csv'] = str(movies_csv)
         return config
 
-    def invoke(self, query='Q3', mode='success', *, ranking=None):
+    def invoke(self, query='Q3', mode='success', *, ranking=None, movies_csv=None):
         self.tokenizer, self.supervisor = SoftwareTokenizer(), SoftwareSupervisor(mode)
         self.output = self.root / ('run-' + query + '-' + mode)
-        return driver.run_query(self.config(query, ranking=ranking), self.output, model_python=sys.executable,
+        return driver.run_query(self.config(query, ranking=ranking, movies_csv=movies_csv), self.output, model_python=sys.executable,
                                 tokenizer=self.tokenizer, supervise=self.supervisor)
 
     def test_one_filter_family_reaches_complete_officially_scored_sinks_before_ACK_close(self):
@@ -219,6 +221,25 @@ class IndependentDaftQueryTests(unittest.TestCase):
         terminal = read_json(self.output / 'native-worker/worker.json')
         self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
         self.assertNotIn('originalScore', json.dumps(self.tokenizer.messages))
+
+    def test_Q10_scores_all_reviews_then_groups_movies_before_official_evaluation(self):
+        with self.csv.open('w', newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerow(('id', 'reviewText'))
+            writer.writerows([('B', 'bad B'), ('A', 'good A'), ('A', 'bad A')])
+        movies = self.root / 'Movies.csv'
+        with movies.open('w', newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerow(('id', 'audienceScore'))
+            writer.writerows([('A', 100), ('B', 20)])
+        report = self.invoke('Q10', 'score', movies_csv=movies)
+        self.assertEqual(report['result']['data'], [['A', 3.0], ['B', 1.0]])
+        self.assertEqual(report['physical_attempts_reserved'], 3)
+        self.assertAlmostEqual(report['quality']['original_metric']['spearman_correlation'], 1)
+        self.assertNotIn('audienceScore', json.dumps(self.tokenizer.messages))
+        terminal = read_json(self.output / 'native-worker/worker.json')
+        self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
+        self.assertLessEqual(report['sink_ready_ns'], report['evaluation_started_ns'])
 
     def test_zero_occurrences_keep_the_real_empty_sink_without_a_worker(self):
         self.write_rows([('other','outside','good outside','POSITIVE')])
@@ -296,6 +317,37 @@ class IndependentDaftQueryTests(unittest.TestCase):
                 self.assertEqual(driver.main([action,'--config',str(config),'--output-dir',str(output)]), 0)
             self.assertFalse(json.loads(stream.getvalue())['execution_enabled'])
         self.assertFalse(output.exists())
+
+    def test_CLI_requires_Q10_gold_and_rejects_gold_for_other_tasks(self):
+        with self.csv.open('w', newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerow(('id', 'reviewText'))
+            writer.writerow(('A', 'good'))
+        movies = self.root / 'Movies.csv'
+        with movies.open('w', newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerow(('id', 'audienceScore'))
+            writer.writerow(('A', 100))
+        path = self.root / 'q10-config.json'
+        path.write_text(json.dumps(self.config('Q10', movies_csv=movies)))
+        with patch.object(driver, 'run_query', side_effect=AssertionError('native execution forbidden')):
+            with redirect_stdout(StringIO()) as stream:
+                self.assertEqual(driver.main(['check', '--config', str(path)]), 0)
+            self.assertEqual(json.loads(stream.getvalue())['task']['query'], 'Q10')
+            for config in (self.config('Q10'), self.config('Q10', ranking='map', movies_csv=movies),
+                           self.config('Q3', movies_csv=movies), self.config('Q8', movies_csv=movies),
+                           self.config('Q9', ranking='map', movies_csv=movies)):
+                path.write_text(json.dumps(config))
+                with self.subTest(query=config['query']), self.assertRaises(ValueError):
+                    driver.main(['check', '--config', str(path)])
+        supervise = SoftwareSupervisor()
+        output = self.root / 'missing-gold-run'
+        with self.assertRaises(FileNotFoundError) as raised:
+            driver.run_query(self.config('Q10', movies_csv=self.root / 'missing-Movies.csv'), output,
+                model_python=sys.executable, tokenizer=SoftwareTokenizer(), supervise=supervise)
+        self.assertEqual(supervise.calls, [])
+        self.assertIsNone(raised.exception.query_report['source_start_ns'])
+        self.assertFalse((output / 'physical-budget.sqlite').exists())
 
     def test_CLI_dispatches_maps_and_requires_the_explicit_Q9_map_profile(self):
         path = self.root / 'map-config.json'
