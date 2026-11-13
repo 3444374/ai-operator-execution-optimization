@@ -132,6 +132,21 @@ Q3a–g／Q6a–c全部N行、两列证据、原投影／dtype／索引／重复
 40个原完整函数／SDK软件差分与十变体fresh禁LOTUS评分通过，旧Extract类／测试逐字保持。
 与Animals消费者合并后，五个完整模块114项全部通过、0skip／模型／GPU，不累加前90或分任务计数；目标模型资格仍pending。
 
+[608e20独立Q9 Map模型](diagnostics/sembench_native_integration_20261112/README.md#native-q9map-608e20-model)
+各256发生项／终态与完整源序sink，128个unique reviewId仅影响原last-wins评分，不减少推理。
+原Spearman .734180／.718516，四条分数不同；1751payload／1158源码blob与永久预算／清理通过。
+工程JSON单冷含启动及内部I/O，无同owner暖／排名，非TopK或当前新候选资格。
+
+[8d071独立MMQA Q1 sf25](diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-q1-8d071-model)
+各25真实终态，原director Series索引[8]及后置F1=1；不是全部25条抽取准确率。1516payload／1160源码blob核验。
+Ray首次外清理失败及后续精确inode清理保留、未重跑模型；首次holder／分配库原因未知，Daft首次外清理通过。
+单冷含启动，其他原题、视觉、warm及正式性能未授资格。
+
+[LOTUS＋Daft混合文本／图像](diagnostics/sembench_native_integration_20261112/README.md#daft-native-mixed-messages)
+原Q12 Filter4→实际Extract3与原空KeyError、原结果／评分／JSON／ACK软件验证；原QueryLM消息保持，native字符串→单text part编码明确分列。
+post-sink原始／effective SHA与HTTP Counter核对，原数组不变；五完整模块52项全部通过、0skip／模型／GPU，不累加分任务。
+旧prefix函数及only-visual／TopK guard保持，目标renderer／token／模型等价仍pending；首次DNS尝试与被拦loopback probe哨兵失败保留。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

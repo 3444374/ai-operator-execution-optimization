@@ -1474,6 +1474,74 @@ root在8d071干净导出整合十个源／测试文件，任务、工厂与两�
 纯文本数组仍原样交tokenizer渲染；整批拒绝检查先于任何模板调用，配置与真实消息分别检查。
 真实模型与物理清理仍待各自目标验收。
 
+<a id="native-q9map-608e20-model"></a>
+## 608e20 独立原生 Q9 Map
+
+具名`native-ray-daft-q9map-608e20-qualification-20261113-r1`固定
+`608e20bebd404efbd480a58f71fccbbf6f7ef4c5`及c814，两配置明确ranking=map。
+同原Reviews 2000行／11列筛选Ant-Man实际256发生项，保留源序256行完整评分结果；
+其中只有128个不同reviewId，原evaluator字典对重复ID采用最后一项，不能因此把推理缩成128次。
+两个永久账本各256、完整终态、closed无退款／未知／重试，额外查询预热为0。
+252条原始答复相同、四处分数不同，不称结果等价；原Spearman Ray `0.734180233896955`、
+Daft `0.7185159186346288`，Kendall分别`0.6347995726167764`、`0.6167664658392769`。
+
+单冷source→完整sink为Ray `77.972277759`、Daft `56.684655174`秒，包含原生启动与已披露的内部I/O，
+关闭／审计／评分后置。Ray 2.56.1／vLLM 0.22.0与Daft 0.7.21／vLLM 0.25.1的版本、容量及缓存差异保持，
+无同owner暖、硬件冷或性能排名。Ray实际token数组与Daft prompt SHA／token长度／输出SHA均核，
+不补写Daft未保存的完整token数组。六组FINAL均passed／failure=null、GPU空闲／租约与SHM保护已核，
+本轮未找到失败模型轮，不据此宣称全历史无失败；预启动控制脚本保留原件。
+1751个payload、1158个608e20源码Git对象、四个c814原参考与实际逐条关联／预算核验通过，
+核验记录SHA-256为`77bdbab611708dd3391ac52620f88cdbbdf24a0f3f526c17db990bab26079ef5`。
+未重跑模型或评分；此为独立JSON Map，不是TopK、LOTUS或当前任务组合的资格。
+
+<a id="native-mmqa-q1-8d071-model"></a>
+## 8d071 独立原生 MMQA Q1 sf25
+
+`native-ray-daft-mmqa-q1-8d0710-qualification-20261113-r1`固定
+`8d071066f80fd004fc5e82a372a95b930bb53dae`及c814，输入原20行表与25行／5列文本，
+两系统各25个完整发生项／终态，永久账本25/25、sequence与摘要唯一、closed，无退款或重跑。
+完整原结果保留Series：name=director、dtype=object、index=[8]、唯一值Michael Ritchie。
+只有后置评分桥转换列形状，原最终查询F1=1；不是25条抽取均正确的质量结论。
+保存的实际输出、Series及原评价分别核验，未重跑模型、答案解析或评分器。
+
+Ray单冷`77.047351423`、Daft单冷`57.154012258`秒，均由source／sink事件差直接支持且含原生启动；
+实际sink先于close／ACK，审计／评分后置。版本／容量、原生内部初始化、prefix／持久编译缓存与预检口径保留，
+不授同owner暖、硬件冷或跨系统正式排名。
+Ray首次query已completed、25次已终态，但外层清理报告semaphore身份或holder unresolved、租约未释放；
+随后EXACT-CLEANUP按精确name／inode／uid清理32字节对象，恢复时holders及scan_errors为空，0模型／无退款／不改原helper。
+首次具体holder、scan-error及分配库原因仍未知，不能把后验恢复归因为某个库；Daft首次外清理passed。
+最终精确清理及SHM保护回执保留，不把原失败轮改写成首次正常收尾。
+
+1516个payload、1517个归档常规成员、1160个源码Git对象、四个c814参考及两份bundle／frozen ref均核，
+核验记录SHA-256为`6f76cf87d408afcfa89ad3a9fab91fbbd558770a634d7c8aef2b4ec86809897d`。
+原归档见下表；只授8d071工程JSON Q1 sf25单冷功能与实际清理范围，不扩展到新Filter、Q4、视觉或warm。
+
+<a id="daft-native-mixed-messages"></a>
+## LOTUS＋Daft 文本到图像的实际混合链
+
+原Q12第一批Filter产生user字符串，随后只对实际survivors作含图片的JSON Extract。
+Daft0.7.21 builtin OpenAIPrompter固定以内容数组发送，现用无SDK依赖的effective_openai_messages明确描述
+system＋single-user的str→单text part编码；旧数组不变、不修改原QueryLM消息或packet、不增加自定义provider／Prompter。
+URL被原生错误识别为媒体及PNG边界沿既有列构造一次验证；未增加查询内per-occurrence审计hash向量。
+
+完整sink后按effective SHA Counter核HTTP、保存batch_index／call_id及原始／effective SHA映射；
+原始SDK提示、普通关系、parser和逐阶段JSON参数保持。重复发生项不去重，HTTP答复仍只按整批关联，
+不能由该映射宣称重复消息的逐行HTTP响应已绑定。
+metadata明记daft.openai.system_single_user.parts.v1及target_renderer_equivalence_verified=None；
+文本和角色无损包装不证明目标renderer／token序列或模型质量等价，实际素材／VLM资格仍待验。
+
+完整原函数／worker软件矩阵包含Animals两Filter4→4、MMQA非空Join→Extract4→4及EcommQ12 Filter4→Extract3，
+核原结果／原评分、原QueryLM消息、JSON与最后sink后ACK；未编码的raw文本HTTP即使产出完整结果也在后置audit失败，
+保结果、移除成功quality。原Q12空survivor在4次软件HTTP后保留原KeyError，不启动Extract worker。
+实际Daft0.7.21 native图＋软件OpenAI API另验字符串、内容数组、重复及原四视觉batch，旧prefix Map／sampling函数逐字未改。
+
+主线程在0d0cc干净导出整合四个源／测试文件，五个完整模块52项全部通过、0skip／模型／GPU，
+包含旧回归，不与分任务9／5项或前47项累加；结果SHA-256为`558fcf872a7f38a6a936676564df992aa61203f2e0262fc2b6fd8d48acbf476b`。
+首次私有用例导入LiteLLM尝试远程cost-map且DNS失败，后续设置本地cost-map；额外零INET尝试哨兵在功能5/5之后
+因urllib3本地IPv6能力probe被拦而失败，具体输出及窄定位保留。最终根组合用本地cost-map；
+实际native API为软件transport，未启动服务／模型，不把首轮说成从无网络尝试。
+only-visual入口与TopK取消guard、原生重试、模型所有权／worker关闭和计时边界均未更改。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -1511,6 +1579,8 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 7fb4 独立原生Ray／Daft Movie Q8 | 3738751 | 1669 | `e1e87b4b76bf6e8c763440ca61c06b0335a21f5720068ca3e0ae5a21cf535659` |
 | f83b 独立原生Ray／Daft Movie Q10 | 6977259 | 3407 | `91775f68b25259c7b5f27b2e3678d29d51d50f3240e5dc9ed1510af653e65b90` |
 | f596 独立原生Ray／Daft Movie Q1 | 7036724 | 3464 | `af47bc3acf443b5ed3032223a05115862321a7833e024b2f3179adcd9aa25a54` |
+| 608e20 独立原生Ray／Daft Movie Q9 Map | 3874724 | 1751 | `0ec63e7473afb647c7bd4b3b3aef13b7d0f967d0bca6c1a9695816a8be32750a` |
+| 8d071 独立原生Ray／Daft MMQA Q1 sf25 | 3264095 | 1516 | `62a01b273b0aebb9d09fcf47f359401e4b412deff1617c8d9bb24adcbbda6638` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

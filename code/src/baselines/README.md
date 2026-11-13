@@ -186,8 +186,12 @@ Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON �
 
 另有[外部OpenAI兼容服务模板](../../configs/sembench_daft_native_openai.example.json)，沿同一原题runner与worker：
 Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不增加自定义provider或Prompter。
-仅接同一system＋单user内容数组；文本与PNG data URI还原为有类型的原生列，固定布局、图像字节及顺序按原消息核对。
-不把该API说成任意raw conversation接口；多轮、字符串user、额外图像detail和未验证形态明确拒绝，原Q12混合文本阶段仍待接。
+接同一system＋单user字符串或内容数组；builtin将字符串显式编码为单text part，数组原内容保持，
+文本与PNG data URI还原为有类型的原生列，固定布局、图像字节及顺序按实际编码核对。
+原QueryLM消息／packet不改，完整sink后保存call_id对应原始／effective SHA并按后者核HTTP。
+不把该API说成任意raw conversation接口；多轮、额外图像detail和未验证形态仍拒绝。
+原Q12文本Filter→实际survivors图像Extract已复用同一runner，软件原题4→3／原评分及空survivor原KeyError通过；
+这是明确的native编码差异，目标renderer／token等价仍为None待验，不因相同文本声称输入tokens相同。
 原Extract的JSON-object只在该阶段透传，沿chat-completions返回原文本，仍交原LOTUS parser。
 `native_openai`只引用endpoint／key环境变量名；禁止同时声明本地模型构造，外部模型由调用方拥有。
 原生SDK重试策略照配置，HTTP发送前占永久预算；driver仅在完整sink后核对实际请求／响应。
@@ -195,6 +199,7 @@ Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不�
 未观测远端READY／启动或显式SDK client close；隔离worker在release ACK后退出，不能据此证明远端模型退出。
 真实Daft0.7.21图＋软件API已验证Animals单图、Medical双图和Q2b非空Join→Extract的消息等价；
 完整worker／ACK与原题的软件验证另列[报告](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-attached-visual)。
+[混合文本／图像接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-native-mixed-messages)核真实native图与后置双身份审计，不新增provider／执行器或恢复TopK。
 没有真实模型／服务器资格，也不借用本地字符串profile的旧成绩。
 
 每批原生READY后，driver将预测交回原题；随后原题产生下一批或完整sink，显式ACK才允许当前worker关闭。
@@ -252,7 +257,9 @@ sink后评价只使用快照及其字节摘要，不让gold进入模型消息或
 [独立软件验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)只授予其零模型范围；
 后续[7fb4 Q8](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q8-7fb4-model)已完成两系统120次真实模型，
 [f83b Q10](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q10-f83b-model)完成各2000次及完整105组；两项均核独立物理清理。
-其他原题／后续候选、same-owner warm与正式性能仍分别待验。
+后续[Q9 Map](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q9map-608e20-model)与
+[MMQA Q1 sf25](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-q1-8d071-model)另按冻结版本核，
+后者Ray首次外清理失败及精确恢复保留；当前新族、same-owner warm与正式性能仍分别待验。
 [后续Map组合验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-map-runners)保留具体提示身份、原后处理、完整空表及失败来源，不与前批计数累加。
 [Q10分组与gold边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-q10-runners)复用同一原生图，不增加题目专用runner。
 [Join与计时组合](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-join-resident-accounting)记录完整配对、提前预算检查和resident统计后移；只授予其实际软件范围。

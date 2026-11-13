@@ -18,7 +18,7 @@
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
 | 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 文件输入与公共 CLIP 实现 |
 | CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[软件检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
-| LOTUS＋Daft完整查询 | [worker／监督入口](../src/experiments/native_daft_query.py) | 原题／LOTUS语义；本地字符串provider或外部服务图像profile；[配置与调用](#native-daft-prepared-worker) |
+| LOTUS＋Daft完整查询 | [worker／监督入口](../src/experiments/native_daft_query.py) | 原题／LOTUS语义；本地字符串provider或外部服务文本→图像profile（显式native消息编码）；[配置与调用](#native-daft-prepared-worker) |
 | 独立原生Ray／Daft文本任务 | [Ray](../src/experiments/sembench_native_ray.py)、[Daft](../src/experiments/sembench_native_daft.py) | Movie Filter／Map／exact pair Join和MMQA Q1/Q4文本Extract，统一语义工程对照、原评分、无LOTUS提示／解析；[调用](#independent-native-text-runners) |
 | DuckDB＋作者IMLane Q3 | [构建／接线](../integrations/imlane_duckdb/README.md)、[软件CPU](../src/experiments/native_imlane_query.py)、[模型worker](../src/experiments/native_imlane_model_query.py) | 作者SQL／Arrow；模型worker拥有独立baseline服务，software CLI不会启动模型 |
 | 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) | [格式／NA 说明](analysis/OFFLINE_RESULTS.md) |

@@ -39,9 +39,9 @@ LOTUS方法系列共用原题定义／原SDK语义，各执行系统保留自己
 |---|---|---|---|
 | LOTUS | 同一原题对象；[resident文本](src/experiments/sembench_text_resident.py)与[外部服务查询](src/experiments/sembench_lotus_query.py)按模型所有权保留profile。文本、视觉、聚合及实际多阶段已接。 | Movie、MMQA、Animals按冻结来源分列；a110 Movie Q8原120×2完成同owner首／暖、相对误差4.0431%；Animals Q10 sf64真实64次、原F1=1。完整排名、空Join与非空Extract组件不互授资格。 | 当前未验视觉／多阶段及真实资产另列；多列Join保留原SDK选列限制。旧视觉／聚合两个CLI和worker已迁移删除。 |
 | LOTUS＋Ray Data | [native_ray_sembench](src/experiments/native_ray_sembench.py)承接完整原函数、实际多LM批次、视觉、分支／groupby和分层聚合；query级runtime不等于模型复用。 | 051639原Animals Q1 sf64及MMQA Q5单叶已真实运行；4073的Q7 sf64两阶段128终态、City F1=1，原退出失败及恢复清理保留。旧Q2a/Q7质量问题不抹除。 | 其余真实视觉、分层聚合与并发另验。旧专项Q3图已删除；外部HTTP Q3保留，但明确为LOTUS-compatible工程路径。 |
-| 独立原生Ray Data | [sembench_native_ray](src/experiments/sembench_native_ray.py)用公开LLM processor执行Movie、MMQA文本及[Animals图像Filter](src/baselines/image/sembench_native_animals.py)Q1/Q3/Q7/Q10，共用独立JSON任务工厂及官方评分，无LOTUS提示／解析。 | 7fb4 Q8真实120次、原相对误差4.0431%；f83b Q10全2000次／105组、Spearman 0.408342；f596 Q1全2000、head5 F1=1／全量正确1597，独立物理清理通过。其他题／候选仍仅软件验收。 | “统一语义工程对照”，非作者原版；当前逐查询新模型owner，同owner暖轮尚未接。其余原题／模态未接，不借用LOTUS＋Ray模型成绩。外层拥有监督／租约。 |
-| LOTUS＋Daft | [native_daft_sembench](src/experiments/native_daft_sembench.py)承接完整文本原题、exact Join和Q5实际多批；每批原生collect／worker隔离，末批在完整sink后关闭。附加内置OpenAIProvider接原视觉内容数组。 | 旧单冷／原生SDK记录仍属各冻结来源；新视觉接点有真实Daft0.7.21图＋软件API及完整原题／ACK检查，无本组合模型资格。 | 本地vllm字符串profile没有图像carrier；外部服务profile仅固定system＋单user数组，字符串／多轮、分组并发未接。TopK取消动作保持停止。旧专项Q3图／schema已删除。 |
-| 独立原生Daft | [sembench_native_daft](src/experiments/sembench_native_daft.py)执行同一独立Movie Filter／Map／exact pair Join及MMQA文本Filter／Extract任务工厂，内置vllm-prefix-caching图／既有worker及ACK；无LOTUS SDK／提示／解析。 | 7fb4 Q8真实120次、原相对误差4.0431%；f83b Q10全2000次／105组、Spearman 0.406878；f596 Q1全2000、head5 F1=1／全量正确1593，ACK／独立物理清理通过。其他题／候选仍仅软件验收。 | “统一语义工程对照”，非作者原版；当前逐查询新模型owner，同owner暖轮尚未接。其余原题／模态未接。共享运输／关闭组件不使其成为LOTUS语义路径。 |
+| 独立原生Ray Data | [sembench_native_ray](src/experiments/sembench_native_ray.py)用公开LLM processor执行Movie、MMQA文本及[Animals图像Filter](src/baselines/image/sembench_native_animals.py)Q1/Q3/Q7/Q10，共用独立JSON任务工厂及官方评分，无LOTUS提示／解析。 | Movie Q1/Q8/Q9-map/Q10及MMQA Q1 sf25已有具名模型回执；MMQA首次外层清理失败后精确恢复，原件保留。新Filter／视觉组合仅软件验收。 | “统一语义工程对照”，非作者原版；当前逐查询新模型owner，同owner暖轮尚未接。其余原题／模态未接，不借用LOTUS＋Ray模型成绩。外层拥有监督／租约。 |
+| LOTUS＋Daft | [native_daft_sembench](src/experiments/native_daft_sembench.py)承接完整文本原题、exact Join和Q5实际多批；每批原生collect／worker隔离，末批在完整sink后关闭。附加内置OpenAIProvider接视觉数组及Q12文本→图像链，原字符串的native编码显式披露。 | 旧单冷／原生SDK记录仍属各冻结来源；新视觉接点有真实Daft0.7.21图＋软件API及完整原题／ACK检查，无本组合模型资格。 | 本地vllm字符串profile没有图像carrier；外部服务profile固定system＋单user，字符串显式转单text part；多轮／分组并发未接，renderer token等价待验。TopK取消动作保持停止。旧专项Q3图／schema已删除。 |
+| 独立原生Daft | [sembench_native_daft](src/experiments/sembench_native_daft.py)执行同一独立Movie Filter／Map／exact pair Join及MMQA文本Filter／Extract任务工厂，内置vllm-prefix-caching图／既有worker及ACK；无LOTUS SDK／提示／解析。 | Movie Q1/Q8/Q9-map/Q10及MMQA Q1 sf25已有具名模型／ACK／物理清理回执；Q1最终结果与全量质量分列。新Filter／图像拒绝组合仅软件验收。 | “统一语义工程对照”，非作者原版；当前逐查询新模型owner，同owner暖轮尚未接。其余原题／模态未接。共享运输／关闭组件不使其成为LOTUS语义路径。 |
 | IMLane | [native_imlane_sembench](src/experiments/native_imlane_sembench.py)共用原题／SQL／ACK接完整视觉、多阶段、分支及groupby；TINYINT Filter／Join和DOUBLE Map按真实原生profile保留。作者[Movie Q3](src/experiments/native_imlane_model_query.py)另列。 | 034dc Map／Extract、ecbd TopK样本、807224 Q5单叶各有冻结模型证据；a110完整Q7 sf64的SQL／IPC／ACK及128次VLM通过，City F1=1。4073零模型CSV失败、独立Q3的50%相对误差均保留。 | a110仅关闭准确Q7修复资格，不转授其余视觉／并发。VARCHAR-owned为工程变体，非作者聚合／TopK算法；Q3题目合同参考LOTUS兼容语义，非论文未公开UDF。旧Q1Relation已删除。 |
 | Kalypso | 同一[KalypsoRunner](src/baselines/text/frameworks/kalypso_native/query_runner.py)与五handler接文本Filter／Map／Join／TopK／原SemAgg；Movie records/prefix是不同输入与消息合同的同系统profile。 | Join样本、作者full256 TopK及3500 Q5单层各按原来源验收；3500离线资格失败仍保留，不外推多层／并发。 | 当前semantic-query前端的图像／Extract未接，底层vLLM能力不能替代此接线。当前纯文本没有虚构两Filter的需要。旧四个专项Driver类及调用已删除，仍用的records/prefix保留。 |
 
@@ -81,7 +81,7 @@ Q8的旧v3区间仍含中间relation快照与stage统计，不能从标签或单
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 完整原函数已接，单算子及非空描述／图像Join、图像self-join软件差分通过；真实资产／Ray VLM待验，SDK选列限制保留 | 外部数组carrier已接；各题完整消息／评分、真实数据／模型未验；Q8原SDK选列限制保留 | 同一完整原函数软件差分通过；Q4重复ID保留完整Extract及原评分异常，非成功评分；真实资产／SQL／VLM另验，SDK选列限制保持 | 未接线 |
 | 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线；空路径已实机执行，参考非空Extract组件5次真实请求已验；实际Join→非空Extract及旧原答关联仍有缺口 | 完整原函数、原生JSON及query owner已接；临时2图／5表行的10→5和10→0软件原题差分通过；真实多阶段模型／质量／清理待验 | 外部profile已接；真实Daft图＋软件API非空4→4原消息及完整worker／原评分通过，真实模型与远端生命周期另验 | 完整原函数／QueryLM／原JSON阶段已接，非空4→4软件差分；真实SQL／VLM／质量及物理清理待验 | 未接线 |
 | 原分层 Aggregate；MMQA Q5 | 同一原生服务runner已接线，真实sf25软件回放按原来源分列 | 原函数／token计数／层次与query owner已接；051639的sf25单叶1次真实请求、F1=1，当前多层／并发模型及物理清理仍待验 | 原完整函数／实际多批层次算法已接，原生CPU图与软件差分；目标模型／tokenizer与物理清理待验 | 原LOTUS层次over VARCHAR工程变体已接；807224的原sf25单叶31项LinuxCPU／1次真实模型F1=1；当前多批／视觉／物理清理另验，非作者聚合算法 | 原SemAgg同一runner已接；3500原sf25 CPU20／1次真实归约F1=1；私有owner离线资格失败，原失败保留，多层／并发未验，算法不与LOTUS等同 |
-| 文本 Filter 后对实际保留行作图像 Extract；E-Commerce Q12 | 原函数及原生服务完整接线；临时数据软件验证，真实数据／VLM待验 | 完整原函数已接，4→3非空Extract及原空路径KeyError软件差分通过；真实数据／Ray VLM待验 | 未接线 | 完整原函数已接，4→3实际survivors及原空错误软件差分；真实资产／SQL／VLM待验 | 未接线 |
+| 文本 Filter 后对实际保留行作图像 Extract；E-Commerce Q12 | 原函数及原生服务完整接线；临时数据软件验证，真实数据／VLM待验 | 完整原函数已接，4→3非空Extract及原空路径KeyError软件差分通过；真实数据／Ray VLM待验 | 外部profile已接，原题软件4→3／原空KeyError与HTTP／ACK通过；native字符串→单text part显式转换，目标renderer／token等价、真实素材／VLM另验 | 完整原函数已接，4→3实际survivors及原空错误软件差分；真实资产／SQL／VLM待验 | 未接线 |
 | 多分支 Filter／Join 及分组 TopK；E-Commerce Q10/Q11/Q14 | 原完整函数已接线，软件原生图检查；多列 Join 受当前SDK选列限制，真实数据／VLM待验 | 原非空分支／Join和原groupby线程已接并作软件差分；各分支空组合与目标待验，多列Join限制保留 | 未接线 | 原Q10/Q11分支及Q14四个原group线程的软件差分通过，SQL/config scope保持串行、预算连续；真实资产／模型／物理清理待验 | 未接线 |
 
 表中LOTUS＋Ray／Daft使用原LOTUS提示、解析和算法，不因为底层使用原生AI API就再统计为独立语义baseline。
@@ -89,7 +89,9 @@ Q8的旧v3区间仍含中间relation快照与stage统计，不能从标签或单
 同一工厂的MMQA十二道文本题复用Filter／Extract两类，保留原最终Series／表与后置原评分，当前新组合仍只作软件验收。
 HTTP Q3保留LOTUS-compatible合同及外部模型所有权，不能重复计为新独立原生语义路径。
 Daft外部数组profile也可绑定其余同形态单算子视觉原题，逐题资产／评分与模型仍未验；
-本地字符串profile不借用该图像carrier；混合字符串阶段及分组TopK仍未接。
+本地字符串profile不借用该图像carrier；attached混合字符串→图像已接，目标renderer／模型待验，分组TopK仍未接。
+混合接点在干净导出五个完整模块52项软件检查通过、0模型，真实Daft图使用软件API；原始／effective消息身份于fullsink后核，
+不把相同文本当作已证明renderer输入等价，见[混合链](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-native-mixed-messages)。
 原生IMLane查询按实际任务合同分列；IMLane的
 [`native_imlane_model_query`](src/experiments/native_imlane_model_query.py)通过作者prediction SQL／Python UDF执行Movie Q3，
 其不导入LOTUS的题目合同仍明确参考1.2.4 non-CoT规则，不称复现作者未公开的论文Q7 UDF。
@@ -139,6 +141,9 @@ MMQA Q3a–g／Q6a–c由单一Filter类接全部原source，两列证据入模�
 保原索引／重复／空值及各变体gold，不套Q4片名条件；源码及软件范围见[Filter家族](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-filter-family)。
 f596的Q1具名模型已完成各2000终态及原最终head5，但最终F1不能替代全量分类质量；具体首次失败回执未定位，
 见[Q1原件范围](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q1-f596-model)。
+后续608e20的Q9 Map各256、原last-wins评分与8d071的MMQA Q1 sf25各25真实终态已核；
+MMQA原Series索引[8]及后置F1=1不表示全部25条抽取正确，Ray首轮外层清理失败及精确恢复／未知原因保留。
+见[Q9 Map](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q9map-608e20-model)与[MMQA Q1](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-q1-8d071-model)，不转授当前新族、视觉或warm。
 独立Ray的Animals Q1/Q3/Q7/Q10沿同一任务／runner，真实图像处理保留，Q7两遍完整source共2N请求。
 现官方输入身份仍为原sf64 manifest；此新JSON视觉组合尚无VLM资格，Daft本地字符串profile明确拒绝图片消息，
 见[图像接线](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-animals-json-filter)。
