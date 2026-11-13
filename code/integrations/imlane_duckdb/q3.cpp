@@ -136,29 +136,10 @@ void execute(const std::map<std::string, std::string> &args, Json &report, int d
         "'occurrence_id':'VARCHAR','id':'VARCHAR','reviewId':'VARCHAR','reviewText':'VARCHAR'}, "
         "force_not_null=['occurrence_id','id','reviewId','reviewText'])";
     query(connection, "CREATE VIEW q3_reviews AS SELECT * FROM " + source);
-    const auto counts_start = Clock::now();
-    auto counts = query(connection, "SELECT count(*), count(*) FILTER (WHERE id='taken_3'), "
-        "count(DISTINCT occurrence_id) FROM q3_reviews");
-    const auto source_rows = counts->GetValue<int64_t>(0, 0);
-    report["source_rows"] = source_rows;
-    report["eligible_rows"] = counts->GetValue<int64_t>(1, 0);
-    if (counts->GetValue<int64_t>(2, 0) != source_rows) {
-        throw std::runtime_error("native Q3 requires a unique occurrence_id for every source row");
-    }
-    report["ordinary_count_seconds"] = seconds_since(counts_start);
 
     const std::string sql = "SELECT count(*) AS positive_review_cnt FROM q3_reviews "
         "WHERE id='taken_3' AND imlane_movie_q3(occurrence_id,id,reviewId,reviewText)=1";
     report["sql"] = sql;
-    const auto explain_start = Clock::now();
-    auto explanation = query(connection, "EXPLAIN " + sql);
-    report["explain"] = Json::array();
-    for (duckdb::idx_t row = 0; row < explanation->RowCount(); ++row) {
-        report["explain"].push_back(Json{
-            {"key", explanation->GetValue(0, row).ToString()},
-            {"plan", explanation->GetValue(1, row).ToString()}});
-    }
-    report["explain_seconds"] = seconds_since(explain_start);
 
     const auto query_start = Clock::now();
     report["native_ai_query_attempts"] = 1;
@@ -181,6 +162,29 @@ void execute(const std::map<std::string, std::string> &args, Json &report, int d
         report["result_clock_error_errno"] = errno;
     }
     report["result_clock"] = "CLOCK_MONOTONIC";
+    report["query_clock_version"] = "imlane.q3.source_to_sink.v1";
+    // Extra source/plan diagnostics must not extend the completed query clock.
+    const auto counts_start = Clock::now();
+    auto counts = query(connection, "SELECT count(*), count(*) FILTER (WHERE id='taken_3'), "
+        "count(DISTINCT occurrence_id) FROM q3_reviews");
+    const auto source_rows = counts->GetValue<int64_t>(0, 0);
+    report["source_rows"] = source_rows;
+    report["eligible_rows"] = counts->GetValue<int64_t>(1, 0);
+    if (counts->GetValue<int64_t>(2, 0) != source_rows) {
+        throw std::runtime_error("native Q3 requires a unique occurrence_id for every source row");
+    }
+    report["ordinary_count_seconds"] = seconds_since(counts_start);
+
+    const auto explain_start = Clock::now();
+    auto explanation = query(connection, "EXPLAIN " + sql);
+    report["explain"] = Json::array();
+    for (duckdb::idx_t row = 0; row < explanation->RowCount(); ++row) {
+        report["explain"].push_back(Json{
+            {"key", explanation->GetValue(0, row).ToString()},
+            {"plan", explanation->GetValue(1, row).ToString()}});
+    }
+    report["explain_seconds"] = seconds_since(explain_start);
+
     // Publish the count before native destructors: a later crash/timeout must not
     // erase returned predictions. The supervisor verifies actual process exit.
     write_attempted = true;

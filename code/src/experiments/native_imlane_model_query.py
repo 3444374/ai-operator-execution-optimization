@@ -256,8 +256,6 @@ def run_worker(args, *, service_factory=None):
         if mode == 'software_ipc' and service_factory is None:
             raise ValueError('software_ipc validation requires an explicit no-model test service factory')
         report.update(provider_mode=mode, model_requests=0 if mode == 'software_ipc' else None)
-        report['source'] = prepare_input(Path(config['reviews_csv']).resolve(), args.output / 'input',
-                                         provider_mode=mode)['source']
         for name in ('udf-receipts', 'model-calls', 'model-service'):
             (args.output / name).mkdir(mode=0o700)
         service_environment = dict(os.environ)
@@ -298,6 +296,9 @@ def run_worker(args, *, service_factory=None):
                         window.check()
                         scope.check()
                         service.check()
+                        report['source_started_ns'] = time.monotonic_ns()
+                        report['source'] = prepare_input(Path(config['reviews_csv']).resolve(),
+                            args.output / 'input', provider_mode=mode)['source']
                         command = [str(args.driver), '--input', str(args.output / 'input/input.csv'),
                             '--module', str(kernel_root / 'q3_udf.py'), '--function', 'infer_q3',
                             '--kind', args.kind, '--output', str(args.output / 'query.json')]
@@ -323,6 +324,12 @@ def run_worker(args, *, service_factory=None):
                                 checked_batches.add(path)
                             window.observe(args.output / 'query.json', args.output / 'result-ready.json')
                             if window.ready_ns is not None:
+                                if 'result_ready_monotonic_ns' not in report:
+                                    native = read_json(args.output / 'query.json')
+                                    report['query_clock_version'] = native.get('query_clock_version')
+                                    report['result_ready_monotonic_ns'] = window.ready_ns
+                                    report['ready_source_to_sink_seconds'] = (window.ready_ns - report['source_started_ns']) / 1e9
+                                    report['cold_worker_entry_to_sink_seconds'] = window.ready_ns / 1e9 - window.started
                                 service.begin_cleanup(window.cleanup_deadline)
                             window.check()
                             scope.check()

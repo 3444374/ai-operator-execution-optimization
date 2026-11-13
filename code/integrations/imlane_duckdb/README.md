@@ -151,7 +151,15 @@ IPC减少TCP／HTTP协议、每行HTTP请求和HTTPX依赖，但仍有进程切�
 未做匹配传输测量前不声称速度收益或零拷贝。HTTP诊断源码可从e420a0abbc02782a919340a3a83179f077f2598a恢复，
 [必要软件证据](../../../experiments/results/diagnostics/imlane_duckdb_q3_20261106/http_software_cpu.json)保留；真实HTTP模型测试暂停。
 
-完整2000源物化计入冷scope，普通筛选仍由DuckDB完成，正常逻辑量120。
+Movie Q3 的独立 SQL 入口在模型与作者 runtime 就绪后开始读取原 CSV，源转换、临时 CSV 交接、
+DuckDB 扫描、普通筛选、prediction 与 COUNT 都进入 `ready_source_to_sink_seconds`。
+`query_clock_version=imlane.q3.source_to_sink.v1` 的终点为 C++ 完整 COUNT 物化时刻；额外源计数、
+EXPLAIN、审计、持久化和关闭不延长它。`cold_worker_entry_to_sink_seconds` 另含准备与启动，
+两者不混比；源转换仍有当前输入 packet 的身份摘要开销，不从测量中估算扣除。
+本次需重建 Q3 薄 driver；旧二进制/历史时长不回填。仅 Python 软件生命周期检查不代表新 Linux SQL
+或模型资格，完整目标验证仍待独立安排。
+
+完整2000源物化计入查询scope，普通筛选仍由DuckDB完成，正常逻辑量120。
 审计用同worker的调用起止区间连接UDF与IPC批次，再逐position核对occurrence，重复消息不靠全局Counter掩盖交换。
 已发布自有回执按实际文件大小读取，不套用小配置JSON的8MiB界限；整体RSS／磁盘仍由外层监督。
 
@@ -620,7 +628,7 @@ request_budget 为既有已 claim 描述符：path、budget_id、limit=N、unit_
 
 薄driver构建用 `build.py movie-scores-driver --root AUTHOR_ROOT --duckdb-source DUCKDB_SOURCE
 --duckdb-build DUCKDB_BUILD --output FRESH_DRIVER`（同一行）；只链接既有原DSO，不重新构建作者库。
-当前维护入口另给出`query_clock_version=sembench.source_to_sink.v3`及
+当前维护入口另给出`query_clock_version=imlane.q3.source_to_sink.v1`及
 `source_to_sink_seconds/ready_source_to_sink_seconds`：模型ready、身份／源码预检后才开始，
 实际准备原提示与native CSV／消息传递，绑定原查询的新鲜源重读及完整内存sink。
 `prepared.json`诊断摘要和receipt回放在sink后；全局result-ready由共享窗口在sink时立即发布，
