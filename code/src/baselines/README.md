@@ -742,13 +742,16 @@ prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常�
 <a id="sembench-native-query-timing"></a>
 ### 完整查询时钟与仍未统一的路径
 
-维护版 LOTUS resident／视觉／MMQA 聚合、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 记录
+维护版 LOTUS resident／视觉／MMQA 聚合、Ray prepared／Animals Filter、Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 记录
 `query_clock_version=sembench.source_to_sink.v3`，同时保留 worker 进入、预检结束和 sink 的实测时间戳。
 共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，
 sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 视觉和 MMQA 聚合也在
 本地客户端、输入／叶级预检及原函数绑定后开始，不将 Git 校验和模块加载混入完整查询。
 Animals 像素身份审计在区间两侧，原生 ImageArray 的真实图像读取／解码仍在区间内；
 MMQA 保留真实 Join 结果及其后续 Extract，聚合保留实际摘要长度决定的原分层归并。
+Ray Animals四题也在manifest／像素及源码预检、原函数绑定和LOTUS客户端初始化后开始真实读取，
+原生模型启动、一遍或两遍图像Filter、必要阶段间清理及完整原sink保留；原入口至sink宽时钟另存，
+新边界本地软件已验、目标验收待进行，旧模型时长不回填。
 软件 fixture 不再套用64条上限；具名官方 sf64 输入仍必须匹配其64条生成身份。
 Ray／Daft prepared 路径在配置／输入核对和预算准备后开始，包含必要的消息准备、原生执行和
 原查询的真实重读／后处理。禁止从历史宽区间估算扣除预检时间；旧 JSON 按原口径保留。

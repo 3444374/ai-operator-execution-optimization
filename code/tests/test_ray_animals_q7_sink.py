@@ -67,7 +67,9 @@ class Q7SinkTests(unittest.TestCase):
         ):
             stack.enter_context(scope)
 
-    def original_query_fixture(self, dataset, execute, *, on_result_ready, physical_attempt_limit, query_id=7):
+    def original_query_fixture(self, dataset, execute, *, on_source_started, on_result_ready,
+                               physical_attempt_limit, query_id=7):
+        on_source_started(time.monotonic_ns())
         passes = binding.filter_passes(query_id)
         self.assertEqual(physical_attempt_limit,passes*self.count)
         two = binding.FilterBinding(execute,self.count,query_id=query_id)
@@ -99,7 +101,10 @@ class Q7SinkTests(unittest.TestCase):
         self.assertEqual(self.actions, ['start-0', 'close-0', 'host-cleanup-0', 'start-1',
             'original-full-sink', 'close-1', 'host-cleanup-1', 'binding-audit', 'evaluation'])
         clock = report['timing']
-        self.assertLessEqual(clock['query_entered_monotonic_ns'], clock['sink_ready_monotonic_ns'])
+        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v3')
+        self.assertLessEqual(clock['query_entered_monotonic_ns'], clock['source_started_monotonic_ns'])
+        self.assertLessEqual(clock['source_started_monotonic_ns'], clock['sink_ready_monotonic_ns'])
+        self.assertLessEqual(clock['source_to_sink_seconds'], clock['query_entry_to_sink_seconds'])
         self.assertLessEqual(clock['sink_ready_monotonic_ns'], clock['final_release_observed_monotonic_ns'])
         self.assertLessEqual(clock['final_release_observed_monotonic_ns'], clock['final_close_started_monotonic_ns'])
         self.assertLessEqual(clock['final_close_finished_monotonic_ns'], clock['serialization_started_monotonic_ns'])
@@ -219,7 +224,8 @@ publish_private_json(root/f'native-close-{stage}.json',dict(started_monotonic_ns
                 resource_passed=True, owned_processes_exited=True, private_sockets_clear=True,
                 GPU_and_Ray_fixture_only=True)
 
-        def query(dataset, execute, *, on_result_ready, physical_attempt_limit):
+        def query(dataset, execute, *, on_source_started, on_result_ready, physical_attempt_limit):
+            on_source_started(time.monotonic_ns())
             self.assertEqual(physical_attempt_limit,128)
             two = binding.FilterBinding(execute,64)
             two(['CPU-image'] * 64)
@@ -247,7 +253,7 @@ class OriginalBindingBoundaryTests(unittest.TestCase):
         actions = []
         frame = pd.DataFrame({'city': []})
         dataset = SimpleNamespace(checkout='software-fixture', preflight=lambda query: dict(rows=64),
-                                  frame=lambda **kwargs: None)
+                                  frame=lambda **kwargs: None, bind_frame=lambda: lambda: None)
         digest = binding.message_digest
 
         def query(*args):
@@ -269,7 +275,7 @@ class OriginalBindingBoundaryTests(unittest.TestCase):
             self.assertEqual(actions, ['original-return'])
             actions.append('sink')
 
-        with patch.object(sembench_animals, 'run_original_query', query), \
+        with patch.object(sembench_animals, 'bind_original_query', return_value=query), \
              patch.object(sembench_animals, 'evaluate_original', evaluate), \
              patch.object(binding, 'message_digest', summarize):
             result, quality, passes, timing = binding.run(dataset,

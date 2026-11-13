@@ -142,10 +142,14 @@ def run_query(root, bound, supervise_stage=None):
     stage, final_future, pool, frame, failure = 0, None, None, None, None
     report = dict(status='failed', query=bound.get('query', 7), result=None, quality=None, passes=[],
         timing=dict(query_entered_monotonic_ns=query_entered, sink_ready_monotonic_ns=None,
-            source_to_sink_seconds=None), controller_entry_monotonic_ns=None,
+            source_started_monotonic_ns=None, source_to_sink_seconds=None,
+            query_entry_to_sink_seconds=None), query_clock_version='sembench.source_to_sink.v3',
+        controller_entry_monotonic_ns=None,
         first_engine_accept_monotonic_ns=None, stage_lifecycle=[],
+        model_ready_before_source=False,
         lifecycle='native worker per original Filter; final owner released after complete original query sink',
-        source_to_sink_scope='fresh source, native startups, required transport and nonfinal-stage cleanup; excludes final teardown, audit, evaluation and persistence',
+        source_to_sink_scope='fresh manifest read and native image read/decode, native startups, required transport and nonfinal-stage cleanup; excludes input/pixel/source preflight, original function binding, LOTUS client setup, final teardown, audit, evaluation and persistence',
+        query_entry_to_sink_scope='query entry through input/source preflight, LOTUS client setup and complete original memory sink',
         request_span_is_GPU_time=False, warmup=0, retries=0,
         logical_occurrences=bound['physical_attempt_limit'])
 
@@ -189,11 +193,15 @@ def run_query(root, bound, supervise_stage=None):
             raise ValueError('cannot dispatch more than the original query Filter passes')
         return json.loads((root / f'predictions-{current}.json').read_text())
 
+    def source_started(timestamp):
+        report['timing']['source_started_monotonic_ns'] = timestamp
+
     def accept(result, sink_ready):
         nonlocal frame, final_future
         frame = result
         report['timing'].update(sink_ready_monotonic_ns=sink_ready,
-            source_to_sink_seconds=(sink_ready-query_entered)/1e9)
+            source_to_sink_seconds=(sink_ready-report['timing']['source_started_monotonic_ns'])/1e9,
+            query_entry_to_sink_seconds=(sink_ready-query_entered)/1e9)
         if final_future is None or final_future.done():
             if final_future is not None:
                 final_future.result()
@@ -214,7 +222,8 @@ def run_query(root, bound, supervise_stage=None):
             final_close_finished_monotonic_ns=close['finished_monotonic_ns'])
 
     try:
-        result, quality, passes, timing = run(dataset, execute, on_result_ready=accept,
+        result, quality, passes, timing = run(dataset, execute, on_source_started=source_started,
+            on_result_ready=accept,
             physical_attempt_limit=bound['physical_attempt_limit'], **query_options)
         if report['timing']['sink_ready_monotonic_ns'] is None:
             raise RuntimeError('Original Animals Filter query omitted its complete memory-sink callback')

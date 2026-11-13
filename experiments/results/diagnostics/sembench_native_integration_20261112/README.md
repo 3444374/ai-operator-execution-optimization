@@ -394,6 +394,22 @@ worker-entry→sink为56.357690154秒。不是完整256、独立暖轮、作者T
 首轮新增窗口测试插入位置错误，误带相邻用例断言，修正测试后干净导出48／48通过，原日志保留。
 本批未运行新模型；原Q9历史成绩不继承新时钟，目标SQL验收仍待进行。
 
+## Ray Animals 四题的完整结果时钟
+
+既有一／两阶段Filter入口共用`sembench.source_to_sink.v3`，预检／像素身份、原函数绑定与LOTUS
+客户端初始化在真实manifest扫描前完成；原生ImageArray仍实际读图／解码，原查询的提示、parser、
+关系后处理与评价不变。Q7的第一阶段关闭及必要物理清理仍计入，最终阶段仍等完整sink才释放。
+新`source_started_monotonic_ns`与原sink事件直接形成时长；早期入口事件和实测宽区间
+`query_entry_to_sink_seconds`独立保留，不从历史成绩估算扣除。
+
+干净候选导出排除三文件草稿后，35项不同本地软件检查通过、0模型／0原生Ray runtime。
+四题受控时钟把7秒预检、11秒输入绑定、13秒源码绑定和90秒LOTUS客户端构造放在起点前；
+单遍真实manifest读取2秒＋原生软件执行3秒共5秒，两遍另含第二次执行3秒及必要阶段间清理5秒共13秒。
+最终关闭23秒、逐消息摘要与评价均在sink后；原题N=1／7／13消息、默认parser回退、完整关系及评价差分保持。
+首轮34项通过，CPU-child一项因macOS沙箱禁止进程树读取失败；获准单项复核后通过，原失败日志保留。
+日志运行身份为`ray-animals-query-clock-r1-clean`及`ray-animals-query-clock-r2-child`，可向接入会话取脱敏原件。
+这些软件秒数只表征边界，不是性能数据；目标新时钟尚待验收，旧Q1／Q7模型成绩保留原口径。
+
 <a id="lotus-native-join-projection"></a>
 ## LOTUS 多列 Join 的原生选列限制
 

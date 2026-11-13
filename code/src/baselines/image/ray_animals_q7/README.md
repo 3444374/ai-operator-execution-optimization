@@ -145,10 +145,12 @@ missing, duplicate, error or unconfirmed request. Request IDs are local to an
 owner; correlate PID/request ID and ledger attempt. `QUERY.json` completion alone
 does not establish final physical resource acceptance.
 
-The fresh-source-to-sink interval includes source work, both startups, required
-input/prediction transport, native work, the first public Ray close and necessary
-inter-stage cleanup. Its endpoint is the original complete in-memory City
-result, before the final public Ray close, final host cleanup, message-summary
+The maintained `sembench.source_to_sink.v3` interval begins after manifest/pixel
+and source-code checks, original function binding and LOTUS client setup.
+It includes a fresh manifest scan, native image reading/decoding, all native
+startups, required input/prediction transport, native work and any nonfinal
+public Ray close and inter-stage cleanup. Its endpoint is the original complete
+in-memory query result, before the final public Ray close, final host cleanup, message-summary
 audit, evaluation, result serialization and report persistence. This is not a
 zero-I/O execution profile: the existing native workers consume input files and
 return predictions through files. Supervised Popen,
@@ -157,7 +159,25 @@ separate clocks. Full controller entry and first engine admission remain unknown
 in this runner; request spans are not pure GPU time. The common definitions are
 in [native baseline calibration](../../../../../experiments/plans/原生基线校准.md).
 
+`timing.source_started_monotonic_ns` and `sink_ready_monotonic_ns` define the
+versioned `source_to_sink_seconds`. `query_entered_monotonic_ns` remains the
+earlier entry event, with its measured `query_entry_to_sink_seconds` retained
+separately. Historical results retain their original wider interval; do not
+reconstruct v3 by subtracting estimated preflight time. Model startup remains
+inside v3, including both lifecycles for Q7; no ready-first or warm claim applies.
+
 Qualification scope:
+
+- The v3 boundary has 35 distinct local software checks, including unchanged
+  original messages/parser/full results/evaluators for Q1/Q3/Q10 at N=1/7/13,
+  the Q7 two-stage path, and a controlled clock over all four original queries.
+  The latter retains source work and nonfinal cleanup while excluding preflight,
+  client setup and post-sink finalization. A real CPU-child handoff initially
+  failed because the macOS sandbox denied process-tree inspection; that single
+  unchanged test passed with inspection permitted. Both outputs are retained.
+  These checks used a clean candidate export excluding the three unrelated
+  draft files, no model or native Ray runtime. Target qualification of this
+  changed clock is pending; older GPU clocks do not acquire v3 identity.
 
 - The shared one/two-pass candidate has local CPU checks for Q1/Q3/Q10 at
   N=1/7/13, their full original messages/parser/results/evaluators, single-stage

@@ -63,7 +63,8 @@ class FilterBinding:
             outcome['message_sha256'] = [message_digest(message) for message in messages]
 
 
-def run(dataset, execute, *, query_id=7, on_result_ready=None, physical_attempt_limit=None):
+def run(dataset, execute, *, query_id=7, on_source_started=None, on_result_ready=None,
+        physical_attempt_limit=None):
     """Native execution must already enforce the process-wide public-generate cap.
 
     Original runner calls the original parser and full City intersection itself.
@@ -72,12 +73,13 @@ def run(dataset, execute, *, query_id=7, on_result_ready=None, physical_attempt_
     import lotus
     from lotus.models import LM
     from lotus.types import LMOutput
-    from src.baselines.image.sembench_animals import run_original_query, evaluate_original
+    from src.baselines.image.sembench_animals import bind_original_query, evaluate_original
 
     source = dataset.preflight(query_id)
     if physical_attempt_limit is not None and rows_per_pass(physical_attempt_limit, query_id) != source['rows']:
         raise ValueError('Animals Filter physical attempt limit differs from the complete frozen source')
     binding = FilterBinding(execute, source['rows'], query_id=query_id)
+    execute_query = bind_original_query(dataset.checkout, dataset.bind_frame(), query_id)
     class NativeLM(LM):
         def __call__(self, messages, *args, **kwargs):
             return LMOutput(outputs=binding(messages))
@@ -85,7 +87,10 @@ def run(dataset, execute, *, query_id=7, on_result_ready=None, physical_attempt_
                   max_batch_size=4, cache={}, top_p=1, seed=0, stop=[],
                   frequency_penalty=0, presence_penalty=0, max_ctx_len=32768)
     with lotus.settings.context(lm=lm, enable_cache=False):
-        result = run_original_query(dataset.checkout, dataset.frame, query_id)
+        source_started = time.monotonic_ns()
+        if on_source_started is not None:
+            on_source_started(source_started)
+        result = execute_query()
         sink_ready = time.monotonic_ns()
         if on_result_ready is not None:
             on_result_ready(result, sink_ready)
@@ -94,6 +99,7 @@ def run(dataset, execute, *, query_id=7, on_result_ready=None, physical_attempt_
     audit_finished = time.monotonic_ns()
     evaluation_started = time.monotonic_ns()
     quality = evaluate_original(dataset.checkout, result, dataset.frame(references=True), query_id)
-    return result, quality, binding.passes, dict(sink_ready_monotonic_ns=sink_ready,
+    return result, quality, binding.passes, dict(source_started_monotonic_ns=source_started,
+        sink_ready_monotonic_ns=sink_ready,
         binding_audit_started_monotonic_ns=audit_started, binding_audit_finished_monotonic_ns=audit_finished,
         evaluation_started_monotonic_ns=evaluation_started, evaluation_finished_monotonic_ns=time.monotonic_ns())

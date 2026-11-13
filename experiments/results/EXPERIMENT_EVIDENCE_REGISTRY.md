@@ -31,6 +31,8 @@ IMLane prepared VARCHAR补齐provider本地回执的occurrence ID，RPC仍按原
 Map私有参考harness首轮失败保留。其他新任务／模型仍另验。
 原版DOUBLE Q9 Map另补真正的ready-source v3起止及审计前就绪通知，保留原含启动宽区间；
 独立干净导出48项软件检查通过、0模型，新时钟目标SQL仍待验，旧成绩不回填。
+Ray Animals四题另共用v3源起点，把额外预检与LOTUS客户端构造前置，真实读图、原生启动、
+阶段间清理与完整关系保留；35项不同本地软件检查通过、0模型，目标新时钟仍待验。
 独立原件再确认cb754的LOTUS quick完整256：3355次真实比较及1296次原parser回退分别保留；
 原相关性、ready-first时钟与原生算法身份不混排。0755的15项Linux检查和真实输入5条Extract消息捕获
 均为CPU准备，不授予非空第二阶段模型资格。

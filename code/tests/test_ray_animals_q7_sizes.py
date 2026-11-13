@@ -106,6 +106,107 @@ class FrozenSizeTests(unittest.TestCase):
 @unittest.skipUnless(os.environ.get('SEMLOOM_NATIVE_TEST_CHECKOUT'),
     'requires pinned c814 source and existing original LOTUS/evaluator dependencies')
 class OriginalSmallSourceTests(unittest.TestCase):
+    def test_query_clock_keeps_real_source_and_interstage_cleanup_but_excludes_preflight(self):
+        from lotus.models import LM
+        from src.baselines.image import sembench_animals
+        from tests.baselines.image.test_sembench_animals_original import OriginalAnimalsImageTests
+
+        helper = OriginalAnimalsImageTests()
+        helper.checkout = Path(os.environ['SEMLOOM_NATIVE_TEST_CHECKOUT'])
+        helper.setUp(); self.addCleanup(helper.doCleanups)
+        dataset = helper.make_dataset(count=7)
+        preflight, bind_frame = type(dataset).preflight, type(dataset).bind_frame
+        bind_query = sembench_animals.bind_original_query
+        verify, image_identity = sembench_animals.verify_animals_checkout, sembench_animals.image_identity
+        initialize, digest = LM.__init__, binding.message_digest
+        evaluate = sembench_animals.evaluate_original
+
+        for query_id in (1, 3, 7, 10):
+            with self.subTest(query=query_id):
+                clock, active, stages, events = [0], [False], [], {}
+
+                def advance(seconds):
+                    clock[0] += seconds * 10**9
+
+                def checked_source(current, query):
+                    self.assertFalse(active[0])
+                    advance(7)
+                    return preflight(current, query)
+
+                def bind_source(current):
+                    self.assertFalse(active[0])
+                    advance(11)
+                    load = bind_frame(current)
+                    def scan():
+                        self.assertTrue(active[0])
+                        advance(2)
+                        return load()
+                    return scan
+
+                def checked_binding(*args):
+                    self.assertFalse(active[0])
+                    advance(13)
+                    return bind_query(*args)
+
+                def initialized(current, *args, **kwargs):
+                    self.assertFalse(active[0])
+                    advance(90)
+                    return initialize(current, *args, **kwargs)
+
+                def outside_clock(function):
+                    def checked(*args, **kwargs):
+                        self.assertFalse(active[0], 'extra source/pixel audit entered query clock')
+                        return function(*args, **kwargs)
+                    return checked
+
+                def started(timestamp):
+                    self.assertEqual(timestamp, 121 * 10**9)
+                    events['start'] = timestamp
+                    active[0] = True
+
+                def execute(rows):
+                    self.assertTrue(active[0])
+                    advance(3)
+                    if query_id == 7 and not stages:
+                        advance(5)  # Required first native lifecycle cleanup.
+                    stages.append(rows)
+                    return [dict(call_id=row['call_id'], generated_text='False') for row in rows[::-1]]
+
+                def ready(result, timestamp):
+                    self.assertTrue(active[0])
+                    active[0] = False
+                    events['sink'] = timestamp
+                    advance(23)  # Final native close occurs after the complete sink.
+
+                def summarized(message):
+                    self.assertFalse(active[0])
+                    advance(17)
+                    return digest(message)
+
+                def evaluated(*args):
+                    self.assertFalse(active[0])
+                    advance(19)
+                    return evaluate(*args)
+
+                with patch.object(type(dataset), 'preflight', checked_source), \
+                     patch.object(type(dataset), 'bind_frame', bind_source), \
+                     patch.object(sembench_animals, 'bind_original_query', checked_binding), \
+                     patch.object(sembench_animals, 'verify_animals_checkout', outside_clock(verify)), \
+                     patch.object(sembench_animals, 'image_identity', outside_clock(image_identity)), \
+                     patch.object(LM, '__init__', initialized), \
+                     patch.object(binding.time, 'monotonic_ns', side_effect=lambda: clock[0]), \
+                     patch.object(binding, 'message_digest', summarized), \
+                     patch.object(sembench_animals, 'evaluate_original', evaluated):
+                    _, _, passes, timing = binding.run(dataset, execute, query_id=query_id,
+                        physical_attempt_limit=7 * binding.filter_passes(query_id),
+                        on_source_started=started, on_result_ready=ready)
+                expected = 13 if query_id == 7 else 5
+                self.assertEqual((events['sink'] - events['start']) / 1e9, expected)
+                self.assertEqual(timing['source_started_monotonic_ns'], events['start'])
+                self.assertEqual(timing['sink_ready_monotonic_ns'], events['sink'])
+                self.assertGreater(timing['evaluation_finished_monotonic_ns'], events['sink'])
+                self.assertEqual(len(passes), binding.filter_passes(query_id))
+
     def test_single_filter_tasks_keep_original_messages_parser_result_and_evaluator(self):
         from tests.baselines.image.test_sembench_animals_original import OriginalAnimalsImageTests
         helper = OriginalAnimalsImageTests(); helper.checkout = Path(os.environ['SEMLOOM_NATIVE_TEST_CHECKOUT'])
