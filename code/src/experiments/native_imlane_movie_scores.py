@@ -20,7 +20,7 @@ import psutil
 from integrations.imlane_duckdb.model_provider import configuration as provider_configuration
 from integrations.imlane_duckdb.model_service import ModelService
 from integrations.imlane_records import owner
-from src.experiments.native_imlane_model_query import QueryWindow, READY_SCHEMA
+from src.experiments.native_imlane_model_query import _ResultWindow
 from src.infrastructure.redact import redact_text
 from src.infrastructure.private_artifacts import content_digest, file_identity, file_sha256, json_metric, new_private_directory, write_private_json
 
@@ -128,7 +128,7 @@ def run(config_path, output, *, service_factory=ModelService):
         raise ValueError('Q9 requires a fresh claimed unit; continuation/retry forbidden')
     config['model_service'] = dict(config['model_service'], request_budget=descriptor)
     new_private_directory(output)
-    window = QueryWindow(config['query_seconds'], config['cleanup_seconds'], 8,
+    window = _ResultWindow(output, config['query_seconds'], config['cleanup_seconds'], 8,
         cleanup_path=output / 'cleanup-start.json')
     stop = owner.StopBudget(threading.Event())
     previous = {number: signal.signal(number, stop.signal) for number in (signal.SIGTERM, signal.SIGINT)}
@@ -144,7 +144,7 @@ def run(config_path, output, *, service_factory=ModelService):
         directory = output / phase
         directory.mkdir(mode=0o700)
         started = time.monotonic_ns()
-        query, operation, calls, rows = q9_binding.prepare(config, directory / 'input', config['run_id'] + '-' + phase)
+        query, operation, calls, rows = q9_binding.prepare(config, output / 'preflight-input', config['run_id'] + '-' + phase)
         if descriptor['limit'] != len(rows):
             raise ValueError('Q9 requires one permanently bounded call per prepared source occurrence')
         assert [content_digest(json.loads(call['messages_json'])) for call in calls] == identity_lock['messages_sha256']
@@ -160,6 +160,9 @@ def run(config_path, output, *, service_factory=ModelService):
             sampling_params=config['sampling_params'], request_timeout_s=config['request_timeout_s'],
             deadline_monotonic=window.query_deadline, receipt_dir=str(directory / 'model-calls')))
         write_private_json(directory / 'model-provider.json', provider)
+        execute_query = query.bind_execution()
+        source_started = time.monotonic_ns()
+        calls, rows = q9_binding.materialize(query, operation, directory / 'input')
         write_private_json(directory / 'udf.json', dict(provider_path=str(CODE / 'integrations/imlane_duckdb/model_provider.py'),
             provider_function='infer_batch', provider_mode=config['provider_mode'], receipt_dir=str(directory / 'udf-receipts'),
             messages_path=str(directory / 'input/messages.json'), messages_sha256=file_sha256(directory / 'input/messages.json')))
@@ -174,8 +177,8 @@ def run(config_path, output, *, service_factory=ModelService):
         frame, failure = None, None
         try:
             frame, audited = run_relation_query(args, native_report, kernel=KERNEL, command=command,
-                window=window, query_started_ns=started,
-                sink=lambda native: finish_movie_scores(native, query, rows),
+                window=window, query_started_ns=source_started,
+                sink=lambda native: finish_movie_scores(native, query, rows, execute_query=execute_query),
                 audit=lambda native, frame: q9_binding.finish(query, operation, calls, rows, native, directory / 'udf-receipts'),
                 check=service.check)
         except BaseException as error:
@@ -186,6 +189,8 @@ def run(config_path, output, *, service_factory=ModelService):
             persist_relation_observation(directory, native_report, frame, primary=failure)
         audited_frame, result = audited
         assert frame.equals(audited_frame)
+        q9_binding.write_prepared_audit(query, calls, rows, directory / 'input')
+        assert [content_digest(json.loads(call['messages_json'])) for call in calls] == identity_lock['messages_sha256']
         native = read(directory / 'query.json')
         ready = native_report['result_ready_monotonic_ns']
         write_private_json(directory / 'result-ready.json', dict(result=result, result_ready_monotonic_ns=ready))
@@ -198,6 +203,14 @@ def run(config_path, output, *, service_factory=ModelService):
             ('api_pid', 'api_process_created', 'ready_sha256', 'gpu_model_identity'))
         current = dict(phase=phase, started_ns=started, result_ready_ns=ready,
             complete_query_seconds=(ready-started)/1e9, native_projection_seconds=native['native_projection_materialized_seconds'],
+            source_started_ns=source_started, source_to_sink_seconds=(ready-source_started)/1e9,
+            ready_source_to_sink_seconds=(ready-source_started)/1e9,
+            query_clock_version='sembench.source_to_sink.v3',
+            timing_scope='model-ready then original prompt/native CSV preparation, required transport, '
+                'native projection and original fresh source/complete memory sink; '
+                'identity preflight, model startup, prepared audit, receipt replay, quality and final close excluded',
+            legacy_complete_query_scope='phase entry includes preflight preparation and model startup; '
+                'not the versioned source-to-sink clock',
             native_result_ready_ns=native['result_ready_monotonic_ns'],
             evaluation_seconds=(evaluation_end-evaluation_start)/1e9, quality=quality,
             native=native, ipc=ipc, model_identity=after_identity,
@@ -211,10 +224,6 @@ def run(config_path, output, *, service_factory=ModelService):
         write_private_json(directory / 'AUDIT.json', current)
         all_ids = [item['response_id'] for current in report['rounds'] for item in current['ipc']['calls']]
         assert len(all_ids) == len(set(all_ids)) == len(rows)
-        last_ready = report['rounds'][-1]['result_ready_ns']
-        write_private_json(output / 'result-ready.json', dict(schema=READY_SCHEMA,
-            result_ready_monotonic_ns=last_ready, clock='CLOCK_MONOTONIC'))
-        window.accept_ready(last_ready, clock='CLOCK_MONOTONIC')
         report.update(status='completed', model_calls=len(all_ids), unknown=0, same_model=True)
     except BaseException as error:
         primary = error

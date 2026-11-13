@@ -24,10 +24,13 @@ IMLane prepared VARCHAR补齐provider本地回执的occurrence ID，RPC仍按原
 82项不同软件检查通过；417的当前kernel真实VARCHAR SQL／IPC／ACK及common14随后通过、0模型。
 417的断连诊断单项失败保留，3d9fb8仅修正测试完成屏障后Linux单项通过，不改旧轮总状态。
 同一prediction接点新增原LOTUS quick完整查询软件验证；每批原生SQL生命周期计入完整时钟，
-11f随后通过8行派生输入的真实SQL／IPC／renderer零模型门，模型／完整输入仍待验；
+11f随后通过8行派生输入的真实SQL／IPC／renderer零模型门；ecbd的8行13次真实比较及原答回放已验，完整256待验；
 不能称作者TopK算法或继承旧模型资格。
 同一VARCHAR单Map／Extract接点随后迁移Q1专属关系类与模板，四场景原题差分和受影响软件检查通过；
-参考token／身份检查前置、真实源读取及完整关系仍在时钟内，新任务／新时钟的SQL与模型另验。
+参考token／身份检查前置、真实源读取及完整关系仍在时钟内；ecbd的12项Linux与120／24项代表SQL软件门通过，
+Map私有参考harness首轮失败保留。其他新任务／模型仍另验。
+原版DOUBLE Q9 Map另补真正的ready-source v3起止及审计前就绪通知，保留原含启动宽区间；
+独立干净导出48项软件检查通过、0模型，新时钟目标SQL仍待验，旧成绩不回填。
 独立原件再确认cb754的LOTUS quick完整256：3355次真实比较及1296次原parser回退分别保留；
 原相关性、ready-first时钟与原生算法身份不混排。0755的15项Linux检查和真实输入5条Extract消息捕获
 均为CPU准备，不授予非空第二阶段模型资格。

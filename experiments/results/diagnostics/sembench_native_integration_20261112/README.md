@@ -311,7 +311,7 @@ SQL／kernel／provider／RPC生产字节保持417来源，原失败保留，不
 共28个软件答复。一个软件ModelService贯穿查询，每批SQL启动／关闭计入完整sink；
 原RNG、消息、发生项、采样、排名、关系和评价回放一致，ACK／作者关闭及宿主资源清理通过。
 复用417的DSO／薄driver，无重建／重链；0模型、无GPU预算，软件usage不能当真实模型成本。
-仅为8行接线资格，真实模型与该后端完整256待验；旧Q1或LOTUS完整256成绩不转授。
+仅为该冻结来源的8行CPU接线资格；下述ecbd已另完成8行真实比较，完整256仍待验，旧Q1或LOTUS成绩不转授。
 
 ## MMQA Q2b 参考 Extract 组件的真实验证
 
@@ -351,6 +351,48 @@ ACK／parser／完整查询与评分复用。当前Q1模板及离线helper迁移
 与原SDK的完整结果及消息相同；保留重复业务ID、非连续索引与原JSON额外字段行为。
 错误预算／Filter误用在模型前拒绝；原Q1 owner／失败／时钟及TopK回归通过。
 新Map／Extract任务及新计时的Linux作者SQL／实际模型仍未验证，不继承旧Q1或其他后端资格。
+
+## ecbd 原题 Map／Extract SQL 与八行 TopK 模型验收
+
+冻结`ecbd60b5469a9103ec7bab69fb80733ba6b8ffe4`，code tree
+`6fda2713870f3675feb4a75b65f352f0002763f5`。12／12 Linux CPU、0skip；原Movie Q8选中120项Map和
+MMQA Q4实际24项Extract走真实作者VARCHAR SQL／Arrow／IPC／ACK、真实renderer和软件答复，
+发生项、原关系及原SDK参考检查通过。Extract原JSON由任务补齐。DSO／薄driver／kernel未改，0模型。
+Map首轮已执行SQL，但私有参考callback误把sem_map的DataFrame按TopK(frame,stats)拆包；
+生产代码未改，仅修正该harness后补Map软件门，原失败保留。不能把参考脚本失败改成第一次全通过。
+
+同一原Q9前8项、完整11列派生输入随后只运行一轮真实TopK。1个原生模型服务跨4批作者SQL，
+批次为7／2／3／1，共13个成功终态，unknown／retry／额外warmup／原parser回退均0；
+永久预留28，未用15不退款，单元关闭。保留原RNG，实际13条完整消息／展开token／采样／请求ID／原文关联、
+8行原排名／完整sink及原答重放通过；原文为6条Document 1、7条Document 2。
+Spearman为0.6667768868321989，Kendall为0.49135381491199537，保留该样本观察，不称质量阈值达标。
+
+就绪后新鲜source→完整sink为15.848765164秒，包含4批SQL启动／关闭；服务启动31.183271148242056秒另计，
+worker-entry→sink为56.357690154秒。不是完整256、独立暖轮、作者TopK算法或跨系统性能排名。
+价格、输出token ID、kernel、首次engine accept及独立物理generate计数未观测，不填零；
+进程／GPU／socket／SHM及租约清理通过。旧模型结果没有重跑或改记为本次来源。
+
+两份归档及全部payload已独立核字节／SHA256，按运行标识向服务器协调者取原件：
+
+| 运行标识 | payload数 | 归档字节数 | SHA256 |
+|---|---:|---:|---|
+| baseline-ecbd60-imlane-prepared-text-cpu-20261113-r1 | 1425 | 3894995 | `7a2645c34768f5626d445a75d1d73f5a2cb9ded842c6839d859b4a44f362d9f8` |
+| baseline-ecbd60-imlane-topk8-gpu-20261113-r1 | 147 | 183851 | `927bb75a96fc81e0703b0b7fc4d1ec7099c0040a4ac1949399e7916b003c35f1` |
+
+## 原版 DOUBLE Map 的完整结果时钟
+
+[既有Q9入口](../../../../code/integrations/imlane_duckdb/README.md#movie-q9原版-double-map-的唯一运行入口)
+保留原DSO／SQL／数字转换／参数与预算；把原题预检和诊断快照同必需CSV／原消息物化分开。
+模型ready及额外身份检查后实际启动新时钟，真实原查询源重读及最终关系保持；全局ready在完整sink时
+由共用窗口发布，随后才做原答回放、prepared摘要、评价及最终关闭。原`complete_query_seconds`宽区间保留，
+新增v3 `source_to_sink_seconds`，不是从旧时长相减。共用就绪窗口从VARCHAR入口移到既有生命周期模块，
+没有第二套通知实现；原调用名和就绪schema保持。
+
+48项受影响软件检查在HEAD加本批改动的独立干净导出中通过，明确排除三文件草稿，0模型。
+受控时间包含90秒模型启动、7秒预检、额外身份／审计／持久化／关闭，同时仅把2秒原输入物化＋3秒完整原查询sink
+记为5秒v3区间；原宽区间113秒另存。原1／7／17项、重复业务ID、数字回退、完整关系／评价、永久预算与失败边界保持。
+首轮新增窗口测试插入位置错误，误带相邻用例断言，修正测试后干净导出48／48通过，原日志保留。
+本批未运行新模型；原Q9历史成绩不继承新时钟，目标SQL验收仍待进行。
 
 <a id="lotus-native-join-projection"></a>
 ## LOTUS 多列 Join 的原生选列限制

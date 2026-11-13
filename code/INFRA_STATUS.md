@@ -28,9 +28,9 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 
 | 任务能力与官方代表 | LOTUS | Ray 原生 processor | Daft 原生 AI | IMLane 作者入口 | Kalypso 作者入口 |
 |---|---|---|---|---|---|
-| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；VARCHAR工程变体的原题单Map／Extract已接，软件差分／新SQL与模型待验；原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
+| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；VARCHAR工程变体的原题单Map／Extract已接，ecbd代表SQL软件已验；其余任务／模型另验，原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接；8667样本真实SQL／模型已验，完整输入另验，非作者 Join 算法复现 | 原 CP＋Filter 已接；4f12样本作者模型已验，其他来源／输入另验 |
-| 文本完整排名；Movie Q9 TopK profile | 原 quick TopK显式resident已接；cb754的完整256真实模型已验，原parser回退保留；其他来源另验 | 未接线 | 未接线 | LOTUS quick over VARCHAR工程变体已接，原题／Arrow／provider软件检查；11f的8行Linux SQL／renderer零模型门通过，模型待验，非作者TopK算法 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
+| 文本完整排名；Movie Q9 TopK profile | 原 quick TopK显式resident已接；cb754的完整256真实模型已验，原parser回退保留；其他来源另验 | 未接线 | 未接线 | LOTUS quick over VARCHAR工程变体已接，原题／Arrow／provider软件检查；11f的8行Linux SQL／renderer门及ecbd的8行13次真实比较通过，full256待验，非作者TopK算法 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 未接线 | 未接线 | 未接线 | 未接线 |
@@ -68,11 +68,12 @@ Linux单项1／1通过，旧失败保留；没有修改DSO、C++ driver、消息
 [TopK新接点](integrations/imlane_duckdb/README.md#lotus-quick-topk-与-varchar-prediction)
 复用同一模型owner／VARCHAR prediction，每批原生SQL关闭计入完整查询；原quick算法、原评分及
 失败留证由软件检查覆盖；11f的8行派生输入通过7批真实SQL／IPC及renderer门，0模型、非完整256；
-真实模型待验，不是作者TopK算法复现。
+ecbd随后完成同一8行发生项13次真实比较／完整原sink和原答回放，资源清理通过，非full256或作者TopK算法复现。
 VARCHAR工程变体的单Map／Extract已使用同一原题任务接口，替代Q1专属关系类；旧Q1配置仅格式兼容。
 实际N与原JSON约束由任务决定，输入／参考token检查前置；原查询真实源读取与完整sink仍在查询内。
 四场景五个原题的临时输入／原SDK完整关系差分及受影响12项软件检查通过、0模型；
-不转授新任务／新时钟的Linux SQL或模型资格，不把该单算子路径说成混合图已接通。
+不转授所有新任务或模型资格，不把该单算子路径说成混合图已接通。ecbd的12项Linux检查和原Movie Q8／MMQA Q4
+的120／24个真实SQL软件答复随后通过；Map私有参考harness首轮错误保留，不改生产代码绕过。
 其他已就绪项继续排队；不为每个格子另写执行器，不只积累软件通过数。
 已核对的普通文本题主要是单个语义调用；E-Commerce Q12 的后续 Extract 明确包含图像，
 已由完整原生 LOTUS 服务入口运行，不能当纯文本或假定其他后端已能执行它。
@@ -247,7 +248,9 @@ LOTUS resident／视觉／MMQA 聚合、Ray／Daft prepared、IMLane Filter 和 
 维护版 IMLane Filter 与 Kalypso Movie Filter／Map 也已移出额外预检：前者在起点前准备源码、
 审计 token、预算及上下文检查，区间内保留执行消息、native SQL 和原完整 sink；后者前置
 manifest／源码绑定，仍新鲜读取原 Reviews CSV、生成作者必需输入并执行原关系。
-Kalypso 另保留 caller→sink，不改旧 receipt 或估算扣除。受影响软件检查通过，v3 目标代表查询待验；
+原版DOUBLE Q9 Map的源／消息物化与额外preflight也已分开，完整sink立即发布全局ready，
+保留原phase-entry含启动宽区间；48项独立干净导出软件检查通过，新时钟目标SQL仍待验。
+Kalypso另保留caller→sink，不改旧receipt或估算扣除。各v3目标范围按冻结来源分列；
 其余专用／私有入口的旧时钟按
 [时钟范围](src/baselines/README.md#完整查询时钟与仍未统一的路径)分列。
 服务器冻结 `d55e9229` 的112项CPU检查通过；IMLane Q3a完成25次请求、原F1为0.9167，

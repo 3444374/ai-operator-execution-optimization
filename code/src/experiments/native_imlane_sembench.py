@@ -24,11 +24,11 @@ from src.baselines.text.sembench_prepared import prepare, finish_relation, audit
 from src.baselines.text.sembench_text import SemBenchTextQuery
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
-from src.experiments.native_imlane_model_query import QueryWindow, READY_SCHEMA, supervised_run, _positive
+from src.experiments.native_imlane_model_query import _ResultWindow, supervised_run, _positive
 from src.experiments.native_imlane_relation import run_relation_query, persist_relation_observation
 from src.infrastructure.private_artifacts import (
     file_identity, json_metric, new_private_directory, open_private_text,
-    publish_private_json, read_json, write_private_json,
+    read_json, write_private_json,
 )
 from src.infrastructure.redact import redact_text
 from src.serving.backends.vllm_protocol import GenerationSpec
@@ -191,17 +191,6 @@ def audit_ipc(directory, requests, tokens, predictions, sampling):
         raise ValueError('every source occurrence requires one identified charged native terminal result')
     return dict(calls=calls, native_generate_terminal_count=len(calls), retries=0,
                 first_engine_accept=None, kernel_count=None)
-
-
-class _ResultWindow(QueryWindow):
-    def __init__(self, output, *args, **kwargs):
-        self.output = output
-        super().__init__(*args, **kwargs)
-
-    def accept_ready(self, ready, *, clock):
-        super().accept_ready(ready, clock=clock)
-        publish_private_json(self.output / 'result-ready.json',
-            dict(schema=READY_SCHEMA, result_ready_monotonic_ns=ready, clock=clock))
 
 
 def run_worker(args, config, *, service_factory=ModelService):

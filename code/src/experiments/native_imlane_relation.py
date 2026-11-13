@@ -221,7 +221,7 @@ def finish_mmqa_filters(native, bindings, *, execute_queries=None):
     return results
 
 
-def finish_movie_scores(native, query, source_rows):
+def finish_movie_scores(native, query, source_rows, *, execute_query=None):
     """Apply original Movie Q9 projection or Q10 grouped sink to native DOUBLE scores."""
     if (query.scenario != 'movie' or query.query not in ('9', '10')
             or query.operation.stage.kind != 'map' or native['return_type'] != 'DOUBLE'
@@ -244,5 +244,6 @@ def finish_movie_scores(native, query, source_rows):
 
     def original_operator(operation, _invoke):
         return dict(frame=operation.result_frame(completed))
-    result, _ = query.execute(original_operator)
+    execute = query.execute if execute_query is None else execute_query
+    result, _ = execute(original_operator)
     return result

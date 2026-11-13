@@ -619,9 +619,16 @@ request_budget 为既有已 claim 描述符：path、budget_id、limit=N、unit_
 
 薄driver构建用 `build.py movie-scores-driver --root AUTHOR_ROOT --duckdb-source DUCKDB_SOURCE
 --duckdb-build DUCKDB_BUILD --output FRESH_DRIVER`（同一行）；只链接既有原DSO，不重新构建作者库。
-原 source 准备到完整内存 sink 的冷区间包含模型启动；service-start 到 sink、model-ready 到 sink
-分别直接观测。后者仅是 ready 后的尾段，不能标为 ready 后重新准备 source 的完整查询时钟。
-ACK 后 driver 退出、审计和关闭仍须成功。这些观测不由历史耗时相减推算。
+当前维护入口另给出`query_clock_version=sembench.source_to_sink.v3`及
+`source_to_sink_seconds/ready_source_to_sink_seconds`：模型ready、身份／源码预检后才开始，
+实际准备原提示与native CSV／消息传递，绑定原查询的新鲜源重读及完整内存sink。
+`prepared.json`诊断摘要和receipt回放在sink后；全局result-ready由共享窗口在sink时立即发布，
+随后才做审计／评价及作者关闭。原DOUBLE DSO、SQL、数字解析、采样和预算不变。
+
+`complete_query_seconds`继续是包含preflight和模型启动的旧phase-entry区间；service-start到sink、
+model-ready到sink也分别直接观测。ready尾段不冒充v3完整查询，不从旧时长估算扣除启动／预检。
+ACK后driver退出、审计和关闭仍须成功。48项受影响软件检查在排除保留草稿的独立干净导出中通过、
+0模型；新时钟仍须目标SQL验收，不将旧Q9成绩改记为新时钟。
 
 规模限制修正 `3c810975` 的 16 个不同 CPU 用例已通过，包含 1／7／17 行软件输入、重复 ID、
 完整原 sink／evaluator、永久预算及失败时序。复核用现有入口：

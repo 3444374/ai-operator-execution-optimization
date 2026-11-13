@@ -46,6 +46,20 @@ class NativeIMLaneModelWindowTests(unittest.TestCase):
             self.window.check()
         self.assertEqual(self.window.begin_cleanup(), 120)
 
+    def test_complete_relation_window_publishes_once_before_any_later_audit(self):
+        from src.experiments.native_imlane_model_query import _ResultWindow
+
+        window = _ResultWindow(self.root, 20, 10, 2, clock=lambda: self.now)
+        self.now = 110
+        window.accept_ready(110_000_000_000, clock='CLOCK_MONOTONIC')
+        observed = read_json(self.root / 'result-ready.json')
+        self.assertEqual(observed['result_ready_monotonic_ns'], 110_000_000_000)
+        self.assertEqual(observed['clock'], 'CLOCK_MONOTONIC')
+        self.now = 115
+        window.accept_ready(115_000_000_000, clock='CLOCK_MONOTONIC')
+        self.assertEqual(read_json(self.root / 'result-ready.json'), observed)
+        self.assertEqual(window.begin_cleanup(), 120)
+
     def test_old_driver_clock_future_clock_and_late_result_do_not_extend_query(self):
         for stamp, clock, now, error in (
             (None, 'CLOCK_MONOTONIC', 117, ValueError),

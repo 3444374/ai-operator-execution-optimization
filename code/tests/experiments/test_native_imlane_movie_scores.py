@@ -1,4 +1,5 @@
 """Q9 CLI refuses changed artifacts or a spent permanent unit before model startup."""
+import csv
 import json
 import os
 from pathlib import Path
@@ -6,6 +7,7 @@ import tempfile
 import time
 import unittest
 from unittest.mock import Mock, patch
+from types import SimpleNamespace
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from src.baselines.text import sembench_movie_q9 as binding
@@ -129,39 +131,90 @@ class Q9SourceSizeTests(unittest.TestCase):
         path.write_text(json.dumps(config))
         return path, config, unit, rows
 
-    def run_size(self, count):
+    def run_size(self, count, *, controlled_clock=False):
         path, config, unit, source = self.source(count)
+        clock = [time.monotonic_ns()] if controlled_clock else None
+        if clock is not None:
+            config.update(query_seconds=1200, cleanup_seconds=120)
+            path.write_text(json.dumps(config))
+        fake_time = (time if clock is None else SimpleNamespace(monotonic_ns=lambda: clock[0],
+            monotonic=lambda: clock[0]/1e9, time=time.time))
         events = []
         class Service:
             socket_path = self.root / 'unused.sock'
             served_model_name = 'fixture'
             def __enter__(current):
-                ready = time.monotonic()
-                current.report = dict(started_monotonic=ready - .01, ready_monotonic=ready)
+                started = fake_time.monotonic()
+                if clock is not None: clock[0] += 90_000_000_000
+                ready = fake_time.monotonic()
+                current.report = dict(started_monotonic=started, ready_monotonic=ready)
                 events.append('model-ready')
                 return current
             def check(current): pass
-            def close(current, **_kwargs): events.append('model-close')
+            def close(current, **_kwargs):
+                events.append('model-close')
+                if clock is not None: clock[0] += 23_000_000_000
         texts = [('1', '4.5', 'invalid', '6', '2')[i % 5] for i in range(count)]
         def execute(args, report, *, sink, audit, **_kwargs):
-            prepared = json.loads((args.output / 'input/prepared.json').read_text())
-            rows, calls = prepared['rows'], prepared['calls']
+            self.assertFalse((args.output / 'input/prepared.json').exists())
+            messages = json.loads((args.output / 'input/messages.json').read_text())['rows']
+            with (args.output / 'input/input.csv').open() as stream:
+                rows = list(csv.DictReader(stream))
+            for row in rows: row['source_position'] = int(row['source_position'])
+            calls = [dict(call_id=row['occurrence_id'],
+                messages_json=json.dumps(messages[row['occurrence_id']]['messages'])) for row in rows]
             for call in calls:
                 unit.reserve(content_digest(json.loads(call['messages_json'])))
             native = receipts(args.output, rows, calls, texts, config['sampling_params'])
+            if clock is not None: clock[0] += 3_000_000_000
+            native['result_ready_monotonic_ns'] = fake_time.monotonic_ns()
             result = sink(native)
             events.append('sink')
-            ready = time.monotonic_ns()
+            ready = fake_time.monotonic_ns()
             report.update(result_ready_monotonic_ns=ready, full_sink_observed_monotonic_ns=ready,
                           native_alive_after_sink=True, status='completed')
+            _kwargs['window'].accept_ready(ready, clock='CLOCK_MONOTONIC')
             (args.output / 'query.json').write_text(json.dumps(native))
+            self.assertTrue((args.output.parent / 'result-ready.json').exists())
             audited = audit(native, result)
+            if clock is not None: clock[0] += 17_000_000_000
             events.append('audit')
             return result, audited
         factory = Mock(return_value=Service())
         owner = dict(api_pid=123, api_process_created=1., ready_sha256='software', gpu_model_identity=[])
+        real_prepare, real_materialize = binding.prepare, binding.materialize
+        real_snapshot, real_sink = binding.write_prepared_audit, runner.finish_movie_scores
+        real_window = runner._ResultWindow
+        def prepare(*args):
+            value = real_prepare(*args)
+            if clock is not None: clock[0] += 7_000_000_000
+            return value
+        def materialize(query, operation, directory):
+            if Path(directory).name == 'input':
+                self.assertEqual(events, ['model-ready'])
+                if clock is not None: clock[0] += 2_000_000_000
+            return real_materialize(query, operation, directory)
+        def snapshot(query, calls, rows, directory):
+            if Path(directory).name == 'input':
+                self.assertEqual(events, ['model-ready', 'sink', 'audit'])
+                if clock is not None: clock[0] += 19_000_000_000
+            return real_snapshot(query, calls, rows, directory)
+        def identity(*args):
+            if clock is not None:
+                clock[0] += (11 if events == ['model-ready'] else 13) * 1_000_000_000
+            return owner
+        def sink(native, query, rows, **kwargs):
+            with patch.object(query, 'verify_source', side_effect=AssertionError('extra identity check inside sink')):
+                return real_sink(native, query, rows, **kwargs)
         with patch.object(runner, 'verified_build', return_value={'binary_path': 'unused-software-driver'}), \
-                patch.object(runner, 'identity', return_value=owner), \
+                patch.object(runner, 'identity', side_effect=identity), \
+                patch.object(runner, 'time', fake_time), \
+                patch.object(runner, '_ResultWindow', side_effect=lambda *a, **k:
+                    real_window(*a, clock=fake_time.monotonic, **k)), \
+                patch.object(binding, 'prepare', side_effect=prepare), \
+                patch.object(binding, 'materialize', side_effect=materialize), \
+                patch.object(binding, 'write_prepared_audit', side_effect=snapshot), \
+                patch.object(runner, 'finish_movie_scores', side_effect=sink), \
                 patch.object(runner, 'run_relation_query', side_effect=execute):
             report = runner.run(path, self.root / 'out', service_factory=factory)
         self.assertEqual(events, ['model-ready', 'sink', 'audit', 'model-close'])
@@ -172,6 +225,12 @@ class Q9SourceSizeTests(unittest.TestCase):
         self.assertEqual(unit.attempts, count)
         self.assertEqual(factory.call_args.args[0]['request_budget']['limit'], count)
         round_report, = report['rounds']
+        self.assertEqual(round_report['query_clock_version'], 'sembench.source_to_sink.v3')
+        if clock is not None:
+            self.assertEqual(round_report['source_to_sink_seconds'], 5)
+            self.assertEqual(round_report['complete_query_seconds'], 113)
+            self.assertEqual(round_report['service_startup_seconds'], 90)
+            self.assertEqual(report['model_close_seconds'], 23)
         self.assertEqual(round_report['ipc']['generate_API_calls'], count)
         self.assertGreaterEqual(round_report['complete_query_seconds'], round_report['model_ready_to_result_seconds'])
         expected = pd.DataFrame(dict(reviewId=[row['reviewId'] for row in source],
@@ -195,6 +254,9 @@ class Q9SourceSizeTests(unittest.TestCase):
         return unit
 
     def test_one_original_occurrence(self): self.run_size(1)
+
+    def test_ready_source_clock_excludes_preflight_startup_identity_audit_and_close(self):
+        self.run_size(7, controlled_clock=True)
 
     def test_seven_occurrences_keep_duplicate_business_ids_and_original_sink(self):
         self.run_size(7)

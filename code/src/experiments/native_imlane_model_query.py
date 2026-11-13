@@ -124,6 +124,20 @@ class QueryWindow:
             cleanup_seconds=self.cleanup_seconds, forced_stop_reserved_seconds=self.stop_grace_seconds)
 
 
+class _ResultWindow(QueryWindow):
+    """Publish the complete relation's readiness before audit and owner close."""
+    def __init__(self, output, *args, **kwargs):
+        self.output = Path(output)
+        super().__init__(*args, **kwargs)
+
+    def accept_ready(self, ready, *, clock):
+        if self.ready_ns is not None:
+            return
+        super().accept_ready(ready, clock=clock)
+        publish_private_json(self.output / 'result-ready.json',
+            dict(schema=READY_SCHEMA, result_ready_monotonic_ns=ready, clock=clock))
+
+
 def audit_model_result(directory, checkout):
     """Join saved native/IPC evidence without another model or graph execution."""
     from integrations.imlane_duckdb.model_wire import SCHEMA

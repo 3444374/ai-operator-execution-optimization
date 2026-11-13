@@ -8,16 +8,13 @@ import csv
 import json
 from pathlib import Path
 
-from src.infrastructure.private_artifacts import content_digest, file_sha256, json_metric, write_private_json
+from src.infrastructure.private_artifacts import content_digest, json_metric, write_private_json
 
 
 def prepare(config, directory, query_id):
     from src.baselines.text.sembench_text import SemBenchTextQuery
-    from src.semantic_methods.lotus.record_method import LotusRecordMethod
     from src.serving.backends.vllm_protocol import GenerationSpec
 
-    directory = Path(directory)
-    directory.mkdir(mode=0o700)
     sampling = dict(config['sampling_params'])
     assert sampling.pop('n') == 1
     query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], 'movie', '9',
@@ -35,8 +32,19 @@ def prepare(config, directory, query_id):
 
     query.execute(capture)  # Source/selection only; the placeholder frame is discarded, never evaluated.
     operation, = captured
+    calls, rows = materialize(query, operation, directory)
+    write_prepared_audit(query, calls, rows, directory)
+    return query, operation, calls, rows
+
+
+def materialize(query, operation, directory):
+    """Required native CSV/message transport; caller owns the query clock."""
+    from src.semantic_methods.lotus.record_method import LotusRecordMethod
+
+    directory = Path(directory)
+    directory.mkdir(mode=0o700)
     method = LotusRecordMethod(operation.stage)
-    calls = method.prepare_rows(operation.records, query_id=query_id)
+    calls = method.prepare_rows(operation.records, query_id=query.query_id)
     rows = []
     messages = {}
     for index, (record, call) in enumerate(zip(operation.records, calls, strict=True)):
@@ -54,11 +62,15 @@ def prepare(config, directory, query_id):
         writer.writeheader()
         writer.writerows(rows)
     write_private_json(directory / 'messages.json', dict(rows=messages))
-    write_private_json(directory / 'prepared.json', dict(query_id=query_id, rows=rows, calls=calls,
-        csv_sha256=file_sha256(Path(config['data_dir']) / 'Reviews.csv'),
-        messages_sha256=[content_digest(messages[r['occurrence_id']]['messages']) for r in rows],
+    return calls, rows
+
+
+def write_prepared_audit(query, calls, rows, directory):
+    """Diagnostic snapshot outside the source-to-sink interval."""
+    write_private_json(Path(directory) / 'prepared.json', dict(query_id=query.query_id, rows=rows, calls=calls,
+        csv_sha256=query.files['Reviews.csv']['sha256'],
+        messages_sha256=[content_digest(json.loads(call['messages_json'])) for call in calls],
         gold_fields_in_model_messages=False, placeholder_frame_discarded=True))
-    return query, operation, calls, rows
 
 
 def finish(query, operation, calls, rows, native, udf_directory):
