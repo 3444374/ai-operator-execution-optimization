@@ -5,13 +5,12 @@ from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
-import sys
 import time
 from types import ModuleType, SimpleNamespace
-from unittest.mock import patch
 
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.shared_request_budget import SharedClaimedUnit
+from tests.baselines.text.native_sdk_fixtures import module_entries
 
 
 @contextmanager
@@ -86,5 +85,5 @@ def recorded_processor(replies, *, transform=lambda rows: rows, close_error=None
     setup.export_setup_func_module = export
     modules = {'ray': ray, 'ray.data': data, 'ray.data.llm': llm,
                'ray._private.runtime_env.setup_hook': setup}
-    with patch.dict(sys.modules, modules):
+    with module_entries(modules):
         yield state
