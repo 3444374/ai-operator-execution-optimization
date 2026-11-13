@@ -563,9 +563,17 @@ def task_from_config(config):
         from .sembench_native_medical import medical_text_task
 
         return medical_text_task(query=config['query'], execution_id=config['query_id'], **sources)
+    if scenario == 'cars':
+        from .sembench_native_cars import cars_text_task
+
+        return cars_text_task(query=config['query'], execution_id=config['query_id'], **sources)
+    if scenario == 'ecomm':
+        from .sembench_native_ecommerce import ecommerce_text_task
+
+        return ecommerce_text_task(query=config['query'], execution_id=config['query_id'], **sources)
     if scenario == 'animals':
         from src.baselines.image.sembench_native_animals import AnimalsFilterTask
 
         return AnimalsFilterTask(checkout=config['sembench_checkout'], query=config['query'],
                                  execution_id=config['query_id'], **sources)
-    raise ValueError('independent native task scenarios are movie, mmqa, medical and animals')
+    raise ValueError('independent native task scenarios are movie, mmqa, medical, cars, ecomm and animals')

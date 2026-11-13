@@ -102,6 +102,22 @@ class NativeTextTaskTests(unittest.TestCase):
                     config['data_dir'], query, config['query_id'], scale_factor=37))
                 with self.assertRaises(TypeError):
                     task_from_config(dict(config, movies_csv='/not-medical-gold'))
+            from src.baselines.text.sembench_native_cars import cars_text_task
+            for query in ('Q1', 'Q4', 'Q10'):
+                config = dict(scenario='cars', data_dir='/not-read/cars', scale_factor=37,
+                              query=query, query_id='cars-factory')
+                self.assertEqual(task_from_config(config), cars_text_task(
+                    config['data_dir'], query, config['query_id'], scale_factor=37))
+                with self.assertRaises(TypeError):
+                    task_from_config(dict(config, movies_csv='/not-cars-gold'))
+            from src.baselines.text.sembench_native_ecommerce import ecommerce_text_task
+            for query in ('Q1', 'Q3', 'Q5'):
+                config = dict(scenario='ecomm', data_dir='/not-read/ecomm',
+                              query=query, query_id='ecomm-factory')
+                self.assertEqual(task_from_config(config), ecommerce_text_task(
+                    config['data_dir'], query, config['query_id']))
+                with self.assertRaises(TypeError):
+                    task_from_config(dict(config, scale_factor=37))
             for name in ['query', 'query_id']:
                 missing = dict(reviews_csv='/not-read/Reviews.csv', query='Q3', query_id='required')
                 missing.pop(name)
