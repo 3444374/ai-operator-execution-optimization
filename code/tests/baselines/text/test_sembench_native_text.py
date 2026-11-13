@@ -94,6 +94,14 @@ class NativeTextTaskTests(unittest.TestCase):
                                   config['manifest_digest'], query[1:], 'image-factory'))
                 with self.assertRaises(TypeError):
                     task_from_config(dict(config, reviews_csv='/not-an-image-source'))
+            from src.baselines.text.sembench_native_medical import medical_text_task
+            for query in ('Q1', 'Q4', 'Q10'):
+                config = dict(scenario='medical', data_dir='/not-read/medical', scale_factor=37,
+                              query=query, query_id='medical-factory')
+                self.assertEqual(task_from_config(config), medical_text_task(
+                    config['data_dir'], query, config['query_id'], scale_factor=37))
+                with self.assertRaises(TypeError):
+                    task_from_config(dict(config, movies_csv='/not-medical-gold'))
             for name in ['query', 'query_id']:
                 missing = dict(reviews_csv='/not-read/Reviews.csv', query='Q3', query_id='required')
                 missing.pop(name)

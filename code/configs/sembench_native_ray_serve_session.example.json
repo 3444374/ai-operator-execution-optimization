@@ -1,0 +1,27 @@
+{
+  "schema": "semloom.sembench_native_ray_serve_session.v1",
+  "sembench_checkout": "<SEMBENCH_C814_CHECKOUT>",
+  "reviews_csv": "<FROZEN_MOVIE_REVIEWS_CSV>",
+  "query": "Q3",
+  "query_id": "NATIVE-RAY-SERVE-UNIQUE-SESSION-ID",
+  "model": "<SERVED_MODEL_ID>",
+  "model_source": "<LOCAL_MODEL_DIRECTORY>",
+  "model_python": "<RAY_SERVE_MODEL_PYTHON>",
+  "app_name": "semloom-native-json-session",
+  "deployment_name": "NativeJSONModel",
+  "engine_kwargs": {},
+  "processor_options": {},
+  "runtime_options": {},
+  "sampling_params": {
+    "n": 1,
+    "max_tokens": 128,
+    "temperature": 0,
+    "structured_outputs": {"json_object": true}
+  },
+  "budget": {
+    "path": "<PRE_RESERVED_PERMANENT_BUDGET_SQLITE>",
+    "id": "<BUDGET_ID>",
+    "limit": 4096,
+    "unit_id": "session"
+  }
+}

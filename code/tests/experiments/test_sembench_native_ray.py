@@ -2,6 +2,7 @@
 
 import json
 import base64
+import asyncio
 from contextlib import redirect_stdout
 from io import BytesIO, StringIO
 import os
@@ -11,6 +12,7 @@ import sys
 import tempfile
 import time
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pandas as pd
@@ -19,6 +21,72 @@ from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.sembench_native_ray import run_query
 from tests.baselines.text.ray_native_fixtures import recorded_processor
+
+
+class SoftwareServeSession:
+    """One fake model plus the real finite observer, without importing Ray."""
+    startup_calls = 0
+    unknown = mismatch = close_failure = False
+
+    def __init__(self, **options):
+        from src.baselines.text.frameworks.ray_native_observer import install
+        from src.experiments.shared_request_budget import SharedClaimedUnit
+        from src.infrastructure.private_artifacts import write_private_json
+
+        self.spec = json.loads(options['model_runtime_env']['env_vars']['SEMLOOM_RAY_NATIVE_OBSERVER'])
+        self.root = Path(self.spec['output'])
+        self.unit = SharedClaimedUnit(Path(self.spec['path']),
+            AttemptBudget(self.spec['id'], self.spec['limit']), self.spec['unit_id'])
+        self.events, self.inputs = [], []
+        self.report = dict(events={}, batches=[], deployment_startup_seconds=0.001,
+                           actual_native_Daft_or_Ray=False)
+        fixture = self
+        def emit(event, **data):
+            with (self.root/'native-events-software.jsonl').open('a') as stream:
+                stream.write(json.dumps(dict(event=event, monotonic_ns=time.monotonic_ns(), **data))+'\n')
+        class Model:
+            def __init__(self):
+                pass
+            async def generate(self, prompt, sampling_params, request_id):
+                text = json.loads(prompt[-1]['content'])['text']
+                yield SimpleNamespace(finished=not fixture.unknown, prompt_token_ids=[1], outputs=[
+                    SimpleNamespace(text=json.dumps(dict(keep='good' in text)), token_ids=[2], finish_reason='stop')])
+        install(Model, self.unit, emit,
+            lambda attempt, value: write_private_json(self.root/('native-output-'+str(attempt)+'.json'), value))
+        self.Model, self.emit = Model, emit
+
+    def start(self):
+        self.events.append('start')
+        self.emit('native_observer_installed', versions={'ray': 'software'}, python=sys.executable, prefix=sys.prefix)
+        self.model = self.Model()
+        for index in range(self.startup_calls):
+            asyncio.run(self.generate(dict(call_id='startup-'+str(index), messages=[dict(
+                role='user', content=json.dumps(dict(text='startup')))])))
+        self.report['events']['deployment_ready_ns'] = time.monotonic_ns()
+
+    async def generate(self, request):
+        key = 'chatcmpl-'+request['call_id']
+        async for output in self.model.generate(request['messages'], SimpleNamespace(n=1), key):
+            text = output.outputs[0].text
+        return dict(call_id=request['call_id'], generated_text=text,
+                    response_id='wrong' if self.mismatch else key)
+
+    def predict(self, requests, *, sampling_params):
+        self.events.append('predict')
+        self.inputs.append(requests)
+        predictions = [asyncio.run(self.generate(request)) for request in requests]
+        batch = dict(predictions=predictions[::-1])
+        self.report['batches'].append(batch)
+        return batch
+
+    def close(self):
+        import sqlite3
+        with sqlite3.connect(Path(self.spec['path']).as_uri()+'?mode=ro', uri=True) as db:
+            self.closed_unit = bool(db.execute('select 1 from closed_shared_units where unit_id=?',
+                                              (self.spec['unit_id'],)).fetchone())
+        self.events.append('close')
+        if self.close_failure:
+            raise ValueError('software owned close failed')
 
 
 class RunnerTests(unittest.TestCase):
@@ -573,7 +641,7 @@ class BlockLotus(importlib.abc.MetaPathFinder):
         if forbidden(fullname):
             raise AssertionError('forbidden LOTUS import: ' + fullname)
 sys.meta_path.insert(0, BlockLotus())
-from tests.experiments.test_sembench_native_ray import RunnerTests
+from tests.experiments.test_sembench_native_ray import RunnerTests, ServeSessionTests
 suite = unittest.TestSuite([RunnerTests('test_native_processor_and_complete_sink_before_close')])
 if os.environ.get('SEMBENCH_CHECKOUT'):
     suite.addTest(RunnerTests('test_neutral_movie_task_and_official_evaluator'))
@@ -582,6 +650,7 @@ if os.environ.get('SEMBENCH_CHECKOUT'):
     suite.addTest(RunnerTests('test_join_tasks_predict_all_pairs_before_original_ID_filter_and_sink'))
     suite.addTest(RunnerTests('test_MMQA_extract_preserves_Series_and_table_sinks_including_close_failure'))
     suite.addTest(RunnerTests('test_Animals_PNG_content_reaches_the_native_processor_and_original_sink'))
+    suite.addTest(ServeSessionTests('test_fresh_movie_queries_use_one_owner_and_original_scoring'))
 result = unittest.TextTestRunner().run(suite)
 assert not any(forbidden(name) for name in sys.modules)
 raise SystemExit(not result.wasSuccessful())
@@ -589,6 +658,214 @@ raise SystemExit(not result.wasSuccessful())
         outcome = subprocess.run([sys.executable, '-B', '-c', script], env=dict(os.environ),
             text=True, capture_output=True, timeout=30)
         self.assertEqual(outcome.returncode, 0, outcome.stdout + outcome.stderr)
+
+
+class ServeSessionTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.owners, self.reads = [], []
+
+    def config(self, *, limit=4, prefix=0):
+        ledger = CellBudgetLedger.create(self.root/'budget.sqlite',
+            AttemptBudget('serve-fixture', limit), deadline_utc=time.time()+120)
+        if prefix:
+            ledger.reserve_unit('prior-unspent', prefix)
+        ledger.reserve_unit('session', limit-prefix)
+        return dict(schema='semloom.sembench_native_ray_serve_session.v1', model='fixture-model',
+            model_source='unused-local-model', model_python=sys.executable,
+            app_name='owned-fixture', deployment_name='model-fixture', query_id='session',
+            engine_kwargs={}, processor_options={}, runtime_options={},
+            sampling_params=dict(n=1, max_tokens=32, structured_outputs={'json_object': True}),
+            budget=dict(path=str(ledger.path), id='serve-fixture', limit=limit, unit_id='session'))
+
+    def owner(self, **kwargs):
+        owner = SoftwareServeSession(**kwargs)
+        self.owners.append(owner)
+        return owner
+
+    def tasks(self, config):
+        test = self
+        class Task:
+            def prepare_evaluation(self): return None
+            def read_source(self):
+                test.reads.append(config['query_id'])
+                return object()
+            def model_request_count(self, source): return 2
+            def requests(self, source):
+                return [dict(call_id=config['query_id']+'-'+str(index), messages=[dict(
+                    role='user', content=json.dumps(dict(text=text)))]) for index, text in enumerate(('good','bad'))]
+            def finish(self, source, predictions):
+                return pd.DataFrame(dict(count=[sum(json.loads(row['generated_text'])['keep'] for row in predictions)]))
+            def verify_source(self, source): pass
+            def describe(self, source): return dict(profile='software-neutral-task')
+            def evaluate(self, source, result, **kwargs): return dict(score=1)
+            def encode_result(self, result): return result.to_dict(orient='split')
+        return Task()
+
+    def run_session(self, config, **kwargs):
+        from src.experiments.sembench_native_ray import run_serve_session
+        return run_serve_session(config, self.root/'session', checkout='unused-fixture',
+            session_factory=self.owner, task_factory=self.tasks, **kwargs)
+
+    def test_two_fresh_complete_queries_share_one_owner_and_nonzero_budget_interval(self):
+        report = self.run_session(self.config(limit=6, prefix=2))
+        self.assertEqual(report['status'], 'completed')
+        self.assertEqual(len(self.owners), 1)
+        self.assertEqual(self.owners[0].events, ['start','predict','predict','close'])
+        self.assertTrue(self.owners[0].closed_unit)
+        self.assertEqual(self.reads, ['session-round-1','session-round-2'])
+        self.assertEqual([q['native_observation']['attempts'] for q in report['queries']], [[3,4],[5,6]])
+        self.assertEqual(report['physical_attempts_reserved'], 4)
+        self.assertIsNone(report['warm_qualified'])
+        self.assertIsNone(report['target_native_model_qualified'])
+
+    def test_native_startup_work_is_charged_separately_and_never_refunded(self):
+        with patch.object(SoftwareServeSession, 'startup_calls', 1):
+            report = self.run_session(self.config(limit=5))
+        self.assertEqual(report['native_startup_attempts']['attempts'], [1])
+        self.assertEqual([q['native_observation']['attempts'] for q in report['queries']], [[2,3],[4,5]])
+        self.assertEqual(report['physical_attempts_reserved'], 5)
+
+    def test_startup_can_exhaust_query_allowance_before_any_requests_are_constructed(self):
+        config = self.config(limit=2)
+        original = self.tasks
+        def no_requests(value):
+            task = original(value)
+            task.requests = lambda source: self.fail('budget failure constructed the query requests')
+            return task
+        from src.experiments.sembench_native_ray import run_serve_session
+        with patch.object(SoftwareServeSession, 'startup_calls', 1), self.assertRaises(BudgetExhausted) as caught:
+            run_serve_session(config, self.root/'session', checkout='unused',
+                session_factory=self.owner, task_factory=no_requests)
+        self.assertEqual(self.owners[0].events, ['start','close'])
+        self.assertEqual(caught.exception.query_report['physical_attempts_reserved'], 1)
+        self.assertEqual(len(self.reads), 1)
+
+    def test_unconfirmed_or_mismatched_responses_stop_before_the_next_query(self):
+        for field in ('unknown', 'mismatch'):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary:
+                self.root = Path(temporary)
+                self.owners, self.reads = [], []
+                with patch.object(SoftwareServeSession, field, True), self.assertRaises(RuntimeError) as caught:
+                    self.run_session(self.config())
+                report = caught.exception.query_report
+                self.assertEqual(report['status'], 'failed')
+                self.assertEqual(len(self.reads), 1)
+                self.assertIsNotNone(report['queries'][0]['result'])
+                self.assertNotIn('quality', report['queries'][0])
+                self.assertTrue(self.owners[0].closed_unit)
+                self.assertIsNone(report['warm_qualified'])
+
+    @staticmethod
+    def identity(*, changed=False):
+        return dict(observed_monotonic_ns=time.monotonic_ns(), node_id='fixture-node',
+            replica_actor_id='fixture-actor', replica_pid=10, replica_create_time=1.0,
+            model_processes=[dict(pid=21 if changed else 20, create_time=2.0)])
+
+    def test_changed_model_child_stops_before_the_second_fresh_source(self):
+        calls = []
+        def snapshot():
+            calls.append(None)
+            return self.identity(changed=len(calls)>=4)
+        with self.assertRaisesRegex(RuntimeError, 'owner changed'):
+            self.run_session(self.config(), identity_snapshot=snapshot)
+        self.assertEqual(len(self.reads), 1)
+        self.assertEqual(self.owners[0].events, ['start','predict','close'])
+
+    def test_a_new_constructor_started_after_sink_stops_before_the_second_source(self):
+        from src.experiments.sembench_native_ray import run_serve_session
+        def factory(value):
+            task = self.tasks(value)
+            original = task.evaluate
+            def evaluate(*args, **kwargs):
+                result = original(*args, **kwargs)
+                if value['query_id'].endswith('-1'):
+                    self.owners[0].emit('native_constructor_started')
+                return result
+            task.evaluate = evaluate
+            return task
+        with self.assertRaisesRegex(RuntimeError, 'constructed a model between'):
+            run_serve_session(self.config(), self.root/'session', checkout='unused',
+                session_factory=self.owner, task_factory=factory)
+        self.assertEqual(len(self.reads), 1)
+        self.assertEqual(self.owners[0].events, ['start','predict','close'])
+
+    def test_identity_evidence_requires_model_children_and_fresh_observation(self):
+        from src.experiments.sembench_native_ray import _owner_snapshot
+        for value in (dict(replica_pid=10), self.identity()):
+            with self.subTest(value=value):
+                _, proof = _owner_snapshot(lambda: value)
+                self.assertIsNone(proof)
+        report = self.run_session(self.config(), identity_snapshot=self.identity)
+        # Conditional snapshot comparison only; these are fixture identities,
+        # and target native/model qualification remains explicitly unknown.
+        self.assertTrue(report['model_owner_reused'])
+        self.assertIsNone(report['target_native_model_qualified'])
+
+    def test_primary_failure_survives_owned_close_failure_and_completed_sink_is_kept(self):
+        with patch.object(SoftwareServeSession, 'mismatch', True), \
+                patch.object(SoftwareServeSession, 'close_failure', True), self.assertRaises(RuntimeError) as caught:
+            self.run_session(self.config())
+        self.assertIn('response IDs', str(caught.exception))
+        self.assertTrue(any('close' in note for note in caught.exception.__notes__))
+        self.assertIsNotNone(caught.exception.query_report['queries'][0]['result'])
+        saved = json.loads((self.root/'session/round-1/query.json').read_text())
+        self.assertEqual(saved['status'], 'failed')
+        self.assertNotIn('quality', saved)
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind fixed official SemBench')
+    def test_fresh_movie_queries_use_one_owner_and_original_scoring(self):
+        from src.baselines.text.sembench_native_text import task_from_config
+        from src.experiments.sembench_native_ray import run_serve_session
+        source = self.root/'Reviews.csv'
+        rows = pd.DataFrame(dict(id=['taken_3','taken_3'], reviewId=[1,2], reviewText=['good first','bad second'],
+                                 scoreSentiment=['POSITIVE','NEGATIVE']))
+        rows.to_csv(source, index=False)
+        config = dict(self.config(), reviews_csv=str(source), query='Q3')
+        reads = []
+        def factory(value):
+            task = task_from_config(value)
+            class Task:
+                def __getattr__(self, name): return getattr(task, name)
+                def read_source(self):
+                    reads.append(value['query_id'])
+                    return task.read_source()
+                def evaluate(self, source_value, result, **kwargs):
+                    quality = task.evaluate(source_value, result, **kwargs)
+                    if value['query_id'].endswith('-1'):
+                        rows.loc[1, 'reviewText'] = 'good second'
+                        rows.to_csv(source, index=False)
+                    return quality
+            return Task()
+        report = run_serve_session(config, self.root/'session', checkout=os.environ['SEMBENCH_CHECKOUT'],
+            session_factory=self.owner, task_factory=factory)
+        self.assertEqual(reads, ['session-round-1','session-round-2'])
+        self.assertEqual([q['result']['data'] for q in report['queries']], [[[1]],[[2]]])
+        self.assertEqual([q['quality']['original_metric']['absolute_error'] for q in report['queries']], [0,1])
+        self.assertEqual(len(self.owners), 1)
+        self.assertTrue(self.owners[0].closed_unit)
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind fixed official SemBench')
+    def test_CLI_profile_is_explicit_and_check_allocates_no_owner_or_budget(self):
+        from src.experiments import sembench_native_ray as entry
+        source = self.root/'Reviews.csv'
+        pd.DataFrame([dict(id='taken_3', reviewId=1, reviewText='good', scoreSentiment='POSITIVE')]).to_csv(source,index=False)
+        config = dict(self.config(), reviews_csv=str(source), query='Q3',
+                      sembench_checkout=os.environ['SEMBENCH_CHECKOUT'])
+        path = self.root/'config.json'
+        path.write_text(json.dumps(config))
+        before = Path(config['budget']['path']).read_bytes()
+        output = self.root/'not-created'
+        with patch.object(entry, 'run_serve_session', side_effect=AssertionError('check executed Serve')):
+            with redirect_stdout(StringIO()) as stream:
+                self.assertEqual(entry.main(['serve-session','--config',str(path),'--output-dir',str(output)]),0)
+            self.assertFalse(json.loads(stream.getvalue())['execution_enabled'])
+            with self.assertRaisesRegex(ValueError, 'explicit serve-session'):
+                entry.main(['run','--config',str(path)])
+        self.assertFalse(output.exists())
+        self.assertEqual(Path(config['budget']['path']).read_bytes(), before)
 
 
 if __name__ == '__main__':
