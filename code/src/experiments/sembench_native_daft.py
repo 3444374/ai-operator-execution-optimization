@@ -13,7 +13,7 @@ import math
 from pathlib import Path
 import time
 
-from src.baselines.text.sembench_native_text import TASK_SOURCE_FIELDS, task_from_config
+from src.baselines.text.sembench_native_text import TASK_SOURCE_FIELDS, native_query_batches, task_from_config
 from src.baselines.text.sembench_source import verify_checkout
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
@@ -64,7 +64,7 @@ def check(config):
     if required > config['max_model_calls']:
         raise ValueError('the finite native budget cannot cover the eligible source')
     description = task.describe(source)
-    if required and description.get('input_modality') == 'image':
+    if required and description.get('input_modality') in ('image', 'text+image'):
         raise ValueError('the local Daft string prompt profile does not support image content')
     return dict(schema=SCHEMA, status='checked_cpu_only', task=description,
                 execution_enabled=False, model_calls=0, target_native_model_qualified=False)
@@ -104,7 +104,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
             'cold native Daft graph and native evidence I/O, IPC/polling, complete strict task JSON relation sink; '
             'preflight, tokenizer loading and budget claim precede source; final native close/process exit, '
             'source identity audit, official evaluation and result persistence follow sink')
-    ledger = unit = primary = source = frame = None
+    ledger = unit = primary = source = frame = query = None
     requests = []
     try:
         evaluation = task.prepare_evaluation()
@@ -119,45 +119,86 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
         source = task.read_source()
         if task.model_request_count(source) > unit.remaining:
             raise ValueError('the finite native budget cannot cover the eligible source')
-        requests = task.requests(source)
+        query = native_query_batches(task, source)
+        pending = next(query)
+        requests.extend(pending)
+        report['native_batches'] = []
 
-        def finish(predictions):
-            nonlocal frame
-            frame = task.finish(source, predictions)
-            report['sink_ready_ns'] = time.monotonic_ns()
-            report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_start_ns']) / 1e9
-            if report['sink_ready_ns'] / 1e9 >= deadline:
-                raise TimeoutError('independent Daft complete sink exceeded its query allowance')
+        def advance(predictions):
+            nonlocal frame, pending
+            while True:
+                try:
+                    pending = query.send(predictions)
+                except StopIteration as complete:
+                    pending, frame = None, complete.value
+                    report['sink_ready_ns'] = time.monotonic_ns()
+                    report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_start_ns']) / 1e9
+                    if report['sink_ready_ns'] / 1e9 >= deadline:
+                        raise TimeoutError('independent Daft complete sink exceeded its query allowance')
+                    return
+                if pending:
+                    requests.extend(pending)
+                    return
+                report['native_batches'].append(dict(index=len(report['native_batches']),
+                    logical_requests=0, status='completed', native_worker_started=False))
+                predictions = []
 
-        if requests:
-            prepared = _render(requests, tokenizer)
-            packet, worker_path = directory / 'prepared-prompts.json', directory / 'worker-config.json'
-            write_private_json(packet, dict(schema='semloom.native_daft_prompts.v1', requests=prepared))
-            worker = {name: deepcopy(config[name]) for name in
-                      ('model', 'sampling_params', 'engine_kwargs', 'provider_options', 'cleanup_s', 'stop_grace_s')}
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise TimeoutError('independent Daft source preparation exceeded its query allowance')
-            worker.update(schema='semloom.native_daft_map.v1', query_timeout_s=remaining,
-                requests_path=str(packet), requests_sha256=file_sha256(packet),
-                request_budget=dict(path=str(directory / 'physical-budget.sqlite'),
-                    budget_id=budget.budget_id, limit=budget.limit, unit_id='query'), wait_for_result_release=True)
-            write_private_json(worker_path, worker)
-
-            def consume(raw):
-                finish(raw['result']['predictions'])
-
-            report['supervision'] = supervise(worker_path, directory / 'native-worker', model_python=model_python,
-                monitor=monitor, on_result_ready=consume)
-            terminal = read_json(directory / 'native-worker' / 'worker.json')
-            report.update(native_api=terminal.get('native_api'), model_close_receipt=terminal.get('model_close_receipt'),
-                          result_release=terminal.get('result_release'))
-            if terminal['status'] != 'completed' or frame is None:
-                raise RuntimeError('the native worker did not establish a complete sink and cleanup')
-        else:
-            finish([])
+        while pending is not None:
+            batch_requests = pending
+            batch = dict(index=len(report['native_batches']), logical_requests=len(batch_requests),
+                         status='submitted', native_worker_started=False)
+            report['native_batches'].append(batch)
+            if len(batch_requests) > unit.remaining:
+                raise ValueError('the finite native budget cannot cover the next complete query batch')
+            if not batch_requests:
+                advance([])
+            else:
+                phase = directory if batch['index'] == 0 else directory / ('batch-' + str(batch['index']))
+                if phase != directory:
+                    new_private_directory(phase)
+                prepared = _render(batch_requests, tokenizer)
+                packet, worker_path = phase / 'prepared-prompts.json', phase / 'worker-config.json'
+                write_private_json(packet, dict(schema='semloom.native_daft_prompts.v1', requests=prepared))
+                worker = {name: deepcopy(config[name]) for name in
+                          ('model', 'sampling_params', 'engine_kwargs', 'provider_options', 'cleanup_s', 'stop_grace_s')}
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError('independent Daft source preparation exceeded its query allowance')
+                worker.update(schema='semloom.native_daft_map.v1', query_timeout_s=remaining,
+                    requests_path=str(packet), requests_sha256=file_sha256(packet),
+                    request_budget=dict(path=str(directory / 'physical-budget.sqlite'),
+                        budget_id=budget.budget_id, limit=budget.limit, unit_id='query'), wait_for_result_release=True)
+                write_private_json(worker_path, worker)
+                first_attempt = unit.attempts
+                batch['native_worker_started'] = True
+                batch['supervision'] = supervise(worker_path, phase / 'native-worker', model_python=model_python,
+                    monitor=monitor, on_result_ready=lambda raw: advance(raw['result']['predictions']))
+                terminal = read_json(phase / 'native-worker' / 'worker.json')
+                batch.update(native_api=terminal.get('native_api'), model_close_receipt=terminal.get('model_close_receipt'),
+                             result_release=terminal.get('result_release'))
+                report.update(supervision=batch['supervision'], native_api=batch['native_api'],
+                    model_close_receipt=batch['model_close_receipt'], result_release=batch['result_release'])
+                api = batch['native_api']
+                if (terminal['status'] != 'completed' or not batch['result_release']['confirmed']
+                        or unit.attempts - first_attempt != len(batch_requests)
+                        or api['generate_calls'] != len(batch_requests)
+                        or api['final_events'] != len(batch_requests) or api['unresolved'] or api['errors']):
+                    raise RuntimeError('the native batch did not establish complete confirmed predictions and cleanup')
+            batch['status'] = 'completed'
+        if not requests:
             report.update(model_ready_before_source=None, model_close_receipt=None,
                           no_model_reason='no eligible semantic occurrences; no native worker or model started')
+        apis = [batch['native_api'] for batch in report['native_batches'] if batch['native_worker_started']]
+        if len(apis) > 1:
+            report['native_api'] = dict(scope='complete query native generate/add/final API receipts',
+                generate_calls=sum(api['generate_calls'] for api in apis),
+                accepted=sum(api['accepted'] for api in apis),
+                final_events=sum(api['final_events'] for api in apis),
+                unresolved=sum(api['unresolved'] for api in apis),
+                errors=[error for api in apis for error in api['errors']],
+                requests=([row for api in apis for row in api['requests']]
+                          if all('requests' in api for api in apis) else None),
+                raw_evidence='native_batches[].native_api and each native worker.json')
         if unit.attempts != len(requests):
             raise RuntimeError('permanent physical attempts differ from independent task occurrences')
         report['source_audit_started_ns'] = time.monotonic_ns()
@@ -170,9 +211,13 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
     except BaseException as error:
         primary = error
         report.update(error_type=type(error).__name__, error=redact_text(str(error)))
+        if report.get('native_batches') and report['native_batches'][-1]['status'] == 'submitted':
+            report['native_batches'][-1]['status'] = 'failed'
         if hasattr(error, 'report'):
             report['supervision'] = error.report
     finally:
+        if query is not None:
+            query.close()
         if ledger is not None:
             try:
                 ledger.close_shared_unit('query')
@@ -198,6 +243,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
                 else:
                     primary.add_note('native result encoding failed: ' + redact_text(str(error)))
         report['logical_model_requests'] = len(requests)
+        report['unsubmitted_logical_requests'] = len(requests) - sum(
+            batch['logical_requests'] for batch in report.get('native_batches', []) if batch['native_worker_started'])
         try:
             _save_artifact(directory / 'driver.json', report, primary=primary)
         except BaseException as error:
@@ -266,12 +313,18 @@ def check_attached_session(config):
     source = task.read_source()
     required = task.model_request_count(source)
     if 2 * required > config['max_http_attempts']:
-        raise ValueError('the finite HTTP allowance cannot cover two current complete queries, before retries')
-    _attached_layout(task.requests(source))
+        raise ValueError('the finite HTTP allowance cannot cover two initial query batches, before retries')
+    program = native_query_batches(task, source)
+    try:
+        first_batch = next(program, [])
+        _attached_layout(first_batch)
+    finally:
+        program.close()
     return dict(schema=ATTACHED_SCHEMA, status='checked_cpu_only', task=task.describe(source),
         execution_enabled=False, model_calls=0, query_rounds=2, warm_qualified=None,
         target_native_model_qualified=False,
-        budget_scope='one permanent shared HTTP attempt limit including native SDK retries')
+        budget_scope='one permanent shared HTTP attempt limit including native SDK retries',
+        checked_batch_scope='first produced batch; dependent layouts are checked when actually produced')
 
 
 def _attached_owner(probe):
@@ -377,7 +430,7 @@ def run_attached_session(config, directory, *, model_python, supervise=supervise
             new_private_directory(query_dir)
             if index:
                 task = task_from_config(dict(config, query_id=config['query_id'] + '-round-2'))
-            source = frame = native_result = None
+            source = frame = native_result = query = terminal_path = active_batch = None
             requests = []
             first_attempt = unit.attempts
             error = None
@@ -400,45 +453,106 @@ def run_attached_session(config, directory, *, model_python, supervise=supervise
                 source = task.read_source()
                 if task.model_request_count(source) > unit.remaining:
                     raise ValueError('the remaining HTTP allowance cannot cover the complete fresh source')
-                requests = task.requests(source)
-                _attached_layout(requests)
+                query = native_query_batches(task, source)
+                pending = next(query)
+                requests.extend(pending)
+                current['native_batches'] = []
+                audit_inputs = []
 
-                def consume(raw):
-                    nonlocal frame, native_result
-                    native_result = raw['result']
-                    frame = task.finish(source, native_result['predictions'])
-                    current['sink_ready_ns'] = time.monotonic_ns()
-                    current['source_to_sink_seconds'] = (current['sink_ready_ns'] - current['source_start_ns']) / 1e9
-                    if current['sink_ready_ns'] / 1e9 >= query_deadline:
-                        raise TimeoutError('the attached Daft complete sink exceeded its query allowance')
+                def advance(predictions):
+                    nonlocal frame, pending
+                    while True:
+                        try:
+                            pending = query.send(predictions)
+                        except StopIteration as complete:
+                            pending, frame = None, complete.value
+                            current['sink_ready_ns'] = time.monotonic_ns()
+                            current['source_to_sink_seconds'] = (current['sink_ready_ns'] - current['source_start_ns']) / 1e9
+                            if current['sink_ready_ns'] / 1e9 >= query_deadline:
+                                raise TimeoutError('the attached Daft complete sink exceeded its query allowance')
+                            return
+                        if pending:
+                            requests.extend(pending)
+                            return
+                        current['native_batches'].append(dict(index=len(current['native_batches']),
+                            logical_requests=0, status='completed', native_worker_started=False))
+                        predictions = []
 
+                while pending is not None:
+                    batch_requests = pending
+                    active_batch = dict(index=len(current['native_batches']), logical_requests=len(batch_requests),
+                        status='submitted', native_worker_started=False)
+                    current['native_batches'].append(active_batch)
+                    terminal_path = None
+                    if len(batch_requests) > unit.remaining:
+                        raise ValueError('the remaining HTTP allowance cannot cover the next complete query batch')
+                    if not batch_requests:
+                        advance([])
+                    else:
+                        _attached_layout(batch_requests)
+                        phase = query_dir if active_batch['index'] == 0 else query_dir / ('batch-' + str(active_batch['index']))
+                        if phase != query_dir:
+                            new_private_directory(phase)
+                        packet, worker_path = phase / 'prepared-messages.json', phase / 'worker-config.json'
+                        write_private_json(packet, dict(schema='semloom.native_daft_messages.v1', requests=batch_requests))
+                        remaining = query_deadline - time.monotonic()
+                        if remaining <= 0:
+                            raise TimeoutError('the attached query cannot submit another batch before its deadline')
+                        worker = {name: deepcopy(config[name]) for name in ('model', 'sampling_params', 'engine_kwargs',
+                            'provider_options', 'native_openai', 'cleanup_s', 'stop_grace_s')}
+                        worker.update(schema='semloom.native_daft_map.v1', query_timeout_s=remaining,
+                            requests_path=str(packet), requests_sha256=file_sha256(packet), wait_for_result_release=True,
+                            request_budget=dict(path=str(directory / 'physical-budget.sqlite'), budget_id=budget.budget_id,
+                                limit=budget.limit, unit_id='session'))
+                        write_private_json(worker_path, worker)
+                        batch_first_attempt = unit.attempts
+                        terminal_path = phase / 'native-worker' / 'worker.json'
+                        active_batch['native_worker_started'] = True
+
+                        def consume(raw):
+                            nonlocal native_result
+                            native_result = raw['result']
+                            advance(native_result['predictions'])
+
+                        active_batch['supervision'] = supervise(worker_path, phase / 'native-worker',
+                            model_python=model_python, monitor=monitor, on_result_ready=consume)
+                        current['supervision'] = active_batch['supervision']
+                        current['client_worker_exit_observed_ns'] = time.monotonic_ns()
+                        terminal = read_json(terminal_path)
+                        active_batch.update(native_api=terminal.get('native_api'), result_release=terminal.get('result_release'))
+                        current.update(native_api=active_batch['native_api'], result_release=active_batch['result_release'])
+                        api = terminal['native_api']
+                        attempts = unit.attempts - batch_first_attempt
+                        if (terminal['status'] != 'completed' or not terminal['result_release']['confirmed']
+                                or api['unresolved'] or api['reserved_attempts'] != attempts
+                                or api['http_send_entries'] != attempts):
+                            raise RuntimeError('the native client batch has unconfirmed attempts or incomplete ACK/exit')
+                        audit_inputs.append((batch_requests, native_result['predictions'], api, batch_first_attempt, attempts))
+                    active_batch['status'] = 'completed'
                 if requests:
-                    packet, worker_path = query_dir / 'prepared-messages.json', query_dir / 'worker-config.json'
-                    write_private_json(packet, dict(schema='semloom.native_daft_messages.v1', requests=requests))
-                    worker = {name: deepcopy(config[name]) for name in ('model', 'sampling_params', 'engine_kwargs',
-                        'provider_options', 'native_openai', 'cleanup_s', 'stop_grace_s')}
-                    worker.update(schema='semloom.native_daft_map.v1',
-                        query_timeout_s=query_deadline - time.monotonic(), requests_path=str(packet),
-                        requests_sha256=file_sha256(packet), wait_for_result_release=True,
-                        request_budget=dict(path=str(directory / 'physical-budget.sqlite'), budget_id=budget.budget_id,
-                            limit=budget.limit, unit_id='session'))
-                    write_private_json(worker_path, worker)
-                    current['supervision'] = supervise(worker_path, query_dir / 'native-worker',
-                        model_python=model_python, monitor=monitor, on_result_ready=consume)
-                    current['client_worker_exit_observed_ns'] = time.monotonic_ns()
-                    terminal = read_json(query_dir / 'native-worker' / 'worker.json')
-                    current.update(native_api=terminal.get('native_api'), result_release=terminal.get('result_release'))
-                    if (terminal['status'] != 'completed' or frame is None
-                            or not terminal.get('result_release', {}).get('confirmed')):
-                        raise RuntimeError('the native client did not establish a complete sink, ACK and exit')
-                    current['HTTP_audit'] = _attached_audit(requests, native_result['predictions'],
-                        terminal['native_api'], model=config['model'], first_attempt=first_attempt,
-                        attempts=unit.attempts - first_attempt)
-                    if seen_response_ids.intersection(current['HTTP_audit']['response_ids']):
-                        raise ValueError('native HTTP response IDs must be distinct across query rounds')
-                    seen_response_ids.update(current['HTTP_audit']['response_ids'])
+                    audits = [_attached_audit(rows, predictions, api, model=config['model'], first_attempt=first,
+                        attempts=attempts) for rows, predictions, api, first, attempts in audit_inputs]
+                    response_ids = [value for audit in audits for value in audit['response_ids']]
+                    if len(set(response_ids)) != len(response_ids) or seen_response_ids.intersection(response_ids):
+                        raise ValueError('native HTTP response IDs must be distinct across batches and query rounds')
+                    seen_response_ids.update(response_ids)
+                    if len(audit_inputs) > 1:
+                        apis = [entry[2] for entry in audit_inputs]
+                        current['native_api'] = dict(scope='complete query native OpenAI HTTP attempts',
+                            provider='Daft builtin OpenAI', model_process_owned=False,
+                            raw_HTTP_call_id_association_available=False,
+                            SDK_explicit_client_close_observed=False,
+                            requests=[row for api in apis for row in api['requests']],
+                            reserved_attempts=sum(api['reserved_attempts'] for api in apis),
+                            http_send_entries=sum(api['http_send_entries'] for api in apis),
+                            unresolved=sum(api['unresolved'] for api in apis))
+                    current['HTTP_audit'] = dict(reserved_attempts=sum(audit['reserved_attempts'] for audit in audits),
+                        successful_responses=sum(audit['successful_responses'] for audit in audits), unresolved_attempts=0,
+                        response_ids=response_ids,
+                        message_occurrences=[row for audit in audits for row in audit['message_occurrences']],
+                        raw_HTTP_call_id_association_available=False,
+                        result_row_association='native Daft call_id projection; HTTP association is a message/output multiset')
                 else:
-                    consume(dict(result=dict(predictions=[])))
                     current['no_model_reason'] = 'no eligible semantic occurrences; no native client started'
                 raw, owner = _attached_owner(identity_probe)
                 current['owner_after_client_exit'] = raw
@@ -461,11 +575,18 @@ def run_attached_session(config, directory, *, model_python, supervise=supervise
                 raise
             finally:
                 current.update(logical_model_requests=len(requests), physical_HTTP_attempts=unit.attempts-first_attempt)
-                terminal_path = query_dir / 'native-worker' / 'worker.json'
-                if terminal_path.exists():
+                current['unsubmitted_logical_requests'] = len(requests) - sum(
+                    batch['logical_requests'] for batch in current.get('native_batches', []) if batch['native_worker_started'])
+                if active_batch is not None and error is not None:
+                    active_batch['status'] = 'failed'
+                if terminal_path is not None and terminal_path.exists():
                     try:
                         terminal = read_json(terminal_path)
-                        current.update(native_api=terminal.get('native_api'), result_release=terminal.get('result_release'))
+                        current['result_release'] = terminal.get('result_release')
+                        if error is not None or 'native_api' not in current:
+                            current['native_api'] = terminal.get('native_api')
+                        if active_batch is not None:
+                            active_batch.update(native_api=terminal.get('native_api'), result_release=terminal.get('result_release'))
                     except BaseException as caught:
                         if error is None:
                             error = caught

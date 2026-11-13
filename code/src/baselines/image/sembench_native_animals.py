@@ -136,6 +136,15 @@ class AnimalsFilterTask:
                 dict(type='image_url', image_url=dict(url=uri))])])
             for i, (key, uri) in enumerate(zip(self._call_ids(source), source.image_uris, strict=True))]
 
+    def query_batches(self, source):
+        """Run each complete Filter condition before forming the original sink."""
+        requests = self.requests(source)
+        count = len(source.frame)
+        predictions = []
+        for index in range(len(self._filters())):
+            predictions.extend((yield requests[index * count:(index + 1) * count]))
+        return self.finish(source, predictions)
+
     def finish(self, source, predictions):
         import pandas as pd
 
@@ -183,7 +192,7 @@ class AnimalsFilterTask:
             expected_model_calls=count, logical_model_requests=count, model_columns=['Image'],
             input_modality='image',
             filter_conditions=list(self._filters()),
-            execution_shape='independent image/condition requests with native batching; not LOTUS sequential LM batches',
+            execution_shape='one complete native batch per image Filter condition; Q7 runs zebra then impala over all source occurrences',
             label_scope='Species frozen before query; official post-query evaluation only',
             image_processing='fresh encoded bytes -> PIL RGB -> PNG data URI per Filter pass; no resize',
             preparation_scope='extra original-byte/RGB identity checks before query; actual read/decode/encode inside',

@@ -1718,6 +1718,83 @@ Python接口可接既有外层host probe，观测服务及非空实际模型子�
 既有可选native trace writer会吞掉含monotonic_ns的HTTP事件，因此本profile明确只使用完整worker.json.native_api原件及prepared消息，
 不使用或宣称完整JSONL，也未为此扩写共享观测工程。真实Daft SDK graph／外部服务／模型尚未在本批运行。
 
+<a id="native-query-batches-visual-families"></a>
+## 独立原生 runner 的查询级依赖批次与图文任务
+
+来源为固定c814原题源码、LOTUS1.2.4软件原函数差分及当前项目实现；工程JSON提示不复现原作者算法。
+现有Ray offline／Serve和Daft offline／attached-session沿同一个native_query_batches(task, source)协议：
+任务yield实际请求、send整批预测、return完整关系；原生系统仍拥有图执行、模型提交和调度。
+既有单批任务直接适配，没有题目专用执行器或查询DSL。已知首次计数在消息构造前检查，
+依赖总量未知为None，实际后继批次在提交前检查永久余额；不会用最大请求数冒充实际调用。
+Ray在一个查询owner内推进批次，Daft复用既有逐批worker／IPC／ACK；空批不创建worker，
+最后完整sink在末批ACK之前，前序必要退出仍计入查询。普通关系、真实读数和图像处理保持在查询内。
+本次替代runner旧单批执行主体，既有文本入口／profile保留有效用途；没有长期保留第二套逐题执行器。
+
+| 同一任务工厂场景 | 本批接入 | 仍未接入或未验证 |
+|---|---|---|
+| Animals | Q7按原两遍完整source分为N／N Filter，其余Q1/Q3/Q10保持一批 | 新分批组合模型／Daft图像资格另验；0d0cc模型成绩属于旧平铺源码 |
+| Medical | Q3／Q8完整单图Filter后原LIMIT；Q9普通三表merge后双图Filter | 新JSON视觉组合、真实原图绑定／VLM待验 |
+| Cars | Q3普通merge＋Manual＋完整Filter＋原head10；Q8完整Filter后原head100 | 其他原题未接；真实资产／VLM待验 |
+| E-Commerce | Q2 Filter、Q4 Extract、Q6 Map、Q8/Q9 exact pair、Q12文本Filter→实际幸存图片Extract、Q13图文Filter | Q10/Q11依赖Join、Q14 TopK未接；真实资产／模型待验 |
+| MMQA | Q2a／Q7完整视觉exact pair；Q2b真实Join匹配→颜色Extract | 新JSON组合模型待验，尚无真实非空后继Extract资格；Q5原生归约未接 |
+
+这些场景任务由Ray和Daft同一配置工厂选择；Ray显式打开prepare_image_stage，Daft图文显式选择attached-session。
+Daft本地字符串profile仍拒绝图片，不静默换语义或换执行拓扑。原生API只提供生成，不等同作者级Join／Aggregate／TopK。
+Q8完整标题／描述及图片是本项目工程输入；原LOTUS1.2.4 Join accessor只取一侧单列的限制未被本路径“修复”。
+图像仅对真实需要的源／幸存行读取，RGB／PNG无resize；Q9双图按明确标签关联，原SDK列顺序不作为新算法等价证明。
+E-Commerce Q4保重复索引后写覆盖，Q8/Q9保全部配对、原标签回连扩张、后置ID过滤及原字符串投影；
+Q12保模型生成ID／字符串，不用金标修复。MMQA保os.listdir顺序和Q7原实现未筛Europe的差异。
+原SDK空Extract不建输出列：新独立Q2b保留缺color的KeyError，现有LOTUS＋后端空schema兼容适配明确为另一合同，
+不借它宣称未修改原SDK，也不把空Join的结果当非空后继验证。
+
+26cc5ec9b干净导出加14份准确文件，12完整模块212项通过、0skip／模型／GPU；
+MMQA两文件及E-Commerce Q8/Q9增量后仅重验三个受影响模块61项，全通过、0skip。
+两次结果SHA-256分别为`b94d731ff8e12decb1332ccc9ec0fe7fc5f54b97dbc10c3bc3b8454e693222c4`、
+`4a443807ee4b8de2b6be333428d34de51cffde308e5c0eae0e0a9d21a4dac8f6`，有重叠，不累加。
+覆盖旧文本／图像／两runner、严格发生项、依赖预算阻断、空批、主错误／完整sink保留、最终ACK和fresh无LOTUS进程。
+原函数与真实SDK软件差分覆盖完整关系、PNG证据和原评分，不使用模型服务。
+
+另用实际场景任务连接两runner壳：Medical Q9为9，Cars Q3为4，E-Commerce Q12为5→3，MMQA Q2b为10→10，
+E-Commerce Q8为12、Q9为36请求；每例Ray一遍、Daft附加会话两遍，共18条完整软件查询流程。
+Daft真实子进程／IPC／ACK及HTTP记账、Ray录制processor与任务结果一致；无真实Daft／Ray SDK、服务、VLM或GPU资格。
+证据SHA-256为`3d351eaa015fa6aae994705693fb4c8a5d6331cad3a59ddd8b13f29ec192308d`、
+`be7810e74663a3c25b808abc50ba65478889f2520c6bac4e49ebff10cc8bb9ee`。
+前两次消费者helper漏checkout／图像开关的失败保留，仅修本地验证配置，没有更改生产语义。
+
+<a id="daft-6c75-4793-606f-model"></a>
+## Daft 三条具名模型回执及 Q2b 标签更正
+
+本节只读复核服务器原件，未重跑模型；新多阶段代码不继承这些冻结来源的资格。
+
+| 冻结来源／真实路径 | 工作与质量 | source→完整sink与边界 |
+|---|---|---|
+| 6c75efdf3，LOTUS＋Daft Animals Q7 sf64 | 两次原生Filter共128真实终态，原城市交集F1=1 | 87.953249591秒，外部服务启动66.064980013秒另列；不是独立暖查询 |
+| 4793ecf75，LOTUS＋Daft MMQA Q2b sf25 | 25图片×13表行＝325真实Join，空结果P/R/F1=0，Extract 0 | 50.373891034秒，外部服务启动65.085848104秒另列；完整空分支执行，不是质量通过 |
+| 606f8b34a，独立JSON Daft Movie Q8 | 两轮fresh 2000行各120真实终态，逐行预测相同，计数相对误差各4.0431266846% | 5.594704559／5.988286006秒，外部服务启动55.07258258秒另列；含客户端worker／packet／IPC和同步观测 |
+
+4793 Q2b是LOTUS＋Daft，不是独立原生Daft；之前笼统“原生Daft Q2b”的交接标签更正，调用与质量事实不变。
+其已有空schema兼容适配已披露，不能称raw SDK零Extract行为。325条原始回复经纯LOTUS1.2.4解析均False，
+其中299条明确Answer: False、26条缺Answer标记但正文含false，默认解析回退0；全部stop，未见输出长度终止或拒答。
+旧8667原始路径是LOTUS原LM→OpenAI/vLLM，不是Ray；相同325候选／原消息、模型revision及七份模型文件摘要已核。
+旧回复为306条明确False＋19条无标记false，回退0；本复核未找到独立Ray Q2b原件，不能串用Q2a／Q7结果。
+五个官方金标匹配都在这325候选里，故不能归因于候选遗漏；完整runtime输入／输出token和全部生成参数读回未采，
+重复消息HTTP逐发生项不能独立一一关联，不能据此完全排除接线差异或把原因全归模型。
+非空Extract仍待验；可用一个原图片与原金标表行做最多Join＋Extract两请求的具名诊断，
+必须由真实Join决定是否进入Extract，False保留为失败观察，不预置匹配或改评分。
+
+606f四次新鲜服务／实际模型进程PID及birth观测一致、日志仅一次EngineCore初始化，支持该冻结配置下同模型owner复用，
+每轮客户端worker另建。prefix cache开启，不能称无cache正式性能对照；同PID不证明全部cache／权重状态。
+原生call_id完整关联及HTTP多重集合核对通过，四个重复消息发生项的独立HTTP一一关联和实际生成token读回仍缺。
+run报告内部target_native_model_qualified=False不是自我授证；外层实际SDK／模型资格仅限本次Q8。
+首次bundle／验证脚本ref假设失败、退出semaphore警告、旧Q2b首轮审计失败均保留，资源清理闭合。
+4793外网INET guard激活缺独立证明，不能称全程离线；本地只读核验没有网络或模型调用。
+
+三条详细复核SHA-256依次为`0c439b9cf1a3cc57076fc0e278a214a78c30fa7c73cf3fa677e27adf6a742ad8`、
+`6fb68d5750f3f74134e25e9a0f356b439c5064444a893d2b9ecaa9a1083fb103`、
+`bf7d504daef3fd09480e6522cda26d74ac0de257701923a6851e07b33e0f2488`。
+金标候选交集复核SHA-256为`4f610db316d7d1d29ac4e527299306e783d1918476566b0d0e34a1e172d8a7bd`。
+不同语义、冷暖与计时范围不互排，不把Q8复用结果转授新视觉／多阶段或Ray Serve。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -1760,6 +1837,9 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 8d071 独立原生Ray／Daft MMQA Q4 sf25 | 3238620 | 1512 | `75ebd31de446926e21239e08f327b728c65e3cdec35b567ac7630e71816f2999` |
 | 0d0cc 独立原生Ray Animals Q7 sf64恢复包 | 3356087 | 1579 | `bef43365126e7f61f56f45cb48a958acfdd13512dbf05fdc78c0f8784b40a8b2` |
 | 0d0cc 独立原生Daft MMQA Q6a sf25 | 2983339 | 1289 | `6a1d26d0b8dac40fd815bafd5dbd6809eb115b524b42bbcc21f88a31324e6c49` |
+| 6c75 LOTUS＋Daft Animals Q7 sf64 | 3361273 | 1482 | `34e53d7269e3efa1c3105b2c21e5c62cf536b49abd8859581b2f8dbe64eb10b1` |
+| 4793 LOTUS＋Daft MMQA Q2b sf25 | 240934848 | 1425 | `1d87ce019eec252036af50850ce5d28b3b3f118ffefde23bf9cec6ca598324c4` |
+| 606f 独立JSON Daft Movie Q8同owner两轮 | 3790208 | 1482 | `b1aee233c72bdbcce806fd6a1ab70437bf3dff3700b97071735335d089b35930` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

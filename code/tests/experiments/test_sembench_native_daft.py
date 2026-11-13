@@ -132,6 +132,27 @@ class SoftwareTokenizer:
         return json.dumps(messages, ensure_ascii=False)
 
 
+class DependentQueryFixture:
+    def __init__(self, task, *, empty=False):
+        self.task, self.empty = task, empty
+
+    def __getattr__(self, name):
+        return getattr(self.task, name)
+
+    def query_batches(self, source):
+        from src.baselines.text.sembench_native_text import TextFilterTask
+        first = self.task.requests(source)
+        predictions = yield first
+        keep = {row['call_id']: TextFilterTask.parse(row['generated_text']) for row in predictions}
+        selected = [] if self.empty else [row for row in first if keep[row['call_id']]]
+        second = [dict(row, call_id=row['call_id']+'-followup') for row in selected]
+        predictions = yield second
+        final = {row['call_id'].removesuffix('-followup'): TextFilterTask.parse(row['generated_text'])
+                 for row in predictions}
+        return self.task.finish(source, [dict(call_id=row['call_id'],
+            generated_text=json.dumps(dict(keep=final.get(row['call_id'], False)))) for row in first])
+
+
 @unittest.skipUnless(CHECKOUT and all(importlib.util.find_spec(name) for name in ('pandas','duckdb','cdlib')),
                      'requires the pinned SemBench checkout and existing CPU evaluator dependencies')
 class IndependentDaftQueryTests(unittest.TestCase):
@@ -211,6 +232,45 @@ class IndependentDaftQueryTests(unittest.TestCase):
         self.output = self.root / ('run-' + query + '-' + mode)
         return driver.run_query(self.config(query, ranking=ranking, movies_csv=movies_csv), self.output, model_python=sys.executable,
                                 tokenizer=self.tokenizer, supervise=self.supervisor)
+
+    def test_dependent_batches_finish_once_before_the_last_native_ACK(self):
+        factory = driver.task_from_config
+        with patch.object(driver, 'task_from_config', side_effect=lambda config: DependentQueryFixture(factory(config))):
+            report = self.invoke()
+        self.assertEqual(report['result']['data'], [[2]])
+        self.assertEqual(report['logical_model_requests'], 6)
+        self.assertEqual(report['native_api']['generate_calls'], 6)
+        self.assertEqual(report['physical_attempts_reserved'], 6)
+        self.assertEqual([row['logical_requests'] for row in report['native_batches']], [4,2])
+        first, last = [read_json(path/'worker.json') for _,path in self.supervisor.calls]
+        self.assertLess(first['result_release']['released_monotonic_ns'], report['sink_ready_ns'])
+        self.assertLessEqual(report['sink_ready_ns'], last['result_release']['released_monotonic_ns'])
+        self.assertEqual(report['quality']['original_metric']['absolute_error'], 0)
+
+    def test_empty_dependent_batch_finishes_before_releasing_the_last_actual_worker(self):
+        factory = driver.task_from_config
+        with patch.object(driver, 'task_from_config', side_effect=lambda config: DependentQueryFixture(factory(config), empty=True)):
+            report = self.invoke()
+        self.assertEqual(report['result']['data'], [[0]])
+        self.assertEqual([row['logical_requests'] for row in report['native_batches']], [4,0])
+        self.assertEqual(len(self.supervisor.calls), 1)
+        terminal = read_json(self.supervisor.calls[0][1]/'worker.json')
+        self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
+
+    def test_dependent_batch_budget_stops_before_creating_the_second_worker(self):
+        factory = driver.task_from_config
+        supervisor = SoftwareSupervisor()
+        with patch.object(driver, 'task_from_config', side_effect=lambda config: DependentQueryFixture(factory(config))):
+            with self.assertRaisesRegex(ValueError, 'next complete query batch') as caught:
+                driver.run_query(dict(self.config(), max_model_calls=5), self.root/'dependent-budget',
+                    model_python=sys.executable, tokenizer=SoftwareTokenizer(), supervise=supervisor)
+        report = caught.exception.query_report
+        self.assertEqual(len(supervisor.calls), 1)
+        self.assertEqual(report['physical_attempts_reserved'], 4)
+        self.assertEqual(report['logical_model_requests'], 6)
+        self.assertEqual(report['unsubmitted_logical_requests'], 2)
+        self.assertFalse(report['native_batches'][-1]['native_worker_started'])
+        self.assertNotIn('result', report)
 
     def test_one_filter_family_reaches_complete_officially_scored_sinks_before_ACK_close(self):
         expected = {'Q1':[['r0'],['r2'],['r3'],['r4'],['r5']], 'Q2':[['r0'],['r3']],
@@ -589,7 +649,7 @@ print(json.dumps(dict(status=report['status'],result=report['result'],quality=re
 
 
 ATTACHED_WORKER = IMPORT_GUARD + r'''
-import asyncio,json,time
+import asyncio,json,os,time
 import httpx
 from pathlib import Path
 from src.experiments.native_daft_query import run_worker
@@ -610,7 +670,7 @@ async def send(client,request,*args,**kwargs):
  content=body['messages'][1]['content']
  text=json.loads(content if isinstance(content,str) else content[0]['text'])['text']
  generated=json.dumps(dict(keep=text.startswith('good')))
- response=dict(id='software-'+directory.parent.name+'-'+str(attempts),model=body['model'],
+ response=dict(id='software-'+str(os.getpid())+'-'+str(attempts),model=body['model'],
   choices=[dict(index=0,message=dict(role='assistant',content=generated),finish_reason='stop')],
   usage=dict(prompt_tokens=1,completion_tokens=1,total_tokens=2))
  return httpx.Response(200,request=request,json=response)
@@ -667,6 +727,39 @@ class AttachedDaftSessionTests(unittest.TestCase):
     def identity(pid=222):
         return dict(observed_monotonic_ns=time.monotonic_ns(), host_id='software-host',
             service_pid=111, service_create_time=10., model_processes=[dict(pid=pid,create_time=20.)])
+
+    def test_attached_dependent_queries_keep_one_budget_and_final_stage_ACK(self):
+        factory = driver.task_from_config
+        with patch.object(driver, 'task_from_config', side_effect=lambda config: DependentQueryFixture(factory(config))):
+            report = self.invoke(config=dict(self.config(), max_http_attempts=12))
+        self.assertEqual(report['status'], 'completed')
+        self.assertEqual(report['physical_HTTP_attempts'], 12)
+        self.assertEqual(len(self.supervisor.calls), 4)
+        for index, query in enumerate(report['queries']):
+            self.assertEqual(query['result']['data'], [[2]])
+            self.assertEqual(query['logical_model_requests'], 6)
+            self.assertEqual([row['logical_requests'] for row in query['native_batches']], [4,2])
+            self.assertEqual(query['HTTP_audit']['successful_responses'], 6)
+            self.assertEqual(query['native_api']['reserved_attempts'], 6)
+            self.assertEqual(len(query['native_api']['requests']), 6)
+            first, last = [read_json(path/'worker.json') for _,path in self.supervisor.calls[index*2:index*2+2]]
+            self.assertLess(first['result_release']['released_monotonic_ns'], query['sink_ready_ns'])
+            self.assertLessEqual(query['sink_ready_ns'], last['result_release']['released_monotonic_ns'])
+
+    def test_attached_unknown_batch_never_submits_its_constructed_followup(self):
+        factory = driver.task_from_config
+        with patch.object(driver, 'task_from_config', side_effect=lambda config: DependentQueryFixture(factory(config))):
+            with self.assertRaisesRegex(RuntimeError, 'unconfirmed attempts') as caught:
+                self.invoke(mode='unknown-recovered')
+        report = caught.exception.query_report
+        self.assertEqual(len(self.supervisor.calls), 1)
+        query = report['queries'][0]
+        self.assertEqual(query['logical_model_requests'], 6)
+        self.assertEqual(query['unsubmitted_logical_requests'], 2)
+        self.assertEqual(query['physical_HTTP_attempts'], 5)
+        self.assertEqual(query['native_api']['unresolved'], 1)
+        self.assertNotIn('result', query)
+        self.assertIsNone(report['warm_qualified'])
 
     def test_two_fresh_queries_share_one_permanent_budget_with_ACK_and_fresh_owner_proof(self):
         snapshots = []

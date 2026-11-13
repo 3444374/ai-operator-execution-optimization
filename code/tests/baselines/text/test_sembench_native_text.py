@@ -118,6 +118,33 @@ class NativeTextTaskTests(unittest.TestCase):
                     config['data_dir'], query, config['query_id']))
                 with self.assertRaises(TypeError):
                     task_from_config(dict(config, scale_factor=37))
+            from src.baselines.image.sembench_native_medical import MedicalVisualTask
+            from src.baselines.image.sembench_native_cars import CarsVisualTask
+            from src.baselines.image.sembench_native_ecommerce import EcommerceVisualTask
+            for scenario, queries, task_type in (
+                    ('medical', ('Q3', 'Q8', 'Q9'), MedicalVisualTask),
+                    ('cars', ('Q3', 'Q8'), CarsVisualTask),
+                    ('ecomm', ('Q2', 'Q4', 'Q6', 'Q8', 'Q9', 'Q12', 'Q13'), EcommerceVisualTask)):
+                for query in queries:
+                    config = dict(scenario=scenario, data_dir='/not-read/'+scenario,
+                                  query=query, query_id=scenario+'-visual-factory')
+                    if scenario != 'ecomm':
+                        config['scale_factor'] = 37
+                    self.assertEqual(task_from_config(config), task_type(
+                        config['data_dir'], query, config['query_id'],
+                        **(dict(scale_factor=37) if scenario != 'ecomm' else {})))
+                    with self.assertRaises(TypeError):
+                        task_from_config(dict(config, ranking='map'))
+            with self.assertRaisesRegex(ValueError, 'not connected'):
+                task_from_config(dict(scenario='ecomm', data_dir='/not-read/ecomm', query='Q14', query_id='not-wired'))
+            from src.baselines.image.sembench_native_mmqa import MMQAVisualJoinTask
+            for query in ('Q2a', 'Q2b', 'Q7'):
+                config = dict(scenario='mmqa', data_dir='/not-read/mmqa', query=query,
+                              query_id='mmqa-visual', sembench_checkout='/not-read/checkout')
+                self.assertEqual(task_from_config(config), MMQAVisualJoinTask(
+                    config['sembench_checkout'], config['data_dir'], query, config['query_id']))
+                with self.assertRaises(TypeError):
+                    task_from_config(dict(config, ranking='map'))
             for name in ['query', 'query_id']:
                 missing = dict(reviews_csv='/not-read/Reviews.csv', query='Q3', query_id='required')
                 missing.pop(name)

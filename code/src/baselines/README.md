@@ -267,9 +267,9 @@ E-Commerce Q7复用同一任务的exact pair分支，原price<=500后N²含self�
 `warm_qualified=None`；CLI没有host身份探针，不能授予真暖资格。接口与目标待验范围见[会话接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)。
 同一Daft runner另接[attached-session模板](../../configs/sembench_native_daft_attached_session.example.json)，
 复用builtin OpenAI messages graph、既有worker／ACK及永久HTTP预算，两次fresh完整查询使用各自客户端worker。
-外部模型服务由调用者拥有，driver不创建或关闭；同system／content layout的原生限制保持，混合system的Animals Q7不适用单批接点。
+外部模型服务由调用者拥有，driver不创建或关闭；每个实际批次保留静态system／content layout限制，任务依赖由查询层推进，Animals Q7拆为两次完整Filter批次。
 HTTP原件／完整输出及新鲜服务和模型子进程身份在sink后核；缺probe或只复用endpoint时warm=None。
-现只软件验收，目标SDK、renderer／token、模型及物理服务生命周期另验，见[范围](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)。
+初始软件范围见[接点验收](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)；606f Movie Q8已有具名同模型owner实测，新多阶段／视觉组合与实际token读回仍另验，见[后续回执](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-6c75-4793-606f-model)。
 生成参数和预算必须显式声明，JSON约束来自本工程对照合同，不能套给LOTUS原Filter。
 Q10另显式给Movies.csv供原评分；两系统调用同一任务准备接口，在source计时和模型启动前冻结gold，
 sink后评价只使用快照及其字节摘要，不让gold进入模型消息或真实查询输入。缺数据在模型前失败，无额外gold缓存或重试层。
@@ -290,14 +290,43 @@ sink后评价只使用快照及其字节摘要，不让gold进入模型消息或
 同一工厂还绑定[Animals图像Filter](image/sembench_native_animals.py)Q1/Q3/Q7/Q10，Ray沿现公开processor的
 `prepare_image_stage`接PNG内容数组；模型／tokenizer／processor须实际支持视觉，不从文本模型取得资格。
 原manifest身份与Species金标在额外预检冻结，真实manifest读、每次图像读取／RGB转换／PNG编码仍在查询内；
-Q7的zebra与impala两次Filter都处理完整N行，保留两遍实际图像处理，2N独立请求由同一原生图调度，
-分别取城市集合、交集排序；这是独立JSON工程对照，未复现LOTUS两个顺序LM批次的调度。
+Q7的zebra与impala两次Filter都处理完整N行，保留两遍实际图像处理，当前query_batches依次交出N／N请求，
+最终才取城市交集排序；旧0d0cc单图平铺批次成绩只归其冻结版本，当前分批组合尚待模型验收。
 其余三题沿原COUNT或城市／站点分组取最大，金标只供sink后原SQL／评分。重复图片分别请求，未增加64行执行上限。
 现官方输入身份仍为既有sf64 manifest，其他规模软件fixture不代表全8718图目录已接入或验证。
 当前Daft本地字符串profile在check及模板渲染前明确拒绝图像等非文本内容，纯文本数组原样交tokenizer渲染，不静默丢图；
 已有LOTUS＋Daft外部服务profile仍为另一身份，不能转授这里。
 代码及软件范围见[图像接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-animals-json-filter)，目标VLM／物理清理及性能仍待验。
 现有Ray外部HTTP Q3继续保留其外部模型所有权，身份更正为LOTUS-compatible工程路径，不能重复统计为独立原生语义baseline。
+
+<a id="native-query-batches-visual-families"></a>
+### 独立任务的完整查询批次与图文接线
+
+任务用普通Python生成器query_batches(source)交出实际请求，接收整批预测，最后return完整原关系；
+[native_query_batches](text/sembench_native_text.py)让既有单批任务沿同一路径执行。
+[Ray runner](../experiments/sembench_native_ray.py)及[Daft runner](../experiments/sembench_native_daft.py)拥有原生提交、预算、终态和关闭；
+任务没有执行调度器、后端分支或逐题runner。下一阶段仅从实际前序输出生成；首次已知计数在构造消息前检查，
+后续实际批次在原生提交前检查余量。未知总量保留None，不用最大值伪作实际请求。
+空批不创建原生worker；末批完整sink在最终ACK／释放前形成，必要的中间worker退出仍在查询内。
+原source／关系后处理及严格JSON解析保留，评分、额外身份审计和结果写盘在完整sink后。
+
+同一工厂新增四个场景任务模块，各自拥有真实源／普通关系／工程提示和原评分，不复制执行器：
+
+| 任务模块 | 当前绑定 | 保留的原关系与尚未接项 |
+|---|---|---|
+| [Medical图像](image/sembench_native_medical.py) | Q3／Q8／Q9 | patient与图像普通merge、完整单图／双图Filter后LIMIT；原scale只选择文件 |
+| [Cars图像](image/sembench_native_cars.py) | Q3／Q8 | 普通merge、Q3 Manual谓词、完整Filter后原投影／LIMIT；其余图像算法未接 |
+| [E-Commerce图文](image/sembench_native_ecommerce.py) | Q2／Q4／Q6／Q8／Q9／Q12／Q13 | Q4重复索引后写；Q8/Q9完整exact pair及原索引回连；Q12文本Filter→实际幸存图片Extract；Q10/Q11依赖Join、Q14 TopK未接 |
+| [MMQA图文](image/sembench_native_mmqa.py) | Q2a／Q2b／Q7 | 原os.listdir顺序、所有有向候选、Q7无Europe预筛；Q2b仅真实Join匹配进入颜色Extract |
+
+均为项目独立JSON工程语义，不导入LOTUS SDK／提示／解析，不能称作者算法。
+E-Commerce Q8显式提供完整标题／描述和图片；原LOTUS1.2.4 Join accessor只选一侧单列的限制仍保留在原路径，
+本工程输入不据此宣称模型算法相同。原生生成API没有自动提供作者级Join／Aggregate／TopK。
+Q4重复Parquet索引按原Extract标签后写覆盖，Q8/Q9标签回连可扩张关系，物理发生项和模型生成ID不按gold修正。
+MMQA独立Q2b零Extract保留原SDK缺color列的KeyError；已有LOTUS＋后端的空schema兼容适配是另一合同。
+
+Ray需显式prepare_image_stage及真实VLM；Daft图文使用显式attached-session，offline字符串profile保持原拒绝规则。
+各场景的真实资产／模型资格与新增软件范围分列，见[完整验收与缺口](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-batches-visual-families)。
 
 <a id="ray-native-prepared-sembench"></a>
 ### LOTUS＋Ray 原生执行的完整查询 sink

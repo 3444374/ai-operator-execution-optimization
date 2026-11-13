@@ -641,8 +641,10 @@ class BlockLotus(importlib.abc.MetaPathFinder):
         if forbidden(fullname):
             raise AssertionError('forbidden LOTUS import: ' + fullname)
 sys.meta_path.insert(0, BlockLotus())
-from tests.experiments.test_sembench_native_ray import RunnerTests, ServeSessionTests
-suite = unittest.TestSuite([RunnerTests('test_native_processor_and_complete_sink_before_close')])
+from tests.experiments.test_sembench_native_ray import RunnerTests, ServeSessionTests, NativeMultistageTests
+suite = unittest.TestSuite([RunnerTests('test_native_processor_and_complete_sink_before_close'),
+    NativeMultistageTests('test_offline_dependent_second_batch_preserves_occurrences_and_final_sink_before_close'),
+    NativeMultistageTests('test_serve_two_dependent_queries_use_one_model_owner_and_audit_every_batch')])
 if os.environ.get('SEMBENCH_CHECKOUT'):
     suite.addTest(RunnerTests('test_neutral_movie_task_and_official_evaluator'))
     suite.addTest(RunnerTests('test_map_tasks_reuse_the_native_processor_and_complete_official_sinks'))
@@ -866,6 +868,278 @@ class ServeSessionTests(unittest.TestCase):
                 entry.main(['run','--config',str(path)])
         self.assertFalse(output.exists())
         self.assertEqual(Path(config['budget']['path']).read_bytes(), before)
+
+
+class DependentTableTask:
+    """Two real source-dependent batches, with no service or scheduling policy."""
+    def __init__(self, path, execution_id, events):
+        self.path, self.execution_id, self.events = Path(path), execution_id, events
+
+    def prepare_evaluation(self):
+        return None
+
+    def read_source(self):
+        from io import BytesIO
+        self.events.append('source')
+        raw = self.path.read_bytes()
+        return dict(raw=raw, frame=pd.read_csv(BytesIO(raw)))
+
+    def model_request_count(self, source):
+        return len(source['frame'])  # Initial lower bound; second batch depends on predictions.
+
+    def requests(self, source):
+        raise AssertionError('dependent query must use its query generator')
+
+    def finish(self, source, predictions):
+        raise AssertionError('dependent query owns its complete relation in query_batches')
+
+    def query_batches(self, source):
+        from src.baselines.text.sembench_native_text import TextFilterTask
+        predicate = TextFilterTask('Keep the supplied good text.')
+        frame = source['frame']
+        first = [dict(call_id=self.execution_id+'-first-'+str(index),
+            messages=predicate.messages(text)) for index, text in enumerate(frame['text'])]
+        try:
+            decisions = predicate.decisions([row['call_id'] for row in first], (yield first))
+            positions = [index for index, keep in enumerate(decisions) if keep]
+            self.events.append('first-finished')
+            second = [dict(call_id=self.execution_id+'-second-'+str(index),
+                messages=predicate.messages(frame.iloc[index]['text']+' dependent')) for index in positions]
+            self.events.append('second-built')
+            following = predicate.decisions([row['call_id'] for row in second], (yield second))
+            self.events.append('sink')
+            return pd.DataFrame(dict(id=[frame.iloc[index]['id'] for index in positions], keep=following))
+        finally:
+            self.events.append('generator-close')
+
+    def verify_source(self, source):
+        assert self.path.read_bytes() == source['raw']
+        self.events.append('verify')
+
+    def describe(self, source):
+        return dict(role='controlled dependent-table software fixture', source_rows=len(source['frame']))
+
+    def evaluate(self, source, result, **kwargs):
+        self.events.append('evaluate')
+        return dict(role='fixture relation check; not a benchmark/model score', rows=len(result))
+
+    def encode_result(self, result):
+        return result.to_dict(orient='split')
+
+
+class NativeMultistageTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.source = self.root/'source.csv'
+        pd.DataFrame(dict(id=['duplicate','other','duplicate'], text=['good first','bad','good second'])).to_csv(
+            self.source, index=False)
+        self.owners = []
+
+    def config(self, limit=5, *, serve=False):
+        ledger = CellBudgetLedger.create(self.root/'budget.sqlite', AttemptBudget('multi-fixture',limit),
+                                        deadline_utc=time.time()+120)
+        ledger.reserve_unit('query', limit)
+        config = dict(model='fixture-model', model_python=sys.executable, engine_kwargs={},
+            processor_options={}, runtime_options={}, sampling_params=dict(n=1,structured_outputs={'json_object':True}),
+            budget=dict(path=str(ledger.path),id='multi-fixture',limit=limit,unit_id='query'))
+        if serve:
+            config.update(schema='semloom.sembench_native_ray_serve_session.v1', model_source='unused',
+                          app_name='owned-fixture',deployment_name='model-fixture',query_id='session')
+        return config
+
+    @staticmethod
+    def reply(row, request):
+        payload = json.loads(request['messages'][-1]['content'])
+        return json.dumps(dict(keep='good' in payload['text']))
+
+    def serve_owner(self, **options):
+        owner = SoftwareServeSession(**options)
+        self.owners.append(owner)
+        return owner
+
+    def test_offline_dependent_second_batch_preserves_occurrences_and_final_sink_before_close(self):
+        config = self.config()
+        with recorded_processor(self.reply) as state:
+            task = DependentTableTask(self.source, 'multi', state.events)
+            report = run_query(task, config, self.root/'query', checkout='unused-fixture')
+        self.assertEqual(report['request_batch_counts'], [3,2])
+        self.assertEqual(report['logical_requests'], 5)
+        self.assertEqual(report['physical_attempts_reserved'], 5)
+        self.assertEqual(report['result']['data'], [['duplicate',True],['duplicate',True]])
+        self.assertEqual(len(state.configs), 2)
+        self.assertEqual(state.events.count('init'), 1)
+        self.assertLess(state.events.index('first-finished'), state.events.index('second-built'))
+        self.assertLess(state.events.index('sink'), state.events.index('close'))
+        self.assertLess(state.events.index('close'), state.events.index('verify'))
+        self.assertIs(report['model_ready_before_source'], False)
+        requests = json.loads((self.root/'query/requests.json').read_text())
+        self.assertEqual([row['call_id'] for row in requests], ['multi-first-0','multi-first-1','multi-first-2',
+                                                              'multi-second-0','multi-second-2'])
+        self.assertIn('good second dependent', state.requests[-1]['messages'][-1]['content'])
+
+    def test_offline_empty_dependent_batch_does_not_start_another_native_graph(self):
+        pd.DataFrame(dict(id=['a','b','c'],text=['bad first','bad second','bad third'])).to_csv(self.source,index=False)
+        config = self.config(limit=3)
+        with recorded_processor(self.reply) as state:
+            report = run_query(DependentTableTask(self.source,'empty',state.events),config,self.root/'query',checkout='fixture')
+        self.assertEqual(report['request_batch_counts'], [3,0])
+        self.assertEqual(report['physical_attempts_reserved'], 3)
+        self.assertEqual(report['result']['data'], [])
+        self.assertEqual(report['result']['columns'], ['id','keep'])
+        self.assertEqual(len(state.configs), 1)
+        native = json.loads((self.root/'query/native-predictions.json').read_text())
+        self.assertEqual([len(batch['predictions']) for batch in native['batches']], [3,0])
+        self.assertLess(state.events.index('sink'), state.events.index('close'))
+
+    def test_offline_second_stage_budget_rejection_keeps_constructed_requests_without_submission(self):
+        config = self.config(limit=4)
+        with recorded_processor(self.reply) as state:
+            with self.assertRaisesRegex(BudgetExhausted, 'next complete native batch') as caught:
+                run_query(DependentTableTask(self.source,'limited',state.events),config,self.root/'query',checkout='fixture')
+        report = caught.exception.query_report
+        self.assertEqual(report['request_batch_counts'], [3,2])
+        self.assertEqual(report['physical_attempts_reserved'], 3)
+        self.assertEqual(len(state.requests), 3)
+        self.assertEqual(len(json.loads((self.root/'query/requests.json').read_text())), 5)
+        self.assertIsNone(report['sink_ready_ns'])
+        self.assertNotIn('quality', report)
+        self.assertIn('generator-close', state.events)
+        self.assertIn('close', state.events)
+
+    def test_offline_unknown_batch_blocks_next_submission_and_final_unknown_preserves_sink(self):
+        for unknown_batch in (1,2):
+            with self.subTest(unknown_batch=unknown_batch), tempfile.TemporaryDirectory() as temporary:
+                self.root = Path(temporary)
+                config = self.config()
+                materialized = []
+                def corrupt_terminal(phase):
+                    if phase != 'materialize': return
+                    materialized.append(phase)
+                    if len(materialized) != unknown_batch: return
+                    path = self.root/'query/native-events-software.jsonl'
+                    rows = [json.loads(line) for line in path.read_text().splitlines()]
+                    target = 1 if unknown_batch == 1 else 4
+                    for row in rows:
+                        if row['event']=='native_generate_terminal' and row['attempt']==target:
+                            row['event']='native_generate_unconfirmed'
+                    path.write_text(''.join(json.dumps(row)+'\n' for row in rows))
+                with recorded_processor(self.reply, advance=corrupt_terminal) as state:
+                    with self.assertRaisesRegex(RuntimeError, 'unconfirmed|confirmed terminals') as caught:
+                        run_query(DependentTableTask(self.source,'unknown',state.events),config,self.root/'query',checkout='fixture')
+                report = caught.exception.query_report
+                self.assertEqual(len(state.requests), 3 if unknown_batch==1 else 5)
+                self.assertEqual(report['physical_attempts_reserved'], 3 if unknown_batch==1 else 5)
+                self.assertEqual(report['request_batch_counts'], [3,2])
+                self.assertNotIn('quality', report)
+                if unknown_batch==1:
+                    self.assertIsNone(report['sink_ready_ns'])
+                else:
+                    self.assertIsNotNone(report['sink_ready_ns'])
+                    self.assertEqual(report['result']['data'], [['duplicate',True],['duplicate',True]])
+
+    def test_offline_second_native_exception_closes_owner_and_keeps_primary(self):
+        calls = []
+        failure = RuntimeError('second native graph failed')
+        def transform(rows):
+            calls.append(1)
+            if len(calls)==2: raise failure
+            return rows
+        config = self.config()
+        with recorded_processor(self.reply, transform=transform, close_error=ValueError('close also failed')) as state:
+            with self.assertRaises(RuntimeError) as caught:
+                run_query(DependentTableTask(self.source,'error',state.events),config,self.root/'query',checkout='fixture')
+        self.assertIs(caught.exception,failure)
+        self.assertTrue(any('close failed' in note for note in failure.__notes__))
+        self.assertEqual(failure.query_report['physical_attempts_reserved'],5)
+        self.assertIsNone(failure.query_report['sink_ready_ns'])
+        self.assertEqual(len(json.loads((self.root/'query/requests.json').read_text())),5)
+
+    def test_serve_two_dependent_queries_use_one_model_owner_and_audit_every_batch(self):
+        from src.experiments import sembench_native_ray as entry
+        events=[]
+        original_read = entry.read_json
+        def post_sink_read(path):
+            if Path(path).name.startswith('native-output-'):
+                attempt = int(Path(path).stem.removeprefix('native-output-'))
+                self.assertGreaterEqual(events.count('sink'), 1 if attempt <= 5 else 2)
+            return original_read(path)
+        with patch.object(entry, 'read_json', side_effect=post_sink_read):
+            report = entry.run_serve_session(self.config(limit=10,serve=True),self.root/'session',checkout='fixture',
+                session_factory=self.serve_owner,
+                task_factory=lambda config:DependentTableTask(self.source,config['query_id'],events))
+        self.assertEqual(report['status'],'completed')
+        self.assertEqual(len(self.owners),1)
+        self.assertEqual(self.owners[0].events,['start','predict','predict','predict','predict','close'])
+        self.assertTrue(self.owners[0].closed_unit)
+        self.assertEqual([query['request_batch_counts'] for query in report['queries']],[[3,2],[3,2]])
+        self.assertEqual([query['native_observation']['attempts'] for query in report['queries']],
+                         [list(range(1,6)),list(range(6,11))])
+        self.assertEqual([len(query['native_observation']['response_associations']) for query in report['queries']],[5,5])
+        self.assertEqual(report['physical_attempts_reserved'],10)
+        self.assertIsNone(report['warm_qualified'])
+        for index,query in enumerate(report['queries'],1):
+            self.assertEqual(query['result']['data'],[['duplicate',True],['duplicate',True]])
+            self.assertLessEqual(query['sink_ready_ns'],query['post_sink_audit_started_ns'])
+            requests=json.loads((self.root/'session'/('round-'+str(index))/'requests.json').read_text())
+            self.assertEqual(len(requests),5)
+
+    def test_serve_second_stage_unknown_keeps_final_sink_and_native_exception_keeps_primary(self):
+        from src.experiments.sembench_native_ray import run_serve_session
+        for mode in ('unknown', 'exception'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                self.root = Path(temporary)
+                self.owners = []
+                failure = RuntimeError('second Serve batch failed')
+                def owner_factory(**options):
+                    owner = self.serve_owner(**options)
+                    original = owner.predict
+                    def predict(rows, **arguments):
+                        if len(owner.inputs) == 1:
+                            if mode == 'exception':
+                                raise failure
+                            owner.unknown = True
+                        return original(rows, **arguments)
+                    owner.predict = predict
+                    return owner
+                with self.assertRaises(RuntimeError) as caught:
+                    run_serve_session(self.config(limit=10, serve=True), self.root/'session', checkout='fixture',
+                        session_factory=owner_factory,
+                        task_factory=lambda config: DependentTableTask(self.source, config['query_id'], []))
+                report = caught.exception.query_report
+                self.assertEqual(len(report['queries']), 1)
+                self.assertTrue(self.owners[0].closed_unit)
+                self.assertEqual(report['queries'][0]['request_batch_counts'], [3,2])
+                self.assertNotIn('quality', report['queries'][0])
+                self.assertIsNone(report['warm_qualified'])
+                if mode == 'unknown':
+                    self.assertEqual(report['physical_attempts_reserved'], 5)
+                    self.assertEqual(report['queries'][0]['result']['data'], [['duplicate',True],['duplicate',True]])
+                else:
+                    self.assertIs(caught.exception, failure)
+                    self.assertEqual(report['physical_attempts_reserved'], 3)
+                    self.assertIsNone(report['queries'][0]['result'])
+
+    def test_serve_unknown_or_insufficient_second_stage_never_submits_dependent_batch_or_next_query(self):
+        from src.experiments.sembench_native_ray import run_serve_session
+        for mode in ('unknown','budget'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                self.root=Path(temporary)
+                self.owners=[]
+                config=self.config(limit=10 if mode=='unknown' else 4,serve=True)
+                with patch.object(SoftwareServeSession,'unknown',mode=='unknown'):
+                    with self.assertRaises((RuntimeError,BudgetExhausted)) as caught:
+                        run_serve_session(config,self.root/'session',checkout='fixture',session_factory=self.serve_owner,
+                            task_factory=lambda config:DependentTableTask(self.source,config['query_id'],[]))
+                report=caught.exception.query_report
+                self.assertEqual(self.owners[0].events,['start','predict','close'])
+                self.assertEqual(len(report['queries']),1)
+                self.assertEqual(report['queries'][0]['request_batch_counts'],[3,2])
+                self.assertEqual(report['physical_attempts_reserved'],3)
+                self.assertIsNone(report['queries'][0]['result'])
+                self.assertTrue(self.owners[0].closed_unit)
+                self.assertIsNone(report['warm_qualified'])
 
 
 if __name__ == '__main__':

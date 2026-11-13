@@ -1,6 +1,7 @@
 """Neutral Animals task parity with fixed original queries and software replies."""
 
 import base64
+from dataclasses import replace
 from io import BytesIO
 import json
 import os
@@ -56,7 +57,13 @@ class NativeAnimalsFilterTests(unittest.TestCase):
                 with patch.object(original, 'image_identity', side_effect=AssertionError('query repeated pixel preflight')):
                     source = task.read_source()
                     requests = task.requests(source)
-                result = task.finish(source, list(reversed(self.replies(requests, [True, True, False, False]))))
+                replies = list(reversed(self.replies(requests, [True, True, False, False])))
+                execution = task.query_batches(source)
+                self.assertEqual(next(execution), requests)
+                with self.assertRaises(StopIteration) as completed:
+                    execution.send(replies)
+                result = completed.exception.value
+                self.assertEqual(task.encode_result(result), task.encode_result(task.finish(source, replies)))
                 expected, quality, batches = self.reference.run_query(query, ['True', 'True', 'False', 'False'])
                 self.assertEqual(task.encode_result(result), task.encode_result(expected))
                 self.assert_quality_equal(task.evaluate(source, result, evaluation=evaluation), quality)
@@ -92,7 +99,21 @@ class NativeAnimalsFilterTests(unittest.TestCase):
         requests = task.requests(source)
         flags = [True, True, False, False, True, False, False,
                  False, False, True, True, False, True, False]
-        result = task.finish(source, list(reversed(self.replies(requests, flags))))
+        execution = task.query_batches(source)
+        first = next(execution)
+        self.assertEqual(first, requests[:7])
+        with patch.object(task, 'finish', wraps=task.finish) as finish:
+            second = execution.send(list(reversed(self.replies(first, flags[:7]))))
+            self.assertEqual(second, requests[7:])
+            finish.assert_not_called()
+            with self.assertRaises(StopIteration) as completed:
+                execution.send(list(reversed(self.replies(second, flags[7:]))))
+            result = completed.exception.value
+            finish.assert_called_once()
+        self.assertEqual(task.encode_result(result), task.encode_result(
+            task.finish(source, list(reversed(self.replies(requests, flags))))))
+        self.assertEqual([len({row['messages'][0]['content'] for row in batch})
+                          for batch in (first, second)], [1, 1])
         expected, quality, batches = self.reference.run_query(7,
             ['True' if keep else 'False' for keep in flags], dataset=dataset)
         self.assertEqual([len(batch) for batch in batches], [7, 7])
@@ -110,7 +131,7 @@ class NativeAnimalsFilterTests(unittest.TestCase):
         self.assertEqual(task.describe(source)['source']['rows'], 7)
         self.assertEqual(task.describe(source)['expected_model_calls'], 14)
         self.assertEqual(task.describe(source)['input_modality'], 'image')
-        self.assertIn('not LOTUS sequential LM batches', task.describe(source)['execution_shape'])
+        self.assertIn('Q7 runs zebra then impala', task.describe(source)['execution_shape'])
         task.verify_source(source)
 
     def test_q7_empty_first_filter_still_requires_both_complete_input_passes(self):
@@ -122,7 +143,14 @@ class NativeAnimalsFilterTests(unittest.TestCase):
         for flags in ([False] * 4 + [True] * 4,
                 [True, False, True, False] + [False, True, False, True]):
             with self.subTest(flags=flags):
-                result = task.finish(source, self.replies(requests, flags))
+                execution = task.query_batches(source)
+                first = next(execution)
+                self.assertEqual(first, requests[:4])
+                second = execution.send(self.replies(first, flags[:4]))
+                self.assertEqual(second, requests[4:])
+                with self.assertRaises(StopIteration) as completed:
+                    execution.send(self.replies(second, flags[4:]))
+                result = completed.exception.value
                 expected, quality, batches = self.reference.run_query(7,
                     ['True' if keep else 'False' for keep in flags])
                 self.assertEqual([len(batch) for batch in batches], [4, 4])
@@ -132,6 +160,24 @@ class NativeAnimalsFilterTests(unittest.TestCase):
                 self.assert_quality_equal(task.evaluate(source, result, evaluation=evaluation), quality)
         with self.assertRaisesRegex(ValueError, 'cover every'):
             task.finish(source, self.replies(requests[:4], flags[:4]))
+
+    def test_query_batches_preserve_each_condition_and_empty_schema_for_zero_occurrences(self):
+        for query, batch_count in ((1, 1), (3, 1), (7, 2), (10, 1)):
+            with self.subTest(query=query):
+                task = self.task(query)
+                task.prepare_evaluation()
+                source = task.read_source()
+                empty = replace(source, frame=source.frame.iloc[:0], image_bytes=(), image_uris=())
+                self.assertEqual(task.requests(empty), [])
+                self.assertEqual(task.model_request_count(empty), 0)
+                execution = task.query_batches(empty)
+                self.assertEqual(next(execution), [])
+                for _ in range(batch_count - 1):
+                    self.assertEqual(execution.send([]), [])
+                with self.assertRaises(StopIteration) as completed:
+                    execution.send([])
+                self.assertEqual(task.encode_result(completed.exception.value),
+                                 task.encode_result(task.finish(empty, [])))
 
     def test_q7_really_reads_both_image_passes_and_audits_each_consumed_snapshot(self):
         task = self.task('Q7')
@@ -265,7 +311,14 @@ source = task.read_source()
 requests = task.requests(source)
 replies = [dict(call_id=row['call_id'], generated_text=json.dumps({'keep': i < 2}))
            for i, row in enumerate(requests)]
-result = task.finish(source, replies)
+execution = task.query_batches(source)
+assert next(execution) == requests
+try:
+    execution.send(replies)
+except StopIteration as completed:
+    result = completed.value
+else:
+    raise AssertionError('single Filter yielded an unexpected second batch')
 quality = task.evaluate(source, result, evaluation=evaluation)
 task.verify_source(source)
 assert task.encode_result(result)['data'] == [[2]]

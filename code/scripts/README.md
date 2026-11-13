@@ -156,13 +156,16 @@ PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_daft attache
 engine_kwargs为空，模型容量由外部服务拥有；provider_options保留原生SDK设置。模板4096次HTTP／128输出token和时限仅作显式示例，
 须按两轮实际N加SDK重试声明，既有预算每次POST前永久扣额、不退款，unknown／失败／超额阻断下一轮。
 每批须同system与内容布局；user字符串转单text part数组的native编码明确披露，目标renderer／token等价未验，
-不同system的Animals Q7不能塞成单批。每轮source→完整sink包括packet／native graph／HTTP观测／IPC，
+不同system的Animals Q7按两次原Filter批次执行，不合并静态prompt。每轮source→完整sink包括packet／native graph／HTTP观测／IPC，
 最后ACK、客户端退出、原评价和写盘在sink后；服务启动未由本driver测量，保留None，不事后扣除旧冷成绩。
 Python可用run_attached_session(..., identity_probe=host_probe)：当场返回observed_monotonic_ns、host_id、service_pid／service_create_time，
 及非空model_processes列表的pid／create_time，四次新鲜观测须一致。CLI无probe时warm_qualified=None，
 即使PID一致也不证明cache／权重或进程内重构状态；真实模型资格与性能仍另验。
 本profile使用worker.json.native_api原始HTTP指纹／答复和永久预算，已知可选JSONL writer缺口明确记录，不假称完整JSONL。
-[软件验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)没有启动服务／模型／GPU。
+初始[软件验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)没有启动服务／模型／GPU；606f Movie Q8的[后续实机回执](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-6c75-4793-606f-model)按冻结来源单列。
+同一工厂接受Medical Q3/Q8/Q9、Cars Q3/Q8、E-Commerce Q2/Q4/Q6/Q8/Q9/Q12/Q13和MMQA Q2a/Q2b/Q7；
+场景／data_dir及Medical／Cars原scale参数沿既有配置，不新增题目CLI。首次计数是依赖查询的下界，预算还须覆盖实际后继批次与重试；
+Q2b真实非空Extract、所有新视觉组合及Ray Serve暖轮仍另验，见[范围](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-batches-visual-families)。
 
 ## Movie session 配置
 

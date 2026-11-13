@@ -12,6 +12,7 @@ import time
 
 from src.baselines.text.frameworks.ray_data_sembench_native import query_scope
 from src.baselines.text.frameworks.ray_native_observer import summarize
+from src.baselines.text.sembench_native_text import native_query_batches
 from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
 from src.experiments.cell_budget import CellBudgetLedger
 from src.infrastructure.private_artifacts import (
@@ -66,7 +67,7 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
         physical_gpu_exit_confirmed=None, performance_claim=False, warmup_calls=0,
         result_cache_enabled=False, requested_generate_retries=0,
         timing_scope='fresh task source, necessary image reads/RGB-to-PNG content, project messages, '
-            'native startup/prediction, strict task JSON parsing and complete memory sink; '
+            'native startup/dependent predictions, necessary terminal checks, strict task parsing and complete memory sink; '
             'mandatory budget reservation and synchronous native observer writes included; '
             'source verification, evaluation, result persistence and final runtime close excluded')
     source = result = native = ledger = unit = primary = None
@@ -87,6 +88,7 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
         value = config['budget']
         ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
         unit = ledger.claim_shared_unit(value['unit_id'])
+        first = next(row['first_attempt'] for row in ledger.snapshot()['units'] if row['unit_id'] == value['unit_id'])
         runtime_env = dict(py_executable=config['model_python'], env_vars=dict(
             PYTHONPATH=str(Path(__file__).parents[2]),
             SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory)))))
@@ -99,20 +101,19 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
             required = task.model_request_count(source)
             if required > unit.remaining:
                 raise BudgetExhausted('permanent budget cannot cover every source occurrence')
-            requests = task.requests(source)
-            report['logical_requests'] = len(requests)
-            images = any(isinstance(message['content'], list)
-                and any(part.get('type') == 'image_url' for part in message['content'])
-                for request in requests for message in request['messages'])
-            if images and not _image_stage_enabled(config['processor_options']):
-                raise ValueError('native image content requires enabled prepare_image_stage')
+
+            def sink(value):
+                nonlocal result
+                result = value
+                report['sink_ready_ns'] = time.monotonic_ns()
+                report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_started_ns']) / 1e9
+
+            _predict_query_batches(task, source, owner, sampling=sampling, unit=unit, directory=directory,
+                first_attempt=first, requests=requests, counts=report.setdefault('request_batch_counts', []),
+                predictions=[], sink=sink, processor_options=config['processor_options'])
             if not requests:
                 report.update(model_ready_before_source=None,
                     model_ready_before_source_reason='no eligible occurrences; native runtime and model were not started')
-            batch = owner.predict(requests, sampling_params=sampling)
-            result = task.finish(source, batch['predictions'])
-            report['sink_ready_ns'] = time.monotonic_ns()
-            report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_started_ns']) / 1e9
         report['post_sink_audit_started_ns'] = time.monotonic_ns()
         task.verify_source(source)
         report['task'] = task.describe(source)
@@ -139,6 +140,7 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
             except BaseException as error:
                 failed(error, 'budget finalization')
         try:
+            report['logical_requests'] = len(requests)
             if result is not None:
                 report['result'] = task.encode_result(result)
             if native is not None:
@@ -157,8 +159,8 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
     return report
 
 
-def _serve_attempt_window(directory, unit, first_attempt, before, predictions=None):
-    """Read confirmed native evidence for one sequential session interval."""
+def _confirmed_attempt_window(directory, unit, first_attempt, before):
+    """Only the terminal/allowance evidence required before another native batch."""
     after = unit.attempts
     expected = list(range(first_attempt+before, first_attempt+after))
     observed = summarize(directory)
@@ -166,13 +168,64 @@ def _serve_attempt_window(directory, unit, first_attempt, before, predictions=No
     terminal = [value for value in observed['terminal_attempts'] if value in expected]
     unknown = [value for value in observed['unknown_attempts'] if value in expected]
     if sorted(submitted) != expected or sorted(terminal) != expected or unknown:
-        raise RuntimeError('Serve interval has unconfirmed, duplicate or missing native attempts')
-    raw = [read_json(Path(directory)/('native-output-'+str(value)+'.json')) for value in expected]
+        raise RuntimeError('native interval has unconfirmed, duplicate or missing native attempts')
+    return dict(attempts=expected, submitted_attempts=submitted, terminal_attempts=terminal,
+        unknown_attempts=unknown), observed
+
+
+def _predict_query_batches(task, source, owner, *, sampling, unit, directory, first_attempt,
+                           requests, counts, predictions, sink, processor_options=None):
+    """Drive the task's ordinary query generator; native Ray owns every batch."""
+    program = native_query_batches(task, source)
+    try:
+        try:
+            pending = next(program)
+        except StopIteration as complete:
+            sink(complete.value)
+            return
+        while True:
+            requests.extend(pending)
+            counts.append(len(pending))
+            if len(pending) > unit.remaining:
+                raise BudgetExhausted('permanent budget cannot cover the next complete native batch')
+            if processor_options is not None:
+                images = any(isinstance(message['content'], list)
+                    and any(part.get('type') == 'image_url' for part in message['content'])
+                    for request in pending for message in request['messages'])
+                if images and not _image_stage_enabled(processor_options):
+                    raise ValueError('native image content requires enabled prepare_image_stage')
+            before = unit.attempts
+            batch = owner.predict(pending, sampling_params=sampling)
+            predictions.extend(batch['predictions'])
+            try:
+                following = program.send(batch['predictions'])
+            except StopIteration as complete:
+                sink(complete.value)
+                return
+            try:
+                _confirmed_attempt_window(directory, unit, first_attempt, before)
+                if unit.attempts-before != len(pending):
+                    raise RuntimeError('native charged attempts differ from complete batch occurrences')
+            except BaseException:
+                # Preserve locally constructed dependent work, without submitting it.
+                requests.extend(following)
+                counts.append(len(following))
+                raise
+            pending = following
+    finally:
+        program.close()
+
+
+def _serve_attempt_window(directory, unit, first_attempt, before, predictions=None):
+    """Full response association audit, after the complete session query sink."""
+    window, observed = _confirmed_attempt_window(directory, unit, first_attempt, before)
+    expected = window['attempts']
     associations = []
     if predictions is not None:
+        raw = [read_json(Path(directory)/('native-output-'+str(value)+'.json')) for value in expected]
         response_ids = [row['response_id'] for row in predictions]
         by_id = {row['request_id']: row for row in raw}
-        if (len(predictions) != after-before or len(set(response_ids)) != len(response_ids)
+        if (len(predictions) != len(expected) or len(set(response_ids)) != len(response_ids)
                 or len(by_id) != len(raw) or set(response_ids) != by_id.keys()):
             raise RuntimeError('Serve response IDs do not cover the charged native outputs')
         for prediction in predictions:
@@ -180,8 +233,7 @@ def _serve_attempt_window(directory, unit, first_attempt, before, predictions=No
             if len(native['outputs']) != 1 or native['outputs'][0]['text'] != prediction['generated_text']:
                 raise RuntimeError('Serve complete response differs from its native output')
             associations.append(dict(call_id=prediction['call_id'], response_id=prediction['response_id']))
-    return dict(attempts=expected, submitted_attempts=submitted, terminal_attempts=terminal,
-        unknown_attempts=unknown, response_associations=associations), observed
+    return dict(window, response_associations=associations), observed
 
 
 def _owner_snapshot(snapshot):
@@ -246,7 +298,7 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
             'unchanged native constructor events; software fixtures do not qualify a target model',
         native_startup_attempts=None, worker_entry_ns=time.monotonic_ns(),
         timing_scope='deployment startup separately measured; each fresh source, native Serve graph, '
-            'strict task parsing and full memory sink measured directly; synchronous native budget/evidence '
+            'dependent batches, necessary terminal checks, strict task parsing and full memory sink measured directly; synchronous native budget/evidence '
             'included; post-sink audits/scoring/persistence and final deployment close excluded')
     primary = ledger = unit = owner = current = None
 
@@ -298,7 +350,7 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
             report['queries'].append(current)
             phase = directory/('round-'+str(index+1))
             new_private_directory(phase)
-            requests, result = [], None
+            requests, predictions, result = [], [], None
             before = unit.attempts
             try:
                 if before != accounted or _serve_constructor_events(directory) != constructor_events:
@@ -312,15 +364,19 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
                 source = task.read_source()
                 if task.model_request_count(source) > unit.remaining:
                     raise BudgetExhausted('Serve session budget cannot cover the complete fresh source')
-                requests = task.requests(source)
-                batch = owner.predict(requests, sampling_params=sampling)
-                result = task.finish(source, batch['predictions'])
-                current['sink_ready_ns'] = time.monotonic_ns()
-                current['source_to_sink_seconds'] = (current['sink_ready_ns']-current['source_started_ns'])/1e9
+                def sink(value):
+                    nonlocal result
+                    result = value
+                    current['sink_ready_ns'] = time.monotonic_ns()
+                    current['source_to_sink_seconds'] = (current['sink_ready_ns']-current['source_started_ns'])/1e9
+
+                _predict_query_batches(task, source, owner, sampling=sampling, unit=unit, directory=directory,
+                    first_attempt=first, requests=requests, counts=current.setdefault('request_batch_counts', []),
+                    predictions=predictions, sink=sink)
                 current['post_sink_audit_started_ns'] = time.monotonic_ns()
-                current['native_observation'], observed = _serve_attempt_window(directory, unit, first, before, batch['predictions'])
+                current['native_observation'], observed = _serve_attempt_window(directory, unit, first, before, predictions)
                 accounted = unit.attempts
-                if len(batch['predictions']) != len(requests):
+                if len(predictions) != len(requests):
                     raise RuntimeError('Serve complete predictions differ from task occurrences')
                 if _serve_constructor_events(directory) != constructor_events:
                     raise RuntimeError('Serve constructed a new native model during the session')
@@ -343,6 +399,7 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
                 failed(error, 'query')
             finally:
                 try:
+                    current['logical_requests'] = len(requests)
                     if result is not None:
                         current['result'] = task.encode_result(result)
                     write_private_json(phase/'requests.json', requests)
@@ -429,7 +486,7 @@ def main(argv=None):
         if task.model_request_count(source) > config['budget']['limit']:
             raise ValueError('the permanent native budget cannot cover the eligible source')
         description = task.describe(source)
-        if description.get('input_modality') == 'image' and not _image_stage_enabled(config['processor_options']):
+        if description.get('input_modality') in ('image', 'text+image') and not _image_stage_enabled(config['processor_options']):
             raise ValueError('native image content requires enabled prepare_image_stage')
         print(json.dumps(dict(status='checked_cpu_only', execution_enabled=False,
             task=description, model_calls=0), ensure_ascii=False, allow_nan=False))

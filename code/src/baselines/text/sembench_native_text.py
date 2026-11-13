@@ -549,6 +549,19 @@ TASK_SOURCE_FIELDS = frozenset({'reviews_csv', 'movies_csv', 'ranking', 'data_di
                                'manifest', 'manifest_digest', 'scale_factor'})
 
 
+def native_query_batches(task, source):
+    """Yield actual native batches and return the complete query relation.
+
+    A task with dependent operators owns its ordinary Python query generator.
+    Existing tasks delegate one batch. Runners own submission, finite physical
+    budgets and result-release timing; this boundary has no execution policy.
+    """
+    if hasattr(task, 'query_batches'):
+        return (yield from task.query_batches(source))
+    predictions = yield task.requests(source)
+    return task.finish(source, predictions)
+
+
 def task_from_config(config):
     """Bind one implemented task family from the system runner's configuration."""
     scenario = config.get('scenario', 'movie')
@@ -556,18 +569,38 @@ def task_from_config(config):
     if scenario == 'movie':
         return movie_text_task(query=config['query'], execution_id=config['query_id'], **sources)
     if scenario == 'mmqa':
+        if str(config['query']).lower().removeprefix('q') in ('2a', '2b', '7'):
+            from src.baselines.image.sembench_native_mmqa import MMQAVisualJoinTask
+
+            return MMQAVisualJoinTask(checkout=config['sembench_checkout'], query=config['query'],
+                                     execution_id=config['query_id'], **sources)
         from .sembench_native_mmqa import mmqa_text_task
 
         return mmqa_text_task(query=config['query'], execution_id=config['query_id'], **sources)
     if scenario == 'medical':
+        from .sembench_medical import VISUAL_QUERY_IDS
+        if str(config['query']).lower().removeprefix('q') in VISUAL_QUERY_IDS:
+            from src.baselines.image.sembench_native_medical import medical_visual_task
+
+            return medical_visual_task(query=config['query'], execution_id=config['query_id'], **sources)
         from .sembench_native_medical import medical_text_task
 
         return medical_text_task(query=config['query'], execution_id=config['query_id'], **sources)
     if scenario == 'cars':
+        from .sembench_cars import VISUAL_QUERY_IDS
+        if str(config['query']).lower().removeprefix('q') in VISUAL_QUERY_IDS:
+            from src.baselines.image.sembench_native_cars import cars_visual_task
+
+            return cars_visual_task(query=config['query'], execution_id=config['query_id'], **sources)
         from .sembench_native_cars import cars_text_task
 
         return cars_text_task(query=config['query'], execution_id=config['query_id'], **sources)
     if scenario == 'ecomm':
+        from .sembench_ecomm import VISUAL_QUERY_IDS
+        if str(config['query']).lower().removeprefix('q') in VISUAL_QUERY_IDS:
+            from src.baselines.image.sembench_native_ecommerce import EcommerceVisualTask
+
+            return EcommerceVisualTask(query=config['query'], execution_id=config['query_id'], **sources)
         from .sembench_native_ecommerce import ecommerce_text_task
 
         return ecommerce_text_task(query=config['query'], execution_id=config['query_id'], **sources)
