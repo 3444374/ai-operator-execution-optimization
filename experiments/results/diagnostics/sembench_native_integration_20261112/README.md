@@ -1542,6 +1542,90 @@ metadata明记daft.openai.system_single_user.parts.v1及target_renderer_equivale
 实际native API为软件transport，未启动服务／模型，不把首轮说成从无网络尝试。
 only-visual入口与TopK取消guard、原生重试、模型所有权／worker关闭和计时边界均未更改。
 
+<a id="native-medical-text-family"></a>
+## 独立原生 Medical 文本任务家族
+
+MedicalTextTask复用同一独立任务协议及Ray／Daft runner，接固定c814的Q1／Q4 Filter和Q10 Extract，
+不导入LOTUS SDK／提示／解析。scale_factor只选原CSV文件，默认原11112，无算法行数上限。
+Q1对全部symptoms判定后返回原patient_id Series；Q4在source区间完成patient与symptoms的原普通inner join，
+对所有连接发生项判定后计算重复加权年龄平均；Q10全量诊断后投影patient_id／text_diagnosis。
+金标不入模，模型／扣额／source计时前冻结原patient labels；Q10评分的小写原地修改只作用sink副本，
+完整内存结果保持模型原文。缺失症状按独立JSON合同转空文本，JSON null按既有Extract合同物化为字符串None，
+原空Series／NaN均值／空Extract缺列KeyError保留，不改写为成功空表。它是工程JSON对照，非作者原版语义方法。
+
+主线程在2bac6e184干净导出整合Medical、任务工厂和下节Serve接点，七个完整模块139项全通过，
+0skip／模型／GPU，包含旧Movie、MMQA、Animals及两系统消费者回归；结果SHA-256为
+`b62a7bb65da6865640d888321286f34d3d5d685bf19ba4206200b632e22baeb0`，不与分任务计数累加。
+Medical模块包含真实原函数／SDK的受控回复差分，以及fresh禁LOTUS导入后的原评分。
+另六条实际Medical任务→原Ray driver或Daft prepared worker／ACK的软件流程，覆盖每系统4／6／4发生项，
+核完整结果及评分一致、诊断大写sink不被评分污染；证据SHA-256为
+`ae6009bb5493f93ea3b977f72b1bfdf8ab9e6d2c429a8ab3f1028cc77cfb4c4e`。
+这六条是实际driver协议上的软件kernel，未启动原生SDK／模型，不授予Medical真实模型或性能资格。
+恢复前的独立任务只有测试、无生产实现，原目录与失败输出保留；本轮未丢弃或覆盖该稿。
+
+<a id="native-ray-serve-session"></a>
+## 独立原生 Ray 的 Serve 会话 profile
+
+固定Ray2.56.1公开LLMConfig／build_llm_deployment及ServeDeploymentProcessorConfig，
+在同一sembench_native_ray runner新增显式serve-session及单独schema，由owned deployment承担模型生命周期，
+Data processor承担批处理／调度；不复制任务逻辑，不改offline run_query、原采样或图像stage接点。
+JSON structured_outputs在chat边界显式转换为response_format，stream=False接完整非流式答复；
+call_id与实际chat response.id／native request_id在sink后核对，不猜测去除ID后缀。
+
+一个已预留有限预算覆盖部署启动的实际请求及两遍完整fresh source查询，扣额不退还，未知或超额立即停止后续轮。
+每轮ready后的source→native graph→strict task parse→完整内存sink直接计时，部署启动及最后关闭另列；
+原生同步预算／观测仍在内，身份核验、source审计、评分和写盘在sink后。失败保留已完成sink及首个异常。
+只关闭本次新建application及其隔离Ray连接，不执行全局serve.shutdown，也不接管已有同名application。
+
+Python调用可接既有host identity_snapshot，当场观测node／replica actor、PID／创建时间及非空实际模型子进程PID／创建时间，
+同时核模型构造事件在两轮前后不变。缺字段、陈旧观测或无探针均不授予warm；CLI没有该探针，warm_qualified=None。
+软件owner fixture能检验判断逻辑，不能证明真实GPU模型复用；target_native_model_qualified始终留待目标验收，
+物理GPU／SHM退出由外层监督确认。Ray Serve是不同执行拓扑，不能给offline历史成绩追授暖轮，Daft暖轮仍未接。
+
+两模块38项受控生命周期检查纳入上节139项组合，不另累加；覆盖共享owner、fresh source、实际预算区间、
+startup请求、unknown、身份变更／缺失、创建／关闭错误和完整结果保留。首次用例暴露遗漏JSON格式转换，修正后冻结；
+fresh用例导入错误及失败输出同样保留。源码已核固定Ray公开API和vLLM单prompt ID规则；
+本轮无Ray Serve SDK部署／模型／GPU／服务安装，实际版本兼容、warm身份及物理退出仍pending。
+
+<a id="native-mmqa-q4-8d071-model"></a>
+## 8d071 独立原生 MMQA Q4 sf25
+
+具名native-ray-daft-mmqa-q4-8d0710-qualification-20261113-r1冻结
+8d071066f80fd004fc5e82a372a95b930bb53dae及c814原题，实际25行源按原24片名条件选择24发生项，
+各系统24次、共48真实终态，无unknown／retry／额外query warm-up；完整19组结果及24条原JSON两系统一致。
+原位置7／15返回JSON null，按已声明合同形成字符串None组；保留原大小写／genre别名，不事后修答案。
+保存的原precision／recall／F1均为0.6153846153846154，执行完整不表示全部抽取正确。
+
+Ray source→sink为75.204570546秒，Daft为56.933395667秒；各自单冷含新owner及内部I/O，
+未测同owner暖轮，版本／容量／缓存不同，不作性能排名。原生模型、预算、实际关联和最终物理清理回执核验。
+首次Daft sdk-r2因私有版本断言被错误改成0.24.1而在0模型时失败；r3仅恢复实际0.25.1断言后完成该门，
+未改模型／算法／依赖，首轮失败保存。独立核验器首次误将raw messages与prompt packet比较，修正核验对象后通过，原件未动。
+
+1512个payload／1160个源码blob／四个官方参考及归档／本地副本已独立核hash；
+私有核验结果SHA-256为`04ffb48d43e7841b59ef126fcb2008f1ab0f33bdf65618a3740e93bdab31b5cb`。
+未重跑模型或评分，不转授当前新Filter、Medical、视觉或Serve会话资格；Daft实际完整token数组仍未知。
+
+<a id="native-q7-q6a-0d0cc-model"></a>
+## 0d0cc 独立 Ray 图像Q7与Daft文本Q6a
+
+两项均冻结0d0cc150d016619a3e38d224f64d73721abcf6e1及c814官方参考，仍为项目JSON工程对照。
+具名native-ray-animals-q7-0d0cc1-qualification-20261113-r1使用原sf64 manifest、64图两条件共128请求，
+全部终态、实际输入／输出token数组、发生项关联及永久预算相符。完整城市交集Mombasa／Nakuru，
+保存原precision=1、recall=2/3、F1=0.8，缺Kisumu；不能借旧LOTUS Q7的F1=1覆盖此质量差异。
+source→完整sink为163.652111592秒，包含新owner初始化、真实图像处理及已披露同步I/O，无真暖轮。
+
+具名native-daft-mmqa-q6a-0d0cc1-qualification-20261113-r1对机场CSV全部25行Filter，25请求全部终态，
+实际prompt SHA／token长度／输出SHA及预算相符。完整投影保留原索引6的Discover Airlines，保存F1=1，
+不表示全部25行分类准确率；source→sink为33.289591545秒，含初始化／packet等内部I/O，未测同owner暖轮。
+Daft实际完整token ID数组未保存，保持未知。两条执行路径和任务不同，不作横向排名或转授新Serve候选。
+
+两者归档／本地payload／Git源码／官方参考及清理回执已核验，GPU／所属进程／租约／SHM检查通过；
+核验只读，永久预算字节未变，未重跑模型或评分。Ray恢复包复用旧Q7图像字节作无损运输，未复用旧模型结果，
+128个实际PNG／RGB消息载荷逐项核验；原JPEG本机未重新散列，保留归档身份与服务器检查证据。
+最初scp文件名被拒在0模型时发生；核验器首次错误期待SDK prompt字段的失败也保留，修正核验对象未改原件。
+本机两份详证SHA-256分别为`8103b51c15698408737e16a5d2d987a8042b3f877d9cccf00fb7319ba2e5d30c`、
+`5850641377bb8002af1912c312712bf738afa546929a17fa1cb69bb6c8e57080`。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -1581,6 +1665,9 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | f596 独立原生Ray／Daft Movie Q1 | 7036724 | 3464 | `af47bc3acf443b5ed3032223a05115862321a7833e024b2f3179adcd9aa25a54` |
 | 608e20 独立原生Ray／Daft Movie Q9 Map | 3874724 | 1751 | `0ec63e7473afb647c7bd4b3b3aef13b7d0f967d0bca6c1a9695816a8be32750a` |
 | 8d071 独立原生Ray／Daft MMQA Q1 sf25 | 3264095 | 1516 | `62a01b273b0aebb9d09fcf47f359401e4b412deff1617c8d9bb24adcbbda6638` |
+| 8d071 独立原生Ray／Daft MMQA Q4 sf25 | 3238620 | 1512 | `75ebd31de446926e21239e08f327b728c65e3cdec35b567ac7630e71816f2999` |
+| 0d0cc 独立原生Ray Animals Q7 sf64恢复包 | 3356087 | 1579 | `bef43365126e7f61f56f45cb48a958acfdd13512dbf05fdc78c0f8784b40a8b2` |
+| 0d0cc 独立原生Daft MMQA Q6a sf25 | 2983339 | 1289 | `6a1d26d0b8dac40fd815bafd5dbd6809eb115b524b42bbcc21f88a31324e6c49` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

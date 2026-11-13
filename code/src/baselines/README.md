@@ -241,12 +241,21 @@ Q10复用同一评分Map处理全部物理源行，沿原pandas分组、Python�
 重复reviewId按发生位置分别请求，不用ID去重或LIMIT提前减少语义工作。
 这是“统一语义工程对照”，不是作者原版或官方SemBench系统runner。
 
+同一工厂的`scenario=medical`接[Medical文本任务](text/sembench_native_medical.py)Q1/Q4/Q10；
+实际scale只选择原CSV文件，Q4普通patient/symptoms内连接及重复加权平均保留，Q1返回原Series，Q10保留完整诊断关系。
+金标在模型前冻结，真实源读取／普通Join／全部推理／完整sink在查询内；评分使用sink副本，避免原Q10评分的小写转换污染完整结果。
+Medical原函数／SDK软件差分与同两runner消费者范围见[接线记录](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-medical-text-family)，尚无本JSON组合模型资格。
+
 每个系统一个runner：[Ray](../experiments/sembench_native_ray.py)使用公开LLM processor／原生AsyncLLM，
 [Daft](../experiments/sembench_native_daft.py)使用内置`vllm-prefix-caching`图和既有隔离worker／ACK关闭。
 两者只共享任务工厂、评分和观测工具；新增Map／Extract无需新增执行器，系统仍拥有批处理、调度及模型执行，没有逐题runner。
 所核固定版本公开AI接点提供生成／结构输出，未提供对应作者级语义Join／Aggregate／TopK算法；
 这里的pair predicate明确为项目exact工程方法，不把普通join/groupby/sort加prompt称作作者原算法。
 配置与CPU检查／显式运行命令见[脚本入口](../../scripts/README.md#independent-native-text-runners)。
+同一Ray runner另有显式`serve-session` profile，[owned Serve adapter](text/frameworks/ray_native_serve_session.py)
+以Ray2.56.1公开Serve deployment和Data processor执行两次fresh完整查询；部署启动、两轮查询和关闭分别记录。
+它改变执行拓扑，不能继承offline单冷成绩。实际模型子进程与replica的新鲜身份、未变constructor事件缺失时，
+`warm_qualified=None`；CLI没有host身份探针，不能授予真暖资格。接口与目标待验范围见[会话接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)。
 生成参数和预算必须显式声明，JSON约束来自本工程对照合同，不能套给LOTUS原Filter。
 Q10另显式给Movies.csv供原评分；两系统调用同一任务准备接口，在source计时和模型启动前冻结gold，
 sink后评价只使用快照及其字节摘要，不让gold进入模型消息或真实查询输入。缺数据在模型前失败，无额外gold缓存或重试层。

@@ -147,6 +147,20 @@ Ray首次外清理失败及后续精确inode清理保留、未重跑模型；首
 post-sink原始／effective SHA与HTTP Counter核对，原数组不变；五完整模块52项全部通过、0skip／模型／GPU，不累加分任务。
 旧prefix函数及only-visual／TopK guard保持，目标renderer／token／模型等价仍pending；首次DNS尝试与被拦loopback probe哨兵失败保留。
 
+[独立Medical文本家族](diagnostics/sembench_native_integration_20261112/README.md#native-medical-text-family)
+Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实scale文件；七模块139项和六条driver软件流程通过，0模型。
+同一组合含[Ray Serve会话profile](diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)，
+单deployment两次fresh查询、预算及身份边界已软件检查，目标SDK／模型／物理退出尚待验；缺实际模型身份不得授予warm。
+
+[8d071独立MMQA Q4 sf25](diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-q4-8d071-model)
+两系统各24真实终态、完整19组相同，保存原F1=.6153846，JSON null及原genre别名保留，非全部抽取正确。
+归档／1512payload／源码及预算／清理核验，首轮零模型断言失败保留；单冷含初始化，无warm／排名／后续组合资格。
+
+[0d0cc独立Ray Q7／Daft Q6a](diagnostics/sembench_native_integration_20261112/README.md#native-q7-q6a-0d0cc-model)
+分别128／25真实终态，原城市交集F1=.8／机场投影F1=1，执行完整与全量分类质量分开。
+1579／1289payload及源码、关联、永久预算和清理已核；前者无损复用旧图像字节运输，不复用旧LOTUS答复。
+单冷含初始化、无真暖／排名／后续组合资格；首轮运输／核验失败及Daft实际完整token数组缺口保留。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。
