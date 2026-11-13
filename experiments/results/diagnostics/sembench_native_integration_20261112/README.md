@@ -410,6 +410,30 @@ worker-entry→sink为56.357690154秒。不是完整256、独立暖轮、作者T
 日志运行身份为`ray-animals-query-clock-r1-clean`及`ray-animals-query-clock-r2-child`，可向接入会话取脱敏原件。
 这些软件秒数只表征边界，不是性能数据；目标新时钟尚待验收，旧Q1／Q7模型成绩保留原口径。
 
+## Medical 单图／双图 Filter 原生接线
+
+固定SemBench `c814e380`的`files/medical/query/lotus/Q3.py`、`Q8.py`和`Q9.py`
+直接交既有LOTUS视觉服务入口。任务绑定只读取实际CSV／图像并计数原首算子关系，复用原查询、
+LM／HTTP／预算／原答关联／完整sink／评分和v3时钟；没有逐题执行器或新调度。
+工程参照沿用[系统架构§8.7–8.8](../../../plans/系统架构.md#company-engineering-reference)已固定的
+算子语义与模型通信分工，本批没有访问或移入公司材料。
+
+Q3／Q8保留患者条件、重复连接行、完整Filter之后的LIMIT 5／100。Q9保留两种图像的患者连接，
+每个发生项在同一原消息中携带皮肤和X-ray图，调用预算为N而非2N；不按患者ID或图片值合并请求。
+额外身份审计在完整时钟之外，原CSV读取／ImageArray／PNG编码和原关系处理仍在时钟内。
+原MedicalEvaluator生成Q3的Series金标后，通过其自身缓存读取接口取得官方CSV的列形状；
+其余金标生成、采样、度量和失败行为不改。Q8临时金标不足100且无命中时，完整空sink后仍保留原采样异常。
+
+干净候选导出明确排除取消的三文件草稿。两模块43项一次通过；金标读取改为原缓存接口后，
+重验三题差分及9项既有Medical文本检查，合计52项不同检查通过、0跳过／0模型。
+软件原查询发生项7／104／11全部消费；原LIMIT结果分别5／100／11行，双图11发生项仍只有11个软件POST。
+消息及完整关系直接与原SDK差分，原评分一致；另覆盖缺图／不支持音频预检、源像素变化、
+原小金标评价失败和实际scale路径。原症状Filter／Extract、重复标签和缺字段失败保持。
+Cars／Medical的CSV读取也共用同一段服务编排，随后7项受影响检查通过。
+日志运行身份为`medical-visual-native-r1-clean`、`medical-visual-native-r2-text-and-gold`及
+`medical-visual-native-r3-shared-csv`，
+可向接入会话取脱敏原件；临时患者／图像只作软件fixture，真实资产、目标renderer及VLM仍待核。
+
 <a id="lotus-native-join-projection"></a>
 ## LOTUS 多列 Join 的原生选列限制
 

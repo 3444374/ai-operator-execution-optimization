@@ -420,6 +420,25 @@ Q1 为症状 Filter，Q4 为原患者关联后的 Filter／平均年龄，Q10 �
 补充文本入口的配置省略生成项时均采用原 LM 的8192 token／无 stop，显式值保留。
 这改变了旧补充 Movie／MMQA 的省略项解析；显式8 token／换行 stop 的旧配置和普通 Filter 类型默认不变，旧结果不改写。
 
+### Medical 原图像查询
+
+同一[Medical任务绑定](text/sembench_medical.py)把原Q3／Q8／Q9脚本接到既有
+[LOTUS视觉服务入口](../experiments/sembench_lotus_image_query.py)，不另建执行器。
+配置使用`scenario=medical`、所选题及`scale_factor`（默认11112），`data_dir`为原场景根目录。
+保留`data/patient_data[_N].csv`、原题所需`image_x_ray_data[_N].csv`／`image_skin_data[_N].csv`
+及实际图像；`patient_data_with_labels[_N].csv`只用于原评价，标签不进入模型消息。
+
+Q3／Q8先按原患者条件连接全部图像并Filter，之后才取原LIMIT 5／100；重复患者和图像不去重。
+Q9保留两表与患者的原连接，每个发生项把皮肤与X-ray两张图一起交原生Filter，预算按发生项N，
+不是按图片数2N。预检在原首算子边界取得实际行数和图像身份；真实CSV读取、图像编码和完整关系
+保留在已有v3源→sink区间内，服务启动由外部owner另记。
+
+原MedicalEvaluator直接生成／读取金标和评分；Q3生成的Series金标通过原缓存读取接口恢复官方CSV形状，
+不重写评分。Q3／Q8的小金标无法满足原评价采样5／100时，保留原失败，不补标签或放宽限制。
+当前52项不同本地软件检查通过，覆盖三题原消息／完整结果／评价和既有文本路径；
+真实图像资产、目标renderer与VLM资格仍待核，不能由临时图像或软件HTTP答复转授。
+音频题及固定上游未实现的脚本不由此取得支持。
+
 ### Cars 原文本查询
 
 [Cars 绑定](text/sembench_cars.py)直接执行官方 Q1／Q4／Q10，复用同一个文本任务、Filter／Extract、
@@ -582,6 +601,7 @@ Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求�
 | MMQA Q7 | sf25 机场25行与原25图，组合后625候选对 | 原源码无自然问题的欧洲预筛，保留并单列该差异；原生服务入口已接，实际服务待绑定／验证 |
 | E-Commerce 图像／多模态 | 首算子真实发生项及图像身份按原函数计算；原件待准备 | 原生服务入口已有软件检查，真实资产／VLM待验，不能记零分 |
 | Cars Q3／Q8 图像 | 原车辆／图像 CSV 的真实连接规模；原件待定位／准备 | 原函数／服务／评价已接线，真实数据／VLM待验 |
+| Medical Q3／Q8／Q9 图像 | 原患者／图像表连接后的一次Filter；Q9每发生项含两图 | 原脚本／服务／评价已接线，软件差分通过；真实图像／renderer／VLM待核 |
 | Cars 其他图音 | 固定 LOTUS tree 缺 Q2/Q5/Q6/Q7/Q9 文件 | 官方实现缺口单列，不编造查询，不代表其他系统不支持 |
 
 上述预算不含暖机、重试或重复；Animals 四题与 MMQA Q2a/Q2b 共970到1295次，Q2b 的匹配数由真正的 Join 决定。

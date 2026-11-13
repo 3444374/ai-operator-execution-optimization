@@ -33,6 +33,7 @@ Q9 Map 不授予 TopK 资格。当前整合保留原生执行与完整 sink，�
 | 文本完整排名；Movie Q9 TopK profile | 原 quick TopK显式resident已接；cb754的完整256真实模型已验，原parser回退保留；其他来源另验 | 未接线 | 未接线 | LOTUS quick over VARCHAR工程变体已接，原题／Arrow／provider软件检查；11f的8行Linux SQL／renderer门及ecbd的8行13次真实比较通过，full256待验，非作者TopK算法 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 共用一／两阶段生命周期已接线；目标范围按原来源 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
+| 原关系连接后单图或双图 Filter；Medical Q3/Q8/Q9 | 原脚本／原生视觉服务／原评分已接线，52项不同本地软件检查通过；真实图像／目标renderer／VLM待核 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线；空路径已实机执行，参考非空Extract组件5次真实请求已验；实际Join→非空Extract及旧原答关联仍有缺口 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 原分层 Aggregate；MMQA Q5 | 独立原 SDK 查询已接线，真实 sf25 软件回放通过 | 未接线 | 未接线 | 未接线 | 未接线 |

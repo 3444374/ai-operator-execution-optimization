@@ -132,9 +132,12 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         elif config["scenario"] == "mmqa":
             from src.baselines.image.sembench_mmqa import bind_original_query, evaluate_original
             execute_query = bind_original_query(checkout, data_dir, config["query"])
-        elif config['scenario'] == 'cars':
+        elif config['scenario'] in ('cars', 'medical'):
             import pandas as pd
-            from src.baselines.text.sembench_cars import bind_original_query, evaluate_visual_original, verify_visual_inputs
+            if config['scenario'] == 'cars':
+                from src.baselines.text.sembench_cars import bind_original_query, evaluate_visual_original, verify_visual_inputs
+            else:
+                from src.baselines.text.sembench_medical import bind_original_query, evaluate_visual_original, verify_visual_inputs
             execute_query = bind_original_query(checkout, config['query'],
                 lambda name, **kwargs: pd.read_csv(Path(data_dir) / name, **kwargs),
                 data_dir=data_dir, scale_factor=inputs['scale_factor'])
@@ -163,7 +166,7 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
                 expected_stages = [inputs["exact_join_candidates"]]
                 if inputs["query"] == "Q2b":
                     expected_stages.append(len(result))
-            elif config['scenario'] == 'cars':
+            elif config['scenario'] in ('cars', 'medical'):
                 verify_visual_inputs(inputs)
                 expected_stages = [inputs['expected_model_calls']]
             else:
@@ -193,7 +196,7 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             elif config["scenario"] == "ecomm":
                 quality = evaluate_original(checkout, config["query"], result, data_dir=data_dir,
                     source_identity=inputs['gold_source_identity'])
-            elif config['scenario'] == 'cars':
+            elif config['scenario'] in ('cars', 'medical'):
                 quality = evaluate_visual_original(checkout, config['query'], result, inputs)
             else:
                 quality = evaluate_original(checkout, config["query"], result)

@@ -11,8 +11,8 @@ from src.infrastructure.redact import redact_text
 
 def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_digest=None, scale_factor=None):
     """Inspect actual inputs; do not allocate a framework, model or call budget."""
-    if scale_factor is not None and scenario != 'cars':
-        raise ValueError('visual scale_factor selects only the authored Cars CSV paths')
+    if scale_factor is not None and scenario not in ('cars', 'medical'):
+        raise ValueError('visual scale_factor selects only the authored Cars/Medical CSV paths')
     if scenario == "animals":
         if manifest is None or manifest_digest is None or data_dir is not None:
             raise ValueError("Animals requires manifest and manifest_digest, without data_dir")
@@ -35,8 +35,14 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
         from src.baselines.text.sembench_cars import describe_visual_inputs, FULL_SCALE_FACTOR
         inputs = describe_visual_inputs(checkout, data_dir, query,
             scale_factor=FULL_SCALE_FACTOR if scale_factor is None else scale_factor)
+    elif scenario == 'medical':
+        if data_dir is None or manifest is not None or manifest_digest is not None:
+            raise ValueError('Medical requires data_dir, without Animals manifest arguments')
+        from src.baselines.text.sembench_medical import describe_visual_inputs, FULL_SCALE_FACTOR
+        inputs = describe_visual_inputs(checkout, data_dir, query,
+            scale_factor=FULL_SCALE_FACTOR if scale_factor is None else scale_factor)
     else:
-        raise ValueError("visual preparation supports animals, mmqa, ecomm and cars")
+        raise ValueError("visual preparation supports animals, mmqa, ecomm, cars and medical")
     return dict(schema="semloom.sembench_image_query_check.v1", status="prepared_cpu_only",
         scenario=scenario, query=inputs["query"], inputs=inputs,
         execution_enabled=False, model_calls=0, requests_reserved=0, requests_claimed=0,
@@ -58,7 +64,7 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sembench-checkout", required=True)
-    parser.add_argument("--scenario", choices=("animals", "mmqa", "ecomm", "cars"), required=True)
+    parser.add_argument("--scenario", choices=("animals", "mmqa", "ecomm", "cars", "medical"), required=True)
     parser.add_argument("--query", required=True)
     parser.add_argument("--data-dir")
     parser.add_argument("--scale-factor", type=int)

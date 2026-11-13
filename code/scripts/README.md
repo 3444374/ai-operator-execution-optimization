@@ -213,7 +213,7 @@ Animals 使用现有官方 sf64／软件夹具 manifest，复核编码与原 RGB
 MMQA 读取 `ap_warrior.csv` 和 `images/`，保留原 `os.listdir` 顺序及 `.png/.jpg` 选择规则，
 按实际图数×表行数核算 exact Join；Q2b 的后续 Extract 预算上界相同，实际次数取决于匹配行。
 Q7 改读 `tampa_international_airport.csv`，仍用同一 `images/`；原代码无欧洲目的地预筛，检查结果明确记录差异。
-`check.json` 中五条 baseline 结果均为空，并明确当前本地视觉 provider 尚未接通。
+`check.json` 中五条 baseline 结果均为空，各后端已有接点与未接线范围分别报告；输入预检不授予模型资格。
 已有原查询／评价可由调用者配置原生 LOTUS LM 后调用；CPU 夹具与旧 HTTP 历史不授予当前 VLM owner 的模型资格。
 完整范围与大 Join／TopK 预算见[基线说明](../src/baselines/README.md#sembench-image-preparation)。
 
@@ -225,6 +225,10 @@ Q7 改读 `tampa_international_airport.csv`，仍用同一 `images/`；原代码
 Cars Q3／Q8 复用相同入口，配置 `scenario=cars` 和可选 `scale_factor`（默认157376）；
 `--data-dir` 指向含 `data/sf_N/` 与 `data/full_data/` 的原场景根，CSV 内图像路径须事先绑定可读原件。
 独立输入检查 CLI 也支持 `--scenario cars --query Q3 --scale-factor N`，不启动服务或消费模型额度。
+Medical Q3／Q8／Q9也复用此入口，设置`scenario=medical`、所选题及`scale_factor`（默认11112），
+`--data-dir`指向含原`data/`患者／所需图像CSV／标签CSV的场景根；图像路径保持原件。
+独立输入检查相应使用`--scenario medical --query Q9 --scale-factor N`。
+Q9每个发生项的两图同属一个请求；原LIMIT、重复关系和评分限制见[Medical图像绑定](../src/baselines/README.md#medical-原图像查询)。
 原 `check_sembench_image_query.py` 继续只做输入检查，其 `execution_enabled=False` 表示没有执行模型。
 实际服务运行使用这个新入口，`check` 或 `run` 不带 `--execute-model` 均不连服务、不消费额度。
 

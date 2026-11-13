@@ -131,6 +131,9 @@ class NativeHTTPReplies:
         elif self.scenario == 'cars':
             keep = pixels[0] == ((255,0,0) if self.query == 'Q3' else (0,128,0))
             text = 'True' if keep else 'False'
+        elif self.scenario == 'medical':
+            self.case.assertEqual(len(uris), 2 if self.query == 'Q9' else 1)
+            text = 'False' if self.mode == 'no_matches' else 'True'
         else:
             keep = self.mode != 'no_matches' and not (
                 self.mode == 'partial_matches' and 'TrackB' in json.dumps(body['messages']))
@@ -281,6 +284,27 @@ class NativeLotusImageQueryTests(unittest.TestCase):
         records['damage_status']=['no_damage']*12+['puncture;paint_scratches']*2+['dented']
         pd.concat([records,pd.DataFrame(dict(car_id=[4],image_id=[99],image_path=[paths[0]],
                     damage_status=['no_damage']))]).to_csv(directory/full_images,index=False)
+        return dict(data_dir=directory)
+
+    def medical_inputs(self, count=6, scale=29):
+        import pandas as pd
+        from src.baselines.text.sembench_medical import visual_files
+
+        directory = self.new_directory('medical')
+        (directory / 'data').mkdir()
+        (patients, skin, xray), labels = visual_files(9, scale)
+        people = pd.DataFrame(dict(patient_id=list(range(count + 1)),
+            did_family_have_cancer=[0] + [1] * count))
+        people.to_csv(directory / patients, index=False)
+        people.assign(x_ray_diagnosis='10_ill', skin_cancer_diagnosis='malignant',
+            text_diagnosis='REFERENCE_ONLY_').to_csv(directory / labels, index=False)
+        for name, column, color in ((skin, 'skin_image_id', 'red'), (xray, 'xray_id', 'blue')):
+            path = directory / (color + '.png')
+            self.Image.new('RGB', (3, 2), color).save(path)
+            ids = list(range(count + 1)) + [1]
+            pd.DataFrame(dict(patient_id=ids, image_path=[str(path)] * len(ids),
+                **{column: list(range(len(ids)))}, gold=['REFERENCE_ONLY_'] * len(ids))).to_csv(
+                    directory / name, index=False)
         return dict(data_dir=directory)
 
     def config(self, scenario="animals", query="Q1", **changes):
@@ -686,6 +710,84 @@ class NativeLotusImageQueryTests(unittest.TestCase):
         frame=pd.read_csv(path)
         Path(frame.iloc[0]['image_path']).unlink()
         with self.assertRaises(FileNotFoundError):self.entry.check(config,self.checkout,**inputs)
+
+    def test_medical_image_queries_reuse_original_limits_duplicates_messages_and_evaluation(self):
+        import lotus
+        import pandas as pd
+        from lotus.models import LM
+        from lotus.types import LMOutput
+        from src.baselines.text import sembench_medical as medical
+
+        for query, count, calls, rows in (('Q3', 6, 7, 5), ('Q8', 103, 104, 100), ('Q9', 7, 11, 11)):
+            with self.subTest(query=query):
+                inputs = self.medical_inputs(count)
+                config, _ = self.config('medical', query, scale_factor=29)
+                replies = NativeHTTPReplies(self, 'medical', query=query)
+                report, directory, claim = self.invoke(config, inputs, replies)
+                self.assertEqual(report['inputs']['expected_model_calls'], calls)
+                self.assertEqual(claim.attempts, calls)
+                self.assertEqual(len(report['result']['data']), rows)
+                self.assertEqual(report['inputs']['images_per_occurrence'], 2 if query == 'Q9' else 1)
+                self.assertEqual(len(report['inputs']['images']), calls * (2 if query == 'Q9' else 1))
+                self.assertEqual(len(report['inputs']['files']), 3 if query == 'Q9' else 2)
+                self.assertTrue(all('_29.csv' in name for name in report['inputs']['files']))
+                messages = []
+                class OriginalLM(LM):
+                    def __call__(self, batch, *args, **kwargs):
+                        messages.extend(batch)
+                        return LMOutput(outputs=['True'] * len(batch))
+                with lotus.settings.context(lm=OriginalLM('openai/local-image-fixture', cache={}), enable_cache=False):
+                    reference = medical.run_original_query(self.checkout, query,
+                        lambda name, **kwargs: pd.read_csv(Path(inputs['data_dir']) / name, **kwargs),
+                        data_dir=inputs['data_dir'], scale_factor=29)
+                self.assertEqual(report['result'], reference.to_frame().to_dict(orient='split'))
+                self.assertEqual(Counter(content_digest(value) for value in messages),
+                    Counter(content_digest(row['body']['messages']) for row in replies.requests))
+                self.assertEqual(report['quality'], medical.evaluate_visual_original(
+                    self.checkout, query, reference, report['inputs']))
+                self.assert_audit(report, directory, replies)
+
+    def test_medical_missing_image_and_unsupported_audio_stop_before_lm_or_post(self):
+        inputs = self.medical_inputs()
+        config, _ = self.config('medical', 'Q3', scale_factor=29)
+        (Path(inputs['data_dir']) / 'blue.png').unlink()
+        with patch.object(self.entry, '_make_lm', side_effect=AssertionError('preflight constructed LM')):
+            with self.assertRaises(FileNotFoundError):
+                self.entry.check(config, self.checkout, **inputs)
+            config['query'] = 'Q2'
+            with self.assertRaisesRegex(ValueError, 'unsupported Medical'):
+                self.entry.check(config, self.checkout, **inputs)
+
+    def test_medical_small_gold_keeps_original_limit_evaluator_failure_after_sink(self):
+        inputs = self.medical_inputs(count=3)
+        config, _ = self.config('medical', 'Q8', scale_factor=29)
+        replies = NativeHTTPReplies(self, 'medical', query='Q8', mode='no_matches')
+        with self.assertRaises(ValueError) as caught:
+            self.invoke(config, inputs, replies)
+        report = caught.exception.query_report
+        self.assertEqual(report['model_calls'], 4)
+        self.assertIsNotNone(report['sink_ready_ns'])
+        self.assertEqual(report['result']['data'], [])
+        self.assertNotIn('quality', report)
+        self.assert_audit(report, self.last['directory'], replies)
+
+    def test_medical_image_mutation_after_sink_retains_result_and_fails_audit(self):
+        from src.baselines.text import sembench_medical as medical
+        inputs = self.medical_inputs(count=2)
+        config, _ = self.config('medical', 'Q9', scale_factor=29)
+        replies = NativeHTTPReplies(self, 'medical', query='Q9')
+        verify = medical.verify_visual_inputs
+        def changed(value):
+            self.Image.new('RGB', (3, 2), 'green').save(Path(inputs['data_dir']) / 'red.png')
+            verify(value)
+        with patch.object(medical, 'verify_visual_inputs', changed), self.assertRaisesRegex(
+                ValueError, 'Medical image changed') as caught:
+            self.invoke(config, inputs, replies)
+        report = caught.exception.query_report
+        self.assertEqual(report['model_calls'], 6)
+        self.assertIsNotNone(report['sink_ready_ns'])
+        self.assertEqual(len(report['result']['data']), 6)
+        self.assertNotIn('quality', report)
 
     def test_cars_gold_mutation_after_sink_retains_complete_native_relation(self):
         from src.baselines.text.sembench_cars import verify_visual_inputs, visual_files

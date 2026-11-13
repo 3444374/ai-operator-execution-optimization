@@ -110,7 +110,7 @@ class MedicalOriginalBindingTests(unittest.TestCase):
         marker = object()
         loader = Mock(return_value=marker)
         calls = []
-        for query in medical.TEXT_QUERY_IDS:
+        for query in medical.TEXT_QUERY_IDS + medical.VISUAL_QUERY_IDS:
             def run(data_dir, scale_factor):
                 calls.append((data_dir, scale_factor))
                 return module.pd.read_csv(Path(data_dir) / 'data/text_symptoms_data_25.csv')
@@ -123,13 +123,13 @@ class MedicalOriginalBindingTests(unittest.TestCase):
             load.assert_called_once_with('checkout', 'sembench_medical_q' + query,
                                          'files/medical/query/lotus/Q' + query + '.py')
             self.assertIs(module.pd.DataFrame, pd.DataFrame)
-        self.assertEqual(calls, [(str(root), 25)] * 3)
-        self.assertEqual(loader.call_count, 3)
+        self.assertEqual(calls, [(str(root), 25)] * 6)
+        self.assertEqual(loader.call_count, 6)
         loader.assert_called_with('data/text_symptoms_data_25.csv')
 
     def test_unsupported_queries_fail_before_original_setup(self):
         with patch.object(medical, 'load_module') as load:
-            for value in (2, '3', '5', '6', '7', '8', '9', '', True, 1.0):
+            for value in (2, '5', '6', '7', '', True, 1.0):
                 with self.subTest(query=value), self.assertRaises(ValueError):
                     medical.run_original_query('checkout', value, Mock(), data_dir='/tmp')
         load.assert_not_called()
