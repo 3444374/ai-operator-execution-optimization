@@ -404,7 +404,7 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
             self.events.append('native-query')
             write_private_json(self.args.output / 'query.json', dict(status='query_returned',
                 result_ready_monotonic_ns=time.monotonic_ns(), result_clock='CLOCK_MONOTONIC',
-                positive_review_cnt=1))
+                positive_review_cnt=1, query_clock_version='imlane.q3.source_to_sink.v1'))
             self.assertEqual(environment['SEMLOOM_IMLANE_Q3_MODEL_CONFIG'],
                              str(self.args.output / 'model-provider.json'))
             self.assertEqual(command[command.index('--kind') + 1], 'thread')
@@ -437,6 +437,43 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
         self.assertEqual(provider['sampling_params']['max_tokens'], 8192)
         self.assertIsNone(provider['sampling_params']['stop'])
         self.assertTrue(self.service.begin_cleanup.called)
+
+    def test_ready_query_clock_contains_fresh_source_and_stops_before_audit_and_close(self):
+        source_started = []
+
+        def prepare(*args, **kwargs):
+            self.events.append('source-read')
+            source_started.append(time.monotonic_ns())
+            return prepare_input(*args, **kwargs)
+
+        with patch('src.experiments.native_imlane_model_query.prepare_input', side_effect=prepare):
+            report = run_worker(self.args, service_factory=self.factory)
+        self.assertEqual(self.events[:4], ['model-start', 'author-start', 'source-read', 'native-query'])
+        self.assertEqual(report['query_clock_version'], 'imlane.q3.source_to_sink.v1')
+        ready = read_json(self.args.output / 'query.json')['result_ready_monotonic_ns']
+        self.assertLessEqual(report['source_started_ns'], source_started[0])
+        self.assertLessEqual(source_started[0], ready)
+        self.assertLessEqual(ready, report['owned_cleanup_completed_monotonic_ns'])
+        self.assertLessEqual(ready, report['audit_started_monotonic_ns'])
+        self.assertEqual(report['ready_source_to_sink_seconds'],
+                         (ready - report['source_started_ns']) / 1e9)
+        self.assertGreaterEqual(report['cold_worker_entry_to_sink_seconds'],
+                                report['ready_source_to_sink_seconds'])
+
+    def test_old_driver_does_not_acquire_new_clock_version(self):
+        import src.experiments.native_imlane_model_query as worker
+        original = worker.read_json
+
+        def read(path, **kwargs):
+            value = original(path, **kwargs)
+            if Path(path).name == 'query.json':
+                value.pop('query_clock_version', None)
+            return value
+
+        with patch.object(worker, 'read_json', side_effect=read):
+            report = run_worker(self.args, service_factory=self.factory)
+        self.assertIsNone(report['query_clock_version'])
+        self.assertIn('ready_source_to_sink_seconds', report)
 
     def test_public_software_mode_cannot_accidentally_start_a_real_model(self):
         with patch('integrations.imlane_duckdb.model_service.ModelService') as real:

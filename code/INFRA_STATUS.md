@@ -65,6 +65,9 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 独立Ray／Daft入口与原生IMLane查询按各自实际任务合同分列；IMLane的
 [`native_imlane_model_query`](src/experiments/native_imlane_model_query.py)通过作者prediction SQL／Python UDF执行Movie Q3，
 其不导入LOTUS的题目合同仍明确参考1.2.4 non-CoT规则，不称复现作者未公开的论文Q7 UDF。
+该独立Q3的`imlane.q3.source_to_sink.v1`已整合，输入packet摘要仍在区间内；
+冻结来源cf220的目标执行、质量与[原件独立复核](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-imlane-q3-cf220)分列，
+当前组合未重跑模型，不能据此称与其他路径统一计时或整体runner完成。
 
 数据状态独立记录：Movie／MMQA／Medical／Animals 已有具名冻结输入和运行证据，具体运行仍须
 重绑实际文件；E-Commerce 当前只有临时 Parquet／图像软件差分，真实资产／目标运行待核。

@@ -7,6 +7,11 @@
 188通过、3个环境／资产未绑定跳过，0模型／GPU。临时Q2b的非空／空第二阶段与8行quick多批
 只授予对应软件接线范围；各系统原生路径和LOTUS组合身份分列，旧目标成绩不转授新公共边界。
 
+[独立原生IMLane Q3](diagnostics/sembench_native_integration_20261112/README.md#native-imlane-q3-cf220)
+另整合cf220的同字节源码与30项本地软件检查。协调者已报告同源Linux SQL及120次真实终态，
+COUNT相对误差50%，packet摘要仍计时；138份原件已核SHA及保存IPC／原parser／官方评分，
+API次数与未知物理计数分列，不将原件核验冒充本会话复跑或组合成绩。
+
 [主报告](diagnostics/sembench_native_integration_20261112/README.md)登记完整 Movie source 修复后的
 Kalypso Join 样本64次、原作者 TopK 样本16次真实请求，以及 IMLane Boolean Join 的三道真实零模型 SQL 门。
 各自固定来源、算法、时钟、私有归档摘要和未知项；历史回放不记新模型质量，样本资格不外推全量或组合树。

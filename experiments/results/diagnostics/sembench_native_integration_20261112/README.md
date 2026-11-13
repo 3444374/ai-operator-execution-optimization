@@ -598,6 +598,33 @@ LOTUS＋Ray／Daft与不经LOTUS执行的原生系统路径按语义和执行归
 v2及单副本输出的受影响40项另通过，属于上述191个用例，不累加通过数。
 整体接入仍有[当前缺口](../../../../code/INFRA_STATUS.md#current-refactor-status)。
 
+<a id="native-imlane-q3-cf220"></a>
+## 独立原生 IMLane Movie Q3 的查询时钟
+
+整合来源`cf2208960225cb64e8aba3b338d028bda5ec33ef`的薄driver、worker和软件检查，
+复用现有作者prediction SQL／Python UDF／独立模型服务；不另建第二套Q3执行器。
+该路径的题目合同不导入LOTUS，明确参考1.2.4 non-CoT规则；它不是作者未公开的论文Q7 UDF复现，
+也不与LOTUS over IMLane组合路径重复统计。三份生产／测试源码与该来源保持相同Git blob。
+只更正其README把DOUBLE Map误标为Q3时钟的文字，DOUBLE继续使用`sembench.source_to_sink.v3`。
+
+模型与作者runtime就绪后，真实CSV读取、必要输入物化／交接、DuckDB扫描与普通谓词、
+prediction及C++完整COUNT进入`imlane.q3.source_to_sink.v1`。额外COUNT／EXPLAIN在完整COUNT
+时间戳后，worker冷区间另记；当前输入packet的摘要和元数据写入仍在主区间，
+不是其他路径排除额外审计后的统一成绩，不作事后相减。
+整合后的30项本地软件检查通过，0模型／原生SQL；Linux薄driver、SQL和模型事实来自下述协调者回执。
+
+服务器协调会话报告该冻结来源的Linux22项及THREAD SQL／Unix IPC门通过：12行输入、8行prediction、
+完整COUNT=4，0模型。随后同源真实2000行输入、120个发生项均有终态，unknown／重试0，
+COUNT=7而原金标14，相对误差50%；ready-source至完整内存COUNT为3.816秒，
+worker至COUNT为35.007秒，模型启动30.478秒，资源释放完成。模型为Qwen2.5-7B-Instruct BF16、
+vLLM0.25.1，原生prefix cache开启、结果缓存关闭。
+本会话随后逐一复核138份payload的字节／SHA、原2000行CSV及120个发生项，以保存的UDF／IPC
+重新关联原消息和答复，重算原parser、COUNT与官方评分，结果一致；没有重跑SQL或模型。
+120次API发生项与原账本／请求身份分列，独立物理调用、kernel、价格和输出token ID数组仍未知。
+首轮私有审计误将API次数当作必须填入的物理计数而失败，修正私有断言后保持原未知项，失败记录保留。
+不据此声称质量达标、整个IMLane runner或全部SemBench已通过。当前组合只继承相同源码身份，
+不把冻结原件改记为新组合运行。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -623,6 +650,7 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 8667 MMQA Q2b GPU | 59392914 | 94 | `7d733719a54b8de5eb560c3b9096d4247a82cbfb73d8ca38537ac3d0a9cd4840` |
 | cb754 LOTUS full256 CPU＋GPU | 105729722 | 1269 | `8f7fb25b14800c0076c0cfcd3a3b22a50357bdd4149ef8d73ade435e0e3c8bd5` |
 | 0755 Extract阶段准备CPU | 3295145 | 1205 | `8b89d4b52fed0f5a7ba934ce5838c7f065a6338bf6d6b509dfe96479ea84b715` |
+| cf220原生IMLane Q3模型 | 779015 | 138 | `304bdd0206a3d1e1c5da8a74987a660021d14bd3210a648d01a5c35a02a97ae4` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。
