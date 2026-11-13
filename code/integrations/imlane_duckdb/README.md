@@ -391,7 +391,7 @@ average_acne_age 结果均保留；空集合、重复行、NULL age 和原 panda
 共享 provider 的可选 occurrence_ids 只记录到本地回执，与原有 batch position 绑定，
 不进入模型消息或 request。原始回复按 occurrence 对应，不去重、不按到达顺序匹配，
 不把最后一个重复回复覆盖到其他行。解析继续 true-before-false/default-true。
-薄 driver 必须显式 `--expected-rows N`，只接受正十进制 int64；无题目白名单或默认25。
+薄 driver 必须显式 `--expected-rows N`，接受非负十进制 int64；无题目白名单或默认25。
 随后以实际 SQL count 与 DISTINCT occurrence_id 检查完整输入，仍在 prediction 前失败。
 
 计时沿用真实双起点：ready 后 fresh source/prompt/token 准备和必要传输到完整内存
@@ -705,7 +705,7 @@ Q9构建记录绑定当前q9.cpp、q9_udf.py、relation_handoff.hpp以及实际b
 
 `native_imlane_filters.configuration` 不再把 Movie/MMQA/Medical 的历史 2000/120/25/1200 行数当作
 执行能力白名单。显式 `max_model_calls` 仍由现有 `AttemptBudget` 验证为正整数；
-`prepare_query` 必须从冻结 SHA 对应的原题源码读取完整 occurrence，并验证数量等于该预算，
+`prepare_query` 必须从冻结 SHA 对应的原题源码读取完整 occurrence，并验证预算等于`max(1,N)`；零发生项实际消费0，
 不截断、不补行、不重试。题号与原操作由 `SemBenchTextQuery` 负责，后端不再维护题号白名单；
 只接收该任务层捕获的单 Filter。Medical/Cars scale 按原作者文件命名规则解析；生成上限来自本次
 `generation.max_tokens`，context 检查与实际回执审计使用同一值，8192 仍是现有比较配置的选择。
@@ -726,9 +726,23 @@ Cars Extract、E-Commerce Map/Extract 不从此接点取得支持。原 Filter s
 
 模型启动前检查原任务形态，ready 后仍 fresh source/prepare；两次工作分别真实计入 cold 与
 ready-source 区间。完整内存 sink 早于 ACK、审计、评价和关闭。TopK/Extract/Map 不通过
-这个 TINYINT 入口；零输入由现有正预算/native driver 合同明确拒绝，属于接线限制，不代表作者系统不支持空 SQL。
+这个 TINYINT 入口。原题零发生项现已接线：保留正预算`max(1,N)`但实际0请求，不加载tokenizer或模型；
+真正捕获空Filter／Join时仍经过必要CSV、原SQL和ACK，`--expected-rows`传实际N=0。
 正输入但全阴性的原空结果不受此限制。旧联合六题 packet 继续绑定它自己的旧 SOURCE；
 若迁移到新源码，其 source binding 必须显式带运输标签，不能从题号补猜。
+
+<a id="zero-occurrence-query"></a>
+### 零发生项与原题提前返回
+
+同一runner的`freeze-config/check/run`接受原题合法选出的零发生项。薄driver的参数体只新增N=0，
+原ASCII、int64范围、缺参／重复检查保持；SQL／DSO／算法不改，但旧薄driver构建记录必须按当前源重链。
+真实Arrow空输入在读取messages/provider之前返回固定空int8表，未构造模型答复。
+
+若原函数提前返回，`operation=None`且已知请求数0，同一runner只执行真实原函数／source／sink及后验评价，
+不造空Join或SQL；报告`semantic_operator=None`，不能据此授予原生算子资格。
+零请求的模型READY、startup和ready-source区间不适用、保留`None`；source→完整结果与cold worker仍直接打点。
+[38项软件验收](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-zero-occurrences)
+包含实际C++参数体、Arrow和原题／评分、软件SQL与真实Python ACK，Linux原DSO空SQL／物理清理仍待验。
 
 ### LOTUS exact Join 与原版 IMLane prediction
 
@@ -744,7 +758,7 @@ DuckDB Join 算法或逐题执行器；逻辑 Join、原关系构造和最后后
 已知多列选列限制。native SQL 返回的实际 TINYINT 成员关系交原 SDK 重建完整关系／原题 sink，
 之后才 ACK、核对全部原始模型答复及实际入模字段、评价与关闭；没有把预检结果或金标当模型预测。
 原模型答复重放仅作后置审计，不再发请求；原 parser 决策与 native 成员关系不一致时失败并保留证据。
-正候选但全部不匹配的空 Join 结果保留；零候选仍受前述薄 driver 接线限制。
+正候选但全部不匹配的空Join及真正捕获的零候选Join均保留；后者与原函数提前返回、没有到达Join的情形分开。
 完整消息准备、native 所需输入与 SQL、真实 source 读取和关系恢复实际计入 v3 查询区间。
 临时 CSV／Parquet、Arrow kernel 和原 SDK 的软件检查不授予真实作者 Linux SQL 或模型资格。
 生成的消息表按实际文件长度读取，不再把配置 JSON 的默认8MiB限额当成查询规模上限；

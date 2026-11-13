@@ -48,15 +48,15 @@ int main(int argc, char **argv) {
         if value is not None: command += ['--expected-rows',value]
         return subprocess.run(command+list(extra),capture_output=True,text=True,timeout=5)
 
-    def test_positive_int64_cardinality_has_no_query_whitelist(self):
-        for count in ('1','7','25','120','1200','2000','2001','9223372036854775807'):
+    def test_nonnegative_int64_cardinality_has_no_query_whitelist(self):
+        for count in ('0','1','7','25','120','1200','2000','2001','9223372036854775807'):
             with self.subTest(count=count):
                 result = self.run_parser(count)
                 self.assertEqual(result.returncode,0,result.stderr)
                 self.assertEqual(result.stdout.strip(),count)
 
     def test_invalid_or_unrepresentable_cardinality_is_rejected(self):
-        for count in ('','0','-1','+120',' 120','120 ','120x','1.2','nan','１２','١٢','9223372036854775808','18446744073709551616'):
+        for count in ('','-1','+120',' 120','120 ','120x','1.2','nan','１２','١٢','9223372036854775808','18446744073709551616'):
             with self.subTest(count=count): self.assertNotEqual(self.run_parser(count).returncode,0)
 
     def test_count_must_be_explicit_and_cannot_be_overridden(self):

@@ -857,6 +857,50 @@ Ray原外层状态仍保留失败：私有审计把整数request_id与引擎字�
 没有重跑模型或改写旧失败。首次本地校验误把全部1136源文件当作code目录1117文件的计数断言失败，
 按实际另19个追踪文件核完全部快照，失败原因保留。归档身份见下表，不授予本批新runner的模型资格。
 
+<a id="ray-animals-q1-051639"></a>
+## 051639 Ray Animals Q1 完整 sf64
+
+`ray-animals-q1-051639-full-query-20261113-r1`在同一准确051639原查询／完整runner上执行一次：
+官方sf64输入64张图，64次原生请求均终态，未知／重试／额外语义预热0；完整COUNT=3、金标3，
+原评价相对误差0。该COUNT不能证明64个逐项分类全部正确，也不是Animals全部8718图或全套SemBench。
+
+模型Qwen2-VL-2B-Instruct BF16，Ray2.56.1／vLLM0.22.0；实际配置为max_num_seqs4、
+max_num_batched_tokens2048、context32768、GPU利用率配置0.8、prefix cache关闭，结果缓存关闭。
+模型／processor／输入身份、64份完整消息、展开输入token、输出token及采样已在冻结原件关联，
+API逻辑input81307／output128；金额、GPU像素tensor、首次engine接受和kernel时间未知。
+保存答复重放原Filter、完整COUNT与原评价通过，不重复调用模型。
+
+独立`lotus_ray.source_to_sink.v1`为119.966097066秒，包含新鲜源／图像读取、原SDK准备、
+原生冷启动及必要pipeline退出、同步actor观察／容量回执I/O；最终Ray.shutdown、driver审计／评价和持久化在外。
+该单冷数值不能与ready-first、旧152.202383049秒或其他时钟直接排位。多层聚合、并发和同owner真暖仍未验。
+三段执行监督通过，现场无owned进程、GPU1MiB、原SHM未变，租约释放；不能由runtime关闭推断其他来源亦完成物理清理。
+
+原Q5的私有ID审计失败与首次清理拒绝保留，本轮依照实际SDK转换及原清理规则通过，未修改生产Ray或放宽保护。
+另有归档传输首次超时及恢复ACK迟到失败：完整包已按同账户原连接恢复、SHA与1431份payload加清单一致，
+1136个源码Git blob也经本接入会话复核；执行结果未受影响，归档confirmation状态仍保持failed，未重跑query／模型。
+首次本地复核沿用旧包source前缀，实际新包是source-snapshot，计数断言失败；检查确切成员后核完全部源码，原失败保留。
+不把这轮资格转授新807224的聚合路径或其他视觉题。
+
+<a id="imlane-zero-occurrences"></a>
+## IMLane 合法零发生项的原查询
+
+基于807224dd7复用既有原版TINYINT Filter／Join runner，删除Python非空拒绝并将C++参数体放开至N=0。
+物理预算保留`max(1,N)`，SQL cardinality独立传实际N，不把正账本额度当行数；零请求不加载tokenizer、
+不创建模型／provider。真正捕获的零行Filter／Join仍走必要header CSV／messages、原SQL／ACK／原完整sink。
+原函数提前返回且operation=None、已知请求数0时只执行真实原函数，不造空Join／SQL，semantic_operator=None。
+模型READY及ready-source字段不适用时为空，source→完整结果直接实测，正数旧流程保持。
+
+整合独立38／38软件检查通过，无skip／真实模型／GPU／原版DSO执行：直接编译当前C++参数体并测
+ASCII／溢出／缺参／重复／非负边界；真实Arrow零表在provider前返回；Movie Q3空Filter与E-Commerce Q7
+零对经软件SQL结果和实际Python ACK完成原关系及评分；Movie Q4和空Movie Join原函数直接返回、无SQL。
+另覆盖错误SQL cardinality的abort ACK、后置评价失败保留完整sink及旧Filter／Medical／Movie行为。
+来源中的SDK多列Join选列限制继续披露，不由零调用检查授予非空消息资格。
+逐项结果SHA为`f26227e115518796329fad275f714c1c3046035087e54bf1843c64d7bfd41243`，原r1夹具缺少resource_state及gold列的失败保留；修夹具未改变生产源。
+ROOT仅把no-op的timing_scope文字更正为“所需SQL仅在实际到达时执行”，打点与行为未变。
+
+原DSO／UDF／ACK未修改。当前薄driver源码身份检查自动拒绝旧构建记录，Linux必须重链后验真实0行SQL／
+IPC及物理清理；本地参数体和软件SQL不能代替该目标资格。构建及原件入口复用既有说明，无第二套runner。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -884,6 +928,7 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 0755 Extract阶段准备CPU | 3295145 | 1205 | `8b89d4b52fed0f5a7ba934ce5838c7f065a6338bf6d6b509dfe96479ea84b715` |
 | cf220原生IMLane Q3模型 | 779015 | 138 | `304bdd0206a3d1e1c5da8a74987a660021d14bd3210a648d01a5c35a02a97ae4` |
 | 051639最小CPU＋模型 | 3930503 | 1578 | `a6d9e929568bad9f9f8e74ddcb9d3cdf406f06aa6d76147a4872834b4ed572e0` |
+| 051639 Ray Animals Q1 sf64 | 84905964 | 1431 | `8ce429180056911dc8e0d7e2ce67a0eda19a045fd85dc7cfc27e7818dad4fa02` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

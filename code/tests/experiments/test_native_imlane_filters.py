@@ -159,7 +159,8 @@ class FilterWorkerTests(unittest.TestCase):
             def preflight(*_):
                 self.assertEqual(events, [])
                 clock[0] += preflight_seconds * 1_000_000_000
-                query=SimpleNamespace(describe=lambda:{}, bind_execution=lambda: lambda handler: (result,None))
+                query=SimpleNamespace(operation=SimpleNamespace(describe=lambda:{'kind':'filter'}),
+                    describe=lambda:{}, bind_execution=lambda: lambda handler: (result,None))
                 return query, SimpleNamespace(columns=['Airlines']), [], [], [[1]], []
             with patch.object(entry,'verified_build',return_value=native_build), \
                     patch.object(entry,'prepare_query',side_effect=preflight), \
@@ -216,18 +217,17 @@ class FilterWorkerTests(unittest.TestCase):
         self.assertIsInstance(error, ValueError)
         self.assertEqual(report['status'], 'failed')
 
-    def test_unsupported_or_empty_task_never_starts_model(self):
+    def test_unsupported_task_never_starts_model(self):
         operations = [None, SimpleNamespace(describe=lambda: {'kind': 'map'}),
                       SimpleNamespace(describe=lambda: {'kind': 'join'}),
-                      SimpleNamespace(describe=lambda: {'kind': 'topk'}),
-                      SimpleNamespace(describe=lambda: {'kind': 'filter'}, records=[])]
+                      SimpleNamespace(describe=lambda: {'kind': 'topk'})]
         for operation in operations:
             with self.subTest(operation=operation), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 args = SimpleNamespace(output=root/'worker', build_record=root/'build.json')
                 args.build_record.write_text('{}')
                 with patch.object(entry, 'verified_build', return_value={'duckdb_library_path':'/unused/lib.so'}), \
-                        patch.object(entry, 'SemBenchTextQuery', return_value=SimpleNamespace(operation=operation)), \
+                        patch.object(entry, 'SemBenchTextQuery', return_value=SimpleNamespace(operation=operation, describe=lambda: {'expected_model_calls': None})), \
                         patch.object(entry, 'ModelService') as factory:
                     with self.assertRaises(ValueError):
                         entry.run_worker(args, config(), service_factory=factory)

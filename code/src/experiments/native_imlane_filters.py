@@ -6,6 +6,7 @@ old joint-batch measurements are not converted into per-query timings.
 """
 
 import argparse
+from contextlib import nullcontext
 import csv
 import json
 import os
@@ -85,14 +86,13 @@ def _source_query(config, generation, *, frozen=True):
         config['query_id'], execution_id=config['execution_id'], model_name=config['model_name'],
         generation=generation, scale_factor=config.get('scale_factor'))
     kind = 'join' if config['schema'] == JOIN_SCHEMA else 'filter'
-    if query.operation is None or query.operation.describe()['kind'] != kind:
+    if (query.operation is None and query.describe()['expected_model_calls'] != 0
+            or query.operation is not None and query.operation.describe()['kind'] != kind):
         raise ValueError('this native entry requires one original ' + kind.title() + ' operation')
-    if not query.operation.records:
-        raise ValueError('the native Filter driver requires a nonempty original input')
     if frozen:
         if {name: item['sha256'] for name, item in query.files.items()} != config['input_sha256']:
             raise ValueError('original source files changed')
-        if len(query.operation.records) != config['max_model_calls']:
+        if max(1, 0 if query.operation is None else len(query.operation.records)) != config['max_model_calls']:
             raise ValueError('single-query Filter binds every original occurrence')
     return query
 
@@ -103,21 +103,23 @@ def freeze_config(value):
     query = _source_query(config, generation, frozen=False)
     method, prepared, _requests = prepare(query)
     config.update(input_sha256={name: item['sha256'] for name, item in query.files.items()},
-                  max_model_calls=len(prepared))
+                  max_model_calls=max(1, len(prepared)))
     if config['schema'] != JOIN_SCHEMA:
-        config['prompt_columns'] = list(method.columns)
+        config['prompt_columns'] = [] if method is None else list(method.columns)
     return configuration(config)[0]
 
 
 def prepare_query(config):
     """Validate source and build audit token IDs before starting the native owner."""
-    from transformers import AutoTokenizer
     config, generation = configuration(config)
     query = _source_query(config, generation)
     method, prepared, requests, rows = _prepare_requests(query, config.get('prompt_columns'))
-    tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
-    tokens = [tokenizer.apply_chat_template(row['messages'], tokenize=True, add_generation_prompt=True)
-              for row in requests]
+    tokens = []
+    if requests:
+        from transformers import AutoTokenizer
+        tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
+        tokens = [tokenizer.apply_chat_template(row['messages'], tokenize=True, add_generation_prompt=True)
+                  for row in requests]
     return query, method, prepared, requests, tokens, rows
 
 
@@ -125,7 +127,7 @@ def _prepare_requests(query, prompt_columns):
     """Build the actual native inputs without reloading source code or audit tokens."""
     method, prepared, requests = prepare(query, prompt_columns=prompt_columns)
     rows = []
-    for record, request in zip(query.operation.records, requests, strict=True):
+    for record, request in zip(() if query.operation is None else query.operation.records, requests, strict=True):
         # Keep the existing three-string native ABI. These two fields carry
         # source identity/cells, not a guessed task title and text column. The
         # original formatter's complete messages remain the model input.
@@ -146,6 +148,8 @@ def check(config):
 
 
 def _prompt_description(config, query, method):
+    if query.operation is None:
+        return dict(semantic_operator=None, semantic_scope='no semantic operator reached by this original query')
     if config['schema'] == JOIN_SCHEMA:
         return dict(declared_join_columns=list(query.operation.columns),
                     join_semantics='original LOTUS exact Join over native IMLane TINYINT prediction')
@@ -257,52 +261,72 @@ def run_worker(args, config, *, service_factory=ModelService):
         ledger.reserve_unit('query', limit)
         unit = ledger.claim_shared_unit('query')
         descriptor = dict(path=str(ledger.path), budget_id=budget.budget_id, limit=limit, unit_id='query')
-        service = service_factory(dict(config['model_service'], request_budget=descriptor),
-            args.output / 'model-service', environment=dict(os.environ), deadline=window.query_deadline,
-            cleanup_deadline=window.begin_cleanup, stop_budget=args.stop_budget, stop_grace_s=config['stop_grace_s'])
         sampling = generation.kwargs()
-        provider = model_provider.configuration(dict(schema=model_provider.CONFIG_SCHEMA,
-            provider_mode='model', socket_path=str(service.socket_path), model=service.served_model_name,
-            sampling_params=sampling, request_timeout_s=config['request_timeout_s'],
-            deadline_monotonic=window.query_deadline, receipt_dir=str(args.output / 'model-calls')))
-        write_private_json(args.output / 'model-provider.json', provider)
-        args.workload_environment = {model_provider.CONFIG_ENV: str(args.output / 'model-provider.json'),
-            mmqa_filter_udf.CONFIG_ENV: str(args.output / 'messages.json')}
-        with service:
-            report.update(model_ready_observed_ns=time.monotonic_ns(), model_owner=service.ready_info)
-            report['model_startup_seconds'] = report['model_ready_observed_ns'] / 1e9 - service.report['started_monotonic']
-            if max(map(len, tokens)) + generation.max_tokens > service.ready_info['max_model_len']:
-                raise ValueError('full Filter prompt and output exceed the actual model context')
+        args.workload_environment = {mmqa_filter_udf.CONFIG_ENV: str(args.output / 'messages.json')}
+        if tokens:
+            service = service_factory(dict(config['model_service'], request_budget=descriptor),
+                args.output / 'model-service', environment=dict(os.environ), deadline=window.query_deadline,
+                cleanup_deadline=window.begin_cleanup, stop_budget=args.stop_budget, stop_grace_s=config['stop_grace_s'])
+            provider = model_provider.configuration(dict(schema=model_provider.CONFIG_SCHEMA,
+                provider_mode='model', socket_path=str(service.socket_path), model=service.served_model_name,
+                sampling_params=sampling, request_timeout_s=config['request_timeout_s'],
+                deadline_monotonic=window.query_deadline, receipt_dir=str(args.output / 'model-calls')))
+            write_private_json(args.output / 'model-provider.json', provider)
+            args.workload_environment[model_provider.CONFIG_ENV] = str(args.output / 'model-provider.json')
+        with service if service is not None else nullcontext():
+            if service is not None:
+                report.update(model_ready_observed_ns=time.monotonic_ns(), model_owner=service.ready_info)
+                report['model_startup_seconds'] = report['model_ready_observed_ns'] / 1e9 - service.report['started_monotonic']
+                if max(map(len, tokens)) + generation.max_tokens > service.ready_info['max_model_len']:
+                    raise ValueError('full Filter prompt and output exceed the actual model context')
+            else:
+                report.update(model_ready_observed_ns=None, model_owner=dict(allocated=False, reason='zero model occurrences'),
+                              model_startup_seconds=None, service_close=dict(status='not_allocated',scope='no model requests'))
             report['preflight_finished_ns'] = time.monotonic_ns()
-            report['model_ready_before_source'] = True
+            report['model_ready_before_source'] = True if service is not None else None
             report['model_ready_before_source_observed_ns'] = report['model_ready_observed_ns']
             started = time.monotonic_ns()
             report['query_started_monotonic_ns'] = started
             report['source_started_ns'] = started
-            method, prepared, requests, rows = _prepare_requests(query, config.get('prompt_columns'))
-            write_private_json(args.output / 'messages.json', dict(rows=rows))
-            with open_private_text(args.output / 'input.csv') as stream:
-                writer = csv.writer(stream); writer.writerow(('occurrence_id', 'title', 'text', 'source_position'))
-                writer.writerows((r['occurrence_id'], r['title'], r['text'], r['source_position']) for r in rows)
-            relation = FilterRelation(query, method, prepared, requests, tokens, rows, execute_query)
-            args.startup_timeout_s = window.query_deadline - time.monotonic()
-            command = [build['binary_path'], '--input', str(args.output / 'input.csv'),
-                '--module', build['kernel_path'], '--function', 'infer_mmqa', '--kind', args.kind,
-                '--output', str(args.output / 'query.json'), '--sink-release', str(args.output / 'sink-release.ack'),
-                '--expected-rows', str(limit)]
-            if args.threads is not None: command += ['--threads', str(args.threads)]
-            def audit(native, value):
-                if Path(native['converter_resolved_DSO']).resolve() != args.duckdb_library:
-                    raise ValueError('native Filter used a different DSO')
-                return relation.audit(native, value, args.output / 'model-calls', sampling)
-            try:
-                result, audited = run_relation_query(args, report, kernel=Path(build['kernel_path']),
-                    command=command, window=window, query_started_ns=started, sink=relation.sink,
-                    audit=audit, check=service.check)
-                report.update(quality=audited['quality'], ipc=audited['ipc'])
-                write_private_json(args.output / 'semantic-audit.json', audited['semantic'])
-            finally:
-                service.begin_cleanup(window.begin_cleanup())
+            if query.operation is None:
+                # The original function returned before its semantic accessor.
+                # Run that real function, without inventing a prediction/SQL call.
+                result, _ = execute_query(None)
+                ready = time.monotonic_ns()
+                report.update(full_sink_observed_monotonic_ns=ready, result_ready_monotonic_ns=ready,
+                    native_alive_after_sink=False, source_to_sink_seconds=(ready-started)/1e9,
+                    result_clock='CLOCK_MONOTONIC', native_ai_query_attempts=0,
+                    result_scope='original function returned before reaching a semantic operator; no SQL required')
+                window.accept_ready(ready, clock='CLOCK_MONOTONIC')
+                query.verify_source()
+                report.update(ipc=audit_ipc(args.output/'model-calls', [], [], [], sampling),
+                              quality=json_metric(query.evaluate(result)))
+            else:
+                method, prepared, requests, rows = _prepare_requests(query, config.get('prompt_columns'))
+                write_private_json(args.output / 'messages.json', dict(rows=rows))
+                with open_private_text(args.output / 'input.csv') as stream:
+                    writer = csv.writer(stream); writer.writerow(('occurrence_id', 'title', 'text', 'source_position'))
+                    writer.writerows((r['occurrence_id'], r['title'], r['text'], r['source_position']) for r in rows)
+                relation = FilterRelation(query, method, prepared, requests, tokens, rows, execute_query)
+                args.startup_timeout_s = window.query_deadline - time.monotonic()
+                command = [build['binary_path'], '--input', str(args.output / 'input.csv'),
+                    '--module', build['kernel_path'], '--function', 'infer_mmqa', '--kind', args.kind,
+                    '--output', str(args.output / 'query.json'), '--sink-release', str(args.output / 'sink-release.ack'),
+                    '--expected-rows', str(len(rows))]
+                if args.threads is not None: command += ['--threads', str(args.threads)]
+                def audit(native, value):
+                    if Path(native['converter_resolved_DSO']).resolve() != args.duckdb_library:
+                        raise ValueError('native Filter used a different DSO')
+                    return relation.audit(native, value, args.output / 'model-calls', sampling)
+                try:
+                    result, audited = run_relation_query(args, report, kernel=Path(build['kernel_path']),
+                        command=command, window=window, query_started_ns=started, sink=relation.sink,
+                        audit=audit, check=(lambda: None) if service is None else service.check)
+                    report.update(quality=audited['quality'], ipc=audited['ipc'])
+                    write_private_json(args.output / 'semantic-audit.json', audited['semantic'])
+                finally:
+                    if service is not None:
+                        service.begin_cleanup(window.begin_cleanup())
         report.update(status='completed', result=result_value(result))
     except BaseException as error:
         primary, result = error, getattr(error, 'query_result', result)
@@ -327,12 +351,14 @@ def run_worker(args, config, *, service_factory=ModelService):
         if primary is not None: report['status'] = 'failed'
         if report.get('full_sink_observed_monotonic_ns') is not None:
             report['cold_worker_entry_to_sink_seconds'] = (report['full_sink_observed_monotonic_ns'] - entered) / 1e9
-            report['ready_source_to_sink_seconds'] = report['source_to_sink_seconds']
+            report['ready_source_to_sink_seconds'] = report['source_to_sink_seconds'] if service is not None else None
         report['deadline'] = window.report()
-        report['timing_scope'] = ('ready_source_to_sink v3: actual message/native-input preparation, native SQL, '
-            'original CSV scan and complete memory sink after owner ready; source binding/configuration, '
+        report['timing_scope'] = ('source_to_sink v3: actual message/native-input preparation, native SQL, '
+            'original CSV scan and complete memory sink after model ready when requests exist; source binding, '
             'tokenizer/audit-token preparation, context and budget checks precede the start. ACK, audit, '
-            'evaluation and close follow. cold_worker_entry_to_sink additionally includes preflight and model startup; '
+            'evaluation and close follow. With zero requests no model/tokenizer is allocated, READY fields '
+            'are inapplicable; source_to_sink_seconds measures required SQL when reached and the original sink. '
+            'cold_worker_entry_to_sink additionally includes preflight and any model startup; '
             'host imports/preflight/lease before this worker remain excluded, not silently reconstructed.')
         try:
             persist_relation_observation(args.output, report, result, primary=primary)

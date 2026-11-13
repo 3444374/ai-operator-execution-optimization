@@ -31,6 +31,14 @@
 [051639最小模型回执](diagnostics/sembench_native_integration_20261112/README.md#native-051-minimal-model)
 单列原单叶Q5与独立Q3的4次真实请求，原外层失败、质量／计时及1578份原件保留，不转授新组合。
 
+[051639 Ray Animals Q1](diagnostics/sembench_native_integration_20261112/README.md#ray-animals-q1-051639)
+完整官方sf64单冷64次请求终态、COUNT3与金标一致，执行监督和物理清理通过；1431份原件及固定源码已复核。
+不是全8718图／全部视觉题，不能由COUNT正确推出逐项全对；保留旧失败与本轮归档迟到ACK失败，不作异口径排名。
+
+[IMLane合法零发生项](diagnostics/sembench_native_integration_20261112/README.md#imlane-zero-occurrences)
+移除原版Filter／Join接点的非空限制，真实空算子与原函数no-op分列；38／38本地软件通过、0模型／GPU。
+原DSO不改，薄driver须重链，Linux真实空SQL／清理待验，不能由无调用授予算子或性能资格。
+
 [Kalypso零发生项](diagnostics/sembench_native_integration_20261112/README.md#kalypso-empty-frontier)
 修正无依据的正数frontier限制、空trace／owner检查和CPU空统计；82个不同软件方法为80通过、
 2项真实tokenizer未绑定跳过，首失败保留。原数据选择／关系／评分和作者算法不变，未运行模型／GPU或服务器。

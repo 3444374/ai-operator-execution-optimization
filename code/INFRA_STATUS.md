@@ -51,7 +51,7 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 | 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；VARCHAR工程变体的原题单Map／Extract已接，ecbd代表SQL软件已验；其余任务／模型另验，原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | LOTUS＋原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接；8667样本真实SQL／模型已验，完整输入另验，非作者 Join 算法复现 | 原 CP＋Filter 已接；4f12样本作者模型已验，其他来源／输入另验 |
 | 文本完整排名；Movie Q9 TopK profile | 原 quick TopK显式resident已接；cb754的完整256真实模型已验，原parser回退保留；其他来源另验 | 原quick完整函数已接，8行28次软件比较／7批共用query owner通过；目标模型与多批物理清理待验 | 未接线 | LOTUS quick over VARCHAR工程变体已接，原题／Arrow／provider软件检查；11f的8行Linux SQL／renderer门及ecbd的8行13次真实比较通过，full256待验，非作者TopK算法 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
-| 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 同一完整查询runner已绑定manifest／原函数，四题软件差分通过；旧专项目标成绩不转授新路径 | 未接线 | 未接线 | 未接线 |
+| 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 同一完整查询runner已绑定manifest／原函数，四题软件差分；051639原Q1 sf64的64次真实请求终态、COUNT3与金标一致，监督／物理清理通过；Q3/Q7/Q10及后续组合另验 | 未接线 | 未接线 | 未接线 |
 | 单个图像／文本 exact Join；MMQA Q2a/Q7 | 原函数／原生视觉服务已接线，目标按来源分列 | 已迁移完整原函数及query owner，原消息／关系软件差分通过；dde单批目标成绩不转授当前公共边界 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 原函数／实际连接及LIMIT／评分已接，两题软件差分通过；真实数据与Ray VLM待验 | 未接线 | 未接线 | 未接线 |
 | 原关系连接后单图或双图 Filter；Medical Q3/Q8/Q9 | 原脚本／原生视觉服务／原评分已接线，db3fe Linux52通过；已查作者checkout缺原图，sf20 Q3原连接0行不授予视觉资格，非空输入／processor／VLM待验 | 三题原函数已接，非空／双图及小gold原失败的软件差分通过；真实数据与Ray VLM待验 | 未接线 | 未接线 | 未接线 |
@@ -79,6 +79,9 @@ Kalypso维护的Filter／Map／Join已允许原题选出零发生项，保留零
 来源和80通过／2项tokenizer未绑定的软件检查见[空输入边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-empty-frontier)。
 
 本批三条聚合／完整查询接线及225个不同软件方法的219通过／6项环境或真实输入未绑定，见[分路径交接](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#aggregate-system-runners)。软件检查不授予模型或整套完成资格。
+
+IMLane原版Filter／exact Join也已移除非空限制：实际零发生项走SQL／ACK，原函数提前返回则不造算子或SQL；
+正预算与实际N分开，38项软件验收通过，Linux薄driver须重链、真实空SQL仍待验，见[零发生项](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-zero-occurrences)。
 
 剩余工作按共同边界闭合：已接线原函数处理真实中间关系，额外预检之外的完整查询计时按版本
 记录，再用真实资产及代表查询验收。完整 SemBench 入口及已核活动服务器绑定走共享路径。

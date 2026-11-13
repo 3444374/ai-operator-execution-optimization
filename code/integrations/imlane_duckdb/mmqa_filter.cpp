@@ -87,8 +87,8 @@ std::map<std::string, std::string> arguments(int argc, char **argv) {
     }
     const auto &expected = result.at("--expected-rows");
     if (expected.empty() || expected.find_first_not_of("0123456789") != std::string::npos ||
-            std::stoll(expected) <= 0) {
-        throw std::invalid_argument("expected rows must be a positive int64 integer");
+            std::stoll(expected) < 0) {
+        throw std::invalid_argument("expected rows must be a nonnegative int64 integer");
     }
     return result;
 }
