@@ -1,6 +1,7 @@
 """Resident configuration, failure ownership and observed clock boundaries."""
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -166,7 +167,9 @@ class ResidentReportTests(unittest.TestCase):
         supervision = dict(started_monotonic=2, timeout_s=600, cleanup_reserved_s=30)
 
         def supervise(command, output, **options):
-            self.assertEqual(command[-2:], ['--execute-model', '--worker'])
+            self.assertIn('--execute-model', command)
+            self.assertIn('--worker', command)
+            self.assertEqual(command[command.index('--data-dir')+1], str(Path('data').resolve()))
             self.assertEqual(options, dict(timeout_s=600, grace_s=30))
             (output/'session').mkdir()
             write_report(output/'session/session.json')
@@ -214,6 +217,198 @@ class ResidentReportTests(unittest.TestCase):
 
 
 class ResidentClockTests(unittest.TestCase):
+    def stage_clock(self, *, post_error=None, statistics_error=None, original_join=False):
+        import pandas as pd
+        from src.baselines.text.frameworks import lotus_native_stage as stage
+        from src.baselines.text.frameworks import lotus_native_join as join
+        from src.baselines.text.sembench_prepared import result_value
+        from src.infrastructure.private_artifacts import content_digest
+        from src.semantic_methods.lotus import record_method
+        from src.serving.backends.vllm_protocol import GenerationSpec
+
+        now, sink, events = [1_000_000_000], [False], []
+        unit = SimpleNamespace(attempts=0, remaining=1)
+        native_frame = (pd.DataFrame({'id:left': [1], 'id:right': [2]}) if original_join else
+                        pd.DataFrame(dict(_map=['POSITIVE'])))
+        preserved = result_value(native_frame.copy(deep=True))
+        result = pd.DataFrame(dict(count=[1]))
+        calls = [dict(call_id='native', engine_request_id='request', text='POSITIVE',
+                      messages_sha256=content_digest([]))]
+        case = self
+
+        class Binding:
+            released = False
+            def report(current):
+                case.assertFalse(current.released, 'statistics read a binding released by owner close')
+                case.assertTrue(sink[0] or post_error is not None)
+                events.append('receipts')
+                now[0] += 13_000_000_000
+                return dict(calls=dict(counts=dict(succeeded=1, missing=0), records=calls))
+        binding = Binding()
+        class Ready(dict):
+            def __deepcopy__(current, memo):
+                case.assertTrue(sink[0] or post_error is not None)
+                events.append('ready-copy')
+                now[0] += 7_000_000_000
+                return dict(current)
+        ready = Ready(engine_uid='CPU-fixture')
+        def snapshot():
+            events.append('snapshot')
+            return dict(active_query=False, tainted=False, transport=None, ready=dict(startup_seconds=0))
+        def close(**kwargs):
+            events.append('close')
+            binding.released = True
+            return dict(status='closed')
+        owner = SimpleNamespace(ready_report=ready, transport=None, snapshot=snapshot, close=close)
+        operation = SimpleNamespace(describe=lambda: dict(kind='join' if original_join else 'map'),
+            frame=native_frame, stage=object(), records=())
+        state = {}
+
+        if original_join:
+            from src.baselines.text.sembench_ecomm import bind_original_query
+            from src.baselines.text.sembench_text import _operators
+            checkout = os.environ.get('SEMLOOM_NATIVE_TEST_CHECKOUT')
+            if checkout is None:
+                self.skipTest('a pinned SemBench checkout is required for original E-Commerce postprocessing')
+            source = pd.DataFrame(dict(id=[1], price=[100], productDisplayName=['shirt'], productDescriptors=['brand']))
+            original = bind_original_query(checkout, '7', lambda *args, **kwargs: source, data_dir='/tmp')
+
+        def native(*args, **kwargs):
+            if not original_join:
+                self.assertTrue(kwargs['defer_accounting'])
+            self.assertIs(kwargs['shared_owner'], owner)
+            unit.attempts, unit.remaining = 1, 0
+            now[0] += 3_000_000_000
+            frame = kwargs['invoke']()
+            value = (dict(status='native_returned', expected_model_calls=1,
+                frame=frame, _native_binding=binding, _native_join_inputs=[]) if original_join else
+                dict(schema='semloom.lotus_native_stage.v1', status='native_returned', stage_calls=[{}],
+                    stage_call_ids=dict(native='finite'), frame=frame,
+                    _native_binding=binding, _native_lm=object(), _native_ready=ready))
+            state['operator'] = value
+            return value
+        def execute(handler):
+            if original_join:
+                def dispatch(kind, frame, args, kwargs, invoke):
+                    self.assertEqual(kind, 'join')
+                    return handler(operation, lambda: native_frame)['frame']
+                with _operators(dispatch):
+                    complete = original()
+                value = state['operator']
+            else:
+                value = handler(operation, lambda: native_frame)
+                complete = result
+            now[0] += 2_000_000_000
+            if post_error is not None:
+                post_error.operator_report = value
+                raise post_error
+            return complete, value
+        def prepare(*args):
+            now[0] += 17_000_000_000
+            return query
+        def bind():
+            now[0] += 7_000_000_000
+            return execute
+        def audit():
+            events.append('source-audit')
+            now[0] += 11_000_000_000
+        query = SimpleNamespace(query_id='q', operation=operation, describe=lambda: dict(expected_model_calls=1),
+            bind_execution=bind, verify_source=audit, evaluate=lambda frame: dict(count=1))
+        method = SimpleNamespace(prepare_rows=lambda *args, **kwargs: [dict(call_id='finite', messages_json='[]')])
+        ledger = SimpleNamespace(claim_shared_unit=lambda key: unit, close_shared_unit=lambda key: None)
+        driver = resident.ResidentDriver(dict(resident=dict(cleanup_s=1), profile=dict(native_lm_max_batch_size=2)),
+            'unused', 'unused', None, GenerationSpec(), None, ledger)
+        driver.owner = owner
+        def emit(event):
+            self.assertEqual(events, [])
+            sink[0] = True
+            events.append('full-sink')
+            return now[0]
+        def lm_report(lm):
+            self.assertTrue(sink[0] or post_error is not None)
+            events.append('lm')
+            now[0] += 19_000_000_000
+            if statistics_error is not None:
+                raise statistics_error
+            return dict(role='CPU statistics fixture')
+        def join_audit(query, operator, result, relation):
+            import numpy as np
+            self.assertEqual(result.tolist(), ['1-2'])
+            self.assertIn('id', native_frame.columns)
+            self.assertEqual(result_value(relation), preserved)
+            self.assertTrue(np.shares_memory(relation['id:left'].to_numpy(), native_frame['id:left'].to_numpy()))
+        try:
+            with patch.object(entry, 'query_from_config', side_effect=prepare), \
+                    patch.object(entry, 'complete_calls', return_value=calls), \
+                    patch.object(resident, 'verify_inputs'), \
+                    patch.object(resident, 'native_request_boundaries', return_value={}), \
+                    patch.object(resident.time, 'monotonic_ns', side_effect=lambda: now[0]), \
+                    patch.object(stage, 'execute_native', side_effect=native), \
+                    patch.object(join, 'execute_native_join', side_effect=native), \
+                    patch.object(join, 'audit', side_effect=join_audit), \
+                    patch.object(stage, 'lm_report', side_effect=lm_report), \
+                    patch.object(record_method, 'LotusRecordMethod', return_value=method), \
+                    patch('src.baselines.text.sembench_prepared.finish', return_value=(
+                        result, dict(operator_relation=preserved))):
+                report = driver.query(dict(query_id='q', temperature='warm', unit_id='q'), emit)
+        except BaseException as error:
+            state['error'] = error
+            report = error.query_report
+        state.update(report=report, events=events, driver=driver, binding=binding)
+        return state
+
+    def test_resident_stage_statistics_follow_full_sink_and_preserve_relation_snapshot(self):
+        state = self.stage_clock()
+        report = state['report']
+        self.assertNotIn('error', state)
+        self.assertEqual(report['source_to_sink_seconds'], 5)
+        self.assertEqual(report['result']['data'], [[1]])
+        self.assertEqual(report['operator']['accounting_phase'], 'after_full_sink')
+        self.assertEqual(state['events'], ['full-sink', 'receipts', 'lm', 'ready-copy', 'source-audit', 'snapshot'])
+        self.assertGreaterEqual(report['audit_finished_ns']-report['sink_ready_ns'], 50_000_000_000)
+        self.assertIn('shallow intermediate relation schema snapshots remain inside', report['timing_scope'])
+        self.assertFalse(any(key.startswith('_native_') for key in report['operator']))
+        state['driver'].close()
+        self.assertEqual(state['events'][-1], 'close')
+        self.assertTrue(state['binding'].released)
+        json.dumps(report, allow_nan=False)
+
+    def test_original_ecomm_join_column_addition_keeps_a_shallow_schema_snapshot(self):
+        state = self.stage_clock(original_join=True)
+        self.assertNotIn('error', state)
+        report = state['report']
+        self.assertEqual(report['source_to_sink_seconds'], 5)
+        self.assertEqual(report['result']['data'], [['1-2']])
+        self.assertEqual(report['operator_relation']['columns'], ['id:left', 'id:right'])
+        self.assertEqual(state['events'], ['full-sink', 'receipts', 'source-audit', 'snapshot'])
+        state['driver'].close()
+        json.dumps(report, allow_nan=False)
+
+    def test_original_postprocess_failure_accounts_before_close_without_replacing_error(self):
+        failure = ValueError('original postprocess failed')
+        state = self.stage_clock(post_error=failure)
+        self.assertIs(state['error'], failure)
+        self.assertEqual(state['report']['status'], 'failed')
+        self.assertIsNone(state['report'].get('sink_ready_ns'))
+        self.assertEqual(state['report']['operator']['calls']['counts']['succeeded'], 1)
+        self.assertEqual(state['report']['operator']['accounting_phase'], 'failure')
+        self.assertEqual(state['events'], ['receipts', 'lm', 'ready-copy'])
+        self.assertFalse(any(key.startswith('_native_') for key in state['report']['operator']))
+        state['driver'].close()
+        json.dumps(state['report'], allow_nan=False)
+
+    def test_post_sink_statistics_failure_keeps_the_actual_complete_result(self):
+        failure = RuntimeError('statistics getter failed')
+        state = self.stage_clock(statistics_error=failure)
+        self.assertIs(state['error'], failure)
+        self.assertEqual(state['report']['status'], 'failed')
+        self.assertEqual(state['report']['source_to_sink_seconds'], 5)
+        self.assertEqual(state['report']['result']['data'], [[1]])
+        self.assertEqual(state['report']['operator']['calls']['counts']['succeeded'], 1)
+        self.assertFalse(any(key.startswith('_native_') for key in state['report']['operator']))
+        state['driver'].close()
+        self.assertEqual(state['events'], ['full-sink', 'receipts', 'lm', 'close'])
+
     def test_source_and_budget_preflight_precede_the_fresh_query_clock(self):
         from src.serving.backends.vllm_protocol import GenerationSpec
         now = [1_000_000_000]

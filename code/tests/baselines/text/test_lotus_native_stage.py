@@ -74,7 +74,7 @@ class FixtureMethod:
 class FixtureBinding:
     def __init__(self, expected, budget, lm):
         self.expected, self.budget, self.lm = expected, budget, lm
-        self.prompts, self.receipts, self.released = [], [], False
+        self.prompts, self.receipts, self.late_receipts, self.released = [], [], [], False
         self.complete_count = None
 
     def capture_prompts(self, prompts):
@@ -100,7 +100,7 @@ class FixtureBinding:
             ledger.record(receipt)
         ledger.mark_unconfirmed("NativeQueryDidNotReturnEveryOccurrence")
         return dict(calls=ledger.report(), native_transport_receipts=list(self.receipts),
-            late_native_receipts=[], source_binding="CPU boundary fixture")
+            late_native_receipts=list(self.late_receipts), source_binding="CPU boundary fixture")
 
 
 class NativeStageFixtureTests(unittest.TestCase):
@@ -172,7 +172,7 @@ class NativeStageFixtureTests(unittest.TestCase):
         return frame, stage, records, budget
 
     def execute(self, *, kind="filter", texts=("same", "same"), invoke=None, profile=None, budget=None,
-                shared_owner=None):
+                shared_owner=None, defer_accounting=False):
         frame, stage, records, allowance = self.inputs(texts, kind)
         self.budget = allowance if budget is None else budget
         self.messages = [[dict(role="user", content=row.values["reviewText"])] for row in records]
@@ -185,7 +185,101 @@ class NativeStageFixtureTests(unittest.TestCase):
         return native_stage.execute_native(frame, stage, records, invoke=complete if invoke is None else invoke,
             engine=self.engine, resources=self.resources, query_id="q",
             profile=dict(native_lm_max_batch_size=2) if profile is None else profile, budget=self.budget,
-            shared_owner=shared_owner)
+            shared_owner=shared_owner, defer_accounting=defer_accounting)
+
+    def test_resident_statistics_materialize_once_after_the_complete_consumer_sink(self):
+        from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+        for kind in ('filter', 'map', 'extract'):
+            with self.subTest(kind=kind):
+                _, stage, _, _ = self.inputs(kind=kind)
+                owner = LocalNativeModel(self.engine, stage.generation, self.resources, 2)
+                sink, events = [False], []
+                original_report, original_lm_report = FixtureBinding.report, native_stage.lm_report
+                def receipt(binding):
+                    self.assertTrue(sink[0], 'full receipt construction preceded the query sink')
+                    events.append('receipts')
+                    return original_report(binding)
+                def lm_stats(lm):
+                    self.assertTrue(sink[0], 'LM statistics preceded the query sink')
+                    events.append('lm')
+                    return original_lm_report(lm)
+                with patch.object(FixtureBinding, 'report', receipt), patch.object(native_stage, 'lm_report', lm_stats):
+                    report = self.execute(kind=kind, shared_owner=owner, defer_accounting=True)
+                    self.assertEqual(events, [])
+                    self.assertEqual(report['status'], 'native_returned')
+                    for key in ('calls', 'lm', 'owner_ready'):
+                        self.assertNotIn(key, report)
+                    self.assertIsInstance(report['model_ready_observed_ns'], int)
+                    sink[0] = True
+                    native_stage.finish_accounting(report)
+                self.assertEqual(events, ['receipts', 'lm'])
+                self.assertEqual(report['calls']['counts']['succeeded'], 2)
+                self.assertEqual(report['accounting_phase'], 'after_full_sink')
+                self.assertEqual(report['status'], 'completed')
+                self.assertFalse(owner.closed)
+                self.assertFalse(any(key.startswith('_native_') for key in report))
+                json.dumps({key: value for key, value in report.items() if key != 'frame'}, allow_nan=False)
+
+    def test_deferred_accessor_failure_keeps_primary_and_owner_final_late_cost(self):
+        from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+        owner = LocalNativeModel(self.engine, self.generation, self.resources, 2)
+        failure = ValueError('original resident accessor failed')
+        def fail():
+            owner.binding.complete_count = 1
+            self.settings.lm(self.messages)
+            self.budget.reserve(hashlib.sha256(b'unconfirmed second native request').hexdigest())
+            raise failure
+        with self.assertRaises(ValueError) as caught:
+            self.execute(shared_owner=owner, defer_accounting=True, invoke=fail)
+        self.assertIs(caught.exception, failure)
+        report = failure.operator_report
+        self.assertEqual(report['calls']['counts']['succeeded'], 1)
+        self.assertEqual(report['calls']['counts']['unknown'], 1)
+        self.assertEqual(self.budget.attempts, 2)
+        self.assertEqual(report['accounting_phase'], 'failure')
+        self.assertFalse(any(key.startswith('_native_') for key in report))
+        self.assertFalse(owner.closed)
+        late = result_record(owner.binding.expected[1], engine_uid='fixture', start=0, end=2,
+                             status='succeeded', submitted=True)
+        late.update(prompt_tokens=9, completion_tokens=2, total_tokens=11)
+        owner.binding.late_receipts.append(late)
+        final = owner.close(timeout=1)['native_final_accounting']
+        self.assertEqual(final['late_native_receipts'], [late])
+        self.assertEqual(final['calls']['counts']['unknown'], 1)
+        self.assertTrue(owner.binding.released)
+        json.dumps(report, allow_nan=False)
+
+    def test_deferred_statistics_require_borrowed_ownership_and_validate_after_return(self):
+        from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+        with self.assertRaisesRegex(ValueError, 'caller-owned'):
+            self.execute(defer_accounting=True)
+        self.assertFalse(self.owners)
+        owner = LocalNativeModel(self.engine, self.generation, self.resources, 2)
+        def incomplete():
+            owner.binding.complete_count = 1
+            self.settings.lm(self.messages)
+            return self.result_frame
+        report = self.execute(shared_owner=owner, defer_accounting=True, invoke=incomplete)
+        with self.assertRaisesRegex(RuntimeError, 'every declared'):
+            native_stage.finish_accounting(report)
+        self.assertEqual(report['calls']['counts']['unknown'], 1)
+        self.assertNotEqual(report['status'], 'completed')
+        self.assertFalse(any(key.startswith('_native_') for key in report))
+
+    def test_deferred_failure_accounting_error_does_not_replace_accessor_exception(self):
+        from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
+        owner = LocalNativeModel(self.engine, self.generation, self.resources, 2)
+        failure = ValueError('original accessor error')
+        def fail():
+            self.settings.lm(self.messages)
+            raise failure
+        with patch.object(native_stage, 'lm_report', side_effect=RuntimeError('statistics unavailable')):
+            with self.assertRaises(ValueError) as caught:
+                self.execute(shared_owner=owner, defer_accounting=True, invoke=fail)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(failure.operator_report['calls']['counts']['succeeded'], 2)
+        self.assertFalse(any(key.startswith('_native_') for key in failure.operator_report))
+        self.assertIn('accounting', failure.__notes__[0])
 
     def test_borrowed_owner_reuses_original_accessors_without_closing_caller_model(self):
         from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel

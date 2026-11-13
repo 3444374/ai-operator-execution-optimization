@@ -133,7 +133,7 @@ class ResidentDriver:
     def query(self, spec, emit):
         import lotus
         from src.baselines.text.frameworks.lotus_native_local import LocalNativeModel
-        from src.baselines.text.frameworks.lotus_native_stage import execute_native
+        from src.baselines.text.frameworks.lotus_native_stage import execute_native, finish_accounting as finish_stage_accounting
         from src.baselines.text.sembench_prepared import finish, result_value
         from src.semantic_methods.lotus.record_method import LotusRecordMethod
         from .sembench_text_query import query_from_config, complete_calls
@@ -146,7 +146,7 @@ class ResidentDriver:
         report['model_initialization'] = self.config['resident'].get('model_initialization', 'inside_first_query')
         report['query_sequence_phase'] = ('first_query' if spec['temperature'] in ('cold', 'ready_first')
                                           else 'repeat_query')
-        unit = primary = None
+        unit = primary = operator = None
         try:
             with lotus.settings.context(enable_cache=False):
                 query = query_from_config(dict(self.config, query_id=spec['query_id']),
@@ -174,9 +174,9 @@ class ResidentDriver:
                         else:
                             with observe_native_requests(self.owner.transport, events):
                                 relation = invoke()
-                        # Retain the native relation before original grouping can
-                        # mutate it; serialize and validate it only after full sink.
-                        relations.append((relation[0] if topk else relation).copy(deep=True))
+                        # Original postprocessing may add or rename columns. Keep
+                        # its pre-projection schema without copying value buffers.
+                        relations.append((relation[0] if topk else relation).copy(deep=False))
                         return relation
                     if topk:
                         from src.baselines.text.frameworks.lotus_native_topk import execute_native_topk
@@ -189,7 +189,7 @@ class ResidentDriver:
                     return execute_native(operation.frame, operation.stage, operation.records,
                         invoke=accessor, engine=self.engine, resources=self.resources,
                         query_id=query.query_id, profile=self.config['profile'], budget=unit,
-                        shared_owner=self.owner)
+                        shared_owner=self.owner, defer_accounting=True)
 
                 execute_query = query.bind_execution()
                 report['preflight_finished_ns'] = time.monotonic_ns()
@@ -202,9 +202,12 @@ class ResidentDriver:
                 sink = emit('result_ready')
                 report.update(sink_ready_ns=sink, source_to_sink_seconds=(sink-report['source_start_ns'])/1e9,
                     native_query_seconds=(sink-report['prepare_finished_ns'])/1e9)
+                report['result'] = result_value(result)
                 if operator is not None and query.operation.describe()['kind'] == 'join':
                     from src.baselines.text.frameworks.lotus_native_join import finish_accounting
                     finish_accounting(operator)
+                elif operator is not None and query.operation.describe()['kind'] in ('filter', 'map', 'extract'):
+                    finish_stage_accounting(operator)
                 report['operator'] = {} if operator is None else {k:v for k,v in operator.items() if k != 'frame'}
                 query.verify_source()
                 state = None if self.owner is None else self.owner.snapshot()
@@ -258,26 +261,31 @@ class ResidentDriver:
                 report['evaluation_started_ns'] = time.monotonic_ns()
                 quality = json_metric(query.evaluate(result))
                 report['evaluation_finished_ns'] = time.monotonic_ns()
-                report.update(status='completed', query=query.describe(), result=result_value(result),
+                report.update(status='completed', query=query.describe(),
                     quality=quality, snapshot=state, native_io_events=events, native_request_events=boundaries,
                     model_ready_observed_ns=None if operator is None else operator.get('model_ready_observed_ns'),
                     startup_this_round_seconds=(state['ready']['startup_seconds'] if first_model and state['ready'] else 0),
                     budget_attempts=unit.attempts, budget_remaining=unit.remaining,
                     timing_scope='original fresh data scan -> full sink; model_ready_before_source distinguishes '
                         'an already ready model from first lazy startup inside this interval; source/file-identity/'
-                        'binding/budget preflight and post-sink source audit, evaluation, persistence and close separate')
+                        'binding/budget preflight and post-sink resident F/M/E statistics, source audit, evaluation, '
+                        'persistence and close separate; shallow intermediate relation schema snapshots remain inside')
                 return report
         except BaseException as error:
             primary = error
             report['error_type'] = type(error).__name__
-            if hasattr(error, 'operator_report') and '_native_binding' in error.operator_report:
-                from src.baselines.text.frameworks.lotus_native_join import finish_accounting
+            partial = getattr(error, 'operator_report', operator)
+            if partial is not None and '_native_binding' in partial:
                 try:
-                    finish_accounting(error.operator_report, require_complete=False)
+                    if partial.get('schema') == 'semloom.lotus_native_stage.v1':
+                        finish_stage_accounting(partial, require_complete=False)
+                    else:
+                        from src.baselines.text.frameworks.lotus_native_join import finish_accounting
+                        finish_accounting(partial, require_complete=False)
                 except BaseException as accounting:
-                    error.add_note('Join failure accounting also failed: ' + type(accounting).__name__)
-            if getattr(error, 'operator_report', None) is not None:
-                report['operator'] = {k:v for k,v in error.operator_report.items() if k != 'frame'}
+                    error.add_note('native failure accounting also failed: ' + type(accounting).__name__)
+            if partial is not None:
+                report['operator'] = {k:v for k,v in partial.items() if k != 'frame'}
             error.query_report = report
             raise
         finally:
