@@ -148,7 +148,8 @@ def _memory_sink_timing(query, report):
         return result
     submitted=query.get('query_start_ns')
     version=receipt.get('query_clock_version')
-    if version not in (None,'sembench.source_to_sink.v2','sembench.source_to_sink.v3'):
+    if version not in (None,'sembench.source_to_sink.v2','sembench.source_to_sink.v3',
+                       'kalypso.source_to_sink.v1'):
         result['source_to_sink_unavailable_reason']='unrecognized query clock version; legacy submission is not substituted'
         return result
     start=submitted if version is None else receipt.get('source_started_ns')

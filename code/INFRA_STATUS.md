@@ -36,7 +36,7 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 |---|---|
 | 原题与实际中间关系 | [`SemBenchTextQuery`](src/baselines/text/sembench_text.py) 已有`bind_execution(multiple=True)`实际算子callback与`bind_original_execution()`完整原函数边界；默认单算子合同供未迁移记录图使用。LOTUS＋Ray已改用完整原函数，MMQA Q2b空／非空第二阶段和Movie quick动态批次有原SDK软件差分；其他后端、分支与未绑定原题仍各自待接线或验收，不从公共函数存在取得资格。 |
 | 原生执行与生命周期 | LOTUS＋Ray以query级runtime接实际多批native processor，在完整sink后关闭；原生分组线程下的批次ID登记与lazy runtime初始化已做受控交错检查，预测仍并行，不声称跨批模型复用；新多批目标清理待验。LOTUS＋Daft已用同一完整原题runner接实际多批预测，每批沿原隔离worker，最后完整sink后ACK才关闭最后worker；不声称模型复用。LOTUS＋IMLane原Q5及完整视觉原题复用既有多批SQL／ACK和一个外部模型owner，SQL/config scope串行，原group线程保持。Kalypso文本Filter／Map／Join／TopK／SemAgg收拢同一系统runner和五个handler，其余连续算子仍待接；其Movie records/prefix＋外置条件profile因输入、消息和schema不同继续单列，不计为第二套系统baseline。两种profile均保留后验失败的完整结果，多阶段仍待接线。Daft collect、IMLane多SQL批次及Kalypso外部服务各有真实owner，不能借用Ray生命周期资格。 |
-| 完整查询计时 | 从真实源读取到完整内存sink直接打点，冷启动、服务ready后查询和组件时间分列；版本名不自动授予跨系统可比性。LOTUS＋Ray记`lotus_ray.source_to_sink.v1`，包含actor observer同步事件／输出写盘；LOTUS外部服务记`lotus_service.source_to_sink.v1`，HTTP指纹、图像审计hash及事件编码仍在查询内，后台写盘可重叠，远端READY／启动归属未观测；LOTUS＋Daft记`lotus_daft.source_to_sink.v1`、LOTUS＋IMLane聚合记`lotus_imlane.source_to_sink.v1`、Kalypso聚合记`kalypso.source_to_sink.v1`，各自包含尚未后置的内部I/O及必要生命周期；独立IMLane v2仍含UDF/provider回执。额外外层预检和driver后置审计分开，但内部审计留存／flush尚待闭合，不能靠旧数值相减制造统一成绩。 |
+| 完整查询计时 | 从真实源读取到完整内存sink直接打点，冷启动、服务ready后查询和组件时间分列；版本名不自动授予跨系统可比性。LOTUS＋Ray记`lotus_ray.source_to_sink.v1`，包含actor observer同步事件／输出写盘；LOTUS外部服务记`lotus_service.source_to_sink.v1`，HTTP指纹、图像审计hash及事件编码仍在查询内，后台写盘可重叠，远端READY／启动归属未观测；LOTUS＋Daft记`lotus_daft.source_to_sink.v1`、LOTUS＋IMLane完整原题记`lotus_imlane.source_to_sink.v1`、Kalypso五handler及Movie records/prefix记`kalypso.source_to_sink.v1`，各自包含尚未后置的内部I/O及必要生命周期；独立IMLane v2仍含UDF/provider回执。额外外层预检和driver后置审计分开，但内部审计留存／flush尚待闭合，不能靠旧数值相减制造统一成绩。 |
 | 验证与数据 | 先以原函数／SDK 差分覆盖共同执行边界，再对有真实输入且后端支持的完整代表查询验模型、结果关联和物理清理。数据缺口、原生接口限制、代码未接线和目标待验各自保留，见下表与所属原报告；不重复已完成模型请求来增加通过数。 |
 | 替代与调用迁移 | 旧 Ray／Daft Q3 专项图和旧 IMLane `Q1Relation` 已退出现行调用。LOTUS外部服务的视觉查询与Q5聚合已共用查询生命周期和原题对象，原两个CLI／worker及旧视觉对象已迁移删除，[恢复来源](../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)保留。HTTP、records、作者算法和不同生命周期对照按真实职责保留；其他替代路径也须迁移完调用再删除。 |
 
@@ -89,6 +89,9 @@ LOTUS＋IMLane的完整原题profile已整合原生多模态载体和逐批采�
 
 后续输入类别也无需生产修改；受影响原题模块12／12通过，包含前8项，不重复累加。
 单图／双图、源连接、完整候选、LIMIT前输入及原评分失败见[输入类别验证](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-original-input-kinds)，真实SQL／VLM资格仍待验。
+
+Kalypso现行runner的独立时钟已被公共读取器识别，真实起止及旧receipt不改写；受影响76项为74通过／2项真实tokenizer未绑定。
+同次固定源码核对澄清了纯文本与真正图像／Extract多阶段的接点边界，见[共同边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-query-scope-clock)，没有为此新增逐题或阶段框架。
 
 剩余工作按共同边界闭合：已接线原函数处理真实中间关系，额外预检之外的完整查询计时按版本
 记录，再用真实资产及代表查询验收。完整 SemBench 入口及已核活动服务器绑定走共享路径。

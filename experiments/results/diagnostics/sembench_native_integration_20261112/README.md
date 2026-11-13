@@ -1022,6 +1022,27 @@ create＋reserve_unit后在新输出slot、相同15永久上界执行，源码�
 资源／租约清理通过。1368份payload加清单与归档逐字节核对，1144个source Git blob由本会话复核等于
 准确3500提交，未重跑模型。冻结原件及失败不改成当前新组合或正式性能资格。
 
+<a id="kalypso-query-scope-clock"></a>
+## Kalypso 原题范围与独立时钟读取
+
+固定05024的SemanticPlan支持多算子；当前项目仍按单handler绑定。固定c814的Movie Q4只调用一次
+语义Filter，前置id筛选及ratio是普通关系处理，不能为凑多阶段改写原题。当前维护纯文本分支没有连续
+两次受支持算子的实际需求；真实Q2b／Q12还缺图像／Extract接线。已复核22件原题、项目和作者Git blob／SHA：
+作者semantic-query数据源只包装文本，planner无sem_extract、chat builder无JSON格式透传；同一底层vLLM却有图像／JSON API。
+因此只记录本前端缺口，不宣称整个系统不支持，也不提前添加阶段框架。未来真实接线须保留原中间关系与阶段身份，
+逐原生子查询不能冒称作者跨阶段pipeline／KV复用。
+
+另复现一个现有共同读取缺陷：聚合runner已输出`kalypso.source_to_sink.v1`，公共query_timing却将其当未知版本，
+真实耗时读成None。现在只将该准确版本加入已知receipt，保留其source起点与独立身份；其他未知版本仍不可用，
+旧v2／v3规则与receipt保持。五handler及Movie records/prefix同时停止新写“统一v3”标签，使用现有独立Kalypso版本。
+实际计时起止、提示／算法／采样／结果／服务关闭没有改变，查询内同步observer／指纹／回执仍披露，不能据此排位或改写历史成绩。
+
+先以新增行为用例复现“None而非真实耗时”的失败，再从干净fc16导出叠加10个源／测试文件，执行8个受影响模块：
+76项中74通过、2项因真实tokenizer未绑定跳过，0模型／真实服务／GPU。结果SHA为
+`2c7dc492341dabed494c7bbad6056efc05af8d345a29137bfe74ee48cc57b102`；
+覆盖五handler、records/prefix、完整sink后审计失败及旧版本／未知／非法时序，原缺陷输出保留。
+这是时钟身份和读取修复，不增加多阶段、图像或新模型资格，冻结3500功能与离线失败仍按原版本解释。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

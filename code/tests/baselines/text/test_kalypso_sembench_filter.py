@@ -84,7 +84,7 @@ class NativeFilterContracts(unittest.TestCase):
                 self.assertEqual(report['quality']['original_metric'],quality['original_metric'])
                 self.assertEqual(report['physical_native_calls'],len(answers))
                 self.assertEqual(report['physical_call_cap'],len(answers))
-                self.assertEqual(report['memory_sink_timing']['query_clock_version'],'sembench.source_to_sink.v3')
+                self.assertEqual(report['memory_sink_timing']['query_clock_version'],'kalypso.source_to_sink.v1')
                 self.assertEqual(events,['memory_sink_ready','result_ready'])
                 self.assertIn('not LOTUS parser',report['prompt_parser_identity'])
 

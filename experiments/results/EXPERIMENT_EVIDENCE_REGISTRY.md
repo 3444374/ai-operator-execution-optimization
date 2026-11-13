@@ -56,6 +56,11 @@
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。
 
+[Kalypso查询范围与独立时钟](diagnostics/sembench_native_integration_20261112/README.md#kalypso-query-scope-clock)
+修正公共读取器拒绝现有聚合独立时钟的问题，现行五handler及records/prefix改用同一独立版本名；实际起止、旧receipt与成绩不变。
+先复现原缺陷，再运行8个受影响模块76项：74通过、2个真实tokenizer未绑定跳过，0模型／GPU。
+22件固定源码身份已复核；当前纯文本没有虚构两Filter的需求，真正多阶段图像／Extract接点与底层vLLM能力分开，未预造阶段框架。
+
 [Kalypso零发生项](diagnostics/sembench_native_integration_20261112/README.md#kalypso-empty-frontier)
 修正无依据的正数frontier限制、空trace／owner检查和CPU空统计；82个不同软件方法为80通过、
 2项真实tokenizer未绑定跳过，首失败保留。原数据选择／关系／评分和作者算法不变，未运行模型／GPU或服务器。

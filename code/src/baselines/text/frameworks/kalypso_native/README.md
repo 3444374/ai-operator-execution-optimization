@@ -1,6 +1,6 @@
 # Kalypso 原生 SemBench 适配
 
-本目录源自2026-10-25 r3适配。维护版将客户端接入中性生命周期与公共计时，并将新运行绑定改为作者CLI默认解析；旧运行的固定容量配置和成绩保留历史身份。本目录没有注册新的默认后端，也不包含作者服务、模型或数据。作者源码固定为`05024f027f932c0e398852e38302be30b9015481`，原生引擎属于vLLM0.13.0rc4分支。
+本目录源自2026-10-25 r3适配。维护版将客户端接入中性生命周期与独立计时，并将新运行绑定改为作者CLI默认解析；旧运行的固定容量配置和成绩保留历史身份。本目录没有注册新的默认后端，也不包含作者服务、模型或数据。作者源码固定为`05024f027f932c0e398852e38302be30b9015481`，原生引擎属于vLLM0.13.0rc4分支。
 
 ## 内存结果边界
 
@@ -24,14 +24,16 @@ trace 完整发生项、request ID 和 model UID 核对在 sink 后执行，审�
 排除 JSON 解析和文件持久化。
 
 `memory_sink_timing` 仍用现有 v1 receipt schema，迁移路径额外记录
-`query_clock_version="sembench.source_to_sink.v3"` 和实测 source 起点。Filter 在此之前验证
+`query_clock_version="kalypso.source_to_sink.v1"` 和实测 source 起点。Filter 在此之前验证
 manifest、物化文件和原始来源，然后由绑定 reader 在区间内真实扫描原 Reviews CSV，保留
 声明的 prefix 与行类型；不是返回预检缓存行。原文件的事后完整性和标签核对仍在 sink 后。
 Map 在预检阶段绑定原查询并核文件身份，区间内执行原查询的读取、必需输入文件、原生请求与完整关系，
 事后完整文件校验在 sink 之后。attach 实际 loaded-model 证明核验后记录模型就绪观测，
 receipt 传递 `model_ready_before_source` 与观测时间；它不是由调用者标签推断的启动耗时。
 未知版本或缺失起点明确留空；没有该字段的旧 receipt 保持原 caller 区间，v2 Map 仍含执行内文件校验。
-历史时长不回填为 v3。运行的 `map_prompt_root` 必须与 CPU 预检输出分开，使用新的空目录；
+当前五handler及Movie records/prefix均使用该独立版本；区间内仍有同步observer指纹／回执及必要输入准备，
+不授予跨系统统一可比性。公共读取器识别该版本且保留真实source起点；未知版本仍为空，旧v2／v3 receipt与时长不改写。
+运行的 `map_prompt_root` 必须与 CPU 预检输出分开，使用新的空目录；
 已有 prompt 表会因独占创建失败，不自动覆盖或复用旧表。
 
 现有私有 Map／MMQA 查询重载 `query()` 并继承 `post()`，后者默认仍同步保存 HTTP 证据。
@@ -400,9 +402,9 @@ Filter／Map／Join按原查询选出的发生项或候选对可以为零；对�
 
 ## 系统查询生命周期
 
-`query_runner.KalypsoRunner` 统一当前维护的文本 Filter／Map／Join／TopK 查询生命周期：
+`query_runner.KalypsoRunner` 统一当前维护的文本 Filter／Map／Join／TopK／SemAgg 查询生命周期：
 原查询绑定、source 到完整内存结果计时、trace 核查、原评价器和结果保存。
-四种原生算子处理器只负责作者调用、关系恢复与各自的原生审计；没有改作者提示、parser、
+五种原生算子处理器只负责作者调用、关系恢复与各自的原生审计；没有改作者提示、parser、
 Map 重试或 TopK 排序算法。题目仍使用 SemBench 原查询定义，不新增逐题执行器。
 这个边界参考固定 c814 SemBench 的 `GenericRunner` 与系统 runner，而不是把 Kalypso 当成 LOTUS 执行后端。
 
@@ -410,6 +412,12 @@ Map 重试或 TopK 排序算法。题目仍使用 SemBench 原查询定义，不
 完整复合查询尚依赖公共 prepared 接口与作者服务的阶段观察身份迁移；当前不得报告为全量
 SemBench runner 完成或多阶段已支持。新结构的 CPU 生命周期检查与原 SDK／GPU 验证分别记录，
 没有沿用旧成绩作为新实现的性能或质量结论。
+
+固定c814的Movie Q4只有一次语义Filter，普通`id`筛选及ratio不算第二算子；当前已接纯文本分支
+没有连续两次受支持算子的实际需求。作者05024的planner本身支持多算子，不能将本接点单算子限制说成整个系统不支持。
+真实多阶段Q2b／Q12还依赖图像／Extract：当前semantic-query只把data_path内容包装成文本，没有sem_extract算子或JSON格式透传；
+底层vLLM另有图像／JSON接口，不等于本前端已接通。未来接线须保留实际中间关系并建立阶段输入／trace身份，
+不能仅开multiple=True，也不为无实际原题需求预造阶段框架。来源与计时修正见[共同边界核对](../../../../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-query-scope-clock)。
 
 整合时独立审查发现：原Map在trace审计前保存完整result，新循环先审计会在后验失败时丢失结果。
 现统一在完整内存sink后编码`result.json`，再做trace／source核查；审计失败仍保留原异常、失败状态，

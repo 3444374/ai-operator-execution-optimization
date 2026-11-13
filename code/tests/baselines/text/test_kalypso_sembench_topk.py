@@ -106,6 +106,7 @@ class NativeTopKContracts(unittest.TestCase):
                 self.assertEqual(len({frozenset(row['pair']) for row in seen}),len(seen))
                 self.assertTrue(all(row['cap']==5 for row in seen))
                 self.assertEqual(events,['memory_sink_ready','result_ready'])
+                self.assertEqual(report['memory_sink_timing']['query_clock_version'],'kalypso.source_to_sink.v1')
                 if n==1:
                     self.assertEqual(seen,[]);self.assertEqual(report['result']['data'][0][-1],3.0)
                 if n>=8:self.assertLess(len(seen),spec['expected_calls'])

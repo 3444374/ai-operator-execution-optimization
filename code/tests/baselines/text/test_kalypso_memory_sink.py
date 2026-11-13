@@ -206,6 +206,7 @@ class KalypsoMemorySinkTests(unittest.TestCase):
         timing=query_timing(dict(query_start_ns=0,backend_report=report))
         self.assertEqual(timing['source_to_sink_seconds'],29)
         self.assertEqual(timing['caller_to_memory_sink_seconds'],46)
+        self.assertEqual(timing['query_clock_version'],'kalypso.source_to_sink.v1')
 
     def test_bound_query_reader_scans_original_csv_without_hashing_or_cached_rows(self):
         from src.baselines.text import movie_records

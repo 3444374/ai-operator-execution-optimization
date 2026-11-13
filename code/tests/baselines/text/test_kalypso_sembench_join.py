@@ -103,7 +103,7 @@ class NativeJoinContracts(unittest.TestCase):
                 self.assertEqual(report['physical_native_calls'],len(answers))
                 self.assertEqual(len(messages),len(answers))
                 self.assertEqual(events,['memory_sink_ready','result_ready'])
-                self.assertEqual(report['memory_sink_timing']['query_clock_version'],'sembench.source_to_sink.v3')
+                self.assertEqual(report['memory_sink_timing']['query_clock_version'],'kalypso.source_to_sink.v1')
                 if scenario=='ecomm':
                     self.assertEqual(set(table['left'][0]['fields']),{'productDisplayName:left','productDescriptors:left'})
                     self.assertEqual(set(table['right'][0]['fields']),{'productDisplayName:right','productDescriptors:right'})

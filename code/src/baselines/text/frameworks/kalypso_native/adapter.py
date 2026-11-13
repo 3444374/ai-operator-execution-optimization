@@ -343,7 +343,7 @@ class NativeQueryDriver:
                     source=MovieRecordSource.from_manifest(spec['manifest'])
                     read_rows=source.bind_query_rows()
                     task=MovieTask.from_config(spec['task'])
-                timing.update(query_clock_version='sembench.source_to_sink.v3',
+                timing.update(query_clock_version='kalypso.source_to_sink.v1',
                               source_started_ns=time.monotonic_ns(),
                               model_ready_before_source=self.model_ready_observed_ns is not None,
                               model_ready_before_source_observed_ns=self.model_ready_observed_ns)

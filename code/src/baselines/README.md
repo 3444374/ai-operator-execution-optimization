@@ -843,10 +843,10 @@ prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常�
 <a id="sembench-native-query-timing"></a>
 ### 完整查询时钟与仍未统一的路径
 
-各路径同时保留worker进入、预检结束和sink的实测时间戳。部分LOTUS／旧Ray Animals／Daft／IMLane Filter／Kalypso路径
+各路径同时保留worker进入、预检结束和sink的实测时间戳。部分LOTUS／旧Ray Animals／Daft／IMLane Filter及历史Kalypso路径
 仍按原来源保留`sembench.source_to_sink.v3`字段；它只说明该版本的外层事件，不证明内部审计I/O全已排除。
 完整LOTUS＋Ray当前使用独立`lotus_ray.source_to_sink.v1`，LOTUS服务使用独立`lotus_service.source_to_sink.v1`，
-原生IMLane Q3使用独立v2并各自披露残余；
+原生IMLane Q3使用独立v2，当前Kalypso五handler及Movie records/prefix使用独立`kalypso.source_to_sink.v1`并各自披露残余；
 字段或版本相同均不自动授予跨系统可比性。
 共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，
 sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 视觉和 MMQA 聚合也在

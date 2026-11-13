@@ -81,6 +81,18 @@ class MemorySinkTests(unittest.TestCase):
         self.assertEqual(result['source_started_ns'],3_000_000_000)
         self.assertEqual(result['query_clock_version'],'sembench.source_to_sink.v2')
 
+    def test_kalypso_independent_clock_keeps_its_actual_source_and_identity(self):
+        q=self.query()
+        q['backend_report']['memory_sink_timing'].update(
+            query_clock_version='kalypso.source_to_sink.v1',source_started_ns=3_000_000_000,
+            model_ready_before_source=True,model_ready_before_source_observed_ns=2_500_000_000)
+        result=query_timing(q)
+        self.assertEqual(result['source_to_sink_seconds'],1)
+        self.assertEqual(result['caller_to_memory_sink_seconds'],3)
+        self.assertEqual(result['query_clock_version'],'kalypso.source_to_sink.v1')
+        self.assertTrue(result['model_ready_before_source'])
+        self.assertIsNone(result['source_to_sink_unavailable_reason'])
+
     def test_versioned_source_never_falls_back_to_submission_when_missing_or_invalid(self):
         for source in (None,True,0,1_500_000_000,5_000_000_000):
             with self.subTest(source=source):

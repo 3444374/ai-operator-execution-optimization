@@ -101,7 +101,7 @@ class OriginalMapContracts(unittest.TestCase):
                 self.assertEqual(report['physical_native_calls'],count)
                 self.assertEqual(report['physical_call_cap'],2*count)
                 self.assertEqual(emitted,['memory_sink_ready','result_ready'])
-                self.assertEqual(report['memory_sink_timing']['query_clock_version'],'sembench.source_to_sink.v3')
+                self.assertEqual(report['memory_sink_timing']['query_clock_version'],'kalypso.source_to_sink.v1')
                 self.assertIn('ecomm Q5',report['semantic_operator'])
 
     def test_original_filter_extract_join_are_not_relabelled_as_map(self):

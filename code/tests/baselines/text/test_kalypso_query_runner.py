@@ -106,6 +106,7 @@ class QueryLifecycleTests(unittest.TestCase):
         self.assertLess(events.index('memory_sink_ready'), events.index('evaluate'))
         self.assertLess(events.index('evaluate'), events.index('persist'))
         timing = receipts[0][2]
+        self.assertEqual(timing['query_clock_version'], 'kalypso.source_to_sink.v1')
         self.assertLessEqual(timing['source_started_ns'], timing['memory_sink_ready_ns'])
         self.assertEqual(timing['model_ready_before_source_observed_ns'], 7)
 
