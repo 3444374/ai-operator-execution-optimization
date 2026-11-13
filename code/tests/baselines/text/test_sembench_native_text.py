@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 from src.baselines.text.sembench_native_text import (
     COMPARISON_IDENTITY, MovieFilterTask, MovieJoinTask, MovieMapTask, PROMPT_PROFILE, TextFilterTask,
-    TASK_SOURCE_FIELDS, movie_text_task, task_from_config,
+    movie_text_task, task_from_config,
 )
 
 
@@ -68,7 +68,6 @@ class NativeTextTaskTests(unittest.TestCase):
         task.verify_source(second)
 
     def test_configuration_factory_preserves_movie_inputs_and_required_identity(self):
-        self.assertEqual(TASK_SOURCE_FIELDS, frozenset({'reviews_csv', 'movies_csv', 'ranking', 'data_dir'}))
         with patch.object(Path, 'read_bytes', side_effect=AssertionError('factory I/O')):
             for query in range(1, 11):
                 config = dict(reviews_csv='/not-read/Reviews.csv', query='Q'+str(query),
@@ -82,6 +81,19 @@ class NativeTextTaskTests(unittest.TestCase):
                     ranking=config.get('ranking'), movies_csv=config.get('movies_csv'))
                 self.assertEqual(actual, expected)
                 self.assertEqual(task_from_config(dict(config, scenario='movie')), expected)
+            from src.baselines.image.sembench_native_animals import AnimalsFilterTask
+            for query in ('Q1', 'Q3', 'Q7', 'Q10'):
+                config = dict(scenario='animals', sembench_checkout='/not-read/checkout',
+                    manifest='/not-read/manifest.json', manifest_digest='a'*64,
+                    query=query, query_id='image-factory')
+                actual = task_from_config(config)
+                self.assertIsInstance(actual, AnimalsFilterTask)
+                self.assertEqual((actual.checkout, actual.manifest, actual.manifest_digest,
+                                  actual.query, actual.execution_id),
+                                 (Path(config['sembench_checkout']), Path(config['manifest']),
+                                  config['manifest_digest'], query[1:], 'image-factory'))
+                with self.assertRaises(TypeError):
+                    task_from_config(dict(config, reviews_csv='/not-an-image-source'))
             for name in ['query', 'query_id']:
                 missing = dict(reviews_csv='/not-read/Reviews.csv', query='Q3', query_id='required')
                 missing.pop(name)

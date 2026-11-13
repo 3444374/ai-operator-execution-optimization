@@ -171,6 +171,28 @@ class IndependentDaftQueryTests(unittest.TestCase):
         config.update(scenario='mmqa', data_dir=str(self.root))
         return config
 
+    def animals_config(self):
+        from PIL import Image
+        from src.baselines.image import sembench_animals as animals
+        from src.infrastructure.private_artifacts import content_digest
+
+        rows = []
+        for index, color in enumerate(('red', 'blue')):
+            path = self.root / ('image-' + str(index) + '.png')
+            Image.new('RGB', (3, 2), color).save(path)
+            rows.append(dict(row_id='animals-row-' + str(index), ImagePath=str(path),
+                Species='ZEBRA' if index == 0 else 'IMPALA', City='City' + str(index),
+                StationID='Station' + str(index), image=animals.image_identity(path)))
+        value = dict(schema=animals.MANIFEST_SCHEMA, role='software_fixture',
+            sembench_commit=animals.SEMBENCH_COMMIT, rows=rows)
+        value['sha256'] = content_digest(value)
+        manifest = self.root / 'animals.json'
+        manifest.write_text(json.dumps(value))
+        config = self.config('Q1')
+        del config['reviews_csv']
+        config.update(scenario='animals', manifest=str(manifest), manifest_digest=value['sha256'])
+        return config
+
     def config(self, query='Q3', *, ranking=None, movies_csv=None):
         config = dict(schema=driver.SCHEMA, sembench_checkout=CHECKOUT, reviews_csv=str(self.csv),
             query=query, query_id='native-daft-' + query, model='software-no-model',
@@ -374,6 +396,37 @@ class IndependentDaftQueryTests(unittest.TestCase):
                 with self.subTest(query=query), redirect_stdout(StringIO()) as stream:
                     self.assertEqual(driver.main(['check', '--config', str(path)]), 0)
                 self.assertEqual(json.loads(stream.getvalue())['task']['scenario'], 'mmqa')
+
+    def test_Animals_content_parts_are_rejected_by_check_and_string_worker_boundary(self):
+        config = self.animals_config()
+        task = driver.task_from_config(config)
+        with patch.object(driver, 'task_from_config', return_value=task), \
+                patch.object(type(task), 'requests', side_effect=AssertionError('check must not expand requests')) as requests:
+            with self.assertRaisesRegex(ValueError, 'image content'):
+                driver.check(config)
+        requests.assert_not_called()
+        tokenizer, supervise = SoftwareTokenizer(), SoftwareSupervisor()
+        with patch.object(tokenizer, 'apply_chat_template', side_effect=AssertionError('image must not be templated')) as render:
+            with self.assertRaisesRegex(ValueError, 'non-text message parts') as raised:
+                driver.run_query(config, self.root / 'image-rejected', model_python=sys.executable,
+                    tokenizer=tokenizer, supervise=supervise)
+        render.assert_not_called()
+        self.assertEqual(supervise.calls, [])
+        self.assertEqual(raised.exception.query_report['physical_attempts_reserved'], 0)
+
+    def test_string_renderer_checks_the_entire_batch_before_any_template_call(self):
+        tokenizer = SoftwareTokenizer()
+        requests = [dict(call_id='text', messages=[dict(role='user', content='plain text')]),
+                    dict(call_id='parts', messages=[dict(role='user', content=[dict(type='text', text='array')])])]
+        prepared = driver._render(requests, tokenizer)
+        self.assertEqual(tokenizer.messages, [row['messages'] for row in requests])
+        self.assertEqual([json.loads(row['prompt']) for row in prepared], tokenizer.messages)
+        requests.append(dict(call_id='image', messages=[dict(role='user', content=[
+            dict(type='image_url', image_url=dict(url='data:image/png;base64,unused-software-image'))])]))
+        with patch.object(tokenizer, 'apply_chat_template', side_effect=AssertionError('no partial batch rendering')) as render:
+            with self.assertRaisesRegex(ValueError, 'non-text message parts'):
+                driver._render(requests, tokenizer)
+        render.assert_not_called()
 
     def test_zero_occurrences_keep_the_real_empty_sink_without_a_worker(self):
         self.write_rows([('other','outside','good outside','POSITIVE')])

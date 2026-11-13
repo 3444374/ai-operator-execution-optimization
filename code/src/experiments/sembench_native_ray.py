@@ -27,6 +27,17 @@ def _sampling(config):
     return sampling
 
 
+def _image_stage_enabled(options):
+    stage = options.get('prepare_image_stage', False)
+    if isinstance(stage, bool):
+        return stage
+    if isinstance(stage, dict):
+        from pydantic import TypeAdapter
+        # Ray 2.56.1 parses dicts with PrepareImageStageConfig(enabled=True).
+        return TypeAdapter(bool).validate_python(stage.get('enabled', True))
+    return stage.enabled
+
+
 def run_query(task, config, directory, *, checkout, scope=query_scope):
     """Keep fresh source, prediction, strict parsing and full sink inside one owner.
 
@@ -50,7 +61,8 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
         model_ready_before_source_reason='lazy query scope; native model starts in the first nonempty prediction batch',
         physical_gpu_exit_confirmed=None, performance_claim=False, warmup_calls=0,
         result_cache_enabled=False, requested_generate_retries=0,
-        timing_scope='fresh CSV read, project messages, native startup/prediction, strict task JSON parsing and complete memory sink; '
+        timing_scope='fresh task source, necessary image reads/RGB-to-PNG content, project messages, '
+            'native startup/prediction, strict task JSON parsing and complete memory sink; '
             'mandatory budget reservation and synchronous native observer writes included; '
             'source verification, evaluation, result persistence and final runtime close excluded')
     source = result = native = ledger = unit = primary = None
@@ -85,6 +97,11 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
                 raise BudgetExhausted('permanent budget cannot cover every source occurrence')
             requests = task.requests(source)
             report['logical_requests'] = len(requests)
+            images = any(isinstance(message['content'], list)
+                and any(part.get('type') == 'image_url' for part in message['content'])
+                for request in requests for message in request['messages'])
+            if images and not _image_stage_enabled(config['processor_options']):
+                raise ValueError('native image content requires enabled prepare_image_stage')
             if not requests:
                 report.update(model_ready_before_source=None,
                     model_ready_before_source_reason='no eligible occurrences; native runtime and model were not started')
@@ -156,8 +173,11 @@ def main(argv=None):
         source = task.read_source()
         if task.model_request_count(source) > config['budget']['limit']:
             raise ValueError('the permanent native budget cannot cover the eligible source')
+        description = task.describe(source)
+        if description.get('input_modality') == 'image' and not _image_stage_enabled(config['processor_options']):
+            raise ValueError('native image content requires enabled prepare_image_stage')
         print(json.dumps(dict(status='checked_cpu_only', execution_enabled=False,
-            task=task.describe(source), model_calls=0), ensure_ascii=False, allow_nan=False))
+            task=description, model_calls=0), ensure_ascii=False, allow_nan=False))
         return 0
     if args.output_dir is None:
         parser.error('executing the native query requires --output-dir')

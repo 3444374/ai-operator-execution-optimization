@@ -14,7 +14,9 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
-from src.baselines.text.sembench_native_mmqa import MMQATextExtractTask
+from src.baselines.text.sembench_native_mmqa import (
+    MMQATextExtractTask, MMQATextFilterTask, mmqa_text_task,
+)
 from src.baselines.text.sembench_native_text import task_from_config
 
 
@@ -302,6 +304,249 @@ class NativeMMQAExtractTests(unittest.TestCase):
             print('MMQA full Extract and original scoring; LOTUS imports and network denied')
         ''')
         result = subprocess.run([sys.executable, '-c', script, str(root), self.official_checkout()],
+            text=True, capture_output=True, timeout=90, env=dict(os.environ))
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.assertIn('LOTUS imports and network denied', result.stdout)
+
+
+class NativeMMQATextFilterTests(unittest.TestCase):
+    queries = ('3a', '3b', '3c', '3d', '3e', '3f', '3g', '6a', '6b', '6c')
+
+    def inputs(self, *, empty=False):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        self.write(root/'lizzy_caplan_text_data.csv', ['title', 'text', 'unused_gold'], [] if empty else [
+            ('Outside Q4 Titles', 'extra movie must still be evaluated', 'HIDDEN-A'),
+            ('Mean Girls', 'same evidence «好»\nquoted "text"', 'HIDDEN-B'),
+            ('Mean Girls', 'same evidence «好»\nquoted "text"', 'HIDDEN-C'),
+            (None, 'no title', 'HIDDEN-D'), ('Orange County', None, 'HIDDEN-E'),
+        ])
+        self.write(root/'tampa_international_airport.csv', ['Airlines', 'Destinations', 'unused_gold'], [] if empty else [
+            ('Discover Airlines', 'Frankfurt, Munich', 'HIDDEN-A'),
+            ('Same Airline', 'Frankfurt, Berlin\nquoted "Paris"', 'HIDDEN-B'),
+            ('Same Airline', 'Frankfurt, Berlin\nquoted "Paris"', 'HIDDEN-C'),
+            (None, 'Frankfurt', 'HIDDEN-D'), ('British Airways', None, 'HIDDEN-E'),
+        ])
+        return root
+
+    @staticmethod
+    def write(path, columns, rows):
+        stream = io.StringIO(newline='')
+        writer = csv.writer(stream)
+        writer.writerow(columns)
+        writer.writerows(rows)
+        path.write_bytes(stream.getvalue().encode())
+
+    @staticmethod
+    def replies(task, source, values):
+        return [dict(call_id=row['call_id'], generated_text=json.dumps(dict(keep=value)))
+                for row, value in zip(task.requests(source), values, strict=True)]
+
+    def official_checkout(self):
+        checkout = os.environ.get('SEMLOOM_NATIVE_TEST_CHECKOUT')
+        if not checkout:
+            self.skipTest('bind the fixed public SemBench checkout for scorer/reference checks')
+        return checkout
+
+    def test_one_filter_family_and_concrete_factory_preserve_extract_and_query_identity(self):
+        with patch.object(Path, 'read_bytes', side_effect=AssertionError('constructor I/O')):
+            for query in self.queries:
+                task = mmqa_text_task('/not-read', 'Q'+query, 'filter-'+query)
+                self.assertIs(type(task), MMQATextFilterTask)
+                self.assertEqual(task.query, query)
+                self.assertEqual(task.execution_id, 'filter-'+query)
+                self.assertEqual(task.response_format, {'type': 'json_object'})
+                self.assertIsNone(task.prepare_evaluation())
+            for query in ['1', '4']:
+                self.assertEqual(mmqa_text_task('/not-read', query, 'extract'),
+                                 MMQATextExtractTask('/not-read', query, 'extract'))
+            with self.assertRaises(ValueError):
+                mmqa_text_task('/not-read', 'Q3z', 'unsupported')
+            with self.assertRaises(TypeError):
+                mmqa_text_task('/not-read', 'Q3a', 'foreign', ranking=None)
+
+    def test_all_rows_and_two_original_columns_feed_the_shared_independent_filter(self):
+        conditions = {}
+        for query in self.queries:
+            task = mmqa_text_task(self.inputs(), query, 'evidence-'+query)
+            source = task.read_source()
+            self.assertEqual(task.model_request_count(source), 5)
+            self.assertEqual(source.positions, tuple(range(5)))
+            self.assertEqual(len(source.raw_files), 1)
+            requests = task.requests(source)
+            self.assertEqual(len(requests), 5)
+            self.assertEqual(requests[1]['messages'], requests[2]['messages'])
+            self.assertNotEqual(requests[1]['call_id'], requests[2]['call_id'])
+            payload = json.loads(requests[1]['messages'][1]['content'])
+            columns = ('title', 'text') if query.startswith('3') else ('Airlines', 'Destinations')
+            self.assertEqual(set(payload['text']), set(columns))
+            self.assertNotIn('unused_gold', json.dumps(requests))
+            self.assertNotIn('HIDDEN-', json.dumps(requests))
+            self.assertEqual(json.loads(requests[4]['messages'][1]['content'])['text'][columns[1]], '')
+            with patch.object(Path, 'read_bytes', side_effect=AssertionError('count/metadata I/O')):
+                self.assertEqual(task.model_request_count(source), 5)
+                metadata = task.describe(source)
+            self.assertEqual(metadata['expected_model_calls'], 5)
+            self.assertEqual(metadata['model_columns'], list(columns))
+            self.assertFalse(metadata['author_original_semantic_method'])
+            conditions[query] = payload['condition']
+        self.assertEqual(len(set(conditions.values())), 10)
+        self.assertIn('romantic comedy', conditions['3f'])
+        self.assertIn('biographical comedy', conditions['3g'])
+        self.assertIn('Frankfurt', conditions['6a'])
+        self.assertIn('Germany', conditions['6b'])
+        self.assertIn('Europe', conditions['6c'])
+
+    def test_filter_keeps_source_indices_duplicates_nulls_and_empty_projection_dtype(self):
+        import pandas as pd
+
+        for query, first in [('3a', 'Mean Girls'), ('6a', 'Same Airline')]:
+            task = mmqa_text_task(self.inputs(), query, 'projection')
+            source = task.read_source()
+            result = task.finish(source, reversed(self.replies(task, source, [False, True, False, True, False])))
+            expected = pd.DataFrame({task.output_column: [first, float('nan')]}, index=[1, 3])
+            pd.testing.assert_frame_equal(result, expected)
+            self.assertEqual(task.encode_result(result)['index'], [1, 3])
+            self.assertEqual(task.encode_result(result)['data'][-1], ['NaN'])
+            all_rows = task.finish(source, self.replies(task, source, [True]*5))
+            self.assertEqual(len(all_rows), 5)
+            self.assertEqual(list(all_rows.iloc[1:3, 0]), [first, first])
+            all_false = task.finish(source, self.replies(task, source, [False]*5))
+            self.assertEqual(list(all_false.columns), [task.output_column])
+            self.assertEqual(all_false[task.output_column].dtype, source.frames[task.input_file][task.output_column].dtype)
+            empty = mmqa_text_task(self.inputs(empty=True), query, 'empty')
+            empty_source = empty.read_source()
+            self.assertEqual(empty.model_request_count(empty_source), 0)
+            self.assertEqual(empty.requests(empty_source), [])
+            empty_result = empty.finish(empty_source, [])
+            self.assertEqual(list(empty_result.columns), [task.output_column])
+            self.assertEqual(empty_result[task.output_column].dtype, empty_source.frames[empty.input_file][task.output_column].dtype)
+
+    def test_exactly_once_and_strict_boolean_rules_apply_to_both_source_shapes(self):
+        for query in ['3a', '6a']:
+            task = mmqa_text_task(self.inputs(), query, 'strict')
+            source = task.read_source()
+            complete = self.replies(task, source, [True]*5)
+            for rows in [complete[:-1], complete+[complete[0]],
+                         complete[:-1]+[dict(complete[-1], call_id='foreign')]]:
+                with self.subTest(query=query, rows=rows), self.assertRaises(ValueError):
+                    task.finish(source, rows)
+            for response in [None, 'True', 'not JSON', '{"keep":null}', '{"keep":1}',
+                             '{"keep":"true"}', '{"keep":true,"extra":0}', '{"keep":true,"keep":false}']:
+                with self.subTest(query=query, response=response), self.assertRaises(ValueError):
+                    task.finish(source, [dict(complete[0], generated_text=response)]+complete[1:])
+
+    def test_source_snapshot_missing_columns_and_missing_data_do_not_become_unsupported(self):
+        for query in ['3a', '6a']:
+            root = self.inputs()
+            task = mmqa_text_task(root, query, 'snapshot')
+            source = task.read_source()
+            path = root/task.input_file
+            path.write_bytes(path.read_bytes()+b'\n')
+            with self.assertRaisesRegex(ValueError, 'changed'):
+                task.verify_source(source)
+            task.verify_source(task.read_source())
+            self.write(path, [task.columns[0]], [('value',)])
+            with self.assertRaisesRegex(ValueError, 'original source columns'):
+                task.read_source()
+            path.unlink()
+            with self.assertRaises(FileNotFoundError):
+                task.read_source()
+
+    def test_each_variant_uses_its_original_gold_without_deduplicating_or_clamping(self):
+        from src.baselines.text.sembench_mmqa import evaluate_original
+
+        quality = {}
+        for query in self.queries:
+            task = mmqa_text_task(self.inputs(), query, 'gold-'+query)
+            source = task.read_source()
+            decisions = [False, True, False, False, False] if query.startswith('3') else [True, False, False, False, False]
+            result = task.finish(source, self.replies(task, source, decisions))
+            quality[query] = task.evaluate(source, result, checkout=self.official_checkout())
+            self.assertEqual(quality[query], evaluate_original(self.official_checkout(), query, result))
+        self.assertEqual(quality['3a']['original_metric']['precision'], 1.0)
+        self.assertEqual(quality['3b']['original_metric']['precision'], 0.0)
+        root = self.inputs()
+        self.write(root/'lizzy_caplan_text_data.csv', ['title', 'text'],
+                   [('Now You See Me 2', 'one'), ('Now You See Me 2', 'two')])
+        task = mmqa_text_task(root, '3e', 'duplicates')
+        source = task.read_source()
+        result = task.finish(source, self.replies(task, source, [True, True]))
+        self.assertEqual(len(result), 2)
+        self.assertAlmostEqual(task.evaluate(source, result, checkout=self.official_checkout())['original_metric']['f1_score'], 4/3)
+
+    def test_all_ten_complete_original_functions_match_sdk_software_filter_answers(self):
+        import importlib.util
+        from contextlib import ExitStack, redirect_stdout
+        import socket
+
+        checkout = self.official_checkout()
+        if any(importlib.util.find_spec(name) is None for name in ('lotus', 'litellm')):
+            self.skipTest('real LOTUS SDK required only for the software original-query reference')
+        with ExitStack() as scope:
+            scope.enter_context(patch.dict(os.environ, dict(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
+                HF_DATASETS_OFFLINE='1', LITELLM_LOCAL_MODEL_COST_MAP='True', CUDA_VISIBLE_DEVICES='')))
+            scope.enter_context(patch.object(socket.socket, 'connect', side_effect=AssertionError('network forbidden')))
+            import lotus
+            import pandas as pd
+            from tests.experiments.test_sembench_text_original import OriginalSemBenchTextTests
+            from src.serving.backends.vllm_protocol import GenerationSpec
+            from src.serving.backends.vllm_engine import VllmEngine
+            from src.serving.backends.vllm_async_engine import VllmAsyncEngine
+
+            for engine in (VllmEngine, VllmAsyncEngine):
+                scope.enter_context(patch.object(engine, '__init__', side_effect=AssertionError('model forbidden')))
+            scope.enter_context(lotus.settings.context(enable_cache=False))
+            original = OriginalSemBenchTextTests()
+            original.generation = GenerationSpec(max_tokens=32, temperature=0, seed=0)
+            for case in ['zero-source', 'all-false', 'all-true', 'mixed-index']:
+                root = self.inputs(empty=case == 'zero-source')
+                original.data = root
+                for query in self.queries:
+                    with self.subTest(case=case, query=query), redirect_stdout(io.StringIO()):
+                        reference = original._query('mmqa', query)
+                        count = reference.operation.describe()['expected_model_calls']
+                        values = ([False]*count if case == 'all-false' else [True]*count if case == 'all-true'
+                                  else [i % 3 != 0 for i in range(count)])
+                        expected, batches = original._reference(reference, [str(value) for value in values])
+                        self.assertEqual(sum(len(messages) for messages, _ in batches), count)
+                        task = mmqa_text_task(root, query, 'reference-'+query)
+                        source = task.read_source()
+                        self.assertEqual(task.model_request_count(source), count)
+                        self.assertEqual(set(reference.operation.describe()['model_columns']), set(task.columns))
+                        actual = task.finish(source, reversed(self.replies(task, source, values)))
+                        pd.testing.assert_frame_equal(actual, expected)
+
+    def test_fresh_public_factory_all_variants_and_real_scores_need_no_lotus(self):
+        script = textwrap.dedent('''
+            import importlib.abc,json,socket,sys
+            class NoLotus(importlib.abc.MetaPathFinder):
+                def find_spec(self,fullname,path=None,target=None):
+                    blocked=('lotus','semantic_methods.lotus','src.semantic_methods.lotus',
+                        'src.baselines.text.sembench_text','src.baselines.text.sembench_prepared',
+                        'src.experiments','tests')
+                    if any(fullname==name or fullname.startswith(name+'.') for name in blocked):
+                        raise AssertionError('forbidden runtime dependency: '+fullname)
+            sys.meta_path.insert(0,NoLotus())
+            def denied(*args,**kwargs):raise AssertionError('network forbidden')
+            socket.socket.connect=denied
+            socket.create_connection=denied
+            from src.baselines.text.sembench_native_text import task_from_config
+            from src.baselines.text.sembench_source import verify_checkout
+            verify_checkout(sys.argv[2])
+            for query in ['3a','3b','3c','3d','3e','3f','3g','6a','6b','6c']:
+                task=task_from_config(dict(scenario='mmqa',data_dir=sys.argv[1],query=query,query_id='fresh-'+query))
+                source=task.read_source()
+                requests=task.requests(source)
+                assert len(requests)==task.model_request_count(source)==5
+                result=task.finish(source,[dict(call_id=row['call_id'],generated_text='{"keep":true}') for row in requests])
+                json.dumps(task.encode_result(result),allow_nan=False)
+                assert task.evaluate(source,result,checkout=sys.argv[2],evaluation=task.prepare_evaluation())['sembench_commit'].startswith('c814e380')
+                task.verify_source(source)
+            print('ten full MMQA Filter variants and original scores; LOTUS imports and network denied')
+        ''')
+        result = subprocess.run([sys.executable, '-c', script, str(self.inputs()), self.official_checkout()],
             text=True, capture_output=True, timeout=90, env=dict(os.environ))
         self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
         self.assertIn('LOTUS imports and network denied', result.stdout)

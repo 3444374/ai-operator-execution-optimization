@@ -1,7 +1,7 @@
-"""Independent MMQA text Extract tasks with the original relational sinks.
+"""Independent MMQA text Filter and Extract tasks with original relation sinks.
 
 The JSON prompt/parser is a project engineering control, not LOTUS semantics.
-Its output schema accepts one string or null. This project's explicit value
+The Extract schema accepts one string or null. This project's explicit value
 materialization turns null into the string 'None'; the resulting ordinary
 relations match the fixed reference, including its empty-frontier errors.
 The caller owns native inference, scheduling, budgets, timing and cleanup.
@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 
 from src.infrastructure.private_artifacts import json_metric
-from .sembench_native_text import COMPARISON_IDENTITY, _unique_object
+from .sembench_native_text import COMPARISON_IDENTITY, PROMPT_PROFILE, TextFilterTask, _unique_object
 from .sembench_source import SEMBENCH_COMMIT
 
 
@@ -187,3 +187,127 @@ class MMQATextExtractTask:
             empty_behavior='original missing extracted/expanded column KeyError is retained',
             sembench_commit=SEMBENCH_COMMIT, native_scheduling_owner='selected framework',
             author_original_semantic_method=False)
+
+
+_GENRE_FILTERS = {
+    '3a': 'comedy', '3b': 'science fiction', '3c': 'romance', '3d': 'horror',
+    '3e': 'heist', '3f': 'romantic comedy', '3g': 'biographical comedy',
+}
+_DESTINATION_FILTERS = {'6a': 'Frankfurt', '6b': 'Germany', '6c': 'Europe'}
+
+
+@dataclass(frozen=True)
+class MMQATextFilterTask:
+    """One scalar Filter family over all original Q3/Q6 source occurrences."""
+    data_dir: object
+    query: object = 'Q3a'
+    execution_id: str = 'native-mmqa-filter'
+
+    def __post_init__(self):
+        query = str(self.query).lower().removeprefix('q')
+        if query not in _GENRE_FILTERS and query not in _DESTINATION_FILTERS:
+            raise ValueError('the independent MMQA text Filter bindings are Q3a–Q3g and Q6a–Q6c')
+        if type(self.execution_id) is not str or not self.execution_id.strip():
+            raise ValueError('each execution requires a nonempty occurrence identity')
+        object.__setattr__(self, 'query', query)
+        object.__setattr__(self, 'data_dir', Path(self.data_dir))
+
+    @property
+    def input_file(self):
+        return ('lizzy_caplan_text_data.csv' if self.query in _GENRE_FILTERS else
+                'tampa_international_airport.csv')
+
+    @property
+    def columns(self):
+        return ('title', 'text') if self.query in _GENRE_FILTERS else ('Airlines', 'Destinations')
+
+    @property
+    def output_column(self):
+        return 'title' if self.query in _GENRE_FILTERS else 'Airlines'
+
+    @property
+    def condition(self):
+        if self.query in _GENRE_FILTERS:
+            return 'The movie described by the supplied title and text belongs to the '+_GENRE_FILTERS[self.query]+' genre.'
+        return 'The named airline has a listed flight destination in '+_DESTINATION_FILTERS[self.query]+'.'
+
+    @property
+    def response_format(self):
+        return {'type': 'json_object'}
+
+    def read_source(self):
+        import pandas as pd
+
+        raw = (self.data_dir/self.input_file).read_bytes()
+        frame = pd.read_csv(io.BytesIO(raw), sep=',', quotechar='"')
+        if not set(self.columns) <= set(frame.columns):
+            raise ValueError('MMQA Filter requires original source columns: '+', '.join(self.columns))
+        return MMQATextSource({self.input_file: raw}, {self.input_file: frame}, tuple(range(len(frame))))
+
+    def model_request_count(self, source):
+        return len(source.positions)
+
+    def _call_ids(self, source):
+        return [f'{self.execution_id}-row-{position}' for position in source.positions]
+
+    def requests(self, source):
+        import pandas as pd
+
+        predicate = TextFilterTask(self.condition)
+        requests = []
+        for call_id, position in zip(self._call_ids(source), source.positions, strict=True):
+            row = source.frames[self.input_file].iloc[position]
+            evidence = {column: '' if pd.isna(row[column]) else str(row[column]) for column in self.columns}
+            requests.append(dict(call_id=call_id, messages=predicate.messages(evidence)))
+        return requests
+
+    def finish(self, source, predictions):
+        decisions = TextFilterTask(self.condition).decisions(self._call_ids(source), predictions)
+        kept = [position for position, keep in zip(source.positions, decisions, strict=True) if keep]
+        return source.frames[self.input_file].iloc[kept][[self.output_column]]
+
+    def prepare_evaluation(self):
+        return None
+
+    def evaluate(self, source, result, *, checkout, evaluation=None):
+        from .sembench_mmqa import evaluate_original
+
+        return evaluate_original(checkout, self.query, result)
+
+    @staticmethod
+    def encode_result(result):
+        return json_metric(result.to_dict(orient='split'))
+
+    def verify_source(self, source):
+        for name, raw in source.raw_files.items():
+            if (self.data_dir/name).read_bytes() != raw:
+                raise ValueError('MMQA Filter input changed after its execution snapshot: '+name)
+
+    def describe(self, source):
+        count = self.model_request_count(source)
+        return dict(schema='semloom.native_mmqa_text_filter_task.v1', scenario='mmqa', query='Q'+self.query,
+            comparison_identity=COMPARISON_IDENTITY, prompt_profile=PROMPT_PROFILE,
+            condition=self.condition, response_format=self.response_format,
+            answer_parser='one JSON object, unique keep key, Boolean value; invalid responses fail',
+            source={name:dict(sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw),
+                rows=len(source.frames[name]), columns=list(source.frames[name].columns))
+                for name, raw in source.raw_files.items()},
+            logical_model_requests=count, expected_model_calls=count,
+            source_selection='all source CSV rows; no pre-filter or result limit',
+            model_columns=list(self.columns), output_column=self.output_column,
+            input_policy='missing model-input cells become empty strings in evidence; source result values are unchanged',
+            relation_postprocessing='complete Boolean Filter then original column projection; preserve index, dtype, duplicates and nulls',
+            label_scope='each original variant query JSON is used only after the complete sink',
+            empty_behavior='empty original column projection with source dtype and index',
+            sembench_commit=SEMBENCH_COMMIT, native_scheduling_owner='selected framework',
+            author_original_semantic_method=False)
+
+
+def mmqa_text_task(data_dir, query, execution_id):
+    """Select an implemented MMQA operator family without owning execution."""
+    query = str(query).lower().removeprefix('q')
+    if query in ('1', '4'):
+        return MMQATextExtractTask(data_dir, query, execution_id)
+    if query in _GENRE_FILTERS or query in _DESTINATION_FILTERS:
+        return MMQATextFilterTask(data_dir, query, execution_id)
+    raise ValueError('independent MMQA text tasks are Q1, Q3a–Q3g, Q4 and Q6a–Q6c')

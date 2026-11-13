@@ -59,11 +59,23 @@ def check(config):
     task = configuration(config)
     task.prepare_evaluation()
     source = task.read_source()
-    if task.model_request_count(source) > config['max_model_calls']:
+    required = task.model_request_count(source)
+    if required > config['max_model_calls']:
         raise ValueError('the finite native budget cannot cover the eligible source')
     description = task.describe(source)
+    if required and description.get('input_modality') == 'image':
+        raise ValueError('the local Daft string prompt profile does not support image content')
     return dict(schema=SCHEMA, status='checked_cpu_only', task=description,
                 execution_enabled=False, model_calls=0, target_native_model_qualified=False)
+
+
+def _render(requests, tokenizer):
+    if any(isinstance(message['content'], list)
+           and any(part.get('type') != 'text' for part in message['content'])
+           for request in requests for message in request['messages']):
+        raise ValueError('the local Daft string prompt profile cannot preserve non-text message parts')
+    return [dict(call_id=row['call_id'], prompt=tokenizer.apply_chat_template(
+        row['messages'], tokenize=False, add_generation_prompt=True)) for row in requests]
 
 
 def run_query(config, directory, *, model_python, tokenizer=None, supervise=supervised_run, monitor=None):
@@ -117,8 +129,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
                 raise TimeoutError('independent Daft complete sink exceeded its query allowance')
 
         if requests:
-            prepared = [dict(call_id=row['call_id'], prompt=tokenizer.apply_chat_template(
-                row['messages'], tokenize=False, add_generation_prompt=True)) for row in requests]
+            prepared = _render(requests, tokenizer)
             packet, worker_path = directory / 'prepared-prompts.json', directory / 'worker-config.json'
             write_private_json(packet, dict(schema='semloom.native_daft_prompts.v1', requests=prepared))
             worker = {name: deepcopy(config[name]) for name in

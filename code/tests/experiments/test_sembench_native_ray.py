@@ -1,8 +1,9 @@
 """Native Ray API fixtures only: no Ray runtime, model or external service."""
 
 import json
+import base64
 from contextlib import redirect_stdout
-from io import StringIO
+from io import BytesIO, StringIO
 import os
 from pathlib import Path
 import subprocess
@@ -89,6 +90,26 @@ class RunnerTests(unittest.TestCase):
         pd.DataFrame(dict(title=['Mean Girls', 'Ignored', 'Allied'], text=['first genres', 'unused', 'second genres'])).to_csv(
             self.root / 'lizzy_caplan_text_data.csv', index=False)
         return self.root
+
+    def animals_source(self):
+        from PIL import Image
+        from src.baselines.image import sembench_animals as animals
+        from src.infrastructure.private_artifacts import content_digest
+
+        rows = []
+        for index, color in enumerate(('red', 'blue')):
+            path = self.root / ('image-' + str(index) + '.png')
+            Image.new('RGB', (3, 2), color).save(path)
+            rows.append(dict(row_id='animals-row-' + str(index), ImagePath=str(path),
+                Species='ZEBRA' if index == 0 else 'IMPALA', City='City' + str(index),
+                StationID='Station' + str(index), image=animals.image_identity(path)))
+        value = dict(schema=animals.MANIFEST_SCHEMA, role='software_fixture',
+            sembench_commit=animals.SEMBENCH_COMMIT, rows=rows)
+        value['sha256'] = content_digest(value)
+        manifest = self.root / 'animals.json'
+        manifest.write_text(json.dumps(value))
+        return dict(scenario='animals', manifest=str(manifest), manifest_digest=value['sha256'],
+            query='Q1', query_id='animals', sembench_checkout=os.environ['SEMBENCH_CHECKOUT'])
 
     def test_native_processor_and_complete_sink_before_close(self):
         with recorded_processor({'0': '{"keep":true}', '1': '{"keep":false}'}) as state:
@@ -386,6 +407,85 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(self.ledger.snapshot(), before)
 
     @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_Animals_PNG_content_reaches_the_native_processor_and_original_sink(self):
+        from PIL import Image
+        from src.baselines.text.sembench_native_text import task_from_config
+
+        settings = self.animals_source()
+        for index, stage in enumerate((True, {}, {'enabled': True})):
+            with self.subTest(stage=stage):
+                root = self.root / ('enabled-' + str(index))
+                root.mkdir()
+                ledger = CellBudgetLedger.create(root / 'budget.sqlite',
+                    AttemptBudget('images-' + str(index), 2), deadline_utc=time.time() + 120)
+                ledger.reserve_unit('query', 2)
+                config = dict(self.config, processor_options=dict(prepare_image_stage=stage),
+                    budget=dict(path=str(ledger.path), id='images-' + str(index), limit=2, unit_id='query'))
+                with recorded_processor(lambda row, request: json.dumps({'keep': row['call_id'].endswith('-0')})) as state:
+                    report = run_query(task_from_config(settings), config, root / 'query', checkout=settings['sembench_checkout'])
+                self.assertEqual(report['status'], 'completed')
+                self.assertEqual(report['result']['data'], [[1]])
+                self.assertEqual(report['quality']['original_metric']['absolute_error'], 0)
+                self.assertEqual(report['physical_attempts_reserved'], 2)
+                original = json.loads((root / 'query/requests.json').read_text())
+                for row, saved in zip(state.requests, original, strict=True):
+                    self.assertEqual(row['messages'], saved['messages'])
+                    parts = row['messages'][1]['content']
+                    raw = base64.b64decode(parts[1]['image_url']['url'].split(',', 1)[1])
+                    self.assertTrue(raw.startswith(b'\x89PNG\r\n\x1a\n'))
+                    with Image.open(BytesIO(raw)) as image, Image.open(self.root / ('image-' + row['call_id'][-1] + '.png')) as source:
+                        self.assertEqual(image.size, (3, 2))
+                        self.assertEqual(image.convert('RGB').tobytes(), source.convert('RGB').tobytes())
+                    self.assertNotIn('Species', json.dumps(row['messages']))
+                self.assertEqual(state.configs[0]['prepare_image_stage'], stage)
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_Animals_missing_or_disabled_image_stage_stops_before_native_start(self):
+        from src.baselines.text.sembench_native_text import task_from_config
+
+        settings = self.animals_source()
+        for index, options in enumerate(({}, {'prepare_image_stage': False}, {'prepare_image_stage': {'enabled': False}})):
+            with self.subTest(options=options):
+                root = self.root / ('disabled-' + str(index))
+                root.mkdir()
+                ledger = CellBudgetLedger.create(root / 'budget.sqlite',
+                    AttemptBudget('disabled-' + str(index), 2), deadline_utc=time.time() + 120)
+                ledger.reserve_unit('query', 2)
+                config = dict(self.config, processor_options=options,
+                    budget=dict(path=str(ledger.path), id='disabled-' + str(index), limit=2, unit_id='query'))
+                with recorded_processor({}) as state:
+                    with self.assertRaisesRegex(ValueError, 'prepare_image_stage') as raised:
+                        run_query(task_from_config(settings), config, root / 'query', checkout=settings['sembench_checkout'])
+                self.assertEqual(state.events, [])
+                self.assertEqual(raised.exception.query_report['physical_attempts_reserved'], 0)
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_CLI_checks_known_image_stage_without_requests_budget_or_output(self):
+        from src.experiments import sembench_native_ray as entry
+        from src.baselines.text import sembench_native_text as tasks
+
+        settings = self.animals_source()
+        task = tasks.task_from_config(settings)
+        base = dict(self.config, schema='semloom.sembench_native_ray.v1', **settings)
+        path, output_dir = self.root / 'image-config.json', self.root / 'not-created'
+        before = self.ledger.snapshot()
+        with patch.object(tasks, 'task_from_config', return_value=task), \
+                patch.object(type(task), 'requests', side_effect=AssertionError('check must not expand requests')) as requests, \
+                patch.object(entry, 'run_query', side_effect=AssertionError('native execution forbidden')):
+            for stage in (True, {}):
+                path.write_text(json.dumps(dict(base, processor_options=dict(prepare_image_stage=stage))))
+                with self.subTest(stage=stage), redirect_stdout(StringIO()) as output:
+                    self.assertEqual(entry.main(['check', '--config', str(path), '--output-dir', str(output_dir)]), 0)
+                self.assertFalse(json.loads(output.getvalue())['execution_enabled'])
+            for options in ({}, {'prepare_image_stage': False}, {'prepare_image_stage': {'enabled': False}}):
+                path.write_text(json.dumps(dict(base, processor_options=options)))
+                with self.subTest(options=options), self.assertRaisesRegex(ValueError, 'prepare_image_stage'):
+                    entry.main(['check', '--config', str(path), '--output-dir', str(output_dir)])
+        requests.assert_not_called()
+        self.assertEqual(self.ledger.snapshot(), before)
+        self.assertFalse(output_dir.exists())
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
     def test_CLI_checks_without_claiming_budget_or_starting_native_execution(self):
         from src.experiments import sembench_native_ray as entry
 
@@ -481,6 +581,7 @@ if os.environ.get('SEMBENCH_CHECKOUT'):
     suite.addTest(RunnerTests('test_Q10_scores_all_reviews_then_groups_movies_before_official_evaluation'))
     suite.addTest(RunnerTests('test_join_tasks_predict_all_pairs_before_original_ID_filter_and_sink'))
     suite.addTest(RunnerTests('test_MMQA_extract_preserves_Series_and_table_sinks_including_close_failure'))
+    suite.addTest(RunnerTests('test_Animals_PNG_content_reaches_the_native_processor_and_original_sink'))
 result = unittest.TextTestRunner().run(suite)
 assert not any(forbidden(name) for name in sys.modules)
 raise SystemExit(not result.wasSuccessful())
