@@ -1,4 +1,4 @@
-"""Independent E-Commerce scalar text tasks with original relation sinks.
+"""Independent E-Commerce text tasks with original relation sinks.
 
 The strict JSON prompts/parsers are project engineering controls, not LOTUS
 semantics. All nested descriptors remain evidence; gold labels never enter
@@ -19,6 +19,7 @@ from .sembench_source import SEMBENCH_COMMIT
 
 
 _BACKPACK = TextFilterTask('The described product is a backpack made by Reebok.')
+_SAME_PRODUCT = TextFilterTask('Both described products belong to the same product category and the same brand.')
 _CATEGORY_SYSTEM = (
     'Classify the product using only the supplied title and description. Choose Dress '
     '(a one-piece garment hanging from the torso over the legs), Bottomwear (clothing '
@@ -48,15 +49,20 @@ class EcommerceGoldSource:
 
 @dataclass(frozen=True)
 class EcommerceTextTask:
-    """Original Q1 Filter, Q3 Extract and Q5 Map relation contracts."""
+    """Q1 Filter, Q3 Extract, Q5 Map and Q7 exact pair relation contracts.
+
+    Q7 is an ordered Cartesian JSON predicate engineering control, not the
+    author's Join algorithm. Check its N² request count against a finite
+    allowance before constructing messages; the native framework owns inference.
+    """
     data_dir: object
     query: object = 'Q1'
     execution_id: str = 'native-ecommerce-text'
 
     def __post_init__(self):
         query = str(self.query).lower().removeprefix('q')
-        if query not in ('1', '3', '5'):
-            raise ValueError('the independent E-Commerce scalar text bindings are Q1, Q3 and Q5')
+        if query not in ('1', '3', '5', '7'):
+            raise ValueError('the independent E-Commerce text bindings are Q1, Q3, Q5 and Q7')
         if type(self.execution_id) is not str or not self.execution_id.strip():
             raise ValueError('each execution requires a nonempty occurrence identity')
         object.__setattr__(self, 'query', query)
@@ -81,17 +87,34 @@ class EcommerceTextTask:
             relation = frame[frame.apply(lambda row: row['masterCategory']['typeName'] == 'Apparel'
                 and row['subCategory']['typeName'] not in
                 ['Saree', 'Apparel Set', 'Loungewear and Nightwear'], axis=1)]
+        elif self.query == '7':
+            relation = frame[frame['price'] <= 500]
         return EcommerceTextSource(raw, frame, relation)
 
     def model_request_count(self, source):
-        return len(source.relation)
+        return len(source.relation)**2 if self.query == '7' else len(source.relation)
+
+    @staticmethod
+    def _pairs(source):
+        return ((left, right) for left in range(len(source.relation)) for right in range(len(source.relation)))
 
     def _call_ids(self, source):
+        if self.query == '7':
+            return [f'{self.execution_id}-left-{left}-right-{right}' for left, right in self._pairs(source)]
         return [f'{self.execution_id}-row-{position}' for position in range(len(source.relation))]
 
     def requests(self, source):
         import pandas as pd
 
+        if self.query == '7':
+            evidence = []
+            for _, row in source.relation.iterrows():
+                title, descriptor = row['productDisplayName'], row['productDescriptors']
+                evidence.append(dict(productDisplayName='' if pd.isna(title) else str(title),
+                                     productDescriptors='' if descriptor is None else str(descriptor)))
+            return [dict(call_id=call_id, messages=_SAME_PRODUCT.messages(
+                dict(left=evidence[left], right=evidence[right])))
+                for call_id, (left, right) in zip(self._call_ids(source), self._pairs(source), strict=True)]
         requests = []
         for call_id, (_, row) in zip(self._call_ids(source), source.relation.iterrows(), strict=True):
             # Preserve the complete nested descriptor as evidence, rather than
@@ -118,6 +141,8 @@ class EcommerceTextTask:
 
     def finish(self, source, predictions):
         call_ids = self._call_ids(source)
+        if self.query == '7':
+            return self._finish_pairs(source, _SAME_PRODUCT.decisions(call_ids, predictions))
         if self.query == '1':
             decisions = _BACKPACK.decisions(call_ids, predictions)
             return source.relation.iloc[[position for position, keep in enumerate(decisions) if keep]]['id']
@@ -142,12 +167,35 @@ class EcommerceTextTask:
             result['category'] = [values[key] for key in call_ids]
         return result[['id', 'category']]
 
+    @staticmethod
+    def _finish_pairs(source, decisions):
+        import pandas as pd
+
+        labels = source.relation.index
+        matches = [(labels[left], labels[right])
+                   for (left, right), keep in zip(EcommerceTextTask._pairs(source), decisions, strict=True) if keep]
+        left, right = source.relation.copy(), source.relation.copy()
+        left['_left_id'], right['_right_id'] = labels, labels
+        for column in left.columns:
+            if column in right.columns:
+                left.rename(columns={column: column+':left'}, inplace=True)
+                right.rename(columns={column: column+':right'}, inplace=True)
+        # Preserve the original label-based ordinary joins. Duplicate index
+        # labels may expand one True pair beyond its physical model occurrence.
+        matched = pd.DataFrame(matches, columns=['_left_id', '_right_id'])
+        joined = (left.join(matched.set_index('_left_id'), how='right', on='_left_id')
+                  .join(right.set_index('_right_id'), how='left', on='_right_id')
+                  .drop(columns=['_left_id', '_right_id']).reset_index(drop=True))
+        joined['id'] = joined['id:left'].astype('str')+'-'+joined['id:right'].astype('str')
+        return joined['id']
+
     def prepare_evaluation(self):
         import pandas as pd
 
         raw = (self.data_dir/TEXT_FILE).read_bytes()
         frame = pd.read_parquet(io.BytesIO(raw))
-        required = ({'id', 'articleType', 'brandName'} if self.query == '1' else
+        required = ({'id', 'price', 'articleType', 'brandName'} if self.query == '7' else
+                    {'id', 'articleType', 'brandName'} if self.query == '1' else
                     {'id', 'brandName'} if self.query == '3' else {'id', 'masterCategory', 'subCategory'})
         if not required <= set(frame.columns):
             raise ValueError('E-Commerce evaluation requires original gold columns: '+', '.join(sorted(required)))
@@ -188,22 +236,29 @@ class EcommerceTextTask:
         count = self.model_request_count(source)
         return dict(schema='semloom.native_ecommerce_text_task.v1', scenario='ecomm', query='Q'+self.query,
             input_modality='text', comparison_identity=COMPARISON_IDENTITY,
-            prompt_profile=PROMPT_PROFILE if self.query == '1' else 'semloom.native_ecommerce.json_category.v1',
+            prompt_profile=('semloom.native_ecommerce.exact_pair.json_bool.v1' if self.query == '7' else
+                            PROMPT_PROFILE if self.query == '1' else 'semloom.native_ecommerce.json_category.v1'),
             response_format=self.response_format,
             source={TEXT_FILE:dict(sha256=hashlib.sha256(source.raw_bytes).hexdigest(),
                 bytes=len(source.raw_bytes), rows=len(source.frame), columns=list(source.frame.columns))},
-            relation_rows=count, logical_model_requests=count, expected_model_calls=count,
+            relation_rows=len(source.relation), logical_model_requests=count, expected_model_calls=count,
             model_columns=['productDisplayName', 'productDescriptors'],
             input_policy='title scalar missing becomes empty text; entire descriptor string retained; no label or ID input',
-            value_materialization="mapping strings unchanged; JSON null becomes the string 'None'; invalid JSON fails",
-            source_selection=('original nested Apparel/subCategory predicate; no result limit' if self.query == '5'
+            value_materialization=('one strict JSON keep Boolean per ordered pair; invalid replies fail' if self.query == '7' else
+                "mapping strings unchanged; JSON null becomes the string 'None'; invalid JSON fails"),
+            source_selection=('original price <= 500 predicate before full ordered Cartesian pairs' if self.query == '7' else
+                              'original nested Apparel/subCategory predicate; no result limit' if self.query == '5'
                               else 'all original Parquet occurrences; no result limit'),
-            relation_postprocessing=('filtered id Series with original index' if self.query == '1' else
+            relation_postprocessing=('True pair index labels join back to both source relations; reset index; concatenate string IDs' if self.query == '7' else
+                'filtered id Series with original index' if self.query == '1' else
                 'original index-label Extract assignment then id/category projection' if self.query == '3' else
                 'original row-wise Map assignment then id/category projection'),
-            empty_behavior='original empty Filter/Map and empty Extract missing-column error retained',
+            empty_behavior=('original empty id Series after ordinary pair joins' if self.query == '7' else
+                            'original empty Filter/Map and empty Extract missing-column error retained'),
             label_scope='frozen same-byte Parquet; original TOML gold SQL and metric after full sink',
-            original_metric='f1-score' if self.query == '1' else 'adjusted-rand-index',
+            original_metric='f1-score' if self.query in ('1', '7') else 'adjusted-rand-index',
+            **(dict(pair_policy='all N² ordered occurrences including self and repeated IDs; both title and whole descriptor supplied; no cascade or approximate join')
+               if self.query == '7' else {}),
             sembench_commit=SEMBENCH_COMMIT, native_scheduling_owner='selected framework',
             author_original_semantic_method=False)
 

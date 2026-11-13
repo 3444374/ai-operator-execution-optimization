@@ -41,7 +41,7 @@ class NativeEcommerceTextTests(unittest.TestCase):
 
     @staticmethod
     def predictions(task, source, values):
-        key = 'keep' if task.query == '1' else 'category'
+        key = 'keep' if task.query in ('1', '7') else 'category'
         return [dict(call_id=row['call_id'], generated_text=json.dumps({key: value}))
                 for row, value in zip(task.requests(source), values, strict=True)]
 
@@ -53,11 +53,11 @@ class NativeEcommerceTextTests(unittest.TestCase):
 
     def test_construct_without_io_and_only_implemented_scalar_families(self):
         with patch.object(Path, 'read_bytes', side_effect=AssertionError('constructor I/O')):
-            for query in ('Q1', 'Q3', 'Q5'):
+            for query in ('Q1', 'Q3', 'Q5', 'Q7'):
                 task = ecommerce_text_task('/not-read', query, 'ecomm-'+query)
                 self.assertIs(type(task), EcommerceTextTask)
                 self.assertEqual(task.query, query[1:])
-            for query in ('Q2', 'Q7', 'Q12', True):
+            for query in ('Q2', 'Q12', True):
                 with self.subTest(query=query), self.assertRaises(ValueError):
                     EcommerceTextTask('/not-read', query)
 
@@ -81,6 +81,191 @@ class NativeEcommerceTextTests(unittest.TestCase):
                     expected[0] = expected[2]
                 self.assertEqual(result['category'].tolist(), expected)
                 self.assertEqual(result.columns.tolist(), ['id', 'category'])
+
+    def test_q7_counts_all_ordered_pairs_before_requests_and_retains_label_join_expansion(self):
+        task = EcommerceTextTask(self.inputs(), 'Q7', 'pairs')
+        source = task.read_source()
+        self.assertEqual(source.relation.index.tolist(), [9, 2, 9])
+        with patch.object(EcommerceTextTask, '_call_ids', side_effect=AssertionError('count allocated requests')):
+            self.assertEqual(task.model_request_count(source), 9)
+        requests = task.requests(source)
+        self.assertEqual(len(requests), 9)
+        self.assertEqual(len({row['call_id'] for row in requests}), 9)
+        self.assertEqual(requests[0]['call_id'], 'pairs-left-0-right-0')
+        self.assertEqual(requests[-1]['call_id'], 'pairs-left-2-right-2')
+        predictions = [dict(call_id=row['call_id'], generated_text='{"keep":true}') for row in requests]
+        result = task.finish(source, reversed(predictions))
+        self.assertEqual(len(result), 25)
+        self.assertEqual(result.index.tolist(), list(range(25)))
+        self.assertEqual(result.name, 'id')
+
+    def test_q7_pairs_keep_self_repeated_ids_and_complete_evidence_only(self):
+        task = EcommerceTextTask(self.inputs(duplicate_ids=True), 'Q7', 'evidence')
+        source = task.read_source()
+        requests = task.requests(source)
+        for ordinal, request in enumerate(requests):
+            payload = json.loads(request['messages'][1]['content'])
+            self.assertEqual(set(payload), {'condition', 'text'})
+            self.assertEqual(set(payload['text']), {'left', 'right'})
+            for side, position in [('left', ordinal//3), ('right', ordinal % 3)]:
+                evidence = payload['text'][side]
+                self.assertEqual(set(evidence), {'productDisplayName', 'productDescriptors'})
+                self.assertIn('keep whole object', evidence['productDescriptors'])
+                title = source.relation.iloc[position]['productDisplayName']
+                self.assertEqual(evidence['productDisplayName'], '' if title is None else title)
+        result = task.finish(source, self.predictions(task, source, [True]+[False]*8))
+        self.assertIn('11-11', result.tolist())
+        metadata = task.describe(source)
+        self.assertEqual(metadata['relation_rows'], 3)
+        self.assertEqual(metadata['expected_model_calls'], 9)
+        self.assertFalse(metadata['author_original_semantic_method'])
+        self.assertIn('whole descriptor', metadata['pair_policy'])
+
+    def test_q7_empty_series_bad_json_and_occurrence_errors_are_preserved(self):
+        import pandas as pd
+
+        task = EcommerceTextTask(self.inputs(), 'Q7')
+        source = task.read_source()
+        rows = self.predictions(task, source, [False]*9)
+        empty = task.finish(source, reversed(rows))
+        pd.testing.assert_series_equal(empty, pd.Series([], name='id', dtype=object))
+        for altered in (rows[:-1], rows+[rows[0]], rows[:-1]+[dict(rows[-1], call_id='foreign')]):
+            with self.subTest(rows=altered), self.assertRaises(ValueError):
+                task.finish(source, altered)
+        for answer in ('not JSON', '{}', '{"keep":null}', '{"keep":1}', '{"keep":"true"}',
+                       '{"keep":true,"keep":false}', '{"keep":false,"extra":1}'):
+            with self.subTest(answer=answer), self.assertRaises(ValueError):
+                task.finish(source, [dict(rows[0], generated_text=answer)]+rows[1:])
+        source.frame.assign(price=700).to_parquet(task.data_dir/'styles_details.parquet')
+        source = task.read_source()
+        self.assertEqual(task.model_request_count(source), 0)
+        self.assertEqual(task.requests(source), [])
+        pd.testing.assert_series_equal(task.finish(source, []), empty)
+
+    def test_q7_string_id_conversion_retains_numeric_and_null_values(self):
+        import pandas as pd
+
+        task = EcommerceTextTask(self.inputs(), 'Q7')
+        frame = pd.read_parquet(task.data_dir/'styles_details.parquet')
+        frame['id'] = [1.5, None, 2.0, 4.0, 5.0, 6.0]
+        frame.to_parquet(task.data_dir/'styles_details.parquet')
+        source = task.read_source()
+        values = [False]*9
+        values[4] = True
+        result = task.finish(source, self.predictions(task, source, values))
+        pd.testing.assert_series_equal(result, pd.Series(['nan-nan'], name='id'))
+
+    def test_q7_shared_full_original_sdk_differential_for_actual_pair_and_index_contracts(self):
+        checkout = self.checkout()
+        if any(importlib.util.find_spec(name) is None for name in ('lotus', 'litellm')):
+            self.skipTest('real LOTUS SDK is required only for the original-query software reference')
+        with ExitStack() as scope:
+            scope.enter_context(patch.dict(os.environ, dict(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
+                HF_DATASETS_OFFLINE='1', LITELLM_LOCAL_MODEL_COST_MAP='True', CUDA_VISIBLE_DEVICES='')))
+            scope.enter_context(patch.object(socket.socket, 'connect', side_effect=AssertionError('network forbidden')))
+            import lotus
+            import pandas as pd
+            from lotus.types import LMOutput
+            from tests.experiments.test_sembench_text_original import OriginalSemBenchTextTests
+            from src.baselines.text.frameworks.lotus_native_join import make_lm
+            from src.serving.backends.vllm_protocol import GenerationSpec
+            from src.serving.backends.vllm_engine import VllmEngine
+            from src.serving.backends.vllm_async_engine import VllmAsyncEngine
+
+            for engine in (VllmEngine, VllmAsyncEngine):
+                scope.enter_context(patch.object(engine, '__init__', side_effect=AssertionError('model forbidden')))
+            scope.enter_context(lotus.settings.context(enable_cache=False))
+            original = OriginalSemBenchTextTests()
+            original.generation = GenerationSpec(max_tokens=32, temperature=0, seed=0)
+            for mode in ('sparse', 'all-true', 'all-false', 'empty-frontier', 'empty-source',
+                         'duplicate-ids', 'float-null-ids-and-price'):
+                with self.subTest(mode=mode), redirect_stdout(io.StringIO()):
+                    root = self.inputs(duplicate_ids=mode == 'duplicate-ids')
+                    path = root/'styles_details.parquet'
+                    frame = pd.read_parquet(path)
+                    if mode == 'empty-frontier':
+                        frame = frame.assign(price=700)
+                    elif mode == 'empty-source':
+                        frame = frame.iloc[:0]
+                    elif mode == 'float-null-ids-and-price':
+                        frame['id'] = [1.5, None, 2.0, 4.0, 5.0, 6.0]
+                        frame['price'] = [300, None, 500, 700, 1000, 600]
+                    frame.to_parquet(path)
+                    task = EcommerceTextTask(root, 'Q7')
+                    source = task.read_source()
+                    count = task.model_request_count(source)
+                    values = [mode != 'all-false' and (mode == 'all-true' or i % 3 == 0) for i in range(count)]
+                    original.data = root
+                    reference = original._query('ecomm', '7')
+                    self.assertEqual(reference.operation.describe()['expected_model_calls'], count)
+                    lm = make_lm(reference.operation, 2)
+                    batches = []
+
+                    def respond(current, messages, **kwargs):
+                        self.assertIs(current, lm)
+                        batches.append(messages)
+                        return LMOutput(outputs=['True' if value else 'False' for value in values])
+
+                    with lotus.settings.context(lm=lm, enable_cache=False), patch.object(type(lm), '__call__', respond):
+                        expected = reference._original()
+                    actual = task.finish(source, reversed(self.predictions(task, source, values)))
+                    self.assertEqual(sum(len(messages) for messages in batches), count)
+                    pd.testing.assert_series_equal(actual, expected)
+
+    def test_q7_fresh_no_lotus_original_f1_and_gold_missing_price_are_explicit(self):
+        import pandas as pd
+
+        root = self.inputs()
+        frame = pd.read_parquet(root/'styles_details.parquet')
+        frame.reset_index(drop=True).to_parquet(root/'styles_details.parquet')
+        task = EcommerceTextTask(root, 'Q7')
+        source = task.read_source()
+        gold = task.prepare_evaluation()
+        values = [True, True, False, True, True, False, False, False, True]
+        result = task.finish(source, self.predictions(task, source, values))
+        quality = task.evaluate(source, result, checkout=self.checkout(), evaluation=gold)
+        self.assertEqual(quality['original_metric']['accuracy'], 1)
+        self.assertEqual(task.encode_result(result)['data'], ['11-11', '11-22', '22-11', '22-22', '33-33'])
+        script = textwrap.dedent('''
+            import importlib.abc,json,socket,sys
+            class NoLotus(importlib.abc.MetaPathFinder):
+                def find_spec(self,fullname,path=None,target=None):
+                    blocked=('lotus','semantic_methods.lotus','src.semantic_methods.lotus',
+                        'src.baselines.text.sembench_text','src.baselines.text.sembench_prepared',
+                        'src.experiments','tests')
+                    if any(fullname==name or fullname.startswith(name+'.') for name in blocked):
+                        raise AssertionError('forbidden runtime dependency: '+fullname)
+            sys.meta_path.insert(0,NoLotus())
+            def no_network(*args,**kwargs): raise AssertionError('network forbidden')
+            socket.socket.connect=no_network
+            from src.baselines.text.sembench_native_ecommerce import ecommerce_text_task
+            task=ecommerce_text_task(sys.argv[1],'Q7','fresh-pairs')
+            gold=task.prepare_evaluation()
+            source=task.read_source()
+            assert task.model_request_count(source)==9
+            values=[True,True,False,True,True,False,False,False,True]
+            predictions=[dict(call_id=row['call_id'],generated_text=json.dumps({'keep':value}))
+                for row,value in zip(task.requests(source),values,strict=True)]
+            result=task.finish(source,predictions)
+            task.verify_source(source)
+            json.dumps(task.encode_result(result),allow_nan=False)
+            assert task.evaluate(source,result,checkout=sys.argv[2],evaluation=gold)['original_metric']['accuracy']==1
+            assert not any(name=='lotus' or name.startswith('lotus.') for name in sys.modules)
+            print('fresh-ecommerce-pairs-no-lotus: passed')
+        ''')
+        environment = dict(os.environ, CUDA_VISIBLE_DEVICES='', HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
+                           LITELLM_LOCAL_MODEL_COST_MAP='True')
+        with tempfile.TemporaryDirectory() as cache:
+            environment['MPLCONFIGDIR'] = cache
+            checked = subprocess.run([sys.executable, '-c', script, str(root), self.checkout()],
+                text=True, capture_output=True, timeout=60, env=environment)
+        self.assertEqual(checked.returncode, 0, checked.stdout+checked.stderr)
+        self.assertIn('fresh-ecommerce-pairs-no-lotus: passed', checked.stdout)
+        frame.drop(columns=['price']).to_parquet(root/'styles_details.parquet')
+        with self.assertRaisesRegex(ValueError, 'evaluation'):
+            task.prepare_evaluation()
+        with self.assertRaises(KeyError):
+            task.read_source()
 
     def test_only_whole_title_descriptor_evidence_enters_messages_not_gold_or_ids(self):
         for query in ('Q1', 'Q3', 'Q5'):

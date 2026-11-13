@@ -111,7 +111,7 @@ class NativeTextTaskTests(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     task_from_config(dict(config, movies_csv='/not-cars-gold'))
             from src.baselines.text.sembench_native_ecommerce import ecommerce_text_task
-            for query in ('Q1', 'Q3', 'Q5'):
+            for query in ('Q1', 'Q3', 'Q5', 'Q7'):
                 config = dict(scenario='ecomm', data_dir='/not-read/ecomm',
                               query=query, query_id='ecomm-factory')
                 self.assertEqual(task_from_config(config), ecommerce_text_task(
