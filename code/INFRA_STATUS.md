@@ -151,8 +151,9 @@ LOTUS＋Daft的Q2b空Join后零请求Extract不创建native worker，后置HTTP�
 见[Medical家族](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-medical-text-family)。
 独立Cars Q1/Q4/Q10和E-Commerce Q1/Q3/Q5复用同一任务工厂及两系统runner，九完整模块159项全通过、0skip／模型。
 Cars真实scale文件／原普通Join／Q4的2026常量及投诉权重保留，E-Commerce保全descriptor和原嵌套谓词／SQL评分；
-真实Cars／E-Commerce资产与本组合模型资格仍待核，原生不支持与缺数据不混同；E-Commerce Q7尚未接。
+真实Cars／E-Commerce资产与本组合模型资格仍待核，原生不支持与缺数据不混同；E-Commerce Q7现已接同任务的exact pair工程方法，原SDK算法身份不转授。
 见[两族接线](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-cars-ecommerce-text)。
+Q7保完整N²请求及原index标签普通回连／字符串ID，111项软件及两driver各9发生项通过，原F1／空结果保留；见[配对接线](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ecommerce-exact-pair)，模型与真实资产待验。
 同一Ray runner新增[Serve会话profile](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)：
 一个owned deployment／有限预算执行两遍fresh查询，启动另列；真实模型身份未知时不授予暖轮。
 目标SDK／模型／物理清理尚待验；offline旧成绩不转授，Daft同owner暖轮仍未接。

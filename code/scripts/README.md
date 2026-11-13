@@ -103,9 +103,10 @@ Q10完整诊断关系与原评分保持。输入和评分缺文件分别报告�
 
 Cars同两模板声明`scenario="cars"`、data_dir及Q1/Q4/Q10，可选scale_factor只选原sample目录和文件，默认原157376。
 Q1不要求无关car表，Q4/Q10普通merge／全发生项和原gold成员筛选保持；Q4固定2026常量及原两种权重不改。
-E-Commerce声明`scenario="ecomm"`、data_dir和Q1/Q3/Q5，省略reviews_csv／movies_csv／ranking／scale_factor。
+E-Commerce声明`scenario="ecomm"`、data_dir和Q1/Q3/Q5/Q7，省略reviews_csv／movies_csv／ranking／scale_factor。
 完整styles_details.parquet中title＋全部nested descriptor入模，gold不入模；Q5只用原嵌套普通谓词选输入，未加LIMIT。
-Q1返回原Series，Q3原index标签赋值及Q5完整Map关系、原SQL评分和原错误保留，Q7此批尚未接。
+Q1返回原Series，Q3原index标签赋值及Q5完整Map关系、原SQL评分和原错误保留。Q7按原price<=500筛选后完整N²有向配对，有限预算须覆盖self／重复发生项；
+调用前先计数，不能按最终原字符串ID结果行数或唯一文本数估额度。原重复index标签回连可能扩张结果；它是明确的exact JSON工程方法。
 这两族目前仅fixture／原函数及driver软件验收，不能把示例路径当真实数据已齐。
 
 ```bash

@@ -170,6 +170,10 @@ Cars Q1/Q4/Q10、E-Commerce Q1/Q3/Q5复用同两系统runner，保普通关系�
 九完整模块159项及各六条实际driver软件流程通过，0模型；真实数据／模型待验，E-Commerce Q7尚未接。
 Cars原2026常量／两种权重、E-Commerce重复索引后写及原ARI错误均明确保留，不借fixture授予完整资产资格。
 
+[独立E-Commerce exact pair](diagnostics/sembench_native_integration_20261112/README.md#native-ecommerce-exact-pair)
+同任务／两runner扩Q7，保price<=500后的N²含self配对、原重复index标签普通回连与字符串ID，不称作者Join方法。
+四模块111项及两driver各九发生项的软件检查通过，0模型；旧scalar行为保持，真实资产／模型待验。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

@@ -250,7 +250,10 @@ Medical原函数／SDK软件差分与同两runner消费者范围见[接线记录
 Series／完整诊断关系及Q4的`2026 - mean(year)`；query按投诉加权而gold按车辆计算的原差异不改。
 `scenario=ecomm`接[E-Commerce任务](text/sembench_native_ecommerce.py)Q1/Q3/Q5，保完整nested descriptor、
 原Apparel谓词和index-label Extract后写行为；gold预先冻结、查询fresh读真实Parquet，原SQL／指标在sink后执行。
-它们只扩现有任务工厂，不新增系统runner；真实资产／模型与未接Q7分列，见[软件范围](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-cars-ecommerce-text)。
+E-Commerce Q7复用同一任务的exact pair分支，原price<=500后N²含self／重复ID请求，
+原index标签普通回连可扩张结果，最后才原字符串ID拼接；同类Movie pair的系统执行与前置计数接口直接复用。
+这是项目exact工程方法，未复现原作者Join策略，见[配对范围](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ecommerce-exact-pair)。
+它们只扩现有任务工厂，不新增系统runner；真实资产／模型与软件范围分列，见[软件范围](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-cars-ecommerce-text)。
 
 每个系统一个runner：[Ray](../experiments/sembench_native_ray.py)使用公开LLM processor／原生AsyncLLM，
 [Daft](../experiments/sembench_native_daft.py)使用内置`vllm-prefix-caching`图和既有隔离worker／ACK关闭。

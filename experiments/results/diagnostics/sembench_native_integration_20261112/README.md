@@ -1668,6 +1668,26 @@ Cars首次fixture在两张gold表都放同名private_label，原无suffix join�
 E-Commerce首次缺gold列fixture含空struct，PyArrow拒绝写Parquet，只改有child的descriptor fixture。
 两个首轮失败、missing-module红及核验命令状态错误均保留，未改生产逻辑迎合测试。
 
+<a id="native-ecommerce-exact-pair"></a>
+## 独立 E-Commerce exact pair 接入同一任务
+
+在009232c04的scalar任务上增量接Q7，仍是一个EcommerceTextTask及原两个系统runner。
+真实Parquet读取后按原price<=500筛选，保原索引；完整N²有向pair包含self与重复ID，先用轻量count核有限额度，
+再构造完整title＋nested descriptor的JSON布尔请求。原生API负责推理／批处理，工程任务不引入Core调度。
+这是项目exact pair对照，不称LOTUS／作者Join方法；原LOTUS1.2.4每侧语义选列限制及approximate策略不由此修写。
+
+True预测先转换成原索引标签pair，再沿原普通join回连两张源表、reset_index，最后两侧id.astype(str)拼接。
+三条frontier若索引为[9,2,9]，九个全True模型发生项会回连成25条结果，不能简化成九条或去重。
+原空Series、浮点／null ID字符串、price null排除、原F1及gold快照边界保留；未改scalar既有执行与评分。
+
+主线程在干净009232c04导出核三文件增量，四完整模块111项全通过、0skip／模型／GPU，包含同两runner旧回归，
+SHA-256为`99636258cb7b068bb03696291ff3ddfebf2374470ee1bb229ca4c44290d29cdc`，不与先前159或分任务16累加。
+新模块包含Q7七种原完整函数／真实SDK软件差分及fresh禁LOTUS原F1检查。
+两条实际任务→driver软件流程各九个发生项、完整25行结果／原评分相等，永久预算及Daft ACK通过，
+证据SHA-256为`6ecc3283a8b91b06b9999b44f1606ea4fc6edb8e7f2c6c5ba4b3aafd2eca69e1`。
+复制的私有helper首次报告标签错误写成six-flow，实际计数是一题／两系统；仅更正派生metadata，原报告保留，未重跑模型或评分。
+本轮原生SDK／模型及真实E-Commerce资产未授资格，原来源配额／完整输入缺口保持。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
