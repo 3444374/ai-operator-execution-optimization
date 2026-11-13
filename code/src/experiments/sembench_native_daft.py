@@ -60,9 +60,9 @@ def check(config):
     task = configuration(config)
     task.prepare_evaluation()
     source = task.read_source()
-    description = task.describe(source)
-    if description['expected_model_calls'] > config['max_model_calls']:
+    if task.model_request_count(source) > config['max_model_calls']:
         raise ValueError('the finite native budget cannot cover the eligible source')
+    description = task.describe(source)
     return dict(schema=SCHEMA, status='checked_cpu_only', task=description,
                 execution_enabled=False, model_calls=0, target_native_model_qualified=False)
 
@@ -105,9 +105,9 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
         report['source_start_ns'] = time.monotonic_ns()
         deadline = report['source_start_ns'] / 1e9 + config['query_timeout_s']
         source = task.read_source()
-        requests = task.requests(source)
-        if len(requests) > unit.remaining:
+        if task.model_request_count(source) > unit.remaining:
             raise ValueError('the finite native budget cannot cover the eligible source')
+        requests = task.requests(source)
 
         def finish(predictions):
             nonlocal frame

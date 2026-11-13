@@ -80,13 +80,14 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
             native = owner.report
             report['source_started_ns'] = time.monotonic_ns()
             source = task.read_source()
+            required = task.model_request_count(source)
+            if required > unit.remaining:
+                raise BudgetExhausted('permanent budget cannot cover every source occurrence')
             requests = task.requests(source)
             report['logical_requests'] = len(requests)
             if not requests:
                 report.update(model_ready_before_source=None,
                     model_ready_before_source_reason='no eligible occurrences; native runtime and model were not started')
-            if len(requests) > unit.remaining:
-                raise BudgetExhausted('permanent budget cannot cover every source occurrence')
             batch = owner.predict(requests, sampling_params=sampling)
             result = task.finish(source, batch['predictions'])
             report['sink_ready_ns'] = time.monotonic_ns()
@@ -154,7 +155,7 @@ def main(argv=None):
         _sampling(config)
         task.prepare_evaluation()
         source = task.read_source()
-        if len(source.positions) > config['budget']['limit']:
+        if task.model_request_count(source) > config['budget']['limit']:
             raise ValueError('the permanent native budget cannot cover the eligible source')
         print(json.dumps(dict(status='checked_cpu_only', execution_enabled=False,
             task=task.describe(source), model_calls=0), ensure_ascii=False, allow_nan=False))

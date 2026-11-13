@@ -15,7 +15,7 @@ import unittest
 from unittest.mock import patch
 
 from src.baselines.text.sembench_native_text import (
-    COMPARISON_IDENTITY, MovieFilterTask, MovieMapTask, PROMPT_PROFILE, TextFilterTask,
+    COMPARISON_IDENTITY, MovieFilterTask, MovieJoinTask, MovieMapTask, PROMPT_PROFILE, TextFilterTask,
     movie_text_task,
 )
 
@@ -272,7 +272,7 @@ class NativeMovieMapTests(unittest.TestCase):
             self.assertIs(type(movie_text_task(path, 'Q8')), MovieMapTask)
             self.assertEqual(movie_text_task(path, 'Q9', ranking='map').ranking, 'map')
             for query, ranking in [('Q1', 'map'), ('Q8', 'map'), ('Q9', None),
-                                   ('Q9', 'topk'), ('Q5', None)]:
+                                   ('Q9', 'topk'), ('Q11', None)]:
                 with self.subTest(query=query, ranking=ranking), self.assertRaises(ValueError):
                     movie_text_task(path, query, ranking=ranking)
 
@@ -599,6 +599,213 @@ class NativeMovieQ10Tests(unittest.TestCase):
             print('Q10 frozen gold and original evaluation; LOTUS imports and network denied')
         ''')
         result = subprocess.run([sys.executable, '-c', script, str(reviews), str(movies), self.official_checkout()],
+            text=True, capture_output=True, timeout=90, env=dict(os.environ))
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.assertIn('LOTUS imports and network denied', result.stdout)
+
+
+class NativeMovieJoinTests(unittest.TestCase):
+    movie = 'ant_man_and_the_wasp_quantumania'
+
+    def source_file(self, rows=None):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        path = Path(directory.name)/'Reviews.csv'
+        stream = io.StringIO(newline='')
+        writer = csv.writer(stream)
+        writer.writerow(['id', 'reviewId', 'reviewText', 'scoreSentiment'])
+        writer.writerows(rows if rows is not None else [
+            ('taken_3', 'outside', 'unselected', 'POSITIVE'),
+            (self.movie, 'duplicate', 'same\n«好»', 'POSITIVE'),
+            (self.movie, 'duplicate', 'same\n«好»', 'POSITIVE'),
+            (self.movie, 'last', 'other', 'NEGATIVE'),
+        ])
+        path.write_bytes(stream.getvalue().encode())
+        return path
+
+    @staticmethod
+    def replies(task, source, decisions):
+        return [dict(call_id=request['call_id'], generated_text=json.dumps(dict(keep=keep)))
+                for request, keep in zip(task.requests(source), decisions, strict=True)]
+
+    def official_checkout(self):
+        checkout = os.environ.get('SEMLOOM_NATIVE_TEST_CHECKOUT')
+        if not checkout:
+            self.skipTest('bind the fixed public SemBench checkout for original evaluator checks')
+        return checkout
+
+    def test_factory_selects_one_join_family_and_rejects_other_method_configs(self):
+        path = self.source_file()
+        with patch.object(Path, 'read_bytes', side_effect=AssertionError('constructor I/O')):
+            for query in ['Q5', 'Q6', 'Q7']:
+                task = movie_text_task(path, query, 'join-run')
+                self.assertIs(type(task), MovieJoinTask)
+                self.assertEqual(task.query, query[1:])
+                self.assertIsNone(task.prepare_evaluation())
+                with self.assertRaises(ValueError):
+                    movie_text_task(path, query, ranking='map')
+                with self.assertRaises(ValueError):
+                    movie_text_task(path, query, movies_csv='unused.csv')
+
+    def test_request_count_is_lightweight_and_shared_by_task_descriptions(self):
+        path = self.source_file()
+        for query, count in [('Q1', 4), ('Q3', 1), ('Q8', 1), ('Q5', 9), ('Q6', 9), ('Q7', 9)]:
+            task = movie_text_task(path, query)
+            source = task.read_source()
+            with patch.object(task.__class__, 'requests', side_effect=AssertionError('messages before budget')):
+                with patch('src.baselines.text.sembench_native_text.hashlib.sha256',
+                           side_effect=AssertionError('request count must not run source audits')):
+                    self.assertEqual(task.model_request_count(source), count)
+                metadata = task.describe(source)
+            self.assertEqual(metadata['expected_model_calls'], count)
+            self.assertEqual(metadata['logical_model_requests'], count)
+
+    def test_all_ordered_pairs_include_self_and_duplicates_without_labels_or_ids(self):
+        task = movie_text_task(self.source_file(), 'Q5', 'pairs')
+        source = task.read_source()
+        requests = task.requests(source)
+        self.assertEqual(len(requests), 9)
+        self.assertEqual([row['call_id'] for row in requests], [
+            f'pairs-left-{left}-right-{right}' for left in (1, 2, 3) for right in (1, 2, 3)])
+        self.assertEqual(requests[0]['messages'], requests[1]['messages'])
+        self.assertEqual(json.loads(requests[0]['messages'][1]['content']),
+                         dict(left_text='same\n«好»', right_text='same\n«好»'))
+        serialized = json.dumps([row['messages'] for row in requests])
+        for forbidden in ['reviewId', 'scoreSentiment', 'POSITIVE', 'NEGATIVE', 'duplicate', self.movie, 'unselected']:
+            self.assertNotIn(forbidden, serialized)
+        metadata = task.describe(source)
+        self.assertFalse(metadata['author_original_semantic_method'])
+        self.assertIn('project exact Cartesian', metadata['join_method'])
+        self.assertEqual(metadata['comparison_identity'], COMPARISON_IDENTITY)
+
+    def test_true_pairs_restore_order_then_filter_review_ids_without_deduplicating(self):
+        import pandas as pd
+
+        for query in ['Q5', 'Q6', 'Q7']:
+            task = movie_text_task(self.source_file(), query)
+            source = task.read_source()
+            result = task.finish(source, reversed(self.replies(task, source, [True]*9)))
+            expected = pd.DataFrame(dict(id=[self.movie]*4,
+                reviewId=['duplicate', 'duplicate', 'last', 'last'],
+                reviewId2=['last', 'last', 'duplicate', 'duplicate']), index=[2, 5, 6, 7])
+            pd.testing.assert_frame_equal(result, expected)
+            self.assertEqual(task.encode_result(result)['index'], [2, 5, 6, 7])
+
+    def test_output_index_is_true_pair_ordinal_before_id_filter_not_cartesian_ordinal(self):
+        task = movie_text_task(self.source_file(), 'Q5')
+        source = task.read_source()
+        decisions = [True, False, True, True, False, True, True, False, False]
+        result = task.finish(source, reversed(self.replies(task, source, decisions)))
+        self.assertEqual(list(result.index), [1, 3, 4])
+        self.assertEqual(list(zip(result['reviewId'], result['reviewId2'])),
+                         [('duplicate', 'last'), ('duplicate', 'last'), ('last', 'duplicate')])
+
+    def test_head10_is_after_complete_cartesian_inference_and_q7_has_no_limit(self):
+        rows = [(self.movie, 'r'+str(i), 'text'+str(i), 'POSITIVE') for i in range(4)]
+        for query, expected_rows in [('Q5', 10), ('Q6', 10), ('Q7', 12)]:
+            task = movie_text_task(self.source_file(rows), query)
+            source = task.read_source()
+            self.assertEqual(task.model_request_count(source), 16)
+            predictions = self.replies(task, source, [True]*16)
+            self.assertEqual(len(predictions), 16)
+            self.assertEqual(len(task.finish(source, predictions)), expected_rows)
+
+    def test_zero_singleton_and_all_false_keep_original_empty_shapes(self):
+        import pandas as pd
+
+        for rows, count, keep in [([], 0, True), ([(self.movie, 'one', 'text', 'POSITIVE')], 1, True),
+                                  ([(self.movie, 'a', 'text', 'POSITIVE'),
+                                    (self.movie, 'b', 'text', 'NEGATIVE')], 4, False)]:
+            for query in ['Q5', 'Q6', 'Q7']:
+                with self.subTest(query=query, rows=rows):
+                    task = movie_text_task(self.source_file(rows), query)
+                    source = task.read_source()
+                    self.assertEqual(task.model_request_count(source), count)
+                    result = task.finish(source, self.replies(task, source, [keep]*count))
+                    expected = (pd.DataFrame(columns=['id', 'reviewId_left', 'reviewText_left',
+                                'reviewId_right', 'reviewText_right']) if query == 'Q5' else pd.DataFrame())
+                    pd.testing.assert_frame_equal(result, expected)
+
+    def test_join_rejects_missing_duplicate_foreign_or_invalid_boolean_responses(self):
+        task = movie_text_task(self.source_file(), 'Q7')
+        source = task.read_source()
+        complete = self.replies(task, source, [True]*9)
+        for rows in [complete[:-1], complete+[complete[0]],
+                     complete[:-1]+[dict(complete[-1], call_id='foreign')]]:
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                task.finish(source, rows)
+        for text in ['True', 'Answer: True', '{"keep":"true"}', '{"keep":1}',
+                     '{"keep":true,"extra":0}', '{"keep":true,"keep":false}', None]:
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                task.finish(source, [dict(complete[0], generated_text=text)]+complete[1:])
+
+    def test_join_source_snapshot_is_fresh_and_gold_column_is_checked_before_messages(self):
+        path = self.source_file()
+        task = movie_text_task(path, 'Q5')
+        source = task.read_source()
+        raw = path.read_bytes()
+        path.write_bytes(raw.replace(b'other', b'fresh'))
+        new = task.read_source()
+        self.assertEqual(new.frame.iloc[3]['reviewText'], 'fresh')
+        self.assertEqual(source.frame.iloc[3]['reviewText'], 'other')
+        with self.assertRaisesRegex(ValueError, 'changed'):
+            task.verify_source(source)
+        task.verify_source(new)
+        new.frame.drop(columns=['scoreSentiment']).to_csv(path, index=False)
+        with self.assertRaisesRegex(ValueError, 'original labeled'):
+            task.read_source()
+
+    def test_original_pair_evaluation_is_reused_with_duplicates_and_directional_rows(self):
+        from src.baselines.text.sembench_movie import evaluate_original
+
+        rows = [(self.movie, review_id, 'text'+str(i), sentiment) for i, (review_id, sentiment) in enumerate([
+            ('duplicate', 'POSITIVE'), ('duplicate', 'POSITIVE'), ('positive-third', 'POSITIVE'),
+            ('negative-1', 'NEGATIVE'), ('negative-2', 'NEGATIVE'), ('negative-3', 'NEGATIVE')])]
+        for query, expected_rows in [('Q5', 10), ('Q6', 10), ('Q7', 18)]:
+            task = movie_text_task(self.source_file(rows), query)
+            source = task.read_source()
+            labels = list(source.frame['scoreSentiment'])
+            decisions = [(left == right) if query == 'Q5' else (left != right)
+                         for left in labels for right in labels]
+            predictions = self.replies(task, source, decisions)
+            self.assertEqual(len(predictions), 36)
+            result = task.finish(source, reversed(predictions))
+            self.assertEqual(len(result), expected_rows)
+            quality = task.evaluate(source, result, checkout=self.official_checkout(), evaluation=task.prepare_evaluation())
+            self.assertEqual(quality, evaluate_original(self.official_checkout(), int(task.query), result, source.frame))
+            self.assertEqual(quality['original_metric']['f1_score'], 1.0)
+
+    def test_fresh_process_join_uses_no_lotus_sdk_or_network(self):
+        script = textwrap.dedent('''
+            import importlib.abc, json, socket, sys
+            class NoLotus(importlib.abc.MetaPathFinder):
+                def find_spec(self, fullname, path=None, target=None):
+                    blocked = ('lotus', 'semantic_methods.lotus', 'src.semantic_methods.lotus',
+                        'src.baselines.text.sembench_text', 'src.baselines.text.sembench_prepared',
+                        'src.baselines.text.sembench_movie_native', 'src.baselines.text.movie_tasks',
+                        'src.baselines.text.movie_records')
+                    if any(fullname == name or fullname.startswith(name+'.') for name in blocked):
+                        raise AssertionError('forbidden LOTUS dependency: '+fullname)
+            sys.meta_path.insert(0, NoLotus())
+            def denied(*args, **kwargs):
+                raise AssertionError('external network is forbidden')
+            socket.socket.connect = denied
+            socket.create_connection = denied
+            from src.baselines.text.sembench_native_text import movie_text_task
+            for query in ['Q5', 'Q6', 'Q7']:
+                task = movie_text_task(sys.argv[1], query)
+                source = task.read_source()
+                count = task.model_request_count(source)
+                assert count == 9
+                requests = task.requests(source)
+                assert len(requests) == count
+                predictions = [dict(call_id=r['call_id'],generated_text='{"keep":true}') for r in requests]
+                result = task.finish(source, predictions)
+                assert task.evaluate(source,result,checkout=sys.argv[2])['sembench_commit'].startswith('c814e380')
+                task.verify_source(source)
+            print('exact JSON Join and original evaluation; LOTUS imports and network denied')
+        ''')
+        result = subprocess.run([sys.executable, '-c', script, str(self.source_file()), self.official_checkout()],
             text=True, capture_output=True, timeout=90, env=dict(os.environ))
         self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
         self.assertIn('LOTUS imports and network denied', result.stdout)

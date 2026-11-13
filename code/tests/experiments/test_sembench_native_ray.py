@@ -45,6 +45,8 @@ class RunnerTests(unittest.TestCase):
             def requests(current, source):
                 return [dict(call_id=str(index), messages=[dict(role='user', content='fixture')])
                         for index in range(count)]
+            def model_request_count(current, source):
+                return count
             def finish(current, source, predictions):
                 self.assertTrue(state.initialized)
                 self.assertEqual(sorted(row['call_id'] for row in predictions), ['0', '1'])
@@ -68,6 +70,13 @@ class RunnerTests(unittest.TestCase):
     def run_fixture(self, state, **task_options):
         return run_query(self.task(state, **task_options), self.config,
                          self.root / 'query', checkout='unused-fixture-checkout')
+
+    def join_source(self):
+        source = self.root / 'Reviews.csv'
+        pd.DataFrame(dict(id=['ant_man_and_the_wasp_quantumania'] * 3,
+            reviewId=['duplicate', 'duplicate', 'other'], reviewText=['good first', 'bad', 'good second'],
+            scoreSentiment=['POSITIVE', 'NEGATIVE', 'POSITIVE'])).to_csv(source, index=False)
+        return source
 
     def test_native_processor_and_complete_sink_before_close(self):
         with recorded_processor({'0': '{"keep":true}', '1': '{"keep":false}'}) as state:
@@ -253,6 +262,67 @@ class RunnerTests(unittest.TestCase):
         self.assertGreaterEqual(report['evaluation_started_ns'], report['sink_ready_ns'])
 
     @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_join_tasks_predict_all_pairs_before_original_ID_filter_and_sink(self):
+        from src.baselines.text.sembench_native_text import movie_text_task
+
+        source = self.join_source()
+        movie = 'ant_man_and_the_wasp_quantumania'
+        for query in ('Q5', 'Q6', 'Q7'):
+            with self.subTest(query=query):
+                root = self.root / query
+                root.mkdir()
+                ledger = CellBudgetLedger.create(root / 'budget.sqlite',
+                    AttemptBudget(query, 9), deadline_utc=time.time() + 120)
+                ledger.reserve_unit('query', 9)
+                config = dict(self.config, budget=dict(path=str(ledger.path), id=query, limit=9, unit_id='query'))
+                task = movie_text_task(source, query, 'native')
+                def reply(row, request):
+                    pair = json.loads(request['messages'][1]['content'])
+                    same = pair['left_text'].startswith('good') == pair['right_text'].startswith('good')
+                    return json.dumps({'keep': same if query == 'Q5' else not same})
+                with recorded_processor(reply) as state:
+                    report = run_query(task, config, root / 'query', checkout=os.environ['SEMBENCH_CHECKOUT'])
+                self.assertEqual(report['result']['data'], [[movie, 'duplicate', 'other'], [movie, 'other', 'duplicate']])
+                self.assertEqual(report['physical_attempts_reserved'], 9)
+                self.assertEqual(len(state.requests), 9)
+                ids = {row['call_id'] for row in state.requests}
+                self.assertIn('native-left-0-right-0', ids)
+                self.assertIn('native-left-0-right-1', ids)
+                self.assertEqual(report['quality']['original_metric']['f1_score'], 1)
+                self.assertTrue(all(set(json.loads(row['messages'][1]['content'])) == {'left_text', 'right_text'}
+                                    for row in state.requests))
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_join_budget_rejection_precedes_pair_construction_and_native_start(self):
+        from src.baselines.text.sembench_native_text import movie_text_task
+
+        task = movie_text_task(self.join_source(), 'Q5', 'native')
+        with patch.object(type(task), 'requests', side_effect=AssertionError('pairs must not be constructed')) as requests:
+            with recorded_processor({}) as state:
+                with self.assertRaises(BudgetExhausted) as raised:
+                    run_query(task, self.config, self.root / 'query', checkout=os.environ['SEMBENCH_CHECKOUT'])
+        requests.assert_not_called()
+        self.assertEqual(state.events, [])
+        self.assertEqual(raised.exception.query_report['physical_attempts_reserved'], 0)
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_CLI_counts_join_pairs_for_all_three_original_tasks(self):
+        from src.experiments import sembench_native_ray as entry
+
+        base = dict(self.config, schema='semloom.sembench_native_ray.v1',
+            sembench_checkout=os.environ['SEMBENCH_CHECKOUT'], reviews_csv=str(self.join_source()), query_id='CLI')
+        path = self.root / 'join-config.json'
+        with patch.object(entry, 'run_query', side_effect=AssertionError('native execution forbidden')):
+            for query in ('Q5', 'Q6', 'Q7'):
+                path.write_text(json.dumps(dict(base, query=query, budget=dict(self.config['budget'], limit=9))))
+                with self.subTest(query=query), redirect_stdout(StringIO()) as output:
+                    self.assertEqual(entry.main(['check', '--config', str(path)]), 0)
+                self.assertEqual(json.loads(output.getvalue())['task']['expected_model_calls'], 9)
+            path.write_text(json.dumps(dict(base, query='Q5', budget=dict(self.config['budget'], limit=8))))
+            with self.assertRaisesRegex(ValueError, 'eligible source'):
+                entry.main(['check', '--config', str(path)])
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
     def test_CLI_checks_without_claiming_budget_or_starting_native_execution(self):
         from src.experiments import sembench_native_ray as entry
 
@@ -346,6 +416,7 @@ if os.environ.get('SEMBENCH_CHECKOUT'):
     suite.addTest(RunnerTests('test_neutral_movie_task_and_official_evaluator'))
     suite.addTest(RunnerTests('test_map_tasks_reuse_the_native_processor_and_complete_official_sinks'))
     suite.addTest(RunnerTests('test_Q10_scores_all_reviews_then_groups_movies_before_official_evaluation'))
+    suite.addTest(RunnerTests('test_join_tasks_predict_all_pairs_before_original_ID_filter_and_sink'))
 result = unittest.TextTestRunner().run(suite)
 assert not any(forbidden(name) for name in sys.modules)
 raise SystemExit(not result.wasSuccessful())

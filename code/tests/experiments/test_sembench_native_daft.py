@@ -53,10 +53,15 @@ def execute(rows,**options):
  for row in rows:
   options['before_generate'](row['call_id'],'software-'+row['call_id'],row['prompt'])
   messages=json.loads(row['prompt'])
-  text=json.loads(messages[1]['content'])['text']
-  if mode=='sentiment':generated=json.dumps({'sentiment':'POSITIVE' if text.startswith('good') else 'NEGATIVE'})
-  elif mode=='score':generated=json.dumps({'score':5 if text.startswith('good') else 1})
-  else:generated=json.dumps({'keep':text.startswith('good')}) if mode!='invalid' else '{"keep":"true"}'
+  payload=json.loads(messages[1]['content'])
+  if mode in ('pair-same','pair-opposite'):
+   same=payload['left_text'].startswith('good')==payload['right_text'].startswith('good')
+   generated=json.dumps({'keep':same if mode=='pair-same' else not same})
+  else:
+   text=payload['text']
+   if mode=='sentiment':generated=json.dumps({'sentiment':'POSITIVE' if text.startswith('good') else 'NEGATIVE'})
+   elif mode=='score':generated=json.dumps({'score':5 if text.startswith('good') else 1})
+   else:generated=json.dumps({'keep':text.startswith('good')}) if mode!='invalid' else '{"keep":"true"}'
   predictions.append(dict(call_id=row['call_id'],generated_text=generated))
  if mode=='missing':predictions.pop()
  result=dict(predictions=predictions,metadata=dict(result_ready_monotonic_ns=time.monotonic_ns(),
@@ -143,6 +148,12 @@ class IndependentDaftQueryTests(unittest.TestCase):
             writer = csv.writer(stream)
             writer.writerow(('id','reviewId','reviewText','scoreSentiment'))
             writer.writerows(rows)
+
+    def write_join_rows(self):
+        self.write_rows([
+            ('ant_man_and_the_wasp_quantumania', 'duplicate', 'good first', 'POSITIVE'),
+            ('ant_man_and_the_wasp_quantumania', 'duplicate', 'bad', 'NEGATIVE'),
+            ('ant_man_and_the_wasp_quantumania', 'other', 'good second', 'POSITIVE')])
 
     def config(self, query='Q3', *, ranking=None, movies_csv=None):
         config = dict(schema=driver.SCHEMA, sembench_checkout=CHECKOUT, reviews_csv=str(self.csv),
@@ -240,6 +251,53 @@ class IndependentDaftQueryTests(unittest.TestCase):
         terminal = read_json(self.output / 'native-worker/worker.json')
         self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
         self.assertLessEqual(report['sink_ready_ns'], report['evaluation_started_ns'])
+
+    def test_join_tasks_predict_all_pairs_before_original_ID_filter_and_sink(self):
+        self.write_join_rows()
+        movie = 'ant_man_and_the_wasp_quantumania'
+        for query in ('Q5', 'Q6', 'Q7'):
+            with self.subTest(query=query):
+                config = dict(self.config(query), max_model_calls=9)
+                output = self.root / query
+                supervise = SoftwareSupervisor('pair-same' if query == 'Q5' else 'pair-opposite')
+                tokenizer = SoftwareTokenizer()
+                report = driver.run_query(config, output, model_python=sys.executable,
+                                          tokenizer=tokenizer, supervise=supervise)
+                self.assertEqual(report['result']['data'], [[movie, 'duplicate', 'other'], [movie, 'other', 'duplicate']])
+                self.assertEqual(report['physical_attempts_reserved'], 9)
+                self.assertEqual(len(tokenizer.messages), 9)
+                prepared = read_json(output / 'prepared-prompts.json')['requests']
+                self.assertIn('native-daft-' + query + '-left-0-right-0', {row['call_id'] for row in prepared})
+                self.assertIn('native-daft-' + query + '-left-0-right-1', {row['call_id'] for row in prepared})
+                self.assertEqual(report['quality']['original_metric']['f1_score'], 1)
+                terminal = read_json(output / 'native-worker/worker.json')
+                self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
+
+    def test_join_budget_rejection_precedes_pair_construction_and_native_start(self):
+        self.write_join_rows()
+        task = driver.movie_text_task(self.csv, 'Q5', 'native')
+        supervise = SoftwareSupervisor()
+        with patch.object(driver, 'movie_text_task', return_value=task), \
+                patch.object(type(task), 'requests', side_effect=AssertionError('pairs must not be constructed')) as requests:
+            with self.assertRaisesRegex(ValueError, 'finite native budget') as raised:
+                driver.run_query(self.config('Q5'), self.root / 'query', model_python=sys.executable,
+                                 tokenizer=SoftwareTokenizer(), supervise=supervise)
+        requests.assert_not_called()
+        self.assertEqual(supervise.calls, [])
+        self.assertEqual(raised.exception.query_report['physical_attempts_reserved'], 0)
+
+    def test_CLI_counts_join_pairs_for_all_three_original_tasks(self):
+        self.write_join_rows()
+        path = self.root / 'join-config.json'
+        with patch.object(driver, 'run_query', side_effect=AssertionError('native execution forbidden')):
+            for query in ('Q5', 'Q6', 'Q7'):
+                path.write_text(json.dumps(dict(self.config(query), max_model_calls=9)))
+                with self.subTest(query=query), redirect_stdout(StringIO()) as stream:
+                    self.assertEqual(driver.main(['check', '--config', str(path)]), 0)
+                self.assertEqual(json.loads(stream.getvalue())['task']['expected_model_calls'], 9)
+            path.write_text(json.dumps(self.config('Q5')))
+            with self.assertRaisesRegex(ValueError, 'finite native budget'):
+                driver.main(['check', '--config', str(path)])
 
     def test_zero_occurrences_keep_the_real_empty_sink_without_a_worker(self):
         self.write_rows([('other','outside','good outside','POSITIVE')])
