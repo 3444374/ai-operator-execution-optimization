@@ -37,7 +37,7 @@ LOTUS方法系列共用原题定义／原SDK语义，各执行系统保留自己
 
 | 系统 | 现行runner与已接任务 | 真实验证范围 | 未接／接口限制及旧入口 |
 |---|---|---|---|
-| LOTUS | 同一原题对象；[resident文本](src/experiments/sembench_text_resident.py)与[外部服务查询](src/experiments/sembench_lotus_query.py)按模型所有权保留profile。文本、视觉、聚合及实际多阶段已接。 | Movie、MMQA、Animals的具名冻结运行按原版本／输入解释，完整排名、空Join与非空Extract组件不互授资格。 | 当前未验视觉／多阶段及真实资产另列；多列Join保留原SDK选列限制。旧视觉／聚合两个CLI和worker已迁移删除。 |
+| LOTUS | 同一原题对象；[resident文本](src/experiments/sembench_text_resident.py)与[外部服务查询](src/experiments/sembench_lotus_query.py)按模型所有权保留profile。文本、视觉、聚合及实际多阶段已接。 | Movie、MMQA、Animals按冻结来源分列；a110 Movie Q8原120×2完成同owner首／暖、相对误差4.0431%；Animals Q10 sf64真实64次、原F1=1。完整排名、空Join与非空Extract组件不互授资格。 | 当前未验视觉／多阶段及真实资产另列；多列Join保留原SDK选列限制。旧视觉／聚合两个CLI和worker已迁移删除。 |
 | LOTUS＋Ray Data | [native_ray_sembench](src/experiments/native_ray_sembench.py)承接完整原函数、实际多LM批次、视觉、分支／groupby和分层聚合；query级runtime不等于模型复用。 | 051639原Animals Q1 sf64及MMQA Q5单叶已真实运行；4073的Q7 sf64两阶段128终态、City F1=1，原退出失败及恢复清理保留。旧Q2a/Q7质量问题不抹除。 | 其余真实视觉、分层聚合与并发另验。旧专项Q3图已删除；外部HTTP Q3保留，但明确为LOTUS-compatible工程路径。 |
 | 独立原生Ray Data | [sembench_native_ray](src/experiments/sembench_native_ray.py)用公开LLM processor执行Movie Q1–Q4 Filter、Q8／显式Q9／Q10 Map，共用独立JSON任务工厂及官方评分，无LOTUS提示／解析。 | 软件替身、完整关系、原评分与CLI检查通过；新语义的真实Ray／模型／物理清理尚未验。 | “统一语义工程对照”，非作者原版；其余原题／模态未接，不借用LOTUS＋Ray模型成绩。外层拥有监督／租约。 |
 | LOTUS＋Daft | [native_daft_sembench](src/experiments/native_daft_sembench.py)承接完整文本原题、exact Join和Q5实际多批；每批原生collect／worker隔离，末批在完整sink后关闭。附加内置OpenAIProvider接原视觉内容数组。 | 旧单冷／原生SDK记录仍属各冻结来源；新视觉接点有真实Daft0.7.21图＋软件API及完整原题／ACK检查，无本组合模型资格。 | 本地vllm字符串profile没有图像carrier；外部服务profile仅固定system＋单user数组，字符串／多轮、分组并发未接。TopK取消动作保持停止。旧专项Q3图／schema已删除。 |
@@ -47,6 +47,9 @@ LOTUS方法系列共用原题定义／原SDK语义，各执行系统保留自己
 
 旧入口的[准确恢复来源](../experiments/reproduction/native_baselines/README.md)与原失败保存；
 活动任务的服务器排程由测试会话协调，本页不把已交付候选写成已经实机通过。
+[a1105两项LOTUS功能回执](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-a1105-q8-q10-model)已核原件；
+Q8 true same-owner repeat保留prefix缓存及实际线程配置，Q10独立service时钟保留启动／预检分列。
+Q8的旧v3区间仍含中间relation快照与stage统计，不能从标签或单次首／暖结果推统一公平排名。
 
 当前剩余问题按共同边界处理，不能用增加题目入口绕开：
 
@@ -69,7 +72,7 @@ LOTUS方法系列共用原题定义／原SDK语义，各执行系统保留自己
 | 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；VARCHAR工程变体的原题单Map／Extract已接，ecbd代表SQL软件已验；其余任务／模型另验，原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | LOTUS＋原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接；8667样本真实SQL／模型已验，完整输入另验，非作者 Join 算法复现 | 原 CP＋Filter 已接；4f12样本作者模型已验，其他来源／输入另验 |
 | 文本完整排名；Movie Q9 TopK profile | 原 quick TopK显式resident已接；cb754的完整256真实模型已验，原parser回退保留；其他来源另验 | 原quick完整函数已接，8行28次软件比较／7批共用query owner通过；目标模型与多批物理清理待验 | 未接线 | LOTUS quick over VARCHAR工程变体已接，原题／Arrow／provider软件检查；11f的8行Linux SQL／renderer门及ecbd的8行13次真实比较通过，full256待验，非作者TopK算法 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
-| 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 同一完整查询runner已绑定；051639 Q1 sf64真实64次、COUNT3；4073 Q7 sf64真实两批128次、City F1=1且恢复清理已验；其他题／组合另验 | 外部OpenAI profile已接原消息数组；真实Daft图Q1消息与完整Q7软件worker／ACK通过，目标模型另验 | 同一完整原题runner已接；a110 Q7 sf64真实SQL／IPC／VLM两批128次、City F1=1；其他题另验 | 未接线 |
+| 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原SDK已接线；a110 Q10原sf64真实64次，完整分组／head1原F1=1；其余按冻结来源分列 | 同一完整查询runner已绑定；051639 Q1 sf64真实64次、COUNT3；4073 Q7 sf64真实两批128次、City F1=1且恢复清理已验；其他题／组合另验 | 外部OpenAI profile已接原消息数组；真实Daft图Q1消息与完整Q7软件worker／ACK通过，目标模型另验 | 同一完整原题runner已接；a110 Q7 sf64真实SQL／IPC／VLM两批128次、City F1=1；其他题另验 | 未接线 |
 | 单个图像／文本 exact Join；MMQA Q2a/Q7 | 原函数／原生视觉服务已接线，目标按来源分列 | 已迁移完整原函数及query owner，原消息／关系软件差分通过；dde单批目标成绩不转授当前公共边界 | 外部数组carrier已接；原Q2b双图Join有真实Daft图＋软件API证明，Q2a/Q7自身及目标模型未验 | 同一完整原函数的Q2a/Q7软件差分通过，真实SQL／VLM另验 | 未接线 |
 | 原关系连接后图像 Filter 和最终 LIMIT；Cars Q3/Q8 | 原函数／原生服务／原评分已接线，软件检查；真实数据／VLM待验 | 原函数／实际连接及LIMIT／评分已接，两题软件差分通过；真实数据与Ray VLM待验 | 外部数组carrier已接；原题数据、连接／LIMIT及目标模型未验，本地字符串profile不支持图像 | 同一完整原函数、连接与LIMIT软件差分通过，保留整数scale；真实资产／SQL／VLM另验 | 未接线 |
 | 原关系连接后单图或双图 Filter；Medical Q3/Q8/Q9 | 原脚本／原生视觉服务／原评分已接线，db3fe Linux52通过；已查作者checkout缺原图，sf20 Q3原连接0行不授予视觉资格，非空输入／processor／VLM待验 | 三题原函数已接，非空／双图及小gold原失败的软件差分通过；真实数据与Ray VLM待验 | 外部数组carrier已接；原Q9双图10次真实Daft图＋软件API消息等价，其他原题／真实资产／模型未验 | 三题单图／双图、LIMIT前完整输入及小gold原失败软件差分通过；双图processor／真实资产／SQL／VLM另验 | 未接线 |

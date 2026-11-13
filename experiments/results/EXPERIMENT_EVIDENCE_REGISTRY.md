@@ -64,6 +64,13 @@
 1694及1492份payload的编码／恢复字节、归档及1146／1147件准确源码逐件核验，旧清理失败／CSV失败保留，
 物理清理完成；不授予全量SemBench或新增独立语义runner资格。
 
+[a1105原LOTUS Q8首／暖轮及Animals Q10](diagnostics/sembench_native_integration_20261112/README.md#lotus-a1105-q8-q10-model)
+Q8原2000源、120×2真请求；同owner、结果缓存关／prefix开，原相对误差4.0431%保留。
+Q10 sf64完整64推理终态，原分组／head1与并列gold评价F1=1；64次tokenize另算CPU元数据门。
+两归档1315／1370份payload及各1147源码blob逐件核验，初始fixture／私有audit失败保留、资源清理通过。
+Q8虽旧receipt标v3，仍含中间relation深拷贝／stage统计；Q10独立service v1含指纹／图像hash／事件编码，
+均不作统一计时排名，不估算扣减或转授新独立JSON任务资格。
+
 [独立原生Ray／Daft Filter runner](diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)
 同一任务层接Movie Q1–Q4原目标／源／评分，各系统原生AI接口拥有执行；不导入LOTUS SDK／提示／解析。
 项目JSON布尔合同明确为“统一语义工程对照”，非作者原版；48个不同软件方法通过、0模型／GPU，

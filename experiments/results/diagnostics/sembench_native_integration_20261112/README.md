@@ -1226,6 +1226,43 @@ sink后原评价只使用这份快照，回执附gold字节SHA；路径后来变
 分任务29项／4项均包含在组合中，不累加。真实框架整图、完整Q10模型、质量／物理退出与公平性能pending，
 不借用LOTUS＋后端的旧Q10成绩。
 
+<a id="lotus-a1105-q8-q10-model"></a>
+## a1105 原 LOTUS Q8 常驻两轮与 Animals Q10 完整查询
+
+两项冻结在`a1105b72357e89da2f4609a3aaeb0ff7b8679237`、SemBench c814及LOTUS1.2.4，
+属于原LOTUS语义，不能授予新独立JSON工程对照模型资格。本接入会话及只读核验任务没有复跑模型或评分；
+两归档原字节SHA、全部payload／恢复字节与各1147个准确源码Git blob已核对。
+紧凑私有核验摘要SHA-256为`f627f15945b220e9f60875f36e625aa9aa443d8419381ada64cd41fa95ccf4fc`，
+归档身份见下表，按运行标识从原服务器协调会话获取。
+
+| 冻结运行 | 真实工作与原结果 | 查询时钟与启动 | 缓存及资格 |
+|---|---|---|---|
+| `lotus-movie-q8-a1105-resident-qualification-20261113-r1` | 原2000×11源、每轮taken_3完整120次；两轮共240终态，unknown／retry／额外推理warmup为0；两轮NEG105／POS15，原gold106／14，原relative_error0.04043126684636118 | 原`sembench.source_to_sink.v3` ready-first1.941388724秒、同owner repeat0.713572857秒；启动53.797202093秒、关闭5.417008606秒另计 | result cache关闭，native prefix cache开启；同model进程／engine UID／birth，120条原答复及完整输出token数组逐项相同；一次首／暖功能资格，非正式排名 |
+| `lotus-animals-q10-a1105-full-query-20261113-r1` | 官方sf64完整64行一次Image Filter，再原City／StationID分组／排序／head1；64推理POST成功、unknown／unfinished／retry／额外推理warmup为0；原precision／recall／F1均1 | 独立`lotus_service.source_to_sink.v1` ready-first35.544935968秒；启动66.080541646秒、tokenize／ready门5.980956013秒、controller→sink121.899902351秒另列 | result／prefix cache均关闭、图像processor cache0；未跑warm，不作跨系统性能比较或全Animals资格 |
+
+Q8使用Qwen2.5-7B-Instruct BF16、revision `a09a35458c702b33eeacc393d103063234e8bc28`、vLLM0.25.1；
+原生成8192 token、temperature0／top_p1／seed0等声明保留。每轮逻辑API usage为14206／360／14566。
+两轮包含同一源位置79／116的重复消息，各自发生项均执行；按原SDK engine_request_id关联240条源、
+native消息指纹、完整输入／输出token数组，不将source ID、transport ID或到达顺序当同一命名空间。
+实际OMP线程为1，旧6c为8；相同engine容量不代表运行校准签名相同。原生MFU仅为scheduler解析估计，
+kernel、纯GPU时长、成本及独立逐请求SamplingParams读回仍未观测。
+
+Q8的v3标签不表示内部观测全部排除：冻结resident在原后处理前深拷贝中间relation，
+F/M/E stage的完整binding.report统计也在原sink前；主要source回放、评分与落盘在后。
+原数值不扣除估算成本，不把这两轮当跨路径统一计时或前缀缓存收益的正式结论。
+首次CPU fixture误用transport到达顺序关联source，0真实模型、120软件尝试不退还；
+只修私有映射后新预算软件两轮通过，原失败保留。
+
+Animals Q10使用Qwen2-VL-2B-Instruct BF16、revision `895c3a49bc3fa70a340399125c650a463535e71c`、vLLM0.25.1，
+原LM batch4及生成配置保留。64次额外tokenize POST是模型前CPU元数据检查，不算64次推理warmup。
+完整input signatures、服务tokenizer数组、API usage及completionID发生项关联已核；output token ID数组、
+GPU像素tensor、独立generate／kernel、真实SamplingParams读回、成本未观测，不填零。
+原gold SQL有三组并列最大City／StationID且无ORDER BY，原查询head1选其中一组，
+c814原评价允许该合法最大结果获得F1=1；不把它解读为逐图全部正确或漏掉金标。
+首次CPU旧私有helper导入失败、首次audit对无序gold做整dict比较失败保持；
+后续仅修私有核对，不改query／模型原答／金标／评分。两项模型、事后audit和归档阶段的owned进程、
+GPU空闲、socket／SHM及租约清理均有实际通过回执。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -1258,6 +1295,8 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 3500 Kalypso Q5单层 | 3129361 | 1368 | `3549da07180f31519880da6412f7dacec24547ddad33f300dfbc4de54bc320f0` |
 | 4073 Ray Q7及旧失败IMLane参考恢复包 | 3541250 | 1694 | `461c67847a7f867a8da420401350e1d23a8a8f677330c427ceef1b5927d81a27` |
 | a1105 IMLane Q7参考恢复包 | 3683997 | 1492 | `0cae1fa63714d42c8ac671c0cec38de62038b5e07681df60470240ecc6560c2c` |
+| a1105 LOTUS Movie Q8首／暖轮 | 4256954 | 1315 | `5a4c447d64fa58ce56a66abb584640bcfe0020bb604d5811d7ad728e873017b4` |
+| a1105 LOTUS Animals Q10参考恢复包 | 3110267 | 1370 | `e45b1773729537c2a97155837a4d601388a5cca0e9735b3dd604e86fdcc4efcc` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。
