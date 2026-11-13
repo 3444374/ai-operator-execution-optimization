@@ -625,6 +625,24 @@ E-Commerce Q12、Cars Q3、Medical Q9，以及Q5单请求和多层长摘要。
 指向删除前的`1c321afef`。新共用入口的实际服务、tokenizer／processor、模型质量及资源退出仍按准确来源另验，
 不能把该重构或此前冻结成绩视为新源码目标通过。
 
+<a id="kalypso-system-runner-review"></a>
+## Kalypso 系统 runner 与完整结果保留
+
+基于独立候选`19d91e339f2f09b5d6bc5c071959429f9a2e7e98`收拢已有文本Filter／Map／Join／TopK：
+一个`KalypsoRunner`拥有查询生命周期，四个handler保留各自原生调用、parser、Map重试及TopK insertion／merge。
+原四个Driver类及维护调用已迁移删除，[准确恢复来源](../../../reproduction/native_baselines/README.md#retired-kalypso-operator-drivers)
+保留。旧Movie Q1–Q4入口和作者服务owner继续按原职责存在；当前仍是已接单算子，不能称完整多阶段接入完成。
+
+整合前独立审查发现新循环把结果编码放在trace／source审计之后，导致已完成的Map结果在后验失败时丢失；
+旧Map原顺序会保留结果。最小修补只把`result_encoding`放在完整sink后、审计前，不改变请求、原生策略或计时起止。
+两个新增用例使用实际`query_evidence`／persist，先复现缺`result.json`，修后保存完整原关系、原异常及失败状态，
+没有成功quality，不接管外部模型关闭。最初5项中2错误的输出与修补后5项全过分别保留。
+
+固定公共依赖`613d930bc`的私有隔离导出中，四算子39项为37通过、2个可选tokenizer未绑定跳过；
+补充owner／内存sink／CPU输入交接23项全部通过，共62个不同用例，60通过、2跳过，5项定向检查包含其中。
+新Kalypso生产／测试源码逐字等于该导出；原owner工作树未改。模型／GPU／外部服务启动均为0，
+原来的作者环境／真实模型成绩仍只属于其冻结来源。
+
 <a id="native-imlane-q3-cf220"></a>
 ## 独立原生 IMLane Movie Q3 的查询时钟
 

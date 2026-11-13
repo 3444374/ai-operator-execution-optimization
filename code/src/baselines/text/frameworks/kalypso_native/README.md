@@ -120,7 +120,7 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 <a id="movie-q9-map-维护版接线"></a>
 ## Movie Q8–Q10 Map 维护版接线
 
-`run_kalypso_sembench_query.py` 的 Movie Map unit 共用 `movie_map.MapDriver`，题目映射只在
+`run_kalypso_sembench_query.py` 的 Movie Map unit 共用 `query_runner.KalypsoRunner`，题目映射只在
 `native_server.MOVIE_MAP_QUERIES` 定义；Movie Q1–Q4 仍走原 Filter driver。原 SemBench c814
 负责 Q8 的 `taken_3` 原标签计数、Q9 显式 `ranking="map"` 的逐评数字评分，以及 Q10 的全评
 分数按电影平均并保留两位小数。Q9/Q10 非法或越界分数仍由原题回落到 3，Q8 不额外归一化
@@ -252,7 +252,7 @@ PYTHONPATH="$VERIFIED_REPO/code" "$AUTHOR_PYTHON" -B \
 
 ### 按原题字段复用 Map
 
-`movie_map.MapDriver` 及既有两个 CPU CLI 也接受 `task="sembench-map"`，每个 query spec
+`query_runner.KalypsoRunner` 及既有两个 CPU CLI 也接受 `task="sembench-map"`，每个 query spec
 另给 `scenario`、`query`，有需要时给原题已有的 `scale_factor`／`ranking`。原三个 `movie-q*`
 名称继续使用同一 driver；新绑定不维护第二套逐题执行器。只有 `SemBenchTextQuery` 捕获到真实
 普通 Map 才允许准备，Filter、Extract、Join、TopK 不改名冒用此入口，后续第二语义算子仍未接线。
@@ -286,7 +286,7 @@ Filter 和 Map unit 分别准备，不自动扩成多算子查询。
 
 [`sembench_inputs.py`](sembench_inputs.py) 拥有原题输入和字段表，
 [`field_binding.py`](field_binding.py) 仅用标准库把字段接到原模板；它们由 Map 与 Filter 共用。
-[`sembench_filter.FilterDriver`](sembench_filter.py) 复用原生 HTTP 客户端、计时和证据生命周期，
+[`FilterOperation`](sembench_filter.py) 复用原生 HTTP 客户端、计时和证据生命周期，
 作者完整返回的 membership 交回原查询完成投影、LIMIT、连接或统计，再记录完整内存 sink。
 没有为每道题复制执行器，也没有把 LOTUS Filter parser 注入作者系统。
 
@@ -330,7 +330,7 @@ Map 核对原动态 cap 和8192重试上界，Filter 核对原8 token cap，均�
 原指令的 `:left/:right` 被一次性替换为全部声明字段，仍使用作者 Join prompt 与8 token Filter
 判定。原 planner 对 CP 后阶段的预估使用 CP 前左 context；预估继续原方法，实际请求必须有完整
 右 context。没有伪造右行、预填模型结果或改变原生预算估计策略。
-[`JoinDriver`](sembench_join.py)复用 Filter 的 source／HTTP／完整 sink／审计流程，原 SDK 仅用
+[`JoinOperation`](sembench_join.py)复用 Filter 的 source／HTTP／完整 sink／审计流程，原 SDK 仅用
 实际 native membership 恢复关系并交回原题；SDK 的消息不发送给第二个模型，也不冒充 Kalypso 的
 模型输入。全部真实读入、必需 CSV／字段表、原生查询和关系恢复均在 v3 source→sink 内；额外
 source 校验、审计、评分和保存仍在区间外。不事后扣除关系恢复或双重格式化成本。
@@ -362,7 +362,7 @@ TopK 分支。`expected_rows=N` 是原筛选后的全部 occurrence，`expected_
 沿用现有正数 unit `call_cap`；零／单行查询的逐查询 cap 为0，正数 owner 额度不产生请求。
 单独 unit 复用现有服务、字段 CSV／JSON、源码绑定与 CPU 交接，不为 Q9 新建执行器。
 
-[`TopKDriver`](sembench_topk.py)把全部 source context 一次交给作者 `sem_topk(k=N)`，保留
+[`TopKOperation`](sembench_topk.py)把全部 source context 一次交给作者 `sem_topk(k=N)`，保留
 [`SemTopK`](https://github.com/goodluck-hojae/kalypso/blob/05024f027f932c0e398852e38302be30b9015481/vllm/kalypso/sem_ops/reducers.py)
 的原生方法：少于8行用 insertion，其余递归 merge；每次比较5 token、原 A/B 判定、无 retry。
 指令字段引用转为字段名，两个文档的完整实际字段值进入作者模板；原生默认 concurrency=20、
@@ -388,3 +388,23 @@ TopK 分支。`expected_rows=N` 是原筛选后的全部 occurrence，`expected_
 其他来源／后端／组合树另验；源／模型／缓存与未观测指标以冻结回执为准，不作性能排名。
 与受影响的 Map／Filter／Join、owner、HTTP／时钟和原题共114项不同本机检查为111通过、
 3跳过（独立Daft SDK及未设置的MMQA／Medical可选资产变量），0真实模型。
+
+## 系统查询生命周期
+
+`query_runner.KalypsoRunner` 统一当前维护的文本 Filter／Map／Join／TopK 查询生命周期：
+原查询绑定、source 到完整内存结果计时、trace 核查、原评价器和结果保存。
+四种原生算子处理器只负责作者调用、关系恢复与各自的原生审计；没有改作者提示、parser、
+Map 重试或 TopK 排序算法。题目仍使用 SemBench 原查询定义，不新增逐题执行器。
+这个边界参考固定 c814 SemBench 的 `GenericRunner` 与系统 runner，而不是把 Kalypso 当成 LOTUS 执行后端。
+
+本批只收拢已有单算子接入。原 Movie Q1–Q4 历史入口仍由 `NativeQueryDriver` 维护，
+完整复合查询尚依赖公共 prepared 接口与作者服务的阶段观察身份迁移；当前不得报告为全量
+SemBench runner 完成或多阶段已支持。新结构的 CPU 生命周期检查与原 SDK／GPU 验证分别记录，
+没有沿用旧成绩作为新实现的性能或质量结论。
+
+整合时独立审查发现：原Map在trace审计前保存完整result，新循环先审计会在后验失败时丢失结果。
+现统一在完整内存sink后编码`result.json`，再做trace／source核查；审计失败仍保留原异常、失败状态，
+不发布成功quality，也不关闭外部owner。真实`query_evidence`／persist的两个失败行为检查先红后绿，
+四算子及owner相关62个不同软件用例为60通过、2个可选tokenizer未绑定跳过；5项定向检查包含其中。
+原四个算子Driver类及调用已退役，无转发壳；[准确恢复来源](../../../../../../experiments/reproduction/native_baselines/README.md#retired-kalypso-operator-drivers)与失败记录保留。
+这些修改不改变作者方法或source→sink起止，模型／GPU及多阶段资格仍未授予。

@@ -1,4 +1,5 @@
 """Native insertion/merge ranking with duplicate rows and original full-query sink."""
+from src.baselines.text.frameworks.kalypso_native.query_runner import KalypsoRunner
 import asyncio
 import copy
 import json
@@ -82,7 +83,7 @@ class NativeTopKContracts(unittest.TestCase):
                 return dict(model_name='m',num_output_rows=len(indices),latency_sec=.1,
                     results=[dict(idx=i) for i in indices])
         with patch.object(adapter,'load_dependencies',return_value=lambda p,v:p.write_text(json.dumps(v))):
-            driver=sembench_topk.TopKDriver(cfg,unit,self.helper.data/(spec['query_id']+'-run'),transport)
+            driver=KalypsoRunner(cfg,unit,self.helper.data/(spec['query_id']+'-run'),transport)
             driver.model_uid='u';report=driver.query(spec,emitted.append)
         return report,seen,emitted
 
@@ -90,7 +91,7 @@ class NativeTopKContracts(unittest.TestCase):
         for n in (0,1,2,7,8,13):
             with self.subTest(n=n):
                 cfg,unit,spec=self.bound(n,'n'+str(n))
-                self.assertIs(query_driver_type(unit),sembench_topk.TopKDriver)
+                self.assertIs(query_driver_type(unit),KalypsoRunner)
                 query=sembench_inputs.make_query(cfg,spec['query_id'],spec,kind='topk')
                 # The original query owns rank-to-score and evaluator. Its accessor
                 # receives the actual native order; no LOTUS sorting is executed.

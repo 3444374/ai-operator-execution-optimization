@@ -1,4 +1,5 @@
 """Original text families and author predicate around one native Filter owner."""
+from src.baselines.text.frameworks.kalypso_native.query_runner import KalypsoRunner
 import ast
 import asyncio
 import json
@@ -53,7 +54,7 @@ class NativeFilterContracts(unittest.TestCase):
             return response
         def save(path,value):path.write_text(json.dumps(value))
         with patch.object(adapter,'load_dependencies',return_value=save),patch.object(adapter,'read_trace',return_value=events):
-            driver=sembench_filter.FilterDriver(cfg,unit,self.helper.data/(spec['query_id']+'-run'),transport)
+            driver=KalypsoRunner(cfg,unit,self.helper.data/(spec['query_id']+'-run'),transport)
             driver.model_uid='u'
             try:return driver.query(spec,emitted.append),emitted
             except BaseException as error:error.observed_events=emitted;raise
@@ -64,7 +65,7 @@ class NativeFilterContracts(unittest.TestCase):
         for index,(scenario,number) in enumerate(cases):
             with self.subTest(scenario=scenario,query=number):
                 cfg,unit,spec=self.bound(scenario,number,str(index))
-                self.assertIs(query_driver_type(unit),sembench_filter.FilterDriver)
+                self.assertIs(query_driver_type(unit),KalypsoRunner)
                 self.assertEqual(native_server.physical_call_caps(unit),{str(index):spec['expected_calls']})
                 query=sembench_inputs.make_query(cfg,spec['query_id'],spec,kind='filter')
                 answers=[('true','false and true','unknown verdict')[i%3] for i in range(spec['expected_calls'])]

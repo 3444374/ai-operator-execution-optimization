@@ -31,6 +31,19 @@
 
 历史运行继续使用其归档中的source binding、配置和原始计时；恢复旧入口不授权自动运行模型。
 
+<a id="retired-kalypso-operator-drivers"></a>
+## 旧 Kalypso 算子 Driver 恢复
+
+现行维护的SemBench文本Filter／Map／Join／TopK使用同一`query_runner.KalypsoRunner`生命周期，
+四个handler各自保留作者调用、关系恢复及原生审计。原四个Driver类及当前调用已迁移删除，无转发别名；
+旧Movie Q1–Q4的`NativeQueryDriver`及外部模型owner仍按实际职责保留，不冒充多阶段已迁移。
+
+准确提交`dde43a48df0153af7854fd8c5e77ab1cc960c99c`中的
+`code/src/baselines/text/frameworks/kalypso_native/`下`movie_map.py`、`sembench_filter.py`、
+`sembench_join.py`、`sembench_topk.py`及`code/src/experiments/kalypso_query_lifecycle.py`
+可按原路径`git show`恢复旧类和选择逻辑。冻结运行、失败、原算法及原时钟仍从其实际source恢复，
+不因新结构的软件检查改记模型资格。
+
 <a id="retired-daft-q3-native-binding"></a>
 ## 旧 Daft Q3 专项原生图恢复
 

@@ -1,4 +1,5 @@
 """Movie Map binding, event identity and finite native retry contracts; no model."""
+from src.baselines.text.frameworks.kalypso_native.query_runner import KalypsoRunner
 import asyncio
 import copy
 import json
@@ -9,7 +10,7 @@ from types import ModuleType, SimpleNamespace as NS
 import unittest
 from unittest.mock import patch
 
-from src.baselines.text.frameworks.kalypso_native import adapter, movie_map, native_server, sembench_inputs
+from src.baselines.text.frameworks.kalypso_native import query_runner, adapter, movie_map, native_server, sembench_inputs
 from src.experiments.kalypso_query_lifecycle import query_driver_type
 
 
@@ -39,7 +40,7 @@ def trace(count=2,retry=False):
 class MovieMapContracts(unittest.TestCase):
     def test_movie_map_aliases_keep_map_and_other_tasks_need_explicit_bindings(self):
         for task in native_server.MOVIE_MAP_QUERIES:
-            self.assertIs(query_driver_type(unit(task=task)),movie_map.MapDriver)
+            self.assertIs(query_driver_type(unit(task=task)),KalypsoRunner)
         self.assertIs(query_driver_type(dict(queries=[dict(task='movie-q4')])),adapter.NativeQueryDriver)
         for task in ('movie-q9-topk','movie-q7','medical-q4','fixture'):
             with self.assertRaisesRegex(ValueError,'supports'):
@@ -195,14 +196,14 @@ class MovieMapContracts(unittest.TestCase):
             root=Path(raw);(root/'Reviews.csv').write_text('changed')
             for hashes in ({},{'Reviews.csv':'wrong'}):
                 with self.assertRaises(ValueError):
-                    movie_map.make_query(dict(data_dir=raw,source_data_sha256=hashes),'q')
+                    sembench_inputs.make_query(dict(data_dir=raw,source_data_sha256=hashes),'q')
 
     def test_q10_requires_frozen_movie_labels_before_original_query(self):
         with patch.object(sembench_inputs,'SemBenchTextQuery') as query:
             with self.assertRaisesRegex(ValueError,'evaluation file hashes'):
-                movie_map.make_query(dict(source_data_sha256={'Reviews.csv':'hash'}),'q','movie-q10')
+                sembench_inputs.make_query(dict(source_data_sha256={'Reviews.csv':'hash'}),'q','movie-q10')
             with self.assertRaisesRegex(ValueError,'supported original text'):
-                movie_map.make_query({},'q','movie-q9-topk')
+                sembench_inputs.make_query({},'q','movie-q9-topk')
         query.assert_not_called()
 
 
@@ -236,7 +237,7 @@ class OriginalMapSizeContracts(unittest.TestCase):
                     execution_enabled=False,CPU_fixture_only=True)
                 spec=dict(query_id='q',task=task,expected_calls=count,max_native_calls=2*count)
                 bound=dict(call_cap=2*count,queries=[spec]);cfg['units']=[bound]
-                query=movie_map.make_query(cfg,'q',task)
+                query=sembench_inputs.make_query(cfg,'q',task)
                 values=(('POSITIVE','NEGATIVE','other',' NEGATIVE ','positive','POSITIVE\n','')
                         if task=='movie-q8' else ('5','1','not numeric','6','nan','Answer: 2','3'))
                 answers=[values[i%7] for i in range(count)]
@@ -265,12 +266,12 @@ class OriginalMapSizeContracts(unittest.TestCase):
                     self.assertEqual(pd.read_csv(payload['data_path'])['data'].tolist(),sample.reviewText.tolist())
                     clock.advance(3);return response
                 original_prepare=movie_map.prepare
-                original_make_query=movie_map.make_query
+                original_make_query=sembench_inputs.make_query
                 original_parse=postprocessors.map_postprocess
                 original_query=sembench_inputs.SemBenchTextQuery._original
                 original_evaluate=sembench_inputs.SemBenchTextQuery.evaluate
                 def prepare(*args):clock.advance(2);return original_prepare(*args)
-                def make_query(*args):clock.advance(17);return original_make_query(*args)
+                def make_query(*args,**kwargs):clock.advance(17);return original_make_query(*args,**kwargs)
                 def parse(*args):clock.advance(5);return original_parse(*args)
                 def original(owner,*args):
                     result=original_query(owner,*args);clock.advance(4);return result
@@ -282,14 +283,14 @@ class OriginalMapSizeContracts(unittest.TestCase):
                 def save(path,value):
                     emit('persist');clock.advance(13);path.write_text(json.dumps(value))
                 with patch.object(adapter,'load_dependencies',return_value=save), \
-                        patch.object(movie_map.time,'monotonic_ns',clock), \
+                        patch.object(query_runner.time,'monotonic_ns',clock), \
                         patch.object(movie_map,'prepare',prepare), \
-                        patch.object(movie_map,'make_query',make_query), \
+                        patch.object(query_runner,'make_query',make_query), \
                         patch.object(postprocessors,'map_postprocess',parse), \
                         patch.object(sembench_inputs.SemBenchTextQuery,'_original',original), \
                         patch.object(sembench_inputs.SemBenchTextQuery,'evaluate',evaluate), \
                         patch.object(adapter,'read_trace',read_trace):
-                    driver=movie_map.MapDriver(cfg,bound,helper.data/f'query-{task}-{count}',transport)
+                    driver=KalypsoRunner(cfg,bound,helper.data/f'query-{task}-{count}',transport)
                     driver.model_uid='u'
                     report=driver.query(spec,emit)
                 self.assertEqual(report['result'],expected.to_dict(orient='split'))

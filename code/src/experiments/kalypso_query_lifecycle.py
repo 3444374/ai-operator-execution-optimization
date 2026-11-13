@@ -26,26 +26,13 @@ def owner_cli_bindings(cfg):
 
 def query_driver_type(unit):
     tasks={q['task'] for q in unit['queries']}
-    if tasks and tasks<=set(MAP_TASKS):
-        from src.baselines.text.frameworks.kalypso_native.movie_map import MapDriver
+    supported = (tasks and tasks <= set(MAP_TASKS)) or tasks in (
+        {'sembench-filter'}, {'sembench-join'}, {'sembench-topk'})
+    if supported:
+        from src.baselines.text.frameworks.kalypso_native.query_runner import KalypsoRunner
         from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
         physical_call_caps(unit)
-        return MapDriver
-    if tasks=={'sembench-filter'}:
-        from src.baselines.text.frameworks.kalypso_native.sembench_filter import FilterDriver
-        from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
-        physical_call_caps(unit)
-        return FilterDriver
-    if tasks=={'sembench-join'}:
-        from src.baselines.text.frameworks.kalypso_native.sembench_join import JoinDriver
-        from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
-        physical_call_caps(unit)
-        return JoinDriver
-    if tasks=={'sembench-topk'}:
-        from src.baselines.text.frameworks.kalypso_native.sembench_topk import TopKDriver
-        from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps
-        physical_call_caps(unit)
-        return TopKDriver
+        return KalypsoRunner
     if tasks and tasks <= {'movie-q1','movie-q2','movie-q3','movie-q4'}:
         return native.NativeQueryDriver
     raise ValueError('Maintained Kalypso CLI supports Movie Filter or original text Filter/Map/Join/TopK units')

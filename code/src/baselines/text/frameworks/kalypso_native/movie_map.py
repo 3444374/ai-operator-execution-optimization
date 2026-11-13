@@ -1,10 +1,10 @@
 """Original SemBench Map queries using the existing native owner session."""
 from dataclasses import replace
 from pathlib import Path
-import time
 
 from src.baselines.text.frameworks.kalypso_native import adapter as native
-from .sembench_inputs import make_query, prepare
+from .sembench_inputs import prepare
+from .query_runner import NativeOperation
 
 
 def reconcile(response,events,qid,expected):
@@ -61,78 +61,54 @@ def reconcile(response,events,qid,expected):
     return [by_idx[i] for i in range(expected)],ends
 
 
-class MapDriver(native.NativeQueryDriver):
-    def query(self,spec,emit):
+class MapOperation(NativeOperation):
+    kind = 'map'
+    source_metadata = dict(
+        policy='original SemBench Map relation; cache disabled; no implicit warmup or transport retry',
+        native_retry_policy='author SemMap length branch: at most once at 8192',
+    )
+
+    def execute(self, operation, unused_original):
         from lotus.sem_ops.postprocessors import map_postprocess
         from src.semantic_methods.lotus.record_method import LotusRecordMethod
-        if spec!=self.unit['queries'][self.next_query]:raise ValueError('Query sequence changed')
-        self.next_query+=1
-        directory=self.output/spec['query_id'];directory.mkdir(mode=0o700)
-        with self.query_evidence(spec,directory,
-                sink_scope='complete original SemBench Map parser and final query relation in memory',
-                source_scope='fresh original query source plus author-required CSV and prompt table') as (report,artifacts,timing):
-            timing['phase_overlap']='original_query includes input, HTTP, parser and original relational work; do not add nested phase durations'
-            native_report={};responses=[]
-            with native.query_phase(timing,'source_preflight'):
-                query=make_query(self.cfg,spec['query_id'],spec)
-                execute_query=query.bind_execution()
-            def execute(operation,unused_original):
-                with native.query_phase(timing,'source_and_required_input'):
-                    values,path=prepare(self.cfg,spec,directory,operation)
-                    payload=dict(data_path=str(path),ops=[dict(op='sem_map',args=dict(prompt=operation.stage.method.instruction))],blocking=False)
-                artifacts['request.json']=payload;artifacts['occurrences.json']=values
-                with native.query_phase(timing,'native_HTTP_and_JSON_parse'):
-                    response=self.transport(payload,spec['query_id'],directory)
-                responses.append(response)
-                with native.query_phase(timing,'required_Map_parser'):
-                    texts=native.response_map_texts(response,self.cfg['model'],spec['expected_calls'])
-                    method=LotusRecordMethod(operation.stage)
-                    parsed=map_postprocess(texts,method.lm,False).outputs
-                    completed=[replace(r,values={**r.values,operation.stage.method.output_column:text}) for r,text in zip(operation.records,parsed,strict=True)]
-                    native_report.update(rows=values,raw_outputs=texts,latency_s=response['latency_sec'])
-                    return dict(frame=operation.result_frame(completed),calls=[])
-            timing.update(query_clock_version='sembench.source_to_sink.v3',
-                          source_started_ns=time.monotonic_ns(),
-                          model_ready_before_source=self.model_ready_observed_ns is not None,
-                          model_ready_before_source_observed_ns=self.model_ready_observed_ns)
-            with native.query_phase(timing,'original_query'):
-                frame,_=execute_query(execute)
-                if len(responses)!=1:raise ValueError('Binding requires one original native Map query')
-            timing['memory_sink_ready_ns']=time.monotonic_ns()
-            emit('memory_sink_ready')
-            with native.query_phase(timing,'result_encoding'):
-                result=frame.to_dict(orient='split');artifacts['result.json']=result
-            with native.query_phase(timing,'trace_audit'):
-                timing['trace_audit_status']='running'
-                events=native.read_trace(self.cfg['native_trace'],spec['query_id'])
-                events+=native.read_trace(Path(self.cfg['native_trace']).with_name('map-trace.jsonl'),spec['query_id'])
-                texts,ends=reconcile(responses[0],events,spec['query_id'],spec['expected_calls'])
-                ids={e['request_id'] for e in ends}
-                if ids&self.request_ids or {e['model_uid'] for e in ends}!={self.model_uid}:raise ValueError('Owner or request IDs changed')
-                self.request_ids.update(ids)
-                native_report.update(native_API_units=ends,
-                    first_max_tokens=[min([e for e in ends if e['idx']==i],key=lambda e:e['sequence'])['max_tokens'] for i in range(spec['expected_calls'])])
-                artifacts['native-map.json']=native_report
-                timing['trace_audit_status']='passed'
-            with native.query_phase(timing,'source_snapshot'):
-                query.verify_source()
-                source=query.describe()
-                source['policy']='original SemBench Map relation; cache disabled; no implicit warmup or transport retry'
-                source['native_retry_policy']='author SemMap length branch: at most once at 8192'
-                artifacts['source.json']=source
-            emit('result_ready')
-            with native.query_phase(timing,'quality_evaluation'):
-                evaluation_started=time.monotonic_ns();quality=query.evaluate(frame);evaluated=time.monotonic_ns()
-                artifacts['quality.json']=quality
-            report.update(status='completed',query_id=spec['query_id'],backend='kalypso-native',
-                baseline_name='Kalypso author SemMap with original SemBench instruction-field binding',
-                semantic_operator='SemMap, original '+source['scenario']+' '+source['query']+' parser, relation and evaluator',
-                execution_backend='author Kalypso controller/KV/ratio estimator and native vLLM persistent service',
-                logical_occurrences=spec['expected_calls'],physical_call_cap=spec['max_native_calls'],
-                native_retry_policy='one length-triggered retry at 8192; no transport retry',physical_native_calls=len(native_report['native_API_units']),
-                native_API_units=native_report['native_API_units'],result=result,quality=quality,
-                evaluation_seconds=(evaluated-evaluation_started)/1e9,native_server_latency_s=native_report['latency_s'],
-                generation='author dynamic first max_tokens, native length-to8192 retry, seed42/frequency.5/repetition1.3',
-                prompt_scope='exact original instruction and referenced field text bound to author Map prompt template, different from LOTUS messages')
-        return report
+        with native.query_phase(self.timing, 'source_and_required_input'):
+            self.values, path = prepare(self.cfg, self.spec, self.directory, operation)
+            payload = dict(data_path=str(path), ops=[dict(op='sem_map',
+                args=dict(prompt=operation.stage.method.instruction))], blocking=False)
+        self.artifacts.update({'request.json': payload, 'occurrences.json': self.values})
+        with native.query_phase(self.timing, 'native_HTTP_and_JSON_parse'):
+            self.response = self.driver.transport(payload, self.spec['query_id'], self.directory)
+        with native.query_phase(self.timing, 'required_Map_parser'):
+            self.texts = native.response_map_texts(self.response, self.cfg['model'], self.spec['expected_calls'])
+            method = LotusRecordMethod(operation.stage)
+            parsed = map_postprocess(self.texts, method.lm, False).outputs
+            completed = [replace(r, values={**r.values, operation.stage.method.output_column: text})
+                for r, text in zip(operation.records, parsed, strict=True)]
+            return dict(frame=operation.result_frame(completed), calls=[])
 
+    def audit(self):
+        qid = self.spec['query_id']
+        events = native.read_trace(self.cfg['native_trace'], qid)
+        events += native.read_trace(Path(self.cfg['native_trace']).with_name('map-trace.jsonl'), qid)
+        _, self.ends = reconcile(self.response, events, qid, self.spec['expected_calls'])
+        ids = {e['request_id'] for e in self.ends}
+        if ids & self.driver.request_ids or {e['model_uid'] for e in self.ends} != {self.driver.model_uid}:
+            raise ValueError('Owner or request IDs changed')
+        self.driver.request_ids.update(ids)
+        self.artifacts['native-map.json'] = dict(
+            rows=self.values, raw_outputs=self.texts, latency_s=self.response['latency_sec'], native_API_units=self.ends,
+            first_max_tokens=[min([e for e in self.ends if e['idx'] == i], key=lambda e: e['sequence'])['max_tokens']
+                for i in range(self.spec['expected_calls'])],
+        )
+
+    def report_metadata(self, source):
+        return dict(
+            baseline_name='Kalypso author SemMap with original SemBench instruction-field binding',
+            semantic_operator='SemMap, original ' + source['scenario'] + ' ' + source['query'] + ' parser, relation and evaluator',
+            execution_backend='author Kalypso controller/KV/ratio estimator and native vLLM persistent service',
+            logical_occurrences=self.spec['expected_calls'], physical_call_cap=self.spec['max_native_calls'],
+            native_retry_policy='one length-triggered retry at 8192; no transport retry', physical_native_calls=len(self.ends),
+            native_API_units=self.ends, native_server_latency_s=self.response['latency_sec'],
+            generation='author dynamic first max_tokens, native length-to8192 retry, seed42/frequency.5/repetition1.3',
+            prompt_scope='exact original instruction and referenced field text bound to author Map prompt template, different from LOTUS messages',
+        )

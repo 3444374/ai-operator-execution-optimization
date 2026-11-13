@@ -1,15 +1,15 @@
 """Original text Join using native CartesianProduct and native SemFilter."""
-from .sembench_filter import FilterDriver
+from .sembench_filter import FilterOperation
 from .join_inputs import prepare
 
 
-class JoinDriver(FilterDriver):
-    operator_kind='join'
+class JoinOperation(FilterOperation):
+    kind='join'
     operator_name='CartesianProduct/SemFilter Join'
     prompt_parser_identity='all declared fields in author Join template; native Filter predicate; not LOTUS parser'
 
-    def prepare_operator(self,spec,directory,operation):
-        table,paths=prepare(self.cfg,spec,directory,operation)
+    def prepare_operator(self,operation):
+        table,paths=prepare(self.cfg,self.spec,self.directory,operation)
         payload=dict(data_path=str(paths['left']),ops=[dict(op='join',args=dict(
             right_table=str(paths['right']),instruction=operation.instruction))],blocking=False)
         rows=[dict(row_id=row.row_id,source_position=row.source_position) for row in operation.records]

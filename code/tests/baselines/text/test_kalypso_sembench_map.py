@@ -1,4 +1,5 @@
 """Original multi-field Map source, author template and complete sink; no model."""
+from src.baselines.text.frameworks.kalypso_native.query_runner import KalypsoRunner
 import ast
 import json
 import os
@@ -9,7 +10,7 @@ from types import ModuleType, SimpleNamespace as NS
 import unittest
 from unittest.mock import patch
 
-from src.baselines.text.frameworks.kalypso_native import adapter, map_observation, movie_map, movie_map_inputs, native_server
+from src.baselines.text.frameworks.kalypso_native import sembench_inputs, adapter, map_observation, movie_map, movie_map_inputs, native_server
 from src.experiments.kalypso_query_lifecycle import query_driver_type
 from tests.baselines.text import test_kalypso_movie_map as movie_tests
 from tests.experiments import test_sembench_text_original as original_tests
@@ -25,7 +26,7 @@ class MapTaskContracts(unittest.TestCase):
         for count in (1,7,13):
             spec=map_spec(count)
             unit=dict(call_cap=2*count, queries=[spec])
-            self.assertIs(query_driver_type(unit), movie_map.MapDriver)
+            self.assertIs(query_driver_type(unit), KalypsoRunner)
             self.assertEqual(native_server.query_task(spec), dict(scenario='ecomm',query_id='5'))
             self.assertEqual(native_server.physical_call_caps(unit),dict(q=2*count))
             spec['max_native_calls']=count
@@ -60,7 +61,7 @@ class OriginalMapContracts(unittest.TestCase):
                 self.freeze_source()
                 spec=map_spec(count);unit=dict(call_cap=2*count,queries=[spec]);self.cfg['units']=[unit]
                 self.cfg['map_prompt_root']=str(self.helper.data/f'prompts-{count}')
-                query=movie_map.make_query(self.cfg,'q',spec)
+                query=sembench_inputs.make_query(self.cfg,'q',spec)
                 answers=[('Topwear','Topwear','Socks')[i%3] for i in range(count)]
                 expected,_=self.helper._reference(query,answers)
                 expected_quality=query.evaluate(expected)
@@ -92,7 +93,7 @@ class OriginalMapContracts(unittest.TestCase):
                 with patch.object(adapter,'load_dependencies',return_value=save), \
                         patch.object(adapter,'read_trace',side_effect=lambda path,qid:
                             [] if Path(path).name=='map-trace.jsonl' else events):
-                    driver=movie_map.MapDriver(self.cfg,unit,self.helper.data/f'run-{count}',transport)
+                    driver=KalypsoRunner(self.cfg,unit,self.helper.data/f'run-{count}',transport)
                     driver.model_uid='u'
                     report=driver.query(spec,emitted.append)
                 self.assertEqual(report['result'],expected.to_dict(orient='split'))
@@ -106,20 +107,20 @@ class OriginalMapContracts(unittest.TestCase):
     def test_original_filter_extract_join_are_not_relabelled_as_map(self):
         for query_id in ('1','3','7'):
             with self.subTest(query=query_id),self.assertRaisesRegex(ValueError,'ordinary text Map'):
-                movie_map.make_query(self.cfg,'q',dict(map_spec(),query=query_id))
+                sembench_inputs.make_query(self.cfg,'q',dict(map_spec(),query=query_id))
 
     def test_explicit_movie_query_reuses_the_existing_map_policy(self):
         spec=dict(map_spec(),scenario='movie',query='Q9')
         cfg=dict(self.cfg,source_data_sha256={'Reviews.csv':adapter.sha(self.helper.data/'Reviews.csv')})
-        query=movie_map.make_query(cfg,'q',spec)
+        query=sembench_inputs.make_query(cfg,'q',spec)
         self.assertEqual(query.ranking,'map')
         self.assertEqual(query.operation.describe()['kind'],'map')
         with self.assertRaisesRegex(ValueError,'ordinary text Map'):
-            movie_map.make_query(cfg,'q',dict(spec,ranking='topk'))
+            sembench_inputs.make_query(cfg,'q',dict(spec,ranking='topk'))
 
     def test_multifield_context_is_stable_across_equivalent_column_iteration_orders(self):
         from dataclasses import replace
-        query=movie_map.make_query(self.cfg,'q',map_spec())
+        query=sembench_inputs.make_query(self.cfg,'q',map_spec())
         left,_=movie_map.prepare(self.cfg,map_spec(),self.helper.data/'left',query.operation)
         records=tuple(replace(row,values=dict(reversed(list(row.values.items())))) for row in query.operation.records)
         cfg=dict(self.cfg,map_prompt_root=str(self.helper.data/'right-prompts'))
@@ -128,10 +129,10 @@ class OriginalMapContracts(unittest.TestCase):
 
     def test_full_parquet_identity_is_required_before_model_submission(self):
         with self.assertRaisesRegex(ValueError,'file hashes'):
-            movie_map.make_query(dict(self.cfg,source_data_sha256={}),'q',map_spec())
+            sembench_inputs.make_query(dict(self.cfg,source_data_sha256={}),'q',map_spec())
         changed=dict(self.cfg,source_data_sha256={'styles_details.parquet':'wrong'})
         with self.assertRaisesRegex(ValueError,'source data changed'):
-            movie_map.make_query(changed,'q',map_spec())
+            sembench_inputs.make_query(changed,'q',map_spec())
 
     @unittest.skipUnless(os.environ.get('SEMLOOM_NATIVE_TEST_KALYPSO_CHECKOUT'),
         'requires author05024 Git objects for the original template functions')
@@ -156,7 +157,7 @@ class OriginalMapContracts(unittest.TestCase):
         helpers=ModuleType('vllm.kalypso.sem_ops.prompt_utils');helpers.__dict__.update(scope)
         base=ModuleType('vllm.kalypso.sem_ops.base');base.OpName=op
         context=ModuleType('vllm.kalypso.context');context.RETRY_TASK=object()
-        query=movie_map.make_query(self.cfg,'q',map_spec())
+        query=sembench_inputs.make_query(self.cfg,'q',map_spec())
         with tempfile.TemporaryDirectory() as raw,patch.dict('sys.modules',
                 {helpers.__name__:helpers,base.__name__:base,context.__name__:context}):
             rows,_=movie_map.prepare(self.cfg,map_spec(),Path(raw)/'input',query.operation)

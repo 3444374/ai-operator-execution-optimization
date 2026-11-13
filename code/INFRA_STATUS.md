@@ -35,7 +35,7 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 | 共同边界 | 当前源码事实与收尾范围 |
 |---|---|
 | 原题与实际中间关系 | [`SemBenchTextQuery`](src/baselines/text/sembench_text.py) 已有`bind_execution(multiple=True)`实际算子callback与`bind_original_execution()`完整原函数边界；默认单算子合同供未迁移记录图使用。LOTUS＋Ray已改用完整原函数，MMQA Q2b空／非空第二阶段和Movie quick动态批次有原SDK软件差分；其他后端、分支与未绑定原题仍各自待接线或验收，不从公共函数存在取得资格。 |
-| 原生执行与生命周期 | LOTUS＋Ray以query级runtime接实际多批native processor，在完整sink后关闭，不声称跨批模型复用；新多批目标清理待验。Daft的原生collect、IMLane多SQL批次及Kalypso作者服务各有真实owner，不能借用Ray生命周期资格；按实际API完成阶段交接、失败与最后资源释放。 |
+| 原生执行与生命周期 | LOTUS＋Ray以query级runtime接实际多批native processor，在完整sink后关闭，不声称跨批模型复用；新多批目标清理待验。Kalypso维护的文本Filter／Map／Join／TopK已收拢同一系统runner和四个handler，仍只支持已接单算子，旧Movie Q1–Q4入口及完整多阶段另迁移。Daft collect、IMLane多SQL批次及Kalypso外部服务各有真实owner，不能借用Ray生命周期资格。 |
 | 完整查询计时 | 现有 v3 时钟保留真实源读取、原生准备、必要阶段交接、解析和最终内存 sink；额外身份／token 预检与结果审计在区间外。冷启动、服务 ready 后查询和组件时间继续分列，不能靠旧数值相减或单阶段成绩补出完整查询时间。 |
 | 验证与数据 | 先以原函数／SDK 差分覆盖共同执行边界，再对有真实输入且后端支持的完整代表查询验模型、结果关联和物理清理。数据缺口、原生接口限制、代码未接线和目标待验各自保留，见下表与所属原报告；不重复已完成模型请求来增加通过数。 |
 | 替代与调用迁移 | 旧 Ray／Daft Q3 专项图和旧 IMLane `Q1Relation` 已退出现行调用。LOTUS外部服务的视觉查询与Q5聚合已共用查询生命周期和原题对象，原两个CLI／worker及旧视觉对象已迁移删除，[恢复来源](../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)保留。HTTP、records、作者算法和不同生命周期对照按真实职责保留；其他替代路径也须迁移完调用再删除。 |

@@ -13,6 +13,10 @@
 与公共边界及IMLane Q3的最终组合检查共245个不同用例，241通过、4个环境／输入未绑定跳过，
 该计数包含前述检查，不能累加；取消的Daft动作及三份草稿未进入验证导出。
 
+[Kalypso系统runner](diagnostics/sembench_native_integration_20261112/README.md#kalypso-system-runner-review)
+另记录19d候选的四算子生命周期收拢、退役旧调用及独立审查修补：后验审计失败仍保存完整结果，
+62个不同软件用例为60通过、2个tokenizer未绑定跳过，0模型／GPU；旧Movie入口及多阶段范围仍分别保留。
+
 [独立原生IMLane Q3](diagnostics/sembench_native_integration_20261112/README.md#native-imlane-q3-cf220)
 另整合cf220的同字节源码与30项本地软件检查。协调者已报告同源Linux SQL及120次真实终态，
 COUNT相对误差50%，packet摘要仍计时；138份原件已核SHA及保存IPC／原parser／官方评分，

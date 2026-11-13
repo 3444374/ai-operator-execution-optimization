@@ -13,6 +13,7 @@ SOURCE_FILES = (
     'src/baselines/text/frameworks/kalypso_native/movie_map_inputs.py',
     'src/baselines/text/frameworks/kalypso_native/movie_map.py',
     'src/baselines/text/frameworks/kalypso_native/adapter.py',
+    'src/baselines/text/frameworks/kalypso_native/query_runner.py',
     'src/baselines/text/frameworks/kalypso_native/sembench_inputs.py',
     'src/baselines/text/frameworks/kalypso_native/sembench_filter.py',
     'src/baselines/text/frameworks/kalypso_native/sembench_join.py',

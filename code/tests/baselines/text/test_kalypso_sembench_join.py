@@ -1,4 +1,5 @@
 """Pinned CP/Filter bodies, repeated texts and original whole-query Join sinks."""
+from src.baselines.text.frameworks.kalypso_native.query_runner import KalypsoRunner
 import asyncio
 import copy
 import json
@@ -77,7 +78,7 @@ class NativeJoinContracts(unittest.TestCase):
                         outputs=[dict(value=next(iter(item.values()))) for item in ctx.output]) for ctx in output])
         def save(path,value):path.write_text(json.dumps(value))
         with patch.object(adapter,'load_dependencies',return_value=save):
-            driver=sembench_join.JoinDriver(cfg,unit,self.helper.data/(spec['query_id']+'-run'),transport)
+            driver=KalypsoRunner(cfg,unit,self.helper.data/(spec['query_id']+'-run'),transport)
             driver.model_uid='u';report=driver.query(spec,emitted.append)
         return report,emitted,messages
 
@@ -85,7 +86,7 @@ class NativeJoinContracts(unittest.TestCase):
         for index,(scenario,number) in enumerate([('movie','5'),('movie','6'),('movie','7'),('ecomm','7')]):
             with self.subTest(scenario=scenario,query=number):
                 cfg,unit,spec=self.bound(scenario,number,str(index))
-                self.assertIs(query_driver_type(unit),sembench_join.JoinDriver)
+                self.assertIs(query_driver_type(unit),KalypsoRunner)
                 query=sembench_inputs.make_query(cfg,str(index),spec,kind='join')
                 answers=[('true','false and true','unparseable')[i%3] for i in range(spec['expected_calls'])]
                 canonical=['False' if 'false' in text else 'True' for text in answers]
