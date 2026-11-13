@@ -36,7 +36,7 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 |---|---|
 | 原题与实际中间关系 | [`SemBenchTextQuery`](src/baselines/text/sembench_text.py) 已有`bind_execution(multiple=True)`实际算子callback与`bind_original_execution()`完整原函数边界；默认单算子合同供未迁移记录图使用。LOTUS＋Ray已改用完整原函数，MMQA Q2b空／非空第二阶段和Movie quick动态批次有原SDK软件差分；其他后端、分支与未绑定原题仍各自待接线或验收，不从公共函数存在取得资格。 |
 | 原生执行与生命周期 | LOTUS＋Ray以query级runtime接实际多批native processor，在完整sink后关闭，不声称跨批模型复用；新多批目标清理待验。Kalypso维护的文本Filter／Map／Join／TopK已收拢同一系统runner和四个handler，仍只支持已接单算子；其Movie records/prefix＋外置条件profile因输入、消息和schema不同继续单列，不计为第二套系统baseline。两种profile均保留后验失败的完整结果，多阶段仍待接线。Daft collect、IMLane多SQL批次及Kalypso外部服务各有真实owner，不能借用Ray生命周期资格。 |
-| 完整查询计时 | 现有 v3 时钟保留真实源读取、原生准备、必要阶段交接、解析和最终内存 sink；额外身份／token 预检与结果审计在区间外。冷启动、服务 ready 后查询和组件时间继续分列，不能靠旧数值相减或单阶段成绩补出完整查询时间。 |
+| 完整查询计时 | 从真实源读取到完整内存sink直接打点，冷启动、服务ready后查询和组件时间分列；版本名不自动授予跨系统可比性。LOTUS＋Ray改记`lotus_ray.source_to_sink.v1`，包含actor observer同步事件／输出写盘；独立IMLane v2仍含UDF/provider回执。额外外层预检和driver后置审计分开，但内部审计留存／flush尚待闭合，不能靠旧数值相减制造统一成绩。 |
 | 验证与数据 | 先以原函数／SDK 差分覆盖共同执行边界，再对有真实输入且后端支持的完整代表查询验模型、结果关联和物理清理。数据缺口、原生接口限制、代码未接线和目标待验各自保留，见下表与所属原报告；不重复已完成模型请求来增加通过数。 |
 | 替代与调用迁移 | 旧 Ray／Daft Q3 专项图和旧 IMLane `Q1Relation` 已退出现行调用。LOTUS外部服务的视觉查询与Q5聚合已共用查询生命周期和原题对象，原两个CLI／worker及旧视觉对象已迁移删除，[恢复来源](../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)保留。HTTP、records、作者算法和不同生命周期对照按真实职责保留；其他替代路径也须迁移完调用再删除。 |
 
@@ -57,7 +57,7 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 | 原关系连接后单图或双图 Filter；Medical Q3/Q8/Q9 | 原脚本／原生视觉服务／原评分已接线，db3fe Linux52通过；已查作者checkout缺原图，sf20 Q3原连接0行不授予视觉资格，非空输入／processor／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线；空路径已实机执行，参考非空Extract组件5次真实请求已验；实际Join→非空Extract及旧原答关联仍有缺口 | 完整原函数、原生JSON及query owner已接；临时2图／5表行的10→5和10→0软件原题差分通过；真实多阶段模型／质量／清理待验 | 未接线 | 未接线 | 未接线 |
-| 原分层 Aggregate；MMQA Q5 | 独立原 SDK 查询已接线，真实 sf25 软件回放通过 | 未接线 | 未接线 | 未接线 | 未接线 |
+| 原分层 Aggregate；MMQA Q5 | 同一原生服务runner已接线，真实sf25软件回放按原来源分列 | 已复用原函数／token计数／分层算法与既有query owner，单层及真实摘要驱动多层的软件差分通过；实际SDK／模型／tokenizer加载及质量待验，独立计时包含observer I/O | 未接线 | 未接线 | 未接线 |
 | 文本 Filter 后对实际保留行作图像 Extract；E-Commerce Q12 | 原函数及原生服务完整接线；临时数据软件验证，真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 | 多分支 Filter／Join 及分组 TopK；E-Commerce Q10/Q11/Q14 | 原完整函数已接线，软件原生图检查；多列 Join 受当前SDK选列限制，真实数据／VLM待验 | 未接线 | 未接线 | 未接线 | 未接线 |
 
@@ -277,8 +277,9 @@ Movie 的 exact 是显式比较 profile，官方 runner 默认 approximate，两
 原生8 token Filter与判定保持；实际消息摘要、CPU完整token数组已核，GPU实际token数组、usage、
 价格与kernel计数未观测。资格只属于该来源／样本，不转授全量、其他后端或后续TopK组合树。
 
-LOTUS resident／视觉／MMQA 聚合、Ray／Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 使用
-`query_clock_version=sembench.source_to_sink.v3`：共享文本输入身份校验在起点前和 sink 后执行，
+LOTUS resident／视觉／MMQA聚合、旧Ray prepared／Animals、Daft prepared、IMLane Filter和Kalypso各路径
+按其来源记录外层source/sink版本；部分仍保留`sembench.source_to_sink.v3`字段，但不能据此推断内部审计全部排除。
+当前完整LOTUS＋Ray入口已改独立v1，原生IMLane Q3为独立v2，具体残余见上方能力表。共享文本身份在起点前及sink后核对，
 完整查询真实读取及最终关系处理仍计入；旧宽时钟和 v2 不回填。LOTUS 可显式
 `model_initialization=before_queries`，调用原 owner 初始化后执行 `ready_first/ready_repeat`，没有额外模型预热；
 默认仍在首次查询内启动。已就绪路径记录实际就绪观测，Ray／Daft 仍是包含启动的原生单冷路径。

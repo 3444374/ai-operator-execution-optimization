@@ -88,6 +88,26 @@ MMQA Q2a／Q2b／Q7也使用这个既有CLI：在仓库外Ray原生配置中选�
 Q2b的预算上界为2×L×R，实际Extract只消费原Join匹配行；同一query owner在完整sink后关闭。
 使用`check/run`和现有监督；普通文本`fixture`不授予新多阶段或VLM资格。
 
+原MMQA Q5分层聚合也使用同一Ray配置和`check/run`：选择`scenario=mmqa, query=Q5`，
+给出正整数`engine.max_model_len`及已有预算内的有限`engine.max_model_calls`，保留原聚合生成参数。
+另给与[服务聚合](#sembench-native-mmqa-aggregate)相同格式的`token_counter`：
+
+```json
+{
+  "kind": "huggingface_tokenizer_file",
+  "path": "<DECLARED_RAY_TOKENIZER_DIRECTORY>/tokenizer.json",
+  "sha256": "<TOKENIZER_JSON_SHA256>",
+  "tokenizer_id": "<DECLARED_TOKENIZER_ID>",
+  "tokenizer_revision": "<DECLARED_TOKENIZER_REVISION>"
+}
+```
+
+文件必须对应Ray显式tokenizer目录（未覆盖时为模型目录）；有`tokenizer_revision/revision`覆盖时须一致，
+context覆盖也须与`engine.max_model_len`一致。该核对不证明实际引擎已加载此tokenizer。
+预检保留原LM首层消息／计数，不推理或claim额度；总调用数依赖真实摘要时为`None`，
+engine上限和永久单位至少覆盖minimum并约束后续层次，不能沿用示例32作为该题固定规模。
+固定逐行回复的普通`fixture`不适用于动态层次；软件差分位于既有Ray测试，真实模型资格另验。
+
 ```sh
 PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py prepare-mmqa-text \
   --sembench-checkout "$SEMBENCH_CHECKOUT" --source-dir "$MMQA_SOURCE_CSV" \
@@ -100,8 +120,9 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py check
 
 各变量由本机仓库外 runtime／packet 提供；准备输出必须是新的 Git 外私有目录。
 Movie 数据目录需要 `Reviews.csv`，Q10 另需原 `Movies.csv`，后者仅用于评价。
-Movie Q5/Q6/Q7 只允许[显式原生 LOTUS resident Join](../src/baselines/README.md#lotus-movie-exact-join)。
-它复用同一 `check/run`，不进入 prepared F/M/E；8 条样本每题需完整 64 对预算。
+Movie Q5/Q6/Q7可走[显式原生LOTUS resident Join](../src/baselines/README.md#lotus-movie-exact-join)
+或上述原生Ray processor；两者复用同一`check/run`，旧记录链F/M/E图仍未接Join。
+8条功能样本每题需完整64对预算，不是原题固定规模。
 零模型回放使用已冻结的前 8 条输入、真实 LOTUS SDK 和软件模型 IPC：
 
 ```sh

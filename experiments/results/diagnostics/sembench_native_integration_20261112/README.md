@@ -598,6 +598,42 @@ LOTUS＋Ray／Daft与不经LOTUS执行的原生系统路径按语义和执行归
 v2及单副本输出的受影响40项另通过，属于上述191个用例，不累加通过数。
 整体接入仍有[当前缺口](../../../../code/INFRA_STATUS.md#current-refactor-status)。
 
+<a id="lotus-ray-native-aggregate"></a>
+## LOTUS＋Ray 原分层聚合与计时范围修正
+
+MMQA Q5接到既有`SemBenchTextQuery → OriginalLotusQuery → native_ray_sembench`完整查询循环，
+实际LM批次继续交`ray_data_sembench_native.query_scope`。没有新增Q5 runner或复制聚合算法。
+首层预检`leaf_plan`、work描述和本地counter加载收回原聚合任务模块，原服务调用同一实现；
+旧`_leaf_plan`已删除，无转发壳，服务配置AST和默认保持。原函数、真实`sem_agg`、实际摘要决定的后续
+层次、原token计数与评分保留，LM新增context/tokenizer选项的默认不影响其他任务。
+
+预检绑定tokenizer JSON／SHA、目录、声明revision与Ray engine context；实际引擎加载仍明确未验证。
+动态总请求数保持`None`，首层给minimum；显式engine上限在新批次前限制，永久预算在真实generate前消费。
+源读取在实测区间内，额外绑定／身份和原评价在外。单层、紧凑多层、长摘要增加归并层及错误actor四组
+服务↔Ray软件差分，提示序列、运行中`LM.count_tokens`序列、批形状、完整结果和原评分相同。
+预算耗尽、归并失败及关闭同时失败保留primary和已有答复，最后由同一query owner关闭。
+
+完整调用链审查同时修正了旧计时声明：`ray_native_observer`在finished output yield前同步写terminal事件，
+发布完整文本／token IDs，setup也逐事件写JSONL，均在实际source→sink内。当前因此采用独立
+`lotus_ray.source_to_sink.v1`，明确包含这些I/O及必要预算预扣；排除的是driver后置审计、结果写盘、评价及shutdown。
+早期完整查询代码沿用的统一v3标签并未排除上述内部成本，现撤回该可比性声明；冻结原字段、数字和失败不改写，
+也不事后相减。后续可靠留存／flush接点仍待闭合，本批不为改标签重造协议。
+
+对[固定Ray2.56.1原生输出](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/llm/_internal/batch/stages/vllm_engine_stage.py)
+的只读核查确认，公开行已有`prompt_token_ids/generated_tokens`及计数，但`request_id`仅replica内唯一；
+`tokenized_prompt`是被消费的输入字段，不能冒称实际返回token。公开行缺`finish_reason`，默认
+[DetokenizeUDF](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/llm/_internal/batch/stages/tokenize_stage.py)
+还会覆盖文本，不能等同observer保留的原始模型文本；整批materialize失败也不返回已完成的部分行。
+因此不以公开字段“成功可取”推断当前失败证据可无损删除，也未为此增加重复payload副本。
+
+独立候选158个不同软件方法为154通过、4个资产／独立Daft SDK未绑定跳过；早期harness拦截系统字体、
+只读git show和明确RecordedFixtureEngine子进程的失败原文保留，收窄guard后补验，不修改产品迎合guard。
+整合后的29模块共346个不同用例最终为340通过、6跳过：真实Q5／MMQA／Medical输入、独立Daft SDK，
+以及两项未绑定本地tokenizer的原作者token门。首轮两个旧Join夹具绕过构造器、缺新增`aggregate_task=None`，
+修复夹具后仅重跑两项；另绑定既有05024 Git对象补验12项，保留两项tokenizer跳过，不将其解释为缺数据。
+其余328项通过结果保留，计数按用例ID去重，不累计各批次数。模型／GPU／真实外部服务请求0；
+实际Ray SDK、目标tokenizer／模型加载、完整Q5模型质量及物理清理仍待目标环境验证。
+
 <a id="lotus-service-query-lifecycle"></a>
 ## LOTUS 外部服务的同一查询生命周期
 

@@ -255,7 +255,8 @@ class SemBenchTextQuery:
     """A finite frozen input snapshot and the unchanged original query/evaluator."""
 
     def __init__(self, checkout, data_dir, scenario, query_id, *, execution_id,
-                 model_name, generation, scale_factor=None, ranking=None, image_join=False):
+                 model_name, generation, scale_factor=None, ranking=None, image_join=False,
+                 lm_options=None):
         from .sembench_medical import FULL_SCALE_FACTOR, TEXT_QUERY_IDS as MEDICAL_QUERY_IDS, text_files
         from .sembench_mmqa import TEXT_QUERY_IDS as MMQA_QUERY_IDS
         from .sembench_ecomm import TEXT_QUERY_IDS as ECOMM_QUERY_IDS, TEXT_FILE
@@ -266,11 +267,11 @@ class SemBenchTextQuery:
         if image_join and not (scenario == 'mmqa' and query in IMAGE_QUERY_IDS):
             raise ValueError('the original image Join binding supports MMQA Q2a/Q2b/Q7')
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
-                or (scenario == 'mmqa' and query in MMQA_QUERY_IDS) or image_join
+                or (scenario == 'mmqa' and query in (*MMQA_QUERY_IDS, '5')) or image_join
                 or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)
                 or (scenario == 'ecomm' and query in ECOMM_QUERY_IDS)
                 or (scenario == 'cars' and query in CARS_QUERY_IDS)):
-            raise ValueError('this entry supports Movie Q1-Q10 (Q5-Q7 native Join, Q9 Map or TopK), twelve ordinary MMQA text queries '
+            raise ValueError('this entry supports Movie Q1-Q10 (Q5-Q7 native Join, Q9 Map or TopK), ordinary MMQA text queries and native Q5 aggregation '
                              'plus Medical/Cars Q1/Q4/Q10 and E-Commerce Q1/Q3/Q5/Q7')
         if scenario not in ('medical', 'cars') and scale_factor is not None:
             raise ValueError('scale_factor applies only to the Medical/Cars authored CSV filenames')
@@ -284,7 +285,29 @@ class SemBenchTextQuery:
         self.model_name, self.generation = model_name, generation
         self.data_dir = Path(data_dir).resolve()
         self.visual_task = None
+        self.aggregate_task = None
+        self.lm_options = dict(lm_options or {})
         self.evaluation_files = set()
+        if scenario == 'mmqa' and query == '5':
+            from lotus.models import LM
+            from . import sembench_mmqa_aggregate as aggregate
+            from src.baselines.sembench_lotus import OriginalLotusQuery
+
+            if self.lm_options.get('max_ctx_len') is None or self.lm_options.get('tokenizer') is None:
+                raise ValueError('native aggregation requires the declared model context and local token counter')
+            source = aggregate.input_identity(self.data_dir)
+            lm = LM(model_name, **self.lm_options, **generation.kwargs())
+            plan = aggregate.leaf_plan(self.checkout, self.data_dir, lm)
+            if aggregate.input_identity(self.data_dir) != source:
+                raise ValueError('MMQA input changed while preparing the native aggregation')
+            self.aggregate_inputs = dict(source=source, native_plan=plan, work=aggregate.describe_work(plan),
+                native_lm_max_ctx_len=lm.max_ctx_len, native_input_token_budget=lm.max_ctx_len-lm.max_tokens)
+            self.aggregate_task = OriginalLotusQuery(self.checkout, scenario, query,
+                inputs=self.aggregate_inputs, data_dir=self.data_dir)
+            self.frames, self.files = {}, {aggregate.INPUT_FILE: source}
+            self.operation = None
+            self._run_original = self.aggregate_task.execute
+            return
         if scenario == 'movie':
             names = ['Reviews.csv'] + (['Movies.csv'] if query == '10' else [])
             self.evaluation_files.add('Movies.csv')
@@ -386,6 +409,14 @@ class SemBenchTextQuery:
         return self._run_original()
 
     def describe(self):
+        if self.aggregate_task is not None:
+            return dict(schema='semloom.sembench_text_query.v1', sembench_commit=SEMBENCH_COMMIT,
+                scenario=self.scenario, query='Q'+self.query, query_id=self.query_id,
+                files=self.files, operation=None, algorithm='native_hierarchical_aggregate',
+                **self.aggregate_inputs['work'], aggregate_inputs=self.aggregate_inputs,
+                policy='original LOTUS token counting, long-context strategy, hierarchy and parser; '
+                       'result cache disabled; no warmup or retry',
+                original_selection_and_postprocessing=True)
         operation = None if self.operation is None else self.operation.describe()
         return dict(schema='semloom.sembench_text_query.v1', sembench_commit=SEMBENCH_COMMIT,
             scenario=self.scenario, query='Q' + self.query, query_id=self.query_id,
@@ -424,6 +455,9 @@ class SemBenchTextQuery:
 
     def verify_source(self):
         """Audit execution-file identities; gold-only snapshots are not query input."""
+        if self.aggregate_task is not None:
+            self.aggregate_task.verify_inputs()
+            return
         if self.visual_task is not None:
             self.visual_task.verify_inputs()
             return
@@ -447,6 +481,8 @@ class SemBenchTextQuery:
         for TopK. Later inputs come from the original query's intermediate
         relations. The default keeps the existing single-operator return shape.
         """
+        if self.aggregate_task is not None:
+            raise ValueError('native aggregation needs the complete original query LM boundary')
         self.verify_source()
         if multiple:
             return lambda execute_operator: self._execute_bound(execute_operator, multiple=True)
@@ -464,7 +500,7 @@ class SemBenchTextQuery:
         return self._execute_original_bound
 
     def _read_execution_files(self):
-        if self.visual_task is not None:
+        if self.visual_task is not None or self.aggregate_task is not None:
             # Its original source reader runs inside the actual original query.
             return
         for name in self.files:
@@ -513,6 +549,8 @@ class SemBenchTextQuery:
         return result, reports if multiple else operator_report
 
     def evaluate(self, result):
+        if self.aggregate_task is not None:
+            return self.aggregate_task.evaluate(result)
         if self.scenario == 'movie':
             from .sembench_movie import evaluate_original
             return evaluate_original(self.checkout, int(self.query), result,

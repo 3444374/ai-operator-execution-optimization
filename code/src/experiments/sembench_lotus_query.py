@@ -7,8 +7,6 @@ keep their established schemas, preflight requirements and legacy clocks.
 
 from contextlib import nullcontext
 from dataclasses import asdict
-import hashlib
-from importlib import import_module
 import json
 import math
 from pathlib import Path
@@ -18,7 +16,7 @@ from urllib.parse import urlsplit
 from src.baselines.sembench_lotus import OriginalLotusQuery
 from src.baselines.text import sembench_mmqa_aggregate as mmqa
 from src.infrastructure.private_artifacts import (
-    file_identity, json_metric, new_private_directory, read_json, write_private_json,
+    json_metric, new_private_directory, read_json, write_private_json,
 )
 from src.infrastructure.redact import redact_text
 from src.semantic_methods.lotus.source import source_report
@@ -93,92 +91,22 @@ def configuration(path):
 def _make_lm(config, *, preflight=False):
     if config['schema'] != AGGREGATE_SCHEMA:
         return make_lm(config)
-    from tokenizers import Tokenizer
-
-    counter = config['token_counter']
-    identity = file_identity(Path(counter['path']).resolve())
-    if identity['sha256'] != counter['sha256']:
-        raise ValueError('the local token counter does not match its declared SHA256')
-    tokenizer = Tokenizer.from_file(str(Path(counter['path']).resolve()))
+    tokenizer = mmqa.load_token_counter(config['token_counter'])
     return make_lm(config, max_ctx_len=config['native_lm_max_ctx_len'], tokenizer=tokenizer,
                    api_key='no-model-preflight' if preflight else None)
-
-
-class _LeafPrepared(BaseException):
-    """Private non-model stop at the unchanged SDK's first LM invocation."""
-
-
-def _leaf_plan(checkout, data_dir, lm):
-    import lotus
-
-    module = import_module("lotus.sem_ops.sem_agg")
-    accessor_type, lm_type = module.SemAggDataframe, type(lm)
-    original_agg, original_call, original_count = accessor_type.__call__, lm_type.__call__, lm.count_tokens
-    original_documents = module.sem_agg
-    prepared = dict(token_count_calls=[])
-
-    def count_tokens(value):
-        count = original_count(value)
-        payload = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True)
-        prepared["token_count_calls"].append(dict(sha256=hashlib.sha256(payload.encode()).hexdigest(),
-                                                 bytes=len(payload.encode()), tokens=count))
-        return count
-
-    def observe_source(frame):
-        prepared["source_rows"] = len(frame)
-        prepared["source_columns"] = list(frame.columns)
-
-    def observe_input(accessor, instruction, *args, **kwargs):
-        frame = accessor._obj
-        prepared["selection"] = dict(rows=len(frame), source_indices=json_metric(frame.index.tolist()),
-            titles=frame["title"].tolist(), text_characters=sum(len(value) for value in frame["text"]),
-            text_utf8_bytes=sum(len(value.encode()) for value in frame["text"]),
-            title_utf8_bytes=sum(len(value.encode()) for value in frame["title"]),
-            instruction=instruction, operator_args=json_metric(args), operator_kwargs=json_metric(kwargs))
-        return original_agg(accessor, instruction, *args, **kwargs)
-
-    def observe_documents(docs, *args, **kwargs):
-        prepared["native_documents"] = len(docs)
-        prepared["long_context_strategy"] = docs.strategy.name.lower() if isinstance(docs, module.ChunkedDocument) else None
-        return original_documents(docs, *args, **kwargs)
-
-    def capture(current, messages, *args, **kwargs):
-        if current is not lm:
-            raise RuntimeError("Q5 preflight encountered another LM")
-        prepared.update(leaf_messages=messages, leaf_message_tokens=[original_count(message) for message in messages],
-                        lm_args=json_metric(args), lm_kwargs=json_metric(kwargs))
-        raise _LeafPrepared()
-
-    accessor_type.__call__, lm_type.__call__, lm.count_tokens = observe_input, capture, count_tokens
-    module.sem_agg = observe_documents
-    try:
-        with lotus.settings.context(lm=lm, enable_cache=False):
-            try:
-                mmqa.run_original_query(checkout, data_dir, input_observer=observe_source)
-            except _LeafPrepared:
-                return prepared
-        raise RuntimeError("the original Q5 query did not reach native aggregation")
-    finally:
-        accessor_type.__call__, lm_type.__call__, lm.count_tokens = original_agg, original_call, original_count
-        module.sem_agg = original_documents
 
 
 def _check_aggregate(config, checkout, *, data_dir, _lm=None):
     """Use native token counting and batching without inference, HTTP or budget calls."""
     source = mmqa.input_identity(data_dir)
     lm = _make_lm(config, preflight=True) if _lm is None else _lm
-    plan = _leaf_plan(checkout, data_dir, lm)
+    plan = mmqa.leaf_plan(checkout, data_dir, lm)
     if mmqa.input_identity(data_dir) != source:
         raise ValueError("MMQA input changed while preparing the native aggregation")
     provenance = source_report("sembench-mmqa-q5-native-aggregate", (
         "models/lm.py", "sem_ops/sem_agg.py", "long_context_strategy.py", "templates/task_instructions.py",
         "nl_expression.py", "cache.py", "settings.py", "types.py"), provider_sources=True)
-    batches = len(plan["leaf_messages"])
-    work = dict(leaf_requests=batches, expected_model_calls=1 if batches == 1 else None,
-        minimum_model_calls=batches if batches == 1 else batches + 1,
-        maximum_model_calls=1 if batches == 1 else None,
-        total_request_rule="exactly one leaf request" if batches == 1 else
-            "leaf requests plus native reduction requests determined by actual summary token lengths; caller budget bounds attempts")
+    work = mmqa.describe_work(plan)
     return dict(schema="semloom.sembench_lotus_mmqa_aggregate_preflight.v1", status="checked_cpu_only",
         scenario="mmqa", query="Q5", sembench_commit=mmqa.SEMBENCH_COMMIT,
         lotus_version=provenance["versions"]["lotus-ai"], native_sources=provenance,

@@ -7,6 +7,12 @@
 188通过、3个环境／资产未绑定跳过，0模型／GPU。临时Q2b的非空／空第二阶段与8行quick多批
 只授予对应软件接线范围；各系统原生路径和LOTUS组合身份分列，旧目标成绩不转授新公共边界。
 
+[LOTUS＋Ray原分层聚合](diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-native-aggregate)
+复用同一完整查询runner和原token计数／层次／评分，真实摘要决定后续工作，未知总数不填零。
+29模块346个不同用例的去重结果为340通过、6个环境／资产未绑定跳过，0模型／GPU；首失败与定向复核分列。
+实际observer同步事件／输出写盘仍在区间内，故改独立`lotus_ray.source_to_sink.v1`并撤回早期统一v3可比性声明，
+冻结旧字段／时长不回填，不从旧成绩相减。新目标SDK／tokenizer／模型及物理清理仍待验。
+
 [LOTUS外部服务生命周期](diagnostics/sembench_native_integration_20261112/README.md#lotus-service-query-lifecycle)
 另记录视觉与Q5共用worker、原题对象及旧调用删除：七个原查询／原评分软件差分、配置／时钟表征，
 删除后105项检查为104通过、1个真实资产未绑定跳过，0模型／GPU／外部网络；旧来源及失败继续保留。

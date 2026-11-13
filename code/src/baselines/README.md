@@ -217,10 +217,13 @@ Q2b由原函数把实际Join结果交给原Extract，JSON约束显式映射为�
 每次原LM调用交给原生 `materialize().take_all()`，原SDK收到答复后继续解析和后续算子；
 整次原函数返回后才 `ray.shutdown()`。一个runtime不表示跨批模型actor或模型实例复用。
 原查询返回的内存结果立即标记 `sink_ready_ns`。`source_to_sink_seconds` 包含本轮新鲜 source/prepare、
-Ray/模型启动及原关系计算；消息摘要、关系序列化、评价、持久化和关闭在 sink 后另记事件。
-`sembench.source_to_sink.v3` 的起点位于输入身份／配置核对、预算领取之后；准备的是已绑定输入，
+Ray/模型启动及原关系计算；driver消息摘要、关系序列化、评价、结果持久化和关闭在sink后另记事件。
+当前时钟为`lotus_ray.source_to_sink.v1`，起点位于输入身份／配置核对、预算领取之后；准备的是已绑定输入，
 原查询开始时真实读取CSV，图像在实际算子格式化时读取，不先准备首阶段再重跑原函数恢复关系。
-完整文件摘要和逐消息摘要在sink后核对；原始批次／答复按独立call_id保存，价格／用量以真实backend回执为准。
+driver完整文件摘要和逐消息摘要在sink后核对；原始批次／答复按独立call_id保存，价格／用量以真实backend回执为准。
+actor的预算预扣、同步事件JSONL和完整输出／token IDs写盘仍在generate结果yield前，实际包含在此区间。
+早期沿用的统一v3标签未核清这段成本，现撤回该可比性声明；冻结旧字段和时长不改写，
+也不从旧时长相减。要排除成功审计，仍需在不丢回执或失败控制的前提下闭合其留存／flush生命周期。
 该完整查询结果schema为`semloom.sembench_text_result.v2`；`native.batches`保留实际预测批次，
 query级`events`保留最后关闭，旧单批报告与默认记录图v1不回填或改记。
 原始预测只存`native-predictions.json`；查询摘要保留call ID／消息摘要，
@@ -599,7 +602,13 @@ Q4 的24行不是该查询规模。只有原 SDK 首层恰好生成一个请求�
 实际原查询读取前到完整聚合结果返回，排除重复源码 Git 校验／模块加载、observer 收尾、评价、
 结果编码和持久化；旧 `query_seconds` 保持原边界。原 sf25 保存输入的软件 SDK 回放不证明目标 tokenizer
 的首层划分，真实调用上限仍需上述目标预检，不能直接使用软件 fixture 的单请求数。
-当前仅原生 LOTUS 聚合已接线，另外四种 baseline 的聚合项留空，不增加替代算法。
+LOTUS＋Ray也复用同一原函数、`leaf_plan`和本地counter加载：`SemBenchTextQuery`绑定原聚合任务，
+`make_query_lm`只接收显式context/tokenizer选项，实际LM批次交给既有Ray query owner，不另建Q5 runner。
+原摘要决定后续层次，总次数未知时保持`None`，预检使用原首层推导的minimum；显式engine上限和永久预算封顶。
+counter的JSON／SHA、目录和revision只核对声明的Ray模型／tokenizer及context，实际加载仍待目标验证。
+单层、多层、长摘要新增归并层和错误actor的软件差分保留原提示、token计数序列、完整结果及评分。
+该路径包含原生冷启动和actor observer I/O，使用上述独立Ray时钟；服务ready后的LOTUS成绩不能直接与它排位。
+其余后端聚合仍未接线，不增加替代算法。
 配置与命令见[脚本说明](../../scripts/README.md#sembench-native-mmqa-aggregate)。
 
 本轮保留的可复现边界：
@@ -788,17 +797,19 @@ LOTUS／Palimpzest 的逐题方法或脚本定义查询，ThalamusDB／BigQuery 
 原远程 Gemini 的并发与输出长度是来源事实，不是本地模型的推荐容量；本地仍需显式绑定实际参数，
 校准和请求上限按具体机器、模型、服务及 workload 核对。
 文本入口现按捕获到的算子检查能力：普通 Filter／Map／Extract 使用既有接点，Join 使用显式
-LOTUS resident 或 Ray 原生 processor，TopK 仍要求 LOTUS resident；独立 Daft 原生入口也接 exact Join。
+LOTUS resident或Ray原生processor，TopK可走原生LOTUS resident或上述Ray完整查询；独立Daft入口也接exact Join。
 prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常退出。
-此项只移除题号决定后端能力的限制，不开放新的场景、聚合或多算子完整查询；这些仍需接入与验证。
+实际接线继续按后端能力区分；Ray完整查询现已接真实后续关系和MMQA原分层聚合，其他后端不能据此自动取得资格。
 同一普通算子的 positional／keyword 参数由一个共享绑定处理，Map 的命名输出列按原 `suffix`
 写入；普通 Extract 保留声明字段及原 JSON 解析，quotes/raw 等未支持的选项仍明确拒绝。
 
 <a id="sembench-native-query-timing"></a>
 ### 完整查询时钟与仍未统一的路径
 
-维护版 LOTUS resident／视觉／MMQA 聚合、Ray prepared／Animals Filter、Daft prepared、IMLane Filter 和 Kalypso Movie Filter／Map 记录
-`query_clock_version=sembench.source_to_sink.v3`，同时保留 worker 进入、预检结束和 sink 的实测时间戳。
+各路径同时保留worker进入、预检结束和sink的实测时间戳。部分LOTUS／旧Ray Animals／Daft／IMLane Filter／Kalypso路径
+仍按原来源保留`sembench.source_to_sink.v3`字段；它只说明该版本的外层事件，不证明内部审计I/O全已排除。
+完整LOTUS＋Ray当前使用独立`lotus_ray.source_to_sink.v1`，原生IMLane Q3使用独立v2并各自披露残余；
+字段或版本相同均不自动授予跨系统可比性。
 共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，
 sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 视觉和 MMQA 聚合也在
 本地客户端、输入／叶级预检及原函数绑定后开始，不将 Git 校验和模块加载混入完整查询。

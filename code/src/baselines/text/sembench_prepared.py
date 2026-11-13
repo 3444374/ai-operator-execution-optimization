@@ -12,13 +12,15 @@ from src.infrastructure.private_artifacts import content_digest, json_metric
 from src.semantic_methods.lotus.record_method import LotusRecordMethod
 
 
-def make_query_lm(query, predict):
+def make_query_lm(query, predict, *, max_ctx_len=None, tokenizer=None):
     """Run complete original LOTUS queries over a backend's native predictions.
 
     LOTUS owns the accessors, actual later inputs, prompts, parsers, algorithms
     and final relation. The backend receives each real LM batch, owns execution
     and closes at query scope. It does not use LOTUS LM execution/cache/usage;
     backend receipts are the accounting source, including unknown usage.
+    Explicit context/tokenizer parameters retain native aggregation's token
+    estimates; callers that omit them keep the established LM defaults.
     """
     from lotus.models import LM
     from lotus.types import LMOutput
@@ -60,7 +62,12 @@ def make_query_lm(query, predict):
     # The native algorithms still use LM token estimation and generation
     # metadata. max_batch_size belongs to LOTUS execution, which this seam does
     # not run; no value is used to split a backend's real batch.
-    return QueryLM(query.model_name, **query.generation.kwargs()), batches
+    options = {}
+    if max_ctx_len is not None:
+        options["max_ctx_len"] = max_ctx_len
+    if tokenizer is not None:
+        options["tokenizer"] = tokenizer
+    return QueryLM(query.model_name, **options, **query.generation.kwargs()), batches
 
 
 def audit_query_batches(batches):

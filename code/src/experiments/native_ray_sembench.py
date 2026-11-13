@@ -19,7 +19,7 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
     actor uses the declared native model interpreter, not the project's fixed
     vLLM bridge. The host owns physical cleanup verification.
     """
-    from .attempt_ledger import AttemptBudget
+    from .attempt_ledger import AttemptBudget, BudgetExhausted
     from .cell_budget import CellBudgetLedger
 
     started = time.monotonic_ns()
@@ -28,13 +28,16 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         semantic_owner='original LOTUS query/accessors/prompts/parsers/algorithms',
         execution_owner='Ray Data LLM processor', baseline_identity='lotus-over-ray-data-native',
         worker_entry_ns=started, source_started_ns=None, source_to_sink_seconds=None,
-        query_clock_version='sembench.source_to_sink.v3', strict_controller_to_sink_seconds=None,
+        query_clock_version='lotus_ray.source_to_sink.v1', strict_controller_to_sink_seconds=None,
         model_ready_before_source=False,
         production_core_used=False, result_cache_enabled=False, warmup_calls=0,
+        engine_max_model_calls=engine.max_model_calls,
         lifecycle='query-owned cold runtime; native processor per LM batch; model reuse unverified', requested_generate_retries=0,
         performance_claim=False, physical_gpu_exit_confirmed=None,
-        timing_scope='actual original source, SDK prompt/image preparation, native predictions and full relation; native cold startup included; '
-                     'source/image identity/config preflight, budget claim, audit, evaluation, persistence and ray.shutdown excluded',
+        timing_scope='actual original source, SDK prompt/image preparation, native predictions and full relation; native cold startup, '
+                     'generate attempt reservation and synchronous actor observer event/output persistence included; '
+                     'source/image identity/config preflight, budget claim, driver post-sink audit, evaluation, result persistence '
+                     'and ray.shutdown excluded; independent native scope, not the shared v3 comparison scope',
         strict_controller_unavailable_reason='worker API does not observe earliest host/controller code',
         engine_accept_ns=None, kernel_seconds=None)
     primary = None
@@ -48,7 +51,8 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
             checked_query.scenario, checked_query.query, execution_id=checked_query.query_id,
             model_name=checked_query.model_name, generation=checked_query.generation,
             scale_factor=config.get('scale_factor'), ranking=config.get('ranking'),
-            image_join=checked_query.visual_inputs is not None)
+            image_join=checked_query.visual_inputs is not None,
+            **(dict(lm_options=checked_query.lm_options) if checked_query.lm_options else {}))
         if query.files != checked_query.files or query.visual_inputs != checked_query.visual_inputs:
             raise ValueError('native Ray fresh source differs from checked input identity')
         report['query'] = query.describe()
@@ -58,6 +62,8 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         unit = ledger.claim_shared_unit(value['unit_id'])
         description = query.describe()
         maximum = description.get('maximum_model_calls', description['expected_model_calls'])
+        if maximum is None:
+            maximum = description['minimum_model_calls']
         if maximum > unit.remaining:
             raise ValueError('shared physical budget cannot cover every original occurrence')
         observer = dict(value, output=str(directory.resolve()))
@@ -79,9 +85,17 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         owner = None
 
         def predict(requests, *, sampling_params):
+            if (engine.max_model_calls is not None
+                    and sum(len(batch['requests']) for batch in batches) > engine.max_model_calls):
+                raise BudgetExhausted('the original query exceeds explicit engine.max_model_calls')
             return owner.predict(requests, sampling_params=sampling_params)
 
-        lm, batches = make_query_lm(query, predict)
+        lm, batches = make_query_lm(query, predict, **query.lm_options)
+        if query.aggregate_task is not None:
+            report['lotus_lm'] = dict(max_ctx_len=lm.max_ctx_len, input_token_budget=lm.max_ctx_len-lm.max_tokens,
+                token_counter=config['token_counter'],
+                model_tokenizer_verified=False,
+                scope='matches declared native Ray model/tokenizer configuration; actual engine loading unverified')
         import numpy as np
         rng = np.random.get_state()
         report['original_query_rng_state'] = [rng[0], rng[1].tolist(), int(rng[2]), int(rng[3]), float(rng[4])]
@@ -97,6 +111,8 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
                 report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_started_ns']) / 1e9
         report['semantic_audit_started_ns'] = time.monotonic_ns()
         query.verify_source()
+        if query.aggregate_task is not None:
+            query.aggregate_task.validate_batch_sizes([len(batch['requests']) for batch in batches], result)
         report['semantic'] = audit_query_batches(batches)
         report['semantic']['native_join_inputs'] = describe_native_join_inputs(join_inputs)
         report['semantic_audit_finished_ns'] = time.monotonic_ns()

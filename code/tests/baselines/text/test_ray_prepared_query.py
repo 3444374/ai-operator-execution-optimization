@@ -125,6 +125,8 @@ class RayPreparedTests(unittest.TestCase):
         query.files = {}
         query.scenario, query.query, query.model_name = 'movie', '10', 'CPU-only'
         query.visual_inputs = None
+        query.aggregate_task = None
+        query.lm_options = {}
         from src.serving.backends.vllm_protocol import GenerationSpec
         query.generation = GenerationSpec()
         query.describe = lambda: {'expected_model_calls': 0 if empty else 2}
@@ -160,7 +162,7 @@ class RayPreparedTests(unittest.TestCase):
         self.assertEqual(report['source_to_sink_seconds'], 5)
         self.assertEqual(report['schema'], 'semloom.sembench_text_result.v2')
         self.assertEqual(report['preflight_finished_ns'] - report['worker_entry_ns'], 17_000_000_000)
-        self.assertEqual(report['query_clock_version'], 'sembench.source_to_sink.v3')
+        self.assertEqual(report['query_clock_version'], 'lotus_ray.source_to_sink.v1')
         self.assertGreater(report['query_seconds'], report['source_to_sink_seconds'] + 17)
 
     def test_sink_excludes_audit_serialization_and_close(self):

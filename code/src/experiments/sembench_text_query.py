@@ -29,7 +29,7 @@ def configuration(path):
     required = {'schema', 'scenario', 'query', 'query_id', 'backend', 'model_name',
                 'generation', 'engine', 'resources', 'profile'}
     if (type(value) is not dict or not required <= value.keys()
-            or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident', 'ray_native', 'ranking'}
+            or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident', 'ray_native', 'ranking', 'token_counter'}
             or value['schema'] != 'semloom.sembench_text_run.v1'
             or value['backend'] not in BACKENDS or type(value['profile']) is not dict):
         raise ValueError('an explicit SemBench LOTUS query/backend configuration is required')
@@ -80,6 +80,36 @@ def query_from_config(config, checkout, data_dir, generation):
     from src.baselines.text.sembench_text import SemBenchTextQuery
     from src.baselines.image.sembench_mmqa import IMAGE_QUERY_IDS
 
+    aggregate = config['scenario'] == 'mmqa' and str(config['query']).lower().removeprefix('q') == '5'
+    lm_options = {}
+    if aggregate:
+        from src.baselines.text.sembench_mmqa_aggregate import load_token_counter
+        from src.serving.backends.vllm_protocol import EngineSpec
+
+        if config['backend'] != 'ray-data' or 'ray_native' not in config:
+            raise ValueError('aggregation requires the explicit native Ray query runner; native LOTUS uses the service query runner')
+        engine = EngineSpec.from_dict(config['engine'])
+        counter = config.get('token_counter')
+        fields = {'kind', 'path', 'sha256', 'tokenizer_id', 'tokenizer_revision'}
+        if (type(counter) is not dict or set(counter) != fields
+                or counter['kind'] != 'huggingface_tokenizer_file'
+                or any(type(counter[name]) is not str or not counter[name].strip() for name in fields)):
+            raise ValueError('bind a local tokenizer JSON identity to the declared Ray tokenizer and revision')
+        native = config['ray_native']['engine_kwargs']
+        tokenizer_dir = native.get('tokenizer', engine.tokenizer_path or engine.model_path)
+        if Path(counter['path']).resolve() != Path(tokenizer_dir).resolve() / 'tokenizer.json':
+            raise ValueError('the LOTUS token counter must be the declared Ray model/tokenizer tokenizer.json')
+        if (engine.max_model_len is None or native.get('max_model_len', engine.max_model_len) != engine.max_model_len
+                or generation.max_tokens >= engine.max_model_len):
+            raise ValueError('aggregation needs the same explicit Ray model context with input space after max_tokens')
+        revision = native.get('tokenizer_revision', native.get('revision'))
+        if revision is not None and revision != counter['tokenizer_revision']:
+            raise ValueError('the LOTUS token counter revision differs from the declared Ray tokenizer revision')
+        if generation.repetition_penalty != 1 or generation.logprobs is not None or generation.response_format is not None:
+            raise ValueError('Q5 uses native standard generation and the original unstructured aggregation parser')
+        lm_options = dict(max_ctx_len=engine.max_model_len, tokenizer=load_token_counter(counter))
+    elif 'token_counter' in config:
+        raise ValueError('an explicit token counter is currently used only by native aggregation')
     image_join = (config['scenario'] == 'mmqa'
         and str(config['query']).lower().removeprefix('q') in IMAGE_QUERY_IDS
         and config.get('ray_native', {}).get('processor_options', {}).get('prepare_image_stage') is True)
@@ -87,7 +117,7 @@ def query_from_config(config, checkout, data_dir, generation):
     return SemBenchTextQuery(checkout, data_dir, config['scenario'], config['query'],
         execution_id=config['query_id'], model_name=config['model_name'],
         generation=generation, scale_factor=config.get('scale_factor'), ranking=config.get('ranking'),
-        **(dict(image_join=True) if image_join else {}))
+        **(dict(image_join=True) if image_join else {}), **(dict(lm_options=lm_options) if aggregate else {}))
 
 
 def check(config, query, engine):
@@ -104,6 +134,8 @@ def check(config, query, engine):
             and config['ray_native']['processor_options'].get('prepare_image_stage') is True):
         raise ValueError('prepared image Join requires the explicit native Ray image preparation stage')
     expected = description.get('maximum_model_calls', description['expected_model_calls'])
+    if expected is None:
+        expected = description['minimum_model_calls']
     if engine.max_model_calls is None or engine.max_model_calls < expected:
         raise ValueError('engine.max_model_calls must cover the complete original operator')
     if engine.max_model_len is not None and query.generation.max_tokens > engine.max_model_len:
@@ -205,6 +237,8 @@ def fixture(config, query, responses, directory):
     from src.semantic_methods.lotus.record_chain import LotusRecordChain
 
     expected = query.describe()['expected_model_calls']
+    if expected is None:
+        raise ValueError('data-dependent native queries need the complete query software backend, not fixed operator replies')
     if (type(responses) is not list or len(responses) != expected
             or any(type(text) is not str for text in responses)):
         raise ValueError('fixture responses must cover every original operator input')

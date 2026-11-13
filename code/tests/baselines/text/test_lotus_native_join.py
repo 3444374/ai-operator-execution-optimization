@@ -122,6 +122,7 @@ class NativeJoinTests(unittest.TestCase):
         owner = SimpleNamespace(generation=op.generation, concurrency=2, query=scope)
         query = object.__new__(SemBenchTextQuery)
         query.visual_task = None
+        query.aggregate_task = None
         query.files, query.operation = {}, op
         query.generation, query.model_name, query.query_id = op.generation, op.model_name, 'join-cpu'
         query._original = lambda: left.sem_join(right, join_instruction=instruction).head(3)
@@ -145,6 +146,7 @@ class NativeJoinTests(unittest.TestCase):
         op = operation(self.frame, right)
         query = object.__new__(SemBenchTextQuery)
         query.visual_task = None
+        query.aggregate_task = None
         query.files, query.operation = {}, op
         query.generation, query.model_name, query.query_id = op.generation, op.model_name, 'join-cpu'
         query._original = lambda: self.frame.sem_join(right, join_instruction=INSTRUCTION)
