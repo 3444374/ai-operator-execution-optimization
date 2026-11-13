@@ -219,10 +219,8 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         else:
             checked = check(config, checkout, data_dir=data_dir, manifest=manifest, manifest_digest=manifest_digest)
             inputs = report['inputs'] = checked['inputs']
-            maximum = inputs.get('expected_model_calls', inputs.get('maximum_model_calls'))
-            if maximum is None:
-                maximum = inputs['minimum_model_calls']
-            if budget.remaining < maximum:
+            minimum = inputs.get('minimum_model_calls', inputs.get('expected_model_calls'))
+            if budget.remaining < minimum:
                 raise ValueError("the reserved request unit is below this query's preflight requirement")
             task_inputs = inputs
         writer = BufferedEvents(Path(directory) / 'native-http.jsonl')

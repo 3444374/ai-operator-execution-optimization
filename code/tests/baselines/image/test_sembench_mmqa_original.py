@@ -211,7 +211,7 @@ class OriginalMMQAImageTests(unittest.TestCase):
                 self.assertLessEqual(report['sink_ready_ns'],report['native']['events']['close_started_ns'])
                 self.assertFalse(sdk.initialized)
 
-    def test_image_query_requires_native_image_stage_and_complete_followup_budget(self):
+    def test_image_query_requires_native_image_stage_and_known_minimum_budget(self):
         from src.baselines.text.sembench_text import SemBenchTextQuery
         from src.experiments.sembench_text_query import check, query_from_config
         from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
@@ -233,9 +233,13 @@ class OriginalMMQAImageTests(unittest.TestCase):
             query_from_config(base, CHECKOUT, self.data, generation)
         mixed = query_from_config(dict(config, query='2b'), CHECKOUT, self.data, generation)
         self.assertIsNone(mixed.describe()['expected_model_calls'])
+        self.assertEqual(mixed.describe()['minimum_model_calls'], 10)
         self.assertEqual(mixed.describe()['maximum_model_calls'], 20)
+        self.assertEqual(check(dict(config, query='2b'), mixed, engine)['status'], 'checked_cpu_only')
+        too_small = EngineSpec(model_path='/tmp/unused', model_python='/tmp/unused',
+            driver_python='/tmp/unused', max_model_calls=9)
         with self.assertRaisesRegex(ValueError, 'max_model_calls'):
-            check(dict(config, query='2b'), mixed, engine)
+            check(dict(config, query='2b'), mixed, too_small)
 
     def test_native_ray_query_runs_extract_on_actual_join_matches_or_empty_path(self):
         from PIL import Image
@@ -254,9 +258,9 @@ class OriginalMMQAImageTests(unittest.TestCase):
                     execution_id='complete-image-chain', model_name='openai/local-image-fixture',
                     generation=GenerationSpec(max_tokens=8192, stop=()), image_join=True)
                 root = self.data / ('full-query-empty' if none_match else 'full-query-nonempty'); root.mkdir()
-                budget = dict(path=str(root/'budget.sqlite'), id='full-query', limit=20, unit_id='query')
-                ledger = CellBudgetLedger.create(Path(budget['path']), AttemptBudget(budget['id'], 20), deadline_utc=None)
-                ledger.reserve_unit('query', 20)
+                budget = dict(path=str(root/'budget.sqlite'), id='full-query', limit=10 if none_match else 15, unit_id='query')
+                ledger = CellBudgetLedger.create(Path(budget['path']), AttemptBudget(budget['id'], budget['limit']), deadline_utc=None)
+                ledger.reserve_unit('query', budget['limit'])
                 config = dict(profile={}, budget=budget,
                     ray_native=dict(engine_kwargs={}, processor_options=dict(prepare_image_stage=True)))
                 engine = EngineSpec(model_path='CPU-no-model', model_python='unused', driver_python='unused')

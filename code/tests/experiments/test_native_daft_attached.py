@@ -121,9 +121,9 @@ class AttachedOriginalQueryTests(unittest.TestCase):
         guard.start()
         self.addCleanup(guard.stop)
 
-    def reference(self, scenario, query, inputs):
+    def reference(self, scenario, query, inputs, *, mode='success'):
         service, _ = self.visual.config(scenario, query)
-        policy = fixture.NativeHTTPReplies(self, scenario, query=query)
+        policy = fixture.NativeHTTPReplies(self, scenario, query=query, mode=mode)
         responses = {}
         original = policy.respond
         def record(request):
@@ -200,6 +200,55 @@ class AttachedOriginalQueryTests(unittest.TestCase):
                 self.assertEqual(observed_http, expected_http)
                 changed = sum(row['original_messages_sha256'] != row['effective_messages_sha256'] for row in encoded)
                 self.assertEqual(changed, 4 if scenario == 'ecomm' else 0)
+
+    def test_original_outfit_queries_use_existing_sequential_bridge_with_actual_work(self):
+        for query, calls in (('Q10', 19), ('Q11', 25)):
+            with self.subTest(query=query):
+                expected, policy, responses, config = self.reference('ecomm', query,
+                    self.visual.ecomm_outfit_inputs(query))
+                config['max_model_calls'] = calls
+                plan = self.visual.root/(query+'-outfit-HTTP-plan.json')
+                write_private_json(plan, dict(responses=responses, failure=False))
+                supervisor = AttachedSupervisor(plan)
+                report = driver.run_query(config, self.visual.root/(query+'-native-outfit'),
+                    model_python=sys.executable, supervise=supervisor)
+                self.assertEqual(report['status'], 'completed')
+                self.assertEqual(report['result'], expected['result'])
+                self.assertEqual(report['quality'], expected['quality'])
+                self.assertEqual(report['native_HTTP_attempts'], calls)
+                self.assertEqual(sum(len(read_json(Path(cfg['requests_path']))['requests'])
+                    for cfg, _ in supervisor.calls), calls)
+                self.assertEqual(report['native_HTTP_audit']['successful_responses'], calls)
+                self.assertTrue(report['query_thread_closed'])
+                last = read_json(supervisor.calls[-1][1]/'worker.json')
+                self.assertLessEqual(report['sink_ready_ns'], last['result_release']['released_monotonic_ns'])
+
+    def test_actual_survivor_budget_need_not_cover_unused_theoretical_maximum(self):
+        expected, _, responses, config = self.reference('ecomm', 'Q12', self.visual.ecomm_inputs())
+        config['max_model_calls'] = 7  # Four actual Filter rows and three real survivors; upper bound is eight.
+        plan = self.visual.root/'tight-survivor-HTTP-plan.json'
+        write_private_json(plan, dict(responses=responses, failure=False))
+        supervisor = AttachedSupervisor(plan)
+        report = driver.run_query(config, self.visual.root/'tight-survivor-native',
+            model_python=sys.executable, supervise=supervisor)
+        self.assertEqual(report['status'], 'completed')
+        self.assertEqual(report['native_HTTP_attempts'], 7)
+        self.assertEqual(report['result'], expected['result'])
+        self.assertEqual(report['quality'], expected['quality'])
+
+    def test_zero_join_matches_need_only_the_real_join_budget(self):
+        expected, _, responses, config = self.reference('mmqa', 'Q2b', self.visual.mmqa_inputs(), mode='no_matches')
+        config['max_model_calls'] = 4
+        plan = self.visual.root/'zero-survivor-HTTP-plan.json'
+        write_private_json(plan, dict(responses=responses, failure=False))
+        report = driver.run_query(config, self.visual.root/'zero-survivor-native', model_python=sys.executable,
+            supervise=AttachedSupervisor(plan))
+        self.assertEqual(report['status'], 'completed')
+        self.assertEqual(report['query']['minimum_model_calls'], 4)
+        self.assertEqual(report['query']['maximum_model_calls'], 8)
+        self.assertEqual(report['native_HTTP_attempts'], 4)
+        self.assertEqual(report['result'], expected['result'])
+        self.assertEqual(report['quality'], expected['quality'])
 
     def test_unencoded_text_HTTP_is_rejected_after_the_complete_original_sink(self):
         expected, _, responses, config = self.reference('ecomm', 'Q12', self.visual.ecomm_inputs())

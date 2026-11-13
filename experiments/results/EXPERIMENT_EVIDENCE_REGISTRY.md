@@ -184,6 +184,11 @@ Cars原2026常量／两种权重、E-Commerce重复索引后写及原ARI错误�
 212项整合、后续61项受影响检查及18条实际driver软件查询通过，0模型；不累加重复用例或授予真实资产／VLM资格。
 8cd初始Q10/Q11未接，后续依赖配对另列；Q14仍未接，新增Q2b空Extract保原错误，LOTUS已有空schema适配另列。
 
+[原题准入下界与Daft分支查询](diagnostics/sembench_native_integration_20261112/README.md#original-query-minimum-budget)
+现有LOTUS＋Daft桥已完成Q10/Q11的19／25次完整软件查询，更正未接线缓存，不新增执行器或转授独立JSON／目标资格。
+四原入口去掉maximum充当minimum的误拒，实际后继／重试仍永久扣额；Q12七次非空和Q2b仅Join额度空链通过。
+139项整合仅旧断言失败，合同修正后22项受影响模块全过；最终139不同方法有通过证据，原失败保留，0模型／GPU。
+
 [E-Commerce依赖配对](diagnostics/sembench_native_integration_20261112/README.md#native-ecommerce-dependent-outfits)
 同一任务／两系统runner接Q10/Q11完整独立Filter与真实后继Join；实际配对在消息展开前检查额度，保原关系与工程方法身份。
 135项相关软件检查和六条完整driver软件查询通过，0模型；不借软件授予真实资产／VLM、TopK或作者算法资格。

@@ -65,10 +65,8 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
         unit = ledger.claim_shared_unit(value['unit_id'])
         description = query.describe()
-        maximum = description.get('maximum_model_calls', description['expected_model_calls'])
-        if maximum is None:
-            maximum = description['minimum_model_calls']
-        if maximum > unit.remaining:
+        minimum = description.get('minimum_model_calls', description['expected_model_calls'])
+        if minimum > unit.remaining:
             raise ValueError('shared physical budget cannot cover every original occurrence')
         observer = dict(value, output=str(directory.resolve()))
         runtime_env = dict(py_executable=engine.model_python,

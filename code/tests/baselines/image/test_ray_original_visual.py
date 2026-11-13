@@ -156,6 +156,12 @@ class RayOriginalVisualTests(unittest.TestCase):
         self.assertEqual(task.describe()['maximum_model_calls'], 8)
         self.assertIsNone(task.describe()['expected_model_calls'])
 
+    def test_actual_survivor_budget_need_not_cover_unused_theoretical_maximum(self):
+        report, task, _ = self.compare('ecomm', 'Q12', self.source.ecomm_inputs(), allowance=7)
+        self.assertEqual(report['physical_attempts_reserved'], 7)
+        self.assertEqual(task.describe()['minimum_model_calls'], 4)
+        self.assertEqual(task.describe()['maximum_model_calls'], 8)
+
     def test_visual_map_uses_the_same_original_formatter_parser_and_result(self):
         report, _, _ = self.compare('ecomm', 'Q6', self.source.ecomm_outfit_inputs('Q6'))
         self.assertEqual(report['physical_attempts_reserved'],2)

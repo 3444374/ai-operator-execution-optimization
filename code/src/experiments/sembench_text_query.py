@@ -147,9 +147,7 @@ def check(config, query, engine):
     if description.get('visual_inputs') is not None and not (config['backend'] == 'ray-data' and 'ray_native' in config
             and config['ray_native']['processor_options'].get('prepare_image_stage') is True):
         raise ValueError('prepared image Join requires the explicit native Ray image preparation stage')
-    expected = description.get('maximum_model_calls', description['expected_model_calls'])
-    if expected is None:
-        expected = description['minimum_model_calls']
+    expected = description.get('minimum_model_calls', description['expected_model_calls'])
     if engine.max_model_calls is None or engine.max_model_calls < expected:
         raise ValueError('engine.max_model_calls must cover the complete original operator')
     if engine.max_model_len is not None and query.generation.max_tokens > engine.max_model_len:

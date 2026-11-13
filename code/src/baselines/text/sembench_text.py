@@ -526,7 +526,8 @@ class SemBenchTextQuery:
                if self.scenario == 'cars' else {}),
             expected_model_calls=(None if self.visual_inputs is not None and self.query == '2b'
                                   else 0 if operation is None else operation['expected_model_calls']),
-            **(dict(maximum_model_calls=self.visual_inputs['maximum_model_calls'])
+            **(dict(minimum_model_calls=self.visual_inputs['minimum_model_calls'],
+                    maximum_model_calls=self.visual_inputs['maximum_model_calls'])
                if self.visual_inputs is not None else {}),
             policy=('original aggregate frontier; backend owns reduction algorithm; result cache disabled; no warmup'
                     if operation is not None and operation['kind'] == 'aggregate' else

@@ -51,6 +51,7 @@ def describe_inputs(checkout, data_dir, query_id):
         table=dict(path=str(table), **file_identity(table), rows=rows, columns=columns),
         images=images, image_occurrences=len(images), exact_join_candidates=candidates,
         maximum_followup_extracts=candidates if query == "2b" else 0,
+        minimum_model_calls=candidates,
         maximum_model_calls=candidates * (2 if query == "2b" else 1),
         actual_followup_extracts=None if query == "2b" else 0,
         original_source_difference=("Q7 native implementation joins all airline rows; it does not apply "

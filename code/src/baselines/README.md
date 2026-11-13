@@ -183,6 +183,9 @@ Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON �
 `native_lm_max_ctx_len`，与`engine_kwargs.max_model_len`及实际声明的tokenizer一致。
 原LOTUS拥有分块、token计数、摘要依赖、parser和最终`_output`；动态总数保持未知，有限预算按实际调用扣除。
 现有字符串prompt provider尚无逐行图像carrier；图像使用下述独立profile。TopK取消项保持停止，分组并发尚未由该路径授予支持。
+附加服务的既有顺序查询桥亦能执行E-Commerce Q10/Q11原分支Filter／Join，19／25请求的软件原题、完整结果／评分与末批ACK已核，保原SDK多列选择限制；不为两题另建执行器。
+原服务及LOTUS＋Ray／Daft按已知minimum准入，maximum只描述上界；实际幸存行／后继请求逐次受同一永久额度约束，
+不是要求预留每种理论后继；紧预算非空／空路径与目标待验范围见[验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#original-query-minimum-budget)。
 
 另有[外部OpenAI兼容服务模板](../../configs/sembench_daft_native_openai.example.json)，沿同一原题runner与worker：
 Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不增加自定义provider或Prompter。

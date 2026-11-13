@@ -169,9 +169,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
                 local_files_only=True, trust_remote_code=False,
                 **(dict(revision=revision) if revision is not None else {}))
         description = report['query'] = query.describe()
-        minimum = description.get('maximum_model_calls', description['expected_model_calls'])
-        if minimum is None:
-            minimum = description['minimum_model_calls']
+        minimum = description.get('minimum_model_calls', description['expected_model_calls'])
         if minimum > budget.limit:
             raise ValueError('physical budget cannot cover the known minimum original requests')
         ledger = CellBudgetLedger.create(directory / 'physical-budget.sqlite', budget,
