@@ -78,6 +78,8 @@ VARCHAR工程变体的单Map／Extract已使用同一原题任务接口，替代
 四场景五个原题的临时输入／原SDK完整关系差分及受影响12项软件检查通过、0模型；
 不转授所有新任务或模型资格，不把该单算子路径说成混合图已接通。ecbd的12项Linux检查和原Movie Q8／MMQA Q4
 的120／24个真实SQL软件答复随后通过；Map私有参考harness首轮错误保留，不改生产代码绕过。
+034dc随后完成同一Map120／Extract24的144次真实请求，unknown／重试0，原答／完整sink及物理清理已验；
+Map相对误差与Extract原F1=0.4865保持，不据执行完整宣称质量达标或转授其他任务。
 其他已就绪项继续排队；不为每个格子另写执行器，不只积累软件通过数。
 已核对的普通文本题主要是单个语义调用；E-Commerce Q12 的后续 Extract 明确包含图像，
 已由完整原生 LOTUS 服务入口运行，不能当纯文本或假定其他后端已能执行它。
@@ -253,7 +255,8 @@ LOTUS resident／视觉／MMQA 聚合、Ray／Daft prepared、IMLane Filter 和 
 审计 token、预算及上下文检查，区间内保留执行消息、native SQL 和原完整 sink；后者前置
 manifest／源码绑定，仍新鲜读取原 Reviews CSV、生成作者必需输入并执行原关系。
 原版DOUBLE Q9 Map的源／消息物化与额外preflight也已分开，完整sink立即发布全局ready，
-保留原phase-entry含启动宽区间；48项独立干净导出软件检查通过，新时钟目标SQL仍待验。
+保留原phase-entry含启动宽区间；034dc的48项Linux和原版256项软件SQL／提前READY通过，
+首轮SQL后私有类型断言失败及离线原结果复核分别保留；0模型，DOUBLE新时钟真实模型仍待验。
 Kalypso另保留caller→sink，不改旧receipt或估算扣除。各v3目标范围按冻结来源分列；
 其余专用／私有入口的旧时钟按
 [时钟范围](src/baselines/README.md#完整查询时钟与仍未统一的路径)分列。

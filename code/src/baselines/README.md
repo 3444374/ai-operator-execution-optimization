@@ -788,7 +788,8 @@ Kalypso 由 receipt 的 `source_started_ns` 和显式版本计算，外层 calle
 `caller_to_memory_sink_seconds`；旧 receipt 保留旧值，不从宽区间估算扣除成本。
 旧 v2 共享文本路径仍含执行内文件摘要核对，旧 LOTUS 首次查询还含模型启动；原值保留，不能回填为 v3。
 IMLane原版DOUBLE Q9 Map也已区分ready后的v3源→完整sink与原含启动宽区间，
-输入诊断快照及身份检查移出时钟，全局ready在审计前发布；当前只有软件检查，新时钟目标资格待验。
+输入诊断快照及身份检查移出时钟，全局ready在审计前发布；034dc的原版256项软件SQL门通过，
+新DOUBLE时钟模型资格仍待验。该来源VARCHAR Map／Extract另完成144次真实请求，原质量单列。
 其余IMLane专用入口、Kalypso未迁移私有查询和旧时钟仍按实际来源解释。
 默认 isolated 记录图继续明确留空统一 sink 指标；多算子、Join、TopK 支持以实际后端接点核对，
 不以时钟字段、软件夹具或逐题计划代替执行能力。

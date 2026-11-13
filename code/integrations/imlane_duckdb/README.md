@@ -499,7 +499,8 @@ Q3 的旧 `168bc` project resident bridge 只供软件 CPU 答复引用；本次
 
 Movie Q8、MMQA Q1／Q4、Medical Q10及E-Commerce Q3的临时数据与原查询／原SDK完整结果差分通过；
 重复ID、非连续原索引及乱序答复保留。12项受影响软件检查通过、0模型；额外身份检查不在sink内、
-原JSON约束确实到provider等边界已覆盖。新任务／新计时仍须Linux SQL及模型单独验收。
+原JSON约束确实到provider等边界已覆盖。034dc的Movie Q8／MMQA Q4随后通过真实SQL及模型，
+其他任务仍按来源另验；执行完整、实际质量和时钟见[原件报告](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-034dc-validation)。
 
 ## LOTUS quick TopK 与 VARCHAR prediction
 
@@ -628,7 +629,8 @@ request_budget 为既有已 claim 描述符：path、budget_id、limit=N、unit_
 `complete_query_seconds`继续是包含preflight和模型启动的旧phase-entry区间；service-start到sink、
 model-ready到sink也分别直接观测。ready尾段不冒充v3完整查询，不从旧时长估算扣除启动／预检。
 ACK后driver退出、审计和关闭仍须成功。48项受影响软件检查在排除保留草稿的独立干净导出中通过、
-0模型；新时钟仍须目标SQL验收，不将旧Q9成绩改记为新时钟。
+0模型；034dc的目标原版DOUBLE SQL／提前READY已验，新时钟真实模型仍待验，
+不将旧Q9成绩改记为新时钟，原件见[同批报告](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-034dc-validation)。
 
 规模限制修正 `3c810975` 的 16 个不同 CPU 用例已通过，包含 1／7／17 行软件输入、重复 ID、
 完整原 sink／evaluator、永久预算及失败时序。复核用现有入口：

@@ -30,7 +30,10 @@ IMLane prepared VARCHAR补齐provider本地回执的occurrence ID，RPC仍按原
 参考token／身份检查前置、真实源读取及完整关系仍在时钟内；ecbd的12项Linux与120／24项代表SQL软件门通过，
 Map私有参考harness首轮失败保留。其他新任务／模型仍另验。
 原版DOUBLE Q9 Map另补真正的ready-source v3起止及审计前就绪通知，保留原含启动宽区间；
-独立干净导出48项软件检查通过、0模型，新时钟目标SQL仍待验，旧成绩不回填。
+独立干净导出48项软件检查通过、0模型；034dc随后通过Linux48和原版DOUBLE256软件SQL／提前READY，
+首轮SQL后私有类型断言失败与离线复核保留，未重跑SQL，DOUBLE新时钟模型仍待验。
+同一034dc的VARCHAR Map120／Extract24完成144次真实请求、unknown／重试0，原sink／答复／时钟／资源已核；
+Extract原F1=0.4865保持，执行完整性、质量和未知成本分列，不转授其他任务或组合树。
 Ray Animals四题另共用v3源起点，把额外预检与LOTUS客户端构造前置，真实读图、原生启动、
 阶段间清理与完整关系保留；35项不同本地软件检查通过、0模型，目标新时钟仍待验。
 Medical Q3／Q8／Q9随后复用原脚本及既有视觉服务入口；Q9双图仍为单发生项请求，
