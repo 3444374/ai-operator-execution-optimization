@@ -101,6 +101,13 @@ Medical仍用同两模板，选择`scenario="medical"`、`data_dir="<MEDICAL_DIR
 Q4在查询内作原普通内连接并对全部连接发生项Filter，保留重复加权年龄平均；Q1完整patient_id Series、
 Q10完整诊断关系与原评分保持。输入和评分缺文件分别报告，不借用其他Medical profile的模型资格。
 
+Cars同两模板声明`scenario="cars"`、data_dir及Q1/Q4/Q10，可选scale_factor只选原sample目录和文件，默认原157376。
+Q1不要求无关car表，Q4/Q10普通merge／全发生项和原gold成员筛选保持；Q4固定2026常量及原两种权重不改。
+E-Commerce声明`scenario="ecomm"`、data_dir和Q1/Q3/Q5，省略reviews_csv／movies_csv／ranking／scale_factor。
+完整styles_details.parquet中title＋全部nested descriptor入模，gold不入模；Q5只用原嵌套普通谓词选输入，未加LIMIT。
+Q1返回原Series，Q3原index标签赋值及Q5完整Map关系、原SQL评分和原错误保留，Q7此批尚未接。
+这两族目前仅fixture／原函数及driver软件验收，不能把示例路径当真实数据已齐。
+
 ```bash
 PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_ray check --config "$RAY_CONFIG"
 PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_daft check --config "$DAFT_CONFIG"

@@ -1640,6 +1640,34 @@ Daft实际完整token ID数组未保存，保持未知。两条执行路径和�
 干净导出五个完整模块53项全通过、0skip／模型／GPU，含真实Daft0.7.21图＋软件API旧回归，结果SHA-256为
 `3d4a778a4918d7dd0ba5e911cddb542009b86ba0f82c9564659a27c965cdeac6`。这只关闭空批次正常语义缺口，Q2b实际VLM／非空Extract及性能资格仍另验。
 
+<a id="native-cars-ecommerce-text"></a>
+## 独立 Cars 与 E-Commerce 文本任务复用现有系统 runner
+
+CarsTextTask接c814原Q1/Q4/Q10，scale_factor默认原157376，只选择真实sample CSV路径，无行数上限。
+Q1全部投诉Filter后返回原car_id Series，无无关car表依赖；Q4/Q10在查询内完成cars.merge(complaints,inner)，
+对全部连接发生项推理，保重复／NaN普通连接。Q4固定`2026 - mean(year)`及投诉加权，
+原gold却按engine问题car IDs筛full车辆求平均的差异明确保留。Q10完整car_id／problem_category不因评分改写。
+金标预先冻结，原sample complaint_id／car_id成员筛选使用本轮source快照，重复sample不人为扩gold，原长度错误保持。
+
+EcommerceTextTask接原Q1 Filter／Q3 Extract／Q5 Map；title和整个nested productDescriptors入模，
+ID及articleType／brandName等gold不入模。Q5原Apparel／subCategory谓词留在真实Parquet读取后的查询内，
+Q1原id Series，Q3原index标签赋值的重复标签后写行为，Q5原逐位置Map投影保持；JSON null物化None字符串。
+prepare_evaluation提前冻结同一Parquet字节，真实查询fresh读源；sink后核同源快照，原TOML SQL与指标在冻结gold临时目录执行，
+不重写scorer。原空Extract／空谓词边界及重复ID引起的原ARI错误保留，不用去重或fallback遮盖。
+E-Commerce Q7及图像／混合题未由这批实现，真实资产缺口不是原生API不支持。
+
+主线程在4793ecf75 clean导出整合六个源／测试文件，九个完整模块159项全通过，0skip／模型／GPU，结果SHA-256为
+`4f99793e38187d872479fce955c0ff338b6e0c032bc93321c043daf3d5c21a4a`；不与先前149／139或分任务计数累加。
+Cars含3题×5原完整函数／SDK软件差分，E-Commerce含3题×4差分；fresh禁LOTUS导入后的原评分也通过，
+两runner源码未因场景新增而复制。另各六条实际两driver软件流程验证完整结果／评分、预算和Daft ACK，
+Cars各5／4／4发生项、E-Commerce各6／6／3，消费者证据SHA-256分别为
+`4fb8c5e867ae7f30d35be9c4597fea8d8a3d4de2cdcea66da4a4b9b3eabb4d5d`、
+`229e80d4c4f707a242c47e4c4fa3d0cd2c0a8005ed09189da26a0a7513983a5e`。它们没有运行原生模型，不授予真实数据完备性、质量或性能资格。
+
+Cars首次fixture在两张gold表都放同名private_label，原无suffix join正确报列冲突，修fixture列名后通过；
+E-Commerce首次缺gold列fixture含空struct，PyArrow拒绝写Parquet，只改有child的descriptor fixture。
+两个首轮失败、missing-module红及核验命令状态错误均保留，未改生产逻辑迎合测试。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

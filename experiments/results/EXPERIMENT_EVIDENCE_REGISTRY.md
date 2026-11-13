@@ -165,6 +165,11 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 原Q2b完整空sink后的metadata KeyError已零模型复现，审计跳过未创建worker的空批；4→0发生项、完整结果／评分／ACK核对。
 五完整模块53项全过、0模型，首轮失败保留；不改变原Q12空Extract错误或授予Q2b真实非空Extract资格。
 
+[独立Cars／E-Commerce文本家族](diagnostics/sembench_native_integration_20261112/README.md#native-cars-ecommerce-text)
+Cars Q1/Q4/Q10、E-Commerce Q1/Q3/Q5复用同两系统runner，保普通关系、原gold／SQL评分及原失败。
+九完整模块159项及各六条实际driver软件流程通过，0模型；真实数据／模型待验，E-Commerce Q7尚未接。
+Cars原2026常量／两种权重、E-Commerce重复索引后写及原ARI错误均明确保留，不借fixture授予完整资产资格。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。
