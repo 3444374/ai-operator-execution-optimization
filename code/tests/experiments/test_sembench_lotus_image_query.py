@@ -375,7 +375,7 @@ class NativeLotusImageQueryTests(unittest.TestCase):
 
     def assert_audit(self, report, directory, replies):
         self.assertIsInstance(report["source_started_ns"], int)
-        self.assertEqual(report["query_clock_version"], "sembench.source_to_sink.v3")
+        self.assertEqual(report["query_clock_version"], "lotus_service.source_to_sink.v1")
         self.assertLessEqual(report["preflight_finished_ns"], report["source_started_ns"])
         if report["sink_ready_ns"] is None:
             self.assertIsNone(report["source_to_sink_seconds"])

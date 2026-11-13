@@ -258,6 +258,9 @@ TopK另含`native_stats`。首算子保留旧记录ID，后续记录加`operator
 接收已有输入快照，拥有原函数、真实后续关系、输入复核和原评分，不拥有模型／预算／时钟。
 外部服务上的视觉／多模态查询和MMQA Q5共用[同一查询生命周期](../experiments/sembench_lotus_query.py)；
 Q5保留原层次聚合及tokenizer预检，不再独立复制查询worker。旧入口从[准确来源](../../../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)恢复。
+该服务查询的当前时钟为`lotus_service.source_to_sink.v1`：HTTP额度预扣、请求指纹、
+图像审计hash和事件编码／入队仍在区间内，后台写盘可能重叠；最终drain、后置审计、
+结果编码与评价在sink后。它不是统一v3口径；旧字段／数字保持原件，不事后扣除观测成本。
 MMQA不再另设cached CSV reader来准备首阶段后重跑恢复；被替代的`load_data`接线已移除。
 typed callback中的`operation.frame`保留原dtype；记录字段不是原生图像payload的替身。
 

@@ -18,6 +18,8 @@
 删除后105项检查为104通过、1个真实资产未绑定跳过，0模型／GPU／外部网络；旧来源及失败继续保留。
 与公共边界及IMLane Q3的最终组合检查共245个不同用例，241通过、4个环境／输入未绑定跳过，
 该计数包含前述检查，不能累加；取消的Daft动作及三份草稿未进入验证导出。
+后续源码核查另确认HTTP指纹、inline-image审计hash及事件编码在查询内、后台写盘可重叠，
+当前服务区间更正为独立`lotus_service.source_to_sink.v1`；原打点／数值和历史结果不变，不授统一计时资格。
 
 [Kalypso系统runner](diagnostics/sembench_native_integration_20261112/README.md#kalypso-system-runner-review)
 另记录19d候选的四算子生命周期收拢、退役旧调用及独立审查修补：后验审计失败仍保存完整结果，

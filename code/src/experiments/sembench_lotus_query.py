@@ -160,10 +160,12 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         warmup_calls=0, retries=0, performance_claim=False,
         query_timing_scope="legacy source/query interval including post-result stage and response accounting",
         source_started_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
-        query_clock_version="sembench.source_to_sink.v3",
+        query_clock_version="lotus_service.source_to_sink.v1",
         source_to_sink_timing_scope="actual image/source decode and CSV reads, native PNG formatting, "
-            "complete original operators and memory sink; input preflight, LM/client setup, external service startup, post-result audit, "
-            "serialization, evaluation and audit flush excluded",
+            "complete original operators and memory sink; mandatory HTTP attempt accounting, request fingerprints/response observation, "
+            "inline-image audit hashing and event encoding/queueing included; background event writes may overlap; "
+            "input preflight, LM/client setup, external service startup, post-result audit, result serialization, "
+            "evaluation and final audit drain excluded; independent service scope, not shared v3",
         evaluation_in_query_seconds=False)
     if aggregate:
         report.update(schema='semloom.sembench_lotus_mmqa_aggregate_result.v1',
@@ -171,8 +173,10 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             lifecycle='attached-ready external text service; not cold model startup',
             query_timing_scope='legacy source/query interval including post-result input identity and response accounting',
             source_to_sink_timing_scope='actual source read and complete unchanged Q5 hierarchy/projection in memory; '
+                'mandatory HTTP attempt accounting, request fingerprints/response observation and event encoding/queueing included; '
+                'background event writes may overlap; '
                 'LM/client/tokenizer setup, input/leaf preflight, external service startup, post-result audit, '
-                'serialization, evaluation and audit flush excluded',
+                'result serialization, evaluation and final audit drain excluded; independent service scope, not shared v3',
             complete_cli_timing='supervisor.elapsed_s includes imports, tokenizer/LM setup, preflight, evaluation and audit flush')
     started = time.monotonic()
     report["worker_entry_ns"] = time.monotonic_ns()

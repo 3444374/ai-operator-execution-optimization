@@ -641,8 +641,15 @@ MMQA Q5接到既有`SemBenchTextQuery → OriginalLotusQuery → native_ray_semb
 原查询对象收拢到`baselines.sembench_lotus.OriginalLotusQuery`，与LOTUS＋Ray任务共同使用。
 原函数、算子、数据读取、实际后续关系、评分及两种既有配置schema保持；Q5的tokenizer预检和
 原层次聚合仍有自己的明确分支，没有变成逐题执行器或新增查询语言。
-完整sink事件、源到sink的v3时钟、各自旧`query_seconds`／`elapsed_seconds`区间保持，
-额外预检、后置身份核对、结果编码、原评分与写盘不混入v3。
+该次重构保持完整sink事件及各自旧`query_seconds`／`elapsed_seconds`区间。
+后续独立源码审查确认，HTTP observer在原send前计算请求JSON／内容指纹，NativeServiceCalls同步做
+inline-image审计hash，BufferedEvents.record同步编码和入队，后台writer也可能与查询重叠。
+因此当前服务时钟更正为`lotus_service.source_to_sink.v1`，明确包含上述观测和必要额度预扣，
+排除的是额外预检、后置身份核对、结果编码、原评分和最终drain；不再据旧v3名称宣称全部审计／写盘已移出。
+事件起止与数值计算未改，历史原件和模型成绩不重标或相减；这只修正观测口径，内部审计闭合仍待完成。
+更正后全新导出的五个受影响模块65项软件检查为64通过、1项真实sf25输入未绑定跳过；
+原HTTP MockTransport／SDK／预算／原结果和失败留证检查保持，实际模型／GPU／外部服务请求0。
+此复核与此前组合检查有重叠，不累计为新的覆盖数量。
 
 删除旧两个CLI／worker及旧视觉原题对象前，七个完整原查询软件差分覆盖Animals Q7、MMQA Q2b、
 E-Commerce Q12、Cars Q3、Medical Q9，以及Q5单请求和多层长摘要。
