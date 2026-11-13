@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import time
 
@@ -36,8 +37,10 @@ def configuration(value):
     fields |= {'requests_path', 'requests_sha256', 'request_budget'}
     if value.get('schema') != 'semloom.native_daft_map.v1':
         raise ValueError('native Daft worker requires prepared prompts from the original query task layer')
-    if set(value) != fields:
+    if set(value) - {'wait_for_result_release'} != fields:
         raise ValueError('native Daft configuration fields do not match its query schema')
+    if type(value.get('wait_for_result_release', False)) is not bool:
+        raise ValueError('wait_for_result_release must be boolean')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s'):
         number = value[name]
         if type(number) not in (int, float) or not math.isfinite(number) or number <= 0:
@@ -56,7 +59,8 @@ def configuration(value):
 class QueryDeadline:
     """One cleanup allowance, including graceful close and forced process stop."""
     def __init__(self, ready_path, *, query_s, cleanup_s, stop_grace_s, monitor=None, clock=time.monotonic,
-                 ready_schema='semloom.native_daft_map.result_ready.v1', on_result_ready=None):
+                 ready_schema='semloom.native_daft_map.result_ready.v1', on_result_ready=None,
+                 wait_for_result_release=False):
         self.path = Path(ready_path)
         self.clock, self.monitor = clock, monitor
         self.started = clock()
@@ -65,6 +69,8 @@ class QueryDeadline:
         self.ready = None
         self.ready_schema = ready_schema
         self.on_result_ready = on_result_ready
+        self.wait_for_result_release = wait_for_result_release
+        self.released = None
 
     def __call__(self, identities):
         if self.monitor is not None:
@@ -76,25 +82,65 @@ class QueryDeadline:
             self.ready = value['result_ready_monotonic_ns'] / 1e9
             if self.ready > self.query_deadline:
                 raise TimeoutError('native Daft result exceeded its complete query allowance')
-            if self.on_result_ready is not None:
-                self.on_result_ready(value)
+            primary = None
+            try:
+                if self.on_result_ready is not None:
+                    self.on_result_ready(value)
+            except BaseException as error:
+                primary = error
+                raise
+            finally:
+                if self.wait_for_result_release:
+                    released = self.clock()
+                    saved = _save_artifact(self.path.with_name('result-release.json'), dict(
+                        schema='semloom.native_daft_map.result_release.v1',
+                        result_ready_monotonic_ns=value['result_ready_monotonic_ns'],
+                        released_monotonic_ns=int(released * 1e9)), primary=primary, publish=True)
+                    if saved:
+                        self.released = released
         now = self.clock()
         if self.ready is not None and self.ready > self.query_deadline:
             raise TimeoutError('native Daft result exceeded its complete query allowance')
         if self.ready is None and now >= self.query_deadline:
             raise TimeoutError('native Daft query exceeded its complete query allowance')
-        if self.ready is not None and now >= self.ready + self.cleanup_s - self.stop_grace_s:
+        if self.wait_for_result_release and self.released is not None and self.released >= self.query_deadline:
+            raise TimeoutError('native Daft complete query exceeded its absolute allowance')
+        cleanup_start = self.released if self.wait_for_result_release else self.ready
+        if cleanup_start is not None and now >= cleanup_start + self.cleanup_s - self.stop_grace_s:
             raise TimeoutError('native Daft post-result close exceeded its graceful allowance')
 
     def report(self):
-        return dict(started_monotonic=self.started, query_deadline_monotonic=self.query_deadline,
+        cleanup_start = self.released if self.wait_for_result_release else self.ready
+        report = dict(started_monotonic=self.started, query_deadline_monotonic=self.query_deadline,
             result_ready_monotonic=self.ready, cleanup_s=self.cleanup_s,
             forced_stop_reserved_s=self.stop_grace_s,
-            cleanup_deadline_monotonic=None if self.ready is None else self.ready + self.cleanup_s)
+            cleanup_deadline_monotonic=None if cleanup_start is None else cleanup_start + self.cleanup_s)
+        if self.wait_for_result_release:
+            report.update(result_release_required=True, result_release_monotonic=self.released)
+        return report
+
+
+def _wait_for_result_release(directory, timestamp, deadline, parent_pid):
+    """Keep the current native owner until the query consumes its result."""
+    path = directory / 'result-release.json'
+    while not path.exists():
+        if os.getppid() != parent_pid:
+            raise InterruptedError('native Daft result consumer exited before release')
+        if time.monotonic() >= deadline:
+            raise TimeoutError('native Daft result release exceeded the absolute query allowance')
+        time.sleep(0.01)
+    value = read_json(path)
+    if (value.get('schema') != 'semloom.native_daft_map.result_release.v1'
+            or value.get('result_ready_monotonic_ns') != timestamp):
+        raise ValueError('native Daft release does not identify this result')
+    if value['released_monotonic_ns'] / 1e9 >= deadline:
+        raise TimeoutError('native Daft result release exceeded the absolute query allowance')
+    return value
 
 
 def run_worker(config, directory, *, execute_query=None):
     started = time.monotonic_ns()
+    parent_pid = os.getppid()
     config = configuration(config)
     directory = Path(directory)
     if not directory.exists():
@@ -124,6 +170,12 @@ def run_worker(config, directory, *, execute_query=None):
             result_ready_monotonic_ns=timestamp, worker_started_monotonic_ns=started,
             cold_result_ready_seconds=(timestamp - started) / 1e9,
             source=source, result=result))
+        if config.get('wait_for_result_release', False):
+            report['result_release'] = dict(required=True, confirmed=False)
+            value = _wait_for_result_release(directory, timestamp,
+                started / 1e9 + config['query_timeout_s'], parent_pid)
+            report['result_release'].update(confirmed=True, **value,
+                observed_monotonic_ns=time.monotonic_ns())
 
     report = dict(schema=schema + '.worker.v1', status='failed',
         source=source, warmup=0, whole_query_retries=0, performance_claim=False,
@@ -184,7 +236,8 @@ def supervised_run(config_path, directory, *, model_python, monitor=None, on_res
     deadline = QueryDeadline(directory / 'result-ready.json', query_s=config['query_timeout_s'],
         cleanup_s=config['cleanup_s'], stop_grace_s=config['stop_grace_s'], monitor=monitor,
         ready_schema=config['schema'].removesuffix('.v1') + '.result_ready.v1',
-        on_result_ready=on_result_ready)
+        on_result_ready=on_result_ready,
+        wait_for_result_release=config.get('wait_for_result_release', False))
     command = [str(model_python), '-u', '-B', '-m', 'src.experiments.native_daft_query', 'worker',
                '--config', str(config_path), '--output-dir', str(directory)]
     primary = None

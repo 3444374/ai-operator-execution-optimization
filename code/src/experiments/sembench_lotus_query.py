@@ -153,9 +153,11 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         backend="lotus-native", execution_enabled=True, production_core_used=False,
         original_operators_used=True, scheduler_owner="original LOTUS LM / LiteLLM batch_completion",
         generation=config["generation"], service_profile_declared=config["service_profile"],
-        lifecycle="existing independently supervised VLM service; not cold model startup",
+        lifecycle="attached external VLM service; readiness and startup are externally owned and unobserved",
         physical_gpu_exit_confirmed=None, model_process_owned=False, result_cache_enabled=False,
-        driver_initialization_in_query_seconds=False, service_startup_in_query_seconds=False,
+        driver_initialization_in_query_seconds=False, service_startup_in_query_seconds=None,
+        model_ready_before_source=None,
+        service_readiness_observation="no remote READY observation; any lazy startup/request wait remains in actual HTTP latency",
         complete_cli_timing="supervisor.elapsed_s includes driver imports, preflight, evaluation and audit flush",
         warmup_calls=0, retries=0, performance_claim=False,
         query_timing_scope="legacy source/query interval including post-result stage and response accounting",
@@ -164,18 +166,20 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         source_to_sink_timing_scope="actual image/source decode and CSV reads, native PNG formatting, "
             "complete original operators and memory sink; mandatory HTTP attempt accounting, request fingerprints/response observation, "
             "inline-image audit hashing and event encoding/queueing included; background event writes may overlap; "
-            "input preflight, LM/client setup, external service startup, post-result audit, result serialization, "
+            "all actual HTTP wait included; remote startup attribution unobserved; "
+            "input preflight, LM/client setup, post-result audit, result serialization, "
             "evaluation and final audit drain excluded; independent service scope, not shared v3",
         evaluation_in_query_seconds=False)
     if aggregate:
         report.update(schema='semloom.sembench_lotus_mmqa_aggregate_result.v1',
             scheduler_owner='original LOTUS sem_agg hierarchy / LM / LiteLLM batch_completion',
-            lifecycle='attached-ready external text service; not cold model startup',
+            lifecycle='attached external text service; readiness and startup are externally owned and unobserved',
             query_timing_scope='legacy source/query interval including post-result input identity and response accounting',
             source_to_sink_timing_scope='actual source read and complete unchanged Q5 hierarchy/projection in memory; '
                 'mandatory HTTP attempt accounting, request fingerprints/response observation and event encoding/queueing included; '
                 'background event writes may overlap; '
-                'LM/client/tokenizer setup, input/leaf preflight, external service startup, post-result audit, '
+                'all actual HTTP wait included; remote startup attribution unobserved; '
+                'LM/client/tokenizer setup, input/leaf preflight, post-result audit, '
                 'result serialization, evaluation and final audit drain excluded; independent service scope, not shared v3',
             complete_cli_timing='supervisor.elapsed_s includes imports, tokenizer/LM setup, preflight, evaluation and audit flush')
     started = time.monotonic()

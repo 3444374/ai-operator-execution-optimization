@@ -23,6 +23,9 @@ SOURCE_FILES = (
     'src/baselines/text/frameworks/kalypso_native/sembench_topk.py',
     'src/baselines/text/frameworks/kalypso_native/topk_binding.py',
     'src/baselines/text/frameworks/kalypso_native/topk_cpu.py',
+    'src/baselines/text/frameworks/kalypso_native/sembench_aggregate.py',
+    'src/baselines/text/frameworks/kalypso_native/aggregate_binding.py',
+    'src/baselines/text/frameworks/kalypso_native/aggregate_cpu.py',
     'src/baselines/text/frameworks/kalypso_native/movie_map_cpu.py',
     'src/baselines/text/frameworks/kalypso_native/map_observation.py',
     'src/baselines/text/frameworks/kalypso_native/field_binding.py',
@@ -33,6 +36,8 @@ SOURCE_FILES = (
     'src/baselines/text/sembench_movie.py',
     'src/baselines/text/sembench_ecomm.py',
     'src/baselines/text/sembench_mmqa.py',
+    'src/baselines/text/sembench_mmqa_aggregate.py',
+    'src/baselines/sembench_lotus.py',
     'src/baselines/text/sembench_medical.py',
     'src/baselines/text/sembench_cars.py',
     'src/experiments/kalypso_query_lifecycle.py',
@@ -65,7 +70,7 @@ def binding(cfg, unit):
     if (len(cfg['units']) != 1 or not unit['queries'] or cfg['units'][0] != unit
             or any(q['task'] not in TEXT_TASKS for q in unit['queries'])
             or len({'map' if q['task'] in MAP_TASKS else q['task'] for q in unit['queries']})!=1):
-        raise ValueError('CPU preparation requires one dedicated Map, Filter or TopK unit')
+        raise ValueError('CPU preparation requires one dedicated Map, Filter, TopK or Aggregate unit')
     physical_call_caps(unit)
     if cfg['source_commit'] != AUTHOR_SOURCE_COMMIT:
         raise ValueError('Map CPU input handoff requires original author05024')
@@ -86,7 +91,7 @@ def prepare_inputs(cfg, unit, output):
     local = dict(cfg, map_prompt_root=str(output / 'prompts'))
     queries = []
     for index, spec in enumerate(unit['queries']):
-        kind={'sembench-filter':'filter','sembench-topk':'topk'}.get(spec['task'],'map')
+        kind={'sembench-filter':'filter','sembench-topk':'topk','sembench-aggregate':'aggregate'}.get(spec['task'],'map')
         qid = spec['query_id']
         if Path(qid).name != qid or qid in ('.', '..'):
             raise ValueError('Text CPU query identity must be a filename-safe name')
@@ -127,7 +132,8 @@ def load_inputs(cfg):
     loaded = []
     for item, spec in zip(queries, expected, strict=True):
         topk=spec['task']=='sembench-topk'
-        count = spec['expected_rows'] if topk else spec['expected_calls']
+        aggregate=spec['task']=='sembench-aggregate'
+        count = spec['expected_rows'] if topk or aggregate else spec['expected_calls']
         paths = {}
         for role in ('csv', 'prompt', 'source'):
             entry = item['files'][role]
@@ -139,19 +145,20 @@ def load_inputs(cfg):
         table = json.loads(paths['prompt'].read_text())
         original=query_task(spec)
         operation=description['operation']
-        instruction=(None if operation is None else operation['instruction']) if topk else operation['stage']['method']['instruction']
-        if topk:
+        instruction=(None if operation is None else operation['instruction']) if topk or aggregate else operation['stage']['method']['instruction']
+        if topk or aggregate:
             from .topk_binding import criterion
             native_instruction=None if instruction is None else criterion(instruction,description['operation']['model_columns'])
             if table['native_instruction']!=native_instruction or instruction is None and count!=0:
-                raise ValueError('Frozen TopK criterion differs from the original referenced fields')
+                raise ValueError('Frozen native criterion differs from the original referenced fields')
         if (description['scenario'] != original['scenario'] or description['query'] != 'Q'+original['query_id']
                 or description.get('ranking') != original.get('ranking')
                 or description['query_id'] != spec['query_id']
                 or description['sembench_commit'] != 'c814e3807e72d4cf876b852b17e77f3cc94575c2'
-                or type(description['expected_model_calls']) is not int or description['expected_model_calls'] != spec['expected_calls']
+                or (description['expected_model_calls'] is not None if aggregate else
+                    type(description['expected_model_calls']) is not int or description['expected_model_calls'] != spec['expected_calls'])
                 or instruction != table['instruction']):
-            kind='TopK' if topk else ('Filter' if spec['task']=='sembench-filter' else 'Map')
+            kind='Aggregate' if aggregate else ('TopK' if topk else ('Filter' if spec['task']=='sembench-filter' else 'Map'))
             raise ValueError('Frozen CPU input is not the original '+kind+' task/instruction')
         rows = table['rows']
         if (table['query_id'] != spec['query_id'] or type(item['logical_occurrences']) is not int

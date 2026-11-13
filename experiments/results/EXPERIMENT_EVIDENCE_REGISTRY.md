@@ -24,6 +24,13 @@
 整合后的198个不同软件方法为194通过、4项环境／真实输入未绑定跳过；首失败和定向复核保留，
 0模型／GPU，真实Ray／VLM及剩余空分支、完整多批物理清理不由软件检查授予。
 
+[三系统聚合／完整查询接线](diagnostics/sembench_native_integration_20261112/README.md#aggregate-system-runners)
+记录LOTUS＋Daft原完整函数／多批ACK、LOTUS＋IMLane原层次聚合及同一KalypsoRunner的原SemAgg。
+225个不同软件方法为219通过、6项环境／真实输入未绑定跳过，0模型／GPU；有效失败与目标待验分别保留。
+算法、原生carrier和冷暖成本分列，旧单批生产调用迁移，独立v1时钟不授统一可比性。
+[051639最小模型回执](diagnostics/sembench_native_integration_20261112/README.md#native-051-minimal-model)
+单列原单叶Q5与独立Q3的4次真实请求，原外层失败、质量／计时及1578份原件保留，不转授新组合。
+
 [Kalypso零发生项](diagnostics/sembench_native_integration_20261112/README.md#kalypso-empty-frontier)
 修正无依据的正数frontier限制、空trace／owner检查和CPU空统计；82个不同软件方法为80通过、
 2项真实tokenizer未绑定跳过，首失败保留。原数据选择／关系／评分和作者算法不变，未运行模型／GPU或服务器。

@@ -591,16 +591,18 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         from src.experiments.shared_request_budget import SharedClaimedUnit
         from src.infrastructure.private_artifacts import read_json,publish_private_json
 
-        for key in ('1','2','3','4','5'):
-            query=self._query('movie',key)
+        cases = [('movie', key, None) for key in ('1','2','3','4','5')]
+        cases += [('movie', '8', 'POSITIVE'), ('mmqa', '4', '{"genres":"comedy"}')]
+        for scenario,key,answer in cases:
+            query=self._query(scenario,key)
             count=len(query.operation.records)
-            answers=['False' if i%2 else 'True' for i in range(count)]
-            if key=='5':expected,messages=self._join_reference(query,answers)
+            answers=[answer if answer is not None else 'False' if i%2 else 'True' for i in range(count)]
+            if scenario=='movie' and key=='5':expected,messages=self._join_reference(query,answers)
             else:
                 expected,batches=self._reference(query,answers)
                 messages=[message for messages,_ in batches for message in messages]
             config=dict(schema='semloom.native_daft_sembench.v1',sembench_checkout=str(query.checkout),
-                data_dir=str(self.data),scenario='movie',query=key,query_id=query.query_id,
+                data_dir=str(self.data),scenario=scenario,query=key,query_id=query.query_id,
                 model_name=query.model_name,model='CPU-only',sampling_params=query.generation.kwargs(),
                 engine_kwargs={},provider_options={},query_timeout_s=60,cleanup_s=5,stop_grace_s=1,
                 max_model_calls=count)
@@ -608,19 +610,24 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                 worker=read_json(path)
                 requests=read_json(worker['requests_path'])['requests']
                 self.assertEqual([json.loads(row['prompt']) for row in requests],messages)
-                self.assertEqual(worker['sampling_params'],query.operation.generation.kwargs())
+                effective = dict(worker['sampling_params'])
+                expected_sampling = query.operation.generation.kwargs()
+                if query.operation.describe()['kind'] == 'extract':
+                    self.assertEqual(effective.pop('response_format'), {'type':'json_object'})
+                    self.assertEqual(expected_sampling.pop('structured_outputs'), {'json_object':True})
+                self.assertEqual(effective,expected_sampling)
                 value=worker['request_budget']
                 unit=SharedClaimedUnit(Path(value['path']),AttemptBudget(value['budget_id'],value['limit']),value['unit_id'])
                 for row in requests:unit.reserve(hashlib.sha256(row['call_id'].encode()).hexdigest())
                 raw=dict(result_ready_monotonic_ns=time.monotonic_ns(),result=dict(predictions=[
-                    dict(call_id=row['call_id'],generated_text=text) for row,text in zip(requests,answers,strict=True)][::-1]))
+                    dict(call_id=row['call_id'],generated_text=text) for row,text in zip(requests,answers,strict=True)][::-1],metadata={}))
                 directory.mkdir()
                 options['on_result_ready'](raw)
                 publish_private_json(directory/'worker.json',dict(status='completed',native_api={},
                     model_close_receipt=dict(status='closed')))
                 return dict(status='CPU fixture')
             tokenizer=SimpleNamespace(apply_chat_template=lambda messages,**kwargs:json.dumps(messages))
-            report=driver.run_query(config,self.data/('driver-result-'+key),model_python='CPU-only',
+            report=driver.run_query(config,self.data/('driver-result-'+scenario+'-'+key),model_python='CPU-only',
                                     tokenizer=tokenizer,supervise=supervised)
             self.assertEqual(report['status'],'completed')
             self.assertEqual(report['result'],result_value(expected))

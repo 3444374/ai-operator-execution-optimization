@@ -35,8 +35,8 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 | 共同边界 | 当前源码事实与收尾范围 |
 |---|---|
 | 原题与实际中间关系 | [`SemBenchTextQuery`](src/baselines/text/sembench_text.py) 已有`bind_execution(multiple=True)`实际算子callback与`bind_original_execution()`完整原函数边界；默认单算子合同供未迁移记录图使用。LOTUS＋Ray已改用完整原函数，MMQA Q2b空／非空第二阶段和Movie quick动态批次有原SDK软件差分；其他后端、分支与未绑定原题仍各自待接线或验收，不从公共函数存在取得资格。 |
-| 原生执行与生命周期 | LOTUS＋Ray以query级runtime接实际多批native processor，在完整sink后关闭；原生分组线程下的批次ID登记与lazy runtime初始化已做受控交错检查，预测仍并行，不声称跨批模型复用；新多批目标清理待验。Kalypso维护的文本Filter／Map／Join／TopK已收拢同一系统runner和四个handler，仍只支持已接单算子；其Movie records/prefix＋外置条件profile因输入、消息和schema不同继续单列，不计为第二套系统baseline。两种profile均保留后验失败的完整结果，多阶段仍待接线。Daft collect、IMLane多SQL批次及Kalypso外部服务各有真实owner，不能借用Ray生命周期资格。 |
-| 完整查询计时 | 从真实源读取到完整内存sink直接打点，冷启动、服务ready后查询和组件时间分列；版本名不自动授予跨系统可比性。LOTUS＋Ray记`lotus_ray.source_to_sink.v1`，包含actor observer同步事件／输出写盘；LOTUS外部服务记`lotus_service.source_to_sink.v1`，HTTP指纹、图像审计hash及事件编码仍在查询内，后台写盘可重叠；独立IMLane v2仍含UDF/provider回执。额外外层预检和driver后置审计分开，但内部审计留存／flush尚待闭合，不能靠旧数值相减制造统一成绩。 |
+| 原生执行与生命周期 | LOTUS＋Ray以query级runtime接实际多批native processor，在完整sink后关闭；原生分组线程下的批次ID登记与lazy runtime初始化已做受控交错检查，预测仍并行，不声称跨批模型复用；新多批目标清理待验。LOTUS＋Daft已用同一完整原题runner接实际多批预测，每批沿原隔离worker，最后完整sink后ACK才关闭最后worker；不声称模型复用。LOTUS＋IMLane原Q5复用既有多批SQL／ACK和一个外部模型owner。Kalypso文本Filter／Map／Join／TopK／SemAgg收拢同一系统runner和五个handler，其余连续算子仍待接；其Movie records/prefix＋外置条件profile因输入、消息和schema不同继续单列，不计为第二套系统baseline。两种profile均保留后验失败的完整结果，多阶段仍待接线。Daft collect、IMLane多SQL批次及Kalypso外部服务各有真实owner，不能借用Ray生命周期资格。 |
+| 完整查询计时 | 从真实源读取到完整内存sink直接打点，冷启动、服务ready后查询和组件时间分列；版本名不自动授予跨系统可比性。LOTUS＋Ray记`lotus_ray.source_to_sink.v1`，包含actor observer同步事件／输出写盘；LOTUS外部服务记`lotus_service.source_to_sink.v1`，HTTP指纹、图像审计hash及事件编码仍在查询内，后台写盘可重叠，远端READY／启动归属未观测；LOTUS＋Daft记`lotus_daft.source_to_sink.v1`、LOTUS＋IMLane聚合记`lotus_imlane.source_to_sink.v1`、Kalypso聚合记`kalypso.source_to_sink.v1`，各自包含尚未后置的内部I/O及必要生命周期；独立IMLane v2仍含UDF/provider回执。额外外层预检和driver后置审计分开，但内部审计留存／flush尚待闭合，不能靠旧数值相减制造统一成绩。 |
 | 验证与数据 | 先以原函数／SDK 差分覆盖共同执行边界，再对有真实输入且后端支持的完整代表查询验模型、结果关联和物理清理。数据缺口、原生接口限制、代码未接线和目标待验各自保留，见下表与所属原报告；不重复已完成模型请求来增加通过数。 |
 | 替代与调用迁移 | 旧 Ray／Daft Q3 专项图和旧 IMLane `Q1Relation` 已退出现行调用。LOTUS外部服务的视觉查询与Q5聚合已共用查询生命周期和原题对象，原两个CLI／worker及旧视觉对象已迁移删除，[恢复来源](../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)保留。HTTP、records、作者算法和不同生命周期对照按真实职责保留；其他替代路径也须迁移完调用再删除。 |
 
@@ -49,7 +49,7 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 | 任务能力与官方代表 | LOTUS | LOTUS＋Ray 原生 processor | LOTUS＋Daft 原生 AI | IMLane（接点身份见格内） | Kalypso 作者入口 |
 |---|---|---|---|---|---|
 | 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；VARCHAR工程变体的原题单Map／Extract已接，ecbd代表SQL软件已验；其余任务／模型另验，原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
-| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | 独立原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接；8667样本真实SQL／模型已验，完整输入另验，非作者 Join 算法复现 | 原 CP＋Filter 已接；4f12样本作者模型已验，其他来源／输入另验 |
+| 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | LOTUS＋原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接；8667样本真实SQL／模型已验，完整输入另验，非作者 Join 算法复现 | 原 CP＋Filter 已接；4f12样本作者模型已验，其他来源／输入另验 |
 | 文本完整排名；Movie Q9 TopK profile | 原 quick TopK显式resident已接；cb754的完整256真实模型已验，原parser回退保留；其他来源另验 | 原quick完整函数已接，8行28次软件比较／7批共用query owner通过；目标模型与多批物理清理待验 | 未接线 | LOTUS quick over VARCHAR工程变体已接，原题／Arrow／provider软件检查；11f的8行Linux SQL／renderer门及ecbd的8行13次真实比较通过，full256待验，非作者TopK算法 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原 SDK 已接线 | 同一完整查询runner已绑定manifest／原函数，四题软件差分通过；旧专项目标成绩不转授新路径 | 未接线 | 未接线 | 未接线 |
 | 单个图像／文本 exact Join；MMQA Q2a/Q7 | 原函数／原生视觉服务已接线，目标按来源分列 | 已迁移完整原函数及query owner，原消息／关系软件差分通过；dde单批目标成绩不转授当前公共边界 | 未接线 | 未接线 | 未接线 |
@@ -57,12 +57,12 @@ Movie Q9 的 Map／TopK 和 exact／approximate 分支仍分别保留策略身�
 | 原关系连接后单图或双图 Filter；Medical Q3/Q8/Q9 | 原脚本／原生视觉服务／原评分已接线，db3fe Linux52通过；已查作者checkout缺原图，sf20 Q3原连接0行不授予视觉资格，非空输入／processor／VLM待验 | 三题原函数已接，非空／双图及小gold原失败的软件差分通过；真实数据与Ray VLM待验 | 未接线 | 未接线 | 未接线 |
 | 图像 Filter／Map／Extract、描述／图像 Join 和图像 self-join；E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 原函数及原生服务已接线，软件检查；真实资产／VLM待验，Q8多列意图受SDK选列限制 | 完整原函数已接，单算子及非空描述／图像Join、图像self-join软件差分通过；真实资产／Ray VLM待验，SDK选列限制保留 | 未接线 | 未接线 | 未接线 |
 | 图像 Join 后对真实匹配结果 Extract；MMQA Q2b | 原完整查询已接线；空路径已实机执行，参考非空Extract组件5次真实请求已验；实际Join→非空Extract及旧原答关联仍有缺口 | 完整原函数、原生JSON及query owner已接；临时2图／5表行的10→5和10→0软件原题差分通过；真实多阶段模型／质量／清理待验 | 未接线 | 未接线 | 未接线 |
-| 原分层 Aggregate；MMQA Q5 | 同一原生服务runner已接线，真实sf25软件回放按原来源分列 | 已复用原函数／token计数／分层算法与既有query owner，单层及真实摘要驱动多层的软件差分通过；实际SDK／模型／tokenizer加载及质量待验，独立计时包含observer I/O | 未接线 | 未接线 | 未接线 |
+| 原分层 Aggregate；MMQA Q5 | 同一原生服务runner已接线，真实sf25软件回放按原来源分列 | 原函数／token计数／层次与query owner已接；051639的sf25单叶1次真实请求、F1=1，当前多层／并发模型及物理清理仍待验 | 原完整函数／实际多批层次算法已接，原生CPU图与软件差分；目标模型／tokenizer与物理清理待验 | 原LOTUS层次算法over VARCHAR工程变体已接；Arrow／provider／ACK软件差分，真实SQL／模型待验，非作者聚合算法 | 原SemAgg已接同一runner，保留作者分块／BlockingExecutor／归并和零单行行为；原方法软件差分，真实服务／模型待验，算法不与LOTUS等同 |
 | 文本 Filter 后对实际保留行作图像 Extract；E-Commerce Q12 | 原函数及原生服务完整接线；临时数据软件验证，真实数据／VLM待验 | 完整原函数已接，4→3非空Extract及原空路径KeyError软件差分通过；真实数据／Ray VLM待验 | 未接线 | 未接线 | 未接线 |
 | 多分支 Filter／Join 及分组 TopK；E-Commerce Q10/Q11/Q14 | 原完整函数已接线，软件原生图检查；多列 Join 受当前SDK选列限制，真实数据／VLM待验 | 原非空分支／Join和原groupby线程已接并作软件差分；各分支空组合与目标待验，多列Join限制保留 | 未接线 | 未接线 | 未接线 |
 
 表中LOTUS＋Ray／Daft使用原LOTUS提示、解析和算法，不因为底层使用原生AI API就再统计为独立语义baseline。
-独立Ray／Daft入口与原生IMLane查询按各自实际任务合同分列；IMLane的
+独立Ray保留HTTP Q3项目合同；Daft旧独立Q3已退役，当前prepared native AI carrier不另算一套非LOTUS完整baseline。原生IMLane查询按实际任务合同分列；IMLane的
 [`native_imlane_model_query`](src/experiments/native_imlane_model_query.py)通过作者prediction SQL／Python UDF执行Movie Q3，
 其不导入LOTUS的题目合同仍明确参考1.2.4 non-CoT规则，不称复现作者未公开的论文Q7 UDF。
 该独立Q3的Python计时已拆分为`imlane.q3.source_to_sink.v2`，真实读写/交接保留，outer packet身份审计后置；
@@ -77,6 +77,8 @@ UDF/provider同步回执与指纹仍在COUNT内，不能标为统一v3；原生v
 表外题目仍按官方实现和实际接点核定，不能因为原题文件可读就算已经接入。
 Kalypso维护的Filter／Map／Join已允许原题选出零发生项，保留零调用预算、空trace、完整原sink及CPU空计划；
 来源和80通过／2项tokenizer未绑定的软件检查见[空输入边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-empty-frontier)。
+
+本批三条聚合／完整查询接线及225个不同软件方法的219通过／6项环境或真实输入未绑定，见[分路径交接](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#aggregate-system-runners)。软件检查不授予模型或整套完成资格。
 
 剩余工作按共同边界闭合：已接线原函数处理真实中间关系，额外预检之外的完整查询计时按版本
 记录，再用真实资产及代表查询验收。完整 SemBench 入口及已核活动服务器绑定走共享路径。
@@ -174,7 +176,7 @@ Kalypso Q9 Map `0afa54134` 在原 `05024` 环境通过 N=256／上限 512 与样
 | 观测 | 查询时钟、事件、模型复用、资源采样和额度由各自模块维护 | 事件重叠、API 断开和引用释放不等于物理并发、进程退出或性能收益 |
 | 原生对照 | LOTUS、Ray、Daft、IMLane、Kalypso 保留各自原生图、作者服务或方法职责 | 输入、生成、缓存、生命周期和实际版本匹配后才能比较；不转授其他路径的验证结果 |
 
-Daft 原生 AI 的[单 F/M/E 完整查询入口](src/baselines/README.md#daft-native-prepared-sembench)
+Daft 原生 AI 的[完整原题查询入口](src/baselines/README.md#daft-native-prepared-sembench)
 已从历史私有接线整理到正式源码，保留分离依赖和原生执行器，并将完整原 sink 与模型关闭分开计时。
 `ffbc352ac` 已完成 Q3a25/Q4 24 的真实单冷资格；最初的 main 整合保留相同 Daft 执行代码，
 原整合22项CPU回归通过；后续sink计时修正的19项检查与Q1/Q3a/Q4完整软件回放见[报告](../experiments/results/diagnostics/daft_native_semantics_20261110/README.md)。旧真实时长含部分审计，不能追认为修正后的统一口径。

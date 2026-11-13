@@ -18,7 +18,7 @@ import uuid
 
 
 @contextmanager
-def methods(checkout,manager,*,planning=False,ranking=False,mapping=False):
+def methods(checkout,manager,*,planning=False,ranking=False,mapping=False,aggregation=False):
     name='_semloom_kalypso05024_'+uuid.uuid4().hex
     module=ModuleType(name);sys.modules[name]=module;scope=module.__dict__
     scope.update(asyncio=asyncio,csv=csv,os=os,math=math,random=random,count=count,Path=Path,dataclass=dataclass,field=field,replace=replace,
@@ -36,6 +36,9 @@ def methods(checkout,manager,*,planning=False,ranking=False,mapping=False):
         load('sem_ops/base.py');load('sem_ops/prompt_utils.py');load('context/context.py')
         load('sem_ops/joins.py',{'CartesianProduct'});load('sem_ops/filters.py',{'SemFilter'})
         if ranking:load('sem_ops/reducers.py',{'SemTopK'})
+        if aggregation:
+            load('execution/pipeline_execution.py',{'BlockingExecutor'})
+            load('sem_ops/reducers.py',{'SemAgg'})
         if mapping:
             import numpy as np
             from collections import defaultdict
@@ -47,6 +50,7 @@ def methods(checkout,manager,*,planning=False,ranking=False,mapping=False):
             scope.update(ops=SimpleNamespace(CartesianProduct=scope['CartesianProduct'],SemFilter=scope['SemFilter']),
                 data=SimpleNamespace(_data_source=scope['_data_source']),PlanExecutor=type('NoModelPlanExecutor',(),{}))
             if ranking:scope['ops'].SemTopK=scope['SemTopK']
+            if aggregation:scope['ops'].SemAgg=scope['SemAgg']
             if mapping:scope['ops'].SemMap=scope['SemMap']
             load('controller/stage.py');load('controller/plan.py')
         yield module

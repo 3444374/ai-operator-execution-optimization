@@ -503,7 +503,7 @@ Q3 的旧 `168bc` project resident bridge 只供软件 CPU 答复引用；本次
 `native_imlane_sembench`的`semloom.imlane.prepared_text.v1`配置用`task.scenario/query`及可选
 `scale_factor`选择已接入的原题。现有[Q1模板](../../configs/sembench_imlane_mmqa_q1.example.json)
 已迁到此格式；换任务同时冻结对应输入SHA和实际N个发生项的预算，不固定题号、25行或模型输出长度。
-本接点仅接受单个原Map／Extract；Filter、Join和TopK继续使用各自现有接点，混合图仍未由此支持。
+本接点接受原单Map／Extract和下述原Q5聚合；Filter、Join和TopK继续复用现有接点，其他混合图仍未由此支持。
 旧`semloom.imlane.mmqa_q1.v1`只保留其已承诺的Q1／25项配置校验，归一到同一实现，没有第二套执行器。
 
 复用`SemBenchTextQuery`、prepared formatter、原parser／完整关系和评分；Extract的JSON约束由
@@ -517,6 +517,24 @@ Movie Q8、MMQA Q1／Q4、Medical Q10及E-Commerce Q3的临时数据与原查询
 重复ID、非连续原索引及乱序答复保留。12项受影响软件检查通过、0模型；额外身份检查不在sink内、
 原JSON约束确实到provider等边界已覆盖。034dc的Movie Q8／MMQA Q4随后通过真实SQL及模型，
 其他任务仍按来源另验；执行完整、实际质量和时钟见[原件报告](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-034dc-validation)。
+
+<a id="lotus-native-aggregate"></a>
+## LOTUS 原层次聚合与 VARCHAR prediction
+
+同一`native_imlane_sembench check/run`及`semloom.imlane.prepared_text.v1`可绑定MMQA Q5。
+追加`token_counter`，字段为`kind=huggingface_tokenizer_file`、本地`path/sha256/tokenizer_id/tokenizer_revision`；
+`path`须对应声明的模型tokenizer目录中的`tokenizer.json`，engine明确`max_model_len`及相同revision。
+这是声明与本地文件绑定，目标模型真实加载的tokenizer／完整token仍须另验。
+
+原查询和LOTUS层次算法实际产生每批消息，复用既有`SQLPredictions`、VARCHAR relation、IPC与ACK，
+每批原生SQL scope关闭后原算法才继续；一个外部模型owner贯穿查询。原摘要实际决定后续prompt／批数，
+未知总数保持`None`，配置提供覆盖原最小请求数的有限`max_model_calls`，逐次永久预扣，不重试或退款。
+这属于LOTUS over IMLane VARCHAR工程变体，不是作者聚合算法或论文Q7 UDF复现。
+
+独立`lotus_imlane.source_to_sink.v1`从模型ready后fresh source到原完整内存sink，包含每批必要CSV／SQL／
+IPC／ACK／scope关闭及现存provider指纹、额度预扣和回执I/O；事后核对／评分／持久化及最终模型关闭在外。
+原SDK空输入错误保持，部分预测不冒充完整查询。已有软件差分覆盖单层、摘要驱动多层及失败保留，
+Linux真实SQL／DSO、目标模型与物理清理仍待验，见[分路径验收](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#aggregate-system-runners)。
 
 ## LOTUS quick TopK 与 VARCHAR prediction
 

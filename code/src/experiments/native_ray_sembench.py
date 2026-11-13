@@ -31,6 +31,7 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         worker_entry_ns=started, source_started_ns=None, source_to_sink_seconds=None,
         query_clock_version='lotus_ray.source_to_sink.v1', strict_controller_to_sink_seconds=None,
         model_ready_before_source=False,
+        model_ready_before_source_reason="query scope is lazy; this query creates its native processor on the first nonempty LM batch",
         production_core_used=False, result_cache_enabled=False, warmup_calls=0,
         engine_max_model_calls=engine.max_model_calls,
         lifecycle='query-owned cold runtime; native processor per LM batch; model reuse unverified', requested_generate_retries=0,

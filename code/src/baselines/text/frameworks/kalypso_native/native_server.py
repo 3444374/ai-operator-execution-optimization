@@ -19,7 +19,7 @@ CALL = contextvars.ContextVar('observed_native_call',default=None)
 AUTHOR_SOURCE_COMMIT = '05024f027f932c0e398852e38302be30b9015481'
 MOVIE_MAP_QUERIES = {'movie-q8': '8', 'movie-q9': '9', 'movie-q10': '10'}
 MAP_TASKS = (*MOVIE_MAP_QUERIES, 'sembench-map')
-TEXT_TASKS = (*MAP_TASKS, 'sembench-filter', 'sembench-topk')
+TEXT_TASKS = (*MAP_TASKS, 'sembench-filter', 'sembench-topk', 'sembench-aggregate')
 
 
 def query_task(spec):
@@ -29,8 +29,8 @@ def query_task(spec):
         query = MOVIE_MAP_QUERIES[task]
         return dict(scenario='movie', query_id=query,
                     **(dict(ranking='map') if query == '9' else {}))
-    if task not in ('sembench-map','sembench-filter','sembench-join','sembench-topk'):
-        raise ValueError('A supported original text Filter/Map/Join/TopK task is required')
+    if task not in ('sembench-map','sembench-filter','sembench-join','sembench-topk','sembench-aggregate'):
+        raise ValueError('A supported original text Filter/Map/Join/TopK/Aggregate task is required')
     binding=dict(scenario=spec['scenario'], query_id=str(spec['query']).lower().removeprefix('q'),
                  **{name: spec[name] for name in ('scale_factor', 'ranking') if name in spec})
     if binding['scenario']=='movie' and binding['query_id']=='9' and binding.get('ranking') is None:
@@ -157,6 +157,14 @@ def physical_call_caps(unit):
     caps={}
     for query in queries:
         logical=query['expected_calls']
+        if query.get('task')=='sembench-aggregate':
+            rows=query['expected_rows']
+            cap=query['max_native_calls']
+            if (type(rows) is not int or rows<0 or logical is not None
+                    or type(cap) is not int or cap!=max(0,rows-1) or query['query_id'] in caps):
+                raise ValueError('Aggregate requires an unknown dynamic total and the finite N-1 reduction upper bound')
+            caps[query['query_id']]=cap
+            continue
         if query.get('task')=='sembench-topk':
             rows=query['expected_rows']
             cap=query['max_native_calls']
@@ -185,6 +193,7 @@ def physical_call_caps(unit):
 def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_class=None):
     directory=Path(directory)
     allowed=physical_call_caps(unit)
+    aggregates={q['query_id'] for q in unit['queries'] if q.get('task')=='sembench-aggregate'}
     trace=directory/'native-trace.jsonl'
     trace.touch(mode=0o600,exist_ok=True)
     counters=dict(reserved_calls=0,cap=unit['call_cap'],query_calls=dict.fromkeys(allowed,0),
@@ -209,6 +218,8 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         # This is the declared safety budget, separate from optional measurement.
         if (qid not in allowed or counters['reserved_calls']>=counters['cap']
                 or counters['query_calls'][qid]>=allowed[qid]):
+            if qid in aggregates:
+                event('native_API_rejected',query_id=qid,idx=ROW.get(),reason='finite owner call budget')
             raise RuntimeError('Declared native call budget or query identity exceeded; no next model invocation')
         counters['reserved_calls']+=1
         counters['query_calls'][qid]+=1
@@ -239,7 +250,8 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
             CALL.reset(token)
         ended=time.monotonic_ns()
         event('native_API_end',**fields,status='succeeded',request_id=output.request_id,
-            finish_reason=output.finish_reason,started_ns=started,ended_ns=ended,elapsed_s=(ended-started)/1e9)
+            finish_reason=output.finish_reason,started_ns=started,ended_ns=ended,elapsed_s=(ended-started)/1e9,
+            **(dict(generated_text=output.text) if qid in aggregates else {}))
         return output
 
     old_filter=filter_class._run_single
@@ -266,6 +278,14 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         binding=install(cfg,unit,directory,sys.modules[__name__],SemMap,MapRatioEstimator)
         counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
         counters['map_binding']=binding
+    elif any(q.get('task')=='sembench-aggregate' for q in unit['queries']):
+        if any(q.get('task')!='sembench-aggregate' for q in unit['queries']):
+            raise ValueError('Native Aggregate requires its own finite owner unit')
+        from vllm.kalypso.sem_ops.reducers import SemAgg
+        from src.baselines.text.frameworks.kalypso_native.aggregate_binding import install
+        from src.baselines.text.frameworks.kalypso_native.map_observation import install_response_observation
+        counters['aggregate_binding']=install(cfg,unit,sys.modules[__name__],SemAgg)
+        counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
     elif any(q.get('task')=='sembench-topk' for q in unit['queries']):
         if any(q.get('task')!='sembench-topk' for q in unit['queries']):
             raise ValueError('Native TopK requires its own finite owner unit')

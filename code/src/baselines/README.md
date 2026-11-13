@@ -116,7 +116,7 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
   `q3_messages/q3_decision` 与 LOTUS1.2.4 普通 Qwen Filter 做 CPU 差分，运行时不导入 LOTUS／Core。
   `evaluate_q3`消费同一份保存的预测，核对原生COUNT、调用原评价器，并报告FP／FN及解析失败default=True。
 - [Daft 原生 AI](text/frameworks/daft_sembench_native.py)当前复用
-  [原题 prepared 查询](#daft-native-prepared-sembench)，使用原生 `prompt(vllm-prefix-caching)` 和一次 collect；
+  [原题 prepared 查询](#daft-native-prepared-sembench)，使用原生 `prompt(vllm-prefix-caching)`，每个实际LM批次一次collect；
   tokenizer与完整原题／sink由任务层拥有。旧专项 `execute_q3` 及其worker schema 已退役，
   [历史来源](../../../experiments/reproduction/native_baselines/README.md#retired-daft-q3-native-binding)保留。
   native runner不重设线程；只接受确实生效的prefix／buffer／morsel选项，拒绝仅distributed生效的actor参数。
@@ -166,19 +166,28 @@ PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.native_daft_query sembench \
 ```
 
 [配置模板](../../configs/sembench_daft_native.example.json)以 MMQA Q3a 单冷25条为例。
-支持原单 F/M/E 工作负载入口的 Movie Q1/Q2/Q3/Q4/Q8/Q9-map/Q10、MMQA Q1/Q3a–g/Q4/Q6a–c、
+已有单 F/M/E 工作负载绑定包括 Movie Q1/Q2/Q3/Q4/Q8/Q9-map/Q10、MMQA Q1/Q3a–g/Q4/Q6a–c、
 Medical Q1/Q4/Q10；这是参数化接线范围，**不是22题均已完成当前资格**。
 Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON 约束。
-输入完整关系超出 `max_model_calls` 时在模型启动前拒绝；已有 SQLite 预算在每次原生
+已知请求数／聚合首层最小数超出 `max_model_calls` 时在模型启动前拒绝；已有 SQLite 预算在每次原生
 `generate` 前扣除，失败不退还，耗尽后不委托第 N+1 次。没有额外预热或整轮自动重试。
 
-原始预测发布后，监督器立即调用原 parser/完整查询 sink；driver 不先等待 worker 关闭。
-`source_start_ns → sink_ready_ns` 含 fresh CSV、prepare、模型启动、原生执行及完整原查询，
-`sembench.source_to_sink.v3` 将原输入身份校验、tokenizer 加载和预算创建放到起点前，
-实际 IPC/polling 包含在内；原 sink 后才记录持久化、评价，模型 close/进程退出另列，
-close 可能与 driver 后处理重叠。严格 host controller 入口仍未知，不能把该区间追认为
-包含 host 导入、预检和租约的统一 cold 总时钟。native generate/add/final 为 API 证据，
-引擎首次接受和 kernel 时间没有独立观测。此入口只声明单冷，不伪造同 owner 暖轮。
+完整原函数现在经`bind_original_execution()`和`make_query_lm()`实际产生各LM批次，
+不再走生产单算子的`prepare/finish`重建。MMQA Q5也使用同一runner：配置追加`token_counter`
+（本地`huggingface_tokenizer_file`的path／sha256／tokenizer_id／tokenizer_revision）和
+`native_lm_max_ctx_len`，与`engine_kwargs.max_model_len`及实际声明的tokenizer一致。
+原LOTUS拥有分块、token计数、摘要依赖、parser和最终`_output`；动态总数保持未知，有限预算按实际调用扣除。
+现有字符串prompt provider尚无逐行图像carrier；TopK取消项保持停止，其他多模态／分组查询不由该路径授予支持。
+
+每批原生READY后，driver将预测交回原题；随后原题产生下一批或完整sink，显式ACK才允许当前worker关闭。
+中间worker必须先关闭再启动下一批，最后worker在完整sink之后关闭；不存在自建模型池或跨批复用声明。
+原worker未开启`wait_for_result_release`时保留旧合同。结果改为v2，`native-lm-batches.json`保留
+全部实际批次；顶层`native_api/model_close_receipt`仅是最后批次的便利字段，不能当整查询调用总数。
+
+`source_start_ns → sink_ready_ns`直接记为独立`lotus_daft.source_to_sink.v1`，包含fresh source、
+原SDK提示与算法、packet／API观察写盘、IPC、原生冷启动及必要的中间关闭；最终关闭、事后身份核对、
+评价和driver持久化在外。不追认旧v3或统一冷暖成绩，不从旧时长扣减。最终按时sink后仍有独立cleanup额度，
+每个中间关闭继续消耗原查询绝对截止时间。真实目标tokenizer、模型、多批物理清理仍待验。
 
 本地实际 Daft0.7.21 CPU 表达式/执行器、Q3a/Q4保存答复全关系回放、预算及清理结果见
 [资格报告](../../../experiments/results/diagnostics/daft_native_semantics_20261110/README.md)。
@@ -737,20 +746,19 @@ pair 按左右 source position 关联，原 SDK 有序返回绑定相同消息�
 
 #### Ray／Daft 复用原 exact Join
 
-[共享 Join 准备与完成](text/sembench_prepared_join.py)从原 `sem_join` 捕获完整消息后停止，
-不产生假中间关系或模型答复；每个左右发生项对保留自己的 `call_id`。Ray 原生 processor
-消费这些消息，Daft 原生 AI 消费同一消息的原 tokenizer chat template，仍由各系统拥有 batching／调度。
-完整预测按 ID 恢复原顺序后，由原 SDK Boolean parser、Join 关系构造和原查询后处理完成 sink；
-自身排除、对称项、重复值及后置 LIMIT 均不预裁剪。该路径适用于 Movie Q5/Q6/Q7 和 E-Commerce Q7，
-没有逐题执行器；多列实际输入限制及 `native_join_inputs` 披露与原生 LOTUS 一致。
+Ray／Daft维护入口均使用[完整原题LM边界](text/sembench_prepared.py)：原`sem_join`实际产生完整消息，
+Ray原生processor消费消息、Daft原生AI消费声明tokenizer的完整chat template，各自拥有batching／调度。
+原SDK继续拥有Boolean parser、Join关系构造和原查询后处理；自身排除、对称项、重复值及LIMIT不预裁剪。
+适用于Movie Q5/Q6/Q7和E-Commerce Q7，不另建逐题执行器。多列指令仍受原SDK选列限制，
+实际入模字段以保存的原LM消息为准。原[typed Join准备与完成](text/sembench_prepared_join.py)仍供
+IMLane prepared接点及冻结答复身份回放使用，不能删除仍有实际调用的合同。
 
-Ray 通过已有 `ray_native` 配置选择此能力，旧有限记录图的 Join 仍未接；Daft 使用独立的
-`semloom.native_daft_sembench.v1` 入口，普通 `backend=daft` 记录图不借用其资格。
-完整预算仍为 L×R，失败／缺失／重复答复不能补默认值或重新请求。source→sink 包含原消息准备、
-原生后端执行、原 SDK 在 sink 中重建消息／解析／关系的适配成本；消息相等检查和实际选列报告在 sink 后完成。
-这一 prepared profile 不等于 LM 原生执行路径，也不扣除适配成本来制造相同时间。
-软件检查覆盖真实 SDK 原题／消息／结果差分、Ray 软件 processor、Daft driver 跨进程 packet 和原 sink；
-Daft SDK／executor 必须在其独立环境另验，真实模型与宿主物理清理仍待对应版本验证。
+Ray通过已有`ray_native`配置选择该能力；Daft使用`semloom.native_daft_sembench.v1`入口，
+普通记录图不借用其资格。完整比较预算保留L×R，失败／缺失／重复答复不补默认值或重新请求。
+source→sink包含原提示、原生后端和原SDK解析／关系，额外消息核对及driver持久化在sink后，
+每条路径内部observer成本及冷暖身份按各自独立时钟记录，不能称相同成本。
+原题／SDK、软件图、跨进程packet与保存答复差分范围见[分路径报告](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#aggregate-system-runners)；
+真实模型和物理清理仍须按准确来源验收。
 
 IMLane 复用同一原生 Join 接点，以独立 `text_join` schema 把完整 pair 发生项交原版 TINYINT
 prediction，实际成员关系交原 SDK／原题恢复完整 sink，之后审计原始答复、评价并关闭。

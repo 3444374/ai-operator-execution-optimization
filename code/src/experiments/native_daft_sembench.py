@@ -1,23 +1,62 @@
-"""One cold native Daft SemBench F/M/E or exact Join through the existing supervisor.
+"""Complete original text queries over sequential native Daft prompt graphs.
 
-Driver and model dependencies stay isolated. Raw native readiness wakes the
-original parser/query sink before the supervisor waits for model/process close.
-This entry does not assert cross-query model reuse or launch a campaign.
+Each real LOTUS LM batch uses the existing isolated prepared worker. A consumed
+result releases that worker before the next graph; the final original sink
+releases the final worker. No model reuse or grouped TopK is implemented here.
 """
 
+from concurrent.futures import Future
 from pathlib import Path
+from queue import Empty, Queue
+from threading import Event, Lock, Thread, get_ident
 import time
 
-from src.baselines.text.sembench_prepared import prepare, finish, result_value
+from src.baselines.text.sembench_prepared import make_query_lm, audit_query_batches, result_value
 from src.baselines.text.sembench_text import SemBenchTextQuery
-from src.experiments.attempt_ledger import AttemptBudget
+from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.native_daft_query import supervised_run, _save_artifact
 from src.infrastructure.private_artifacts import (
-    new_private_directory, write_private_json, publish_private_json,
-    read_json, file_sha256, json_metric,
+    new_private_directory, write_private_json, read_json, file_sha256, json_metric,
 )
 from src.serving.backends.vllm_protocol import GenerationSpec
+
+
+def _query(config, generation):
+    aggregate = config['scenario'] == 'mmqa' and str(config['query']).lower().removeprefix('q') == '5'
+    options = {}
+    if aggregate:
+        from src.baselines.text.sembench_mmqa_aggregate import load_token_counter
+        counter = config.get('token_counter')
+        fields = {'kind', 'path', 'sha256', 'tokenizer_id', 'tokenizer_revision'}
+        if (type(counter) is not dict or set(counter) != fields
+                or counter['kind'] != 'huggingface_tokenizer_file'
+                or any(type(counter[name]) is not str or not counter[name].strip() for name in fields)):
+            raise ValueError('aggregation requires the declared local tokenizer JSON identity')
+        engine = config['engine_kwargs']
+        context = config.get('native_lm_max_ctx_len')
+        if (type(context) is not int or engine.get('max_model_len') != context
+                or generation.max_tokens >= context):
+            raise ValueError('aggregation requires the declared native context with input space after max_tokens')
+        if Path(counter['path']).resolve() != Path(engine.get('tokenizer', config['model'])).resolve() / 'tokenizer.json':
+            raise ValueError('LOTUS counter must be the declared native model/tokenizer tokenizer.json')
+        revision = engine.get('tokenizer_revision') or engine.get('revision')
+        if revision is not None and revision != counter['tokenizer_revision']:
+            raise ValueError('LOTUS counter revision differs from the declared native tokenizer revision')
+        if generation.repetition_penalty != 1 or generation.logprobs is not None or generation.response_format is not None:
+            raise ValueError('native Q5 retains ordinary generation and the original unstructured parser')
+        options = dict(max_ctx_len=context, tokenizer=load_token_counter(counter))
+    elif 'token_counter' in config or 'native_lm_max_ctx_len' in config:
+        raise ValueError('explicit local token counting currently belongs to native aggregation')
+    query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'],
+        config['scenario'], config['query'], execution_id=config['query_id'],
+        model_name=config['model_name'], generation=generation,
+        scale_factor=config.get('scale_factor'), **(dict(lm_options=options) if aggregate else {}))
+    if query.visual_inputs is not None:
+        raise ValueError('the native Daft string-prompt provider has no per-row image input')
+    if query.operation is not None and query.operation.describe()['kind'] == 'topk':
+        raise ValueError('native Daft TopK remains disabled')
+    return query
 
 
 def run_query(config, directory, *, model_python, tokenizer=None, supervise=supervised_run,
@@ -27,7 +66,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
               'model_name', 'model', 'sampling_params', 'engine_kwargs', 'provider_options',
               'query_timeout_s', 'cleanup_s', 'stop_grace_s', 'max_model_calls'}
     if (config.get('schema') != 'semloom.native_daft_sembench.v1'
-            or set(config) - {'scale_factor'} != fields):
+            or set(config) - {'scale_factor', 'token_counter', 'native_lm_max_ctx_len'} != fields):
         raise ValueError('explicit native Daft SemBench configuration required')
     sampling = dict(config['sampling_params'])
     if sampling.pop('n') != 1:
@@ -37,117 +76,224 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
     directory = Path(directory)
     new_private_directory(directory)
     deadline = started / 1e9 + config['query_timeout_s']
-    report = dict(schema='semloom.native_daft_sembench.result.v1', status='failed',
+    report = dict(schema='semloom.native_daft_sembench.result.v2', status='failed',
         backend='daft-native-ai', worker_entry_ns=started, source_start_ns=None,
-        query_clock_version='sembench.source_to_sink.v3', strict_controller_entry_ns=None,
-        model_ready_before_source=False,
+        source_to_sink_seconds=None, query_clock_version='lotus_daft.source_to_sink.v1',
+        strict_controller_entry_ns=None, model_ready_before_source=False,
         strict_controller_entry_reason='host imports, preflight and lease precede this function',
         clock='time.monotonic_ns on one host', warmup=0, whole_query_retries=0,
         result_cache=False, prefix_cache='native provider/config; effective value observed when exposed',
-        lifecycle='isolated cold; no warm or cross-query model reuse claim',
-        physical_gpu_exit_confirmed=None, performance_claim=False)
-    ledger = primary = result = None
+        lifecycle='one original query; isolated native collect/engine per sequential LM batch',
+        timing_scope='fresh original source, original SDK algorithms/token counting, prompt serialization, '
+            'prepared packet and native API evidence I/O, IPC/polling, cold native graphs and required intermediate close, '
+            'complete original memory sink; final worker close, source audit, evaluation and driver persistence excluded',
+        physical_gpu_exit_confirmed=None, performance_claim=False, native_batches=[])
+    ledger = unit = primary = thread = None
+    batches = []
+    state = {}
+    events = Queue(maxsize=1)
+    stopped, handoff_lock = Event(), Lock()
+    pending = [None]
     try:
-        query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'],
-            config['scenario'], config['query'], execution_id=config['query_id'],
-            model_name=config['model_name'], generation=generation,
-            scale_factor=config.get('scale_factor'))
+        query = _query(config, generation)
         if tokenizer is None:
             from transformers import AutoTokenizer
-            tokenizer = AutoTokenizer.from_pretrained(config['model'], local_files_only=True,
-                                                       trust_remote_code=False)
-        if query.describe()['expected_model_calls'] > budget.limit:
-            raise ValueError('complete original query exceeds the declared model-call budget')
-        if query.operation is not None and query.operation.records:
-            ledger = CellBudgetLedger.create(directory / 'physical-budget.sqlite', budget,
-                deadline_utc=time.time() + max(0, deadline - time.monotonic()))
-            ledger.reserve_unit('query', budget.limit)
-            ledger.claim_shared_unit('query')
-        execute_query = query.bind_execution()
+            engine = config['engine_kwargs']
+            revision = engine.get('tokenizer_revision') or engine.get('revision')
+            tokenizer = AutoTokenizer.from_pretrained(engine.get('tokenizer', config['model']),
+                local_files_only=True, trust_remote_code=False,
+                **(dict(revision=revision) if revision is not None else {}))
+        description = report['query'] = query.describe()
+        minimum = description.get('maximum_model_calls', description['expected_model_calls'])
+        if minimum is None:
+            minimum = description['minimum_model_calls']
+        if minimum > budget.limit:
+            raise ValueError('physical budget cannot cover the known minimum original requests')
+        ledger = CellBudgetLedger.create(directory / 'physical-budget.sqlite', budget,
+            deadline_utc=time.time() + max(0, deadline - time.monotonic()))
+        ledger.reserve_unit('query', budget.limit)
+        unit = ledger.claim_shared_unit('query')
+        execute_query = query.bind_original_execution()
+
+        def remaining():
+            value = deadline - time.monotonic()
+            if value <= 0:
+                raise TimeoutError('complete original Daft query exceeded its absolute allowance')
+            return value
+
+        def next_event():
+            try:
+                return events.get(timeout=remaining())
+            except Empty as error:
+                raise TimeoutError('complete original Daft query exceeded its absolute allowance') from error
+
+        def predict(requests, *, sampling_params):
+            if get_ident() != thread.ident:
+                raise ValueError('native Daft query bridge supports sequential LM calls; grouped TopK remains disabled')
+            if sum(len(batch['requests']) for batch in batches) > budget.limit:
+                raise BudgetExhausted('original query exceeds its finite physical request allowance')
+            if not requests:
+                return dict(predictions=[])
+            prepared = []
+            for request in requests:
+                if any(isinstance(message['content'], list) and
+                        any(part.get('type') != 'text' for part in message['content']) for message in request['messages']):
+                    raise ValueError('native Daft string prompts cannot carry original image parts')
+                prepared.append(dict(call_id=request['call_id'], prompt=tokenizer.apply_chat_template(
+                    request['messages'], tokenize=False, add_generation_prompt=True)))
+            reply = Future()
+            with handoff_lock:
+                if stopped.is_set():
+                    raise InterruptedError('native Daft query consumer stopped')
+                pending[0] = reply
+            events.put(('batch', prepared, sampling_params, reply), timeout=remaining())
+            return reply.result(timeout=remaining())
+
+        lm, batches = make_query_lm(query, predict, **query.lm_options)
+        if query.aggregate_task is not None:
+            report['lotus_lm'] = dict(max_ctx_len=lm.max_ctx_len,
+                input_token_budget=lm.max_ctx_len-lm.max_tokens, token_counter=config['token_counter'],
+                model_tokenizer_verified=False, scope='declared native context/tokenizer only; actual target loading unverified')
+
+        def original_query():
+            import lotus
+            try:
+                with lotus.settings.context(lm=lm, enable_cache=False):
+                    report['source_start_ns'] = time.monotonic_ns()
+                    value = execute_query()
+                    report['sink_ready_ns'] = time.monotonic_ns()
+                    state['result'] = value
+                    report['source_to_sink_seconds'] = (report['sink_ready_ns']-report['source_start_ns']) / 1e9
+                    remaining()
+                event = ('sink', value)
+            except BaseException as error:
+                event = ('failed', error)
+            if not stopped.is_set():
+                events.put(event, timeout=max(0, deadline-time.monotonic()))
+
         report['preflight_finished_ns'] = time.monotonic_ns()
-        report['source_start_ns'] = time.monotonic_ns()
-        method, prepared, requests = prepare(query, tokenizer)
-        report.update(query=query.describe(), logical_requests=len(requests),
-                      prepare_finished_ns=time.monotonic_ns())
-
-        def accept(raw):
-            nonlocal result
-            if 'sink_ready_ns' in report:
-                raise ValueError('duplicate native result callback')
-            report['raw_native_ready_ns'] = raw['result_ready_monotonic_ns']
-            report['raw_native_observed_ns'] = time.monotonic_ns()
-            def sink_ready(value):
-                nonlocal result
-                result = value
-                report['sink_ready_ns'] = time.monotonic_ns()
-                report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_start_ns']) / 1e9
-                if report['sink_ready_ns'] / 1e9 > deadline:
-                    raise TimeoutError('complete original Daft query exceeded its query allowance')
-                report['semantic_audit_started_ns'] = time.monotonic_ns()
-
-            _, semantic = finish(query, method, prepared, raw['result']['predictions'],
-                                 on_result_ready=sink_ready, execute_query=execute_query)
-            report['semantic_audit_finished_ns'] = time.monotonic_ns()
-            # The original sink timestamp precedes serialization and all audit.
-            report['sink_persistence_started_ns'] = time.monotonic_ns()
-            publish_private_json(directory / 'result-ready.json', dict(result=result_value(result),
-                semantic=semantic, sink_ready_ns=report['sink_ready_ns']))
-            report['sink_persistence_finished_ns'] = time.monotonic_ns()
-
-        if requests:
-            packet = directory / 'prepared-prompts.json'
+        thread = Thread(target=original_query, name='native-daft-original-query', daemon=True)
+        thread.start()
+        event = next_event()
+        index = 0
+        while event[0] == 'batch':
+            _, requests, native_sampling, reply = event
+            phase = directory if index == 0 else directory / ('batch-' + str(index))
+            if index:
+                new_private_directory(phase)
+            packet, worker_path = phase / 'prepared-prompts.json', phase / 'worker-config.json'
             write_private_json(packet, dict(schema='semloom.native_daft_prompts.v1', requests=requests))
-            native_sampling = query.operation.generation.kwargs()
-            worker = {key: config[key] for key in ('model', 'engine_kwargs', 'provider_options',
-                                                   'cleanup_s', 'stop_grace_s')}
+            worker = {key: config[key] for key in ('model', 'engine_kwargs', 'provider_options', 'cleanup_s', 'stop_grace_s')}
             worker.update(schema='semloom.native_daft_map.v1', sampling_params=native_sampling,
-                query_timeout_s=deadline - time.monotonic(), requests_path=str(packet),
-                requests_sha256=file_sha256(packet), request_budget=dict(
-                    path=str(directory / 'physical-budget.sqlite'), budget_id=budget.budget_id,
-                    limit=budget.limit, unit_id='query'))
-            worker_path = directory / 'worker-config.json'
+                query_timeout_s=remaining(), requests_path=str(packet), requests_sha256=file_sha256(packet),
+                request_budget=dict(path=str(directory/'physical-budget.sqlite'), budget_id=budget.budget_id,
+                    limit=budget.limit, unit_id='query'), wait_for_result_release=True)
             write_private_json(worker_path, worker)
-            report['supervision'] = supervise(worker_path, directory / 'native-worker',
+            current = dict(index=index, input_call_ids=[row['call_id'] for row in requests], status='submitted',
+                           worker_artifacts=str((phase/'native-worker').relative_to(directory)))
+            report['native_batches'].append(current)
+            following = None
+            raw_result = None
+
+            def accept(raw):
+                nonlocal following, raw_result
+                if reply.done():
+                    raise ValueError('duplicate native Daft result callback')
+                raw_result = raw['result']
+                current.update(raw_native_ready_ns=raw['result_ready_monotonic_ns'],
+                    raw_native_observed_ns=time.monotonic_ns())
+                reply.set_result(raw_result)
+                following = next_event()
+                if following[0] == 'failed':
+                    raise following[1]
+
+            current['supervision'] = supervise(worker_path, phase/'native-worker',
                 model_python=model_python, monitor=monitor, on_result_ready=accept)
-            report['supervision_finished_ns'] = time.monotonic_ns()
-            terminal = read_json(directory / 'native-worker' / 'worker.json')
-            if terminal['status'] != 'completed' or 'sink_ready_ns' not in report:
-                raise RuntimeError('native worker did not establish complete query and cleanup')
-            report.update(native_api=terminal['native_api'],
-                          model_close_receipt=terminal['model_close_receipt'])
-        else:
-            accept(dict(result_ready_monotonic_ns=time.monotonic_ns(), result=dict(predictions=[])))
+            terminal = read_json(phase/'native-worker'/'worker.json')
+            current.update(native_api=terminal.get('native_api'), model_close_receipt=terminal.get('model_close_receipt'),
+                           result_release=terminal.get('result_release'))
+            if terminal['status'] != 'completed' or following is None:
+                raise RuntimeError('native worker did not establish complete predictions and cleanup')
+            current['status'] = 'completed'
+            if raw_result is not None:
+                raw_result['metadata']['model_close_receipt'] = current['model_close_receipt']
+            event = following
+            index += 1
+        if event[0] == 'failed':
+            raise event[1]
+        report['semantic_audit_started_ns'] = time.monotonic_ns()
+        query.verify_source()
+        if query.aggregate_task is not None:
+            query.aggregate_task.validate_batch_sizes([len(batch['requests']) for batch in batches], state['result'])
+        report['semantic'] = audit_query_batches(batches)
+        report['logical_requests'] = sum(len(batch['requests']) for batch in batches)
+        if unit.attempts != report['logical_requests']:
+            raise RuntimeError('native physical accounting differs from original LM occurrences')
+        report['semantic_audit_finished_ns'] = time.monotonic_ns()
         report['evaluation_started_ns'] = time.monotonic_ns()
-        report['quality'] = json_metric(query.evaluate(result))
+        report['quality'] = json_metric(query.evaluate(state['result']))
         report['evaluation_finished_ns'] = time.monotonic_ns()
-        report.update(status='completed', result=result_value(result),
-            timing_scope='prepared execution, native cold model/query, original fresh CSV scan/parser/full sink; '
-                         'source/config/tokenizer preflight and budget setup excluded; '
-                         'no wait for worker close on sink path; polling/IPC included',
-            close_overlap='worker shutdown may overlap driver parsing; close and supervision are separate events')
+        if report['native_batches']:
+            last = report['native_batches'][-1]
+            report.update(native_api=last['native_api'], model_close_receipt=last['model_close_receipt'],
+                raw_native_ready_ns=last['raw_native_ready_ns'], raw_native_observed_ns=last['raw_native_observed_ns'],
+                supervision=last['supervision'])
+        report['status'] = 'completed'
     except BaseException as error:
         primary = error
         report['error_type'] = type(error).__name__
+        if report['native_batches'] and report['native_batches'][-1]['status'] == 'submitted':
+            report['native_batches'][-1].update(status='failed', error_type=type(error).__name__)
         raise
     finally:
-        budget_error = None
+        with handoff_lock:
+            stopped.set()
+            if pending[0] is not None and not pending[0].done():
+                pending[0].set_exception(primary or InterruptedError('native Daft query stopped'))
+        if thread is not None:
+            if thread.ident is not None:
+                thread.join(timeout=config['stop_grace_s'])
+            report['query_thread_closed'] = not thread.is_alive()
+            if thread.is_alive():
+                error = RuntimeError('native Daft original query thread did not finish')
+                if primary is None:
+                    primary = error
+                else:
+                    primary.add_note(str(error))
         if ledger is not None:
             try:
                 ledger.close_shared_unit('query')
+                report['physical_attempts_reserved'] = unit.attempts
                 report['budget'] = ledger.snapshot()
             except BaseException as error:
                 if primary is None:
-                    primary = budget_error = error
-                    report.update(status='failed', error_type=type(error).__name__)
+                    primary = error
                 else:
                     primary.add_note('native budget close failed: ' + type(error).__name__)
+        try:
+            report['native_lm_batches'] = [dict(index=index, status=batch['status'], occurrences=len(batch['requests']),
+                sampling_params=batch['sampling_params']) for index, batch in enumerate(batches)]
+            if 'result' in state:
+                report['result'] = result_value(state['result'])
+                _save_artifact(directory/'result-ready.json', dict(result=report['result'],
+                    semantic=report.get('semantic'), sink_ready_ns=report['sink_ready_ns']), primary=primary, publish=True)
+            _save_artifact(directory/'native-lm-batches.json',
+                [{key: value for key, value in batch.items() if key != 'native'} for batch in batches], primary=primary)
+        except BaseException as error:
+            report['status'] = 'failed'
+            if primary is None:
+                primary = error
+            else:
+                primary.add_note('native Daft finalization failed: ' + type(error).__name__)
+        if primary is not None:
+            report['status'] = 'failed'
+            report.setdefault('error_type', type(primary).__name__)
+            report.pop('quality', None)
         report['final_persistence_started_ns'] = time.monotonic_ns()
-        _save_artifact(directory / 'driver.json', report, primary=primary)
-        report['final_persistence_finished_ns'] = time.monotonic_ns()
-        _save_artifact(directory / 'persistence.json', dict(
-            driver_json_started_ns=report['final_persistence_started_ns'],
-            driver_json_finished_ns=report['final_persistence_finished_ns'],
-            excludes='this receipt publication'), primary=primary)
-        if budget_error is not None:
-            raise budget_error
+        _save_artifact(directory/'driver.json', report, primary=primary)
+        _save_artifact(directory/'persistence.json', dict(driver_json_started_ns=report['final_persistence_started_ns'],
+            driver_json_finished_ns=time.monotonic_ns(), excludes='this receipt publication'), primary=primary)
+        if primary is not None:
+            primary.query_report = report
+            raise primary
     return report

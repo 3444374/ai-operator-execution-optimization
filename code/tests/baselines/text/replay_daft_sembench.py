@@ -93,12 +93,14 @@ def replay(config, frozen, output):
     def supervised(config_path, directory, *, model_python, monitor, on_result_ready):
         worker = read_json(config_path)
         actual_requests = read_json(worker['requests_path'])['requests']
-        assert actual_requests == requests
-        outputs = [by_call[row['call_id']] for row in actual_requests]
+        assert [row['prompt'] for row in actual_requests] == [row['prompt'] for row in requests]
+        assert [row['call_id'] for row in actual_requests] == [
+            f'{query.query_id}-batch-0-row-{index}' for index in range(len(requests))]
+        outputs = [by_call[row['call_id']] for row in calls]
         deadline = QueryDeadline(Path(directory) / 'result-ready.json',
             query_s=worker['query_timeout_s'], cleanup_s=worker['cleanup_s'],
             stop_grace_s=worker['stop_grace_s'], ready_schema='semloom.native_daft_map.result_ready.v1',
-            on_result_ready=on_result_ready)
+            on_result_ready=on_result_ready, wait_for_result_release=worker['wait_for_result_release'])
         def publish_then_observe(path, value):
             publish_private_json(path, value)
             deadline(())
@@ -126,15 +128,18 @@ def replay(config, frozen, output):
     report = run_query(config, output, model_python='CPU-fixture', tokenizer=tokenizer, supervise=supervised)
     actual = read_json(Path(output) / 'result-ready.json')
     assert actual['result'] == frozen['result']
-    assert actual['semantic']['operator_relation'] == relations[0]
-    assert [row['text'] for row in actual['semantic']['calls']] == frozen['texts']
+    batch_path = Path(output) / 'native-lm-batches.json'
+    batches = read_json(batch_path, max_bytes=batch_path.stat().st_size)
+    assert len(batches) == 1
+    assert [row['messages'] for row in batches[0]['requests']] == messages
+    texts = {row['call_id']: row['generated_text'] for row in batches[0]['predictions']}
+    assert [texts[row['call_id']] for row in batches[0]['requests']] == frozen['texts']
     assert [(row['call_id'], row['source_position']) for row in actual['semantic']['calls']] == [
-        (row['call_id'], row['source_position']) for row in calls]
+        (f'{query.query_id}-batch-0-row-{index}', index) for index in range(len(calls))]
     assert report['quality'] == frozen['quality']
     assert report['sink_ready_ns'] < report['model_close_receipt']['close_started_monotonic_ns']
     assert (report['sink_ready_ns'] <= report['semantic_audit_started_ns']
-            <= report['semantic_audit_finished_ns'] <= report['sink_persistence_started_ns'])
-    assert report['sink_ready_ns'] <= report['sink_persistence_started_ns'] < report['evaluation_started_ns']
+            <= report['semantic_audit_finished_ns'] <= report['evaluation_started_ns'])
     receipt = dict(status='passed', model_calls=0, requests=len(requests),
         unique_call_ids=len(by_call), unique_messages=len(by_message),
         native_reference_occurrences=len(native_reference_messages),

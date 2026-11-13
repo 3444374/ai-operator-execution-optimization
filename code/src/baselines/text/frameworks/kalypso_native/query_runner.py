@@ -29,7 +29,8 @@ class KalypsoRunner(native.NativeQueryDriver):
                 execute_query = query.bind_execution()
                 operator.check_query(query)
             timing.update(
-                query_clock_version='sembench.source_to_sink.v3',
+                query_clock_version=('kalypso.source_to_sink.v1' if operator.kind=='aggregate'
+                                     else 'sembench.source_to_sink.v3'),
                 source_started_ns=time.monotonic_ns(),
                 model_ready_before_source=self.model_ready_observed_ns is not None,
                 model_ready_before_source_observed_ns=self.model_ready_observed_ns,
@@ -84,7 +85,8 @@ def operator_handler(spec):
     from .sembench_filter import FilterOperation
     from .sembench_join import JoinOperation
     from .sembench_topk import TopKOperation
+    from .sembench_aggregate import AggregateOperation
     if spec['task'] in MAP_TASKS:
         return MapOperation
     return {'sembench-filter': FilterOperation, 'sembench-join': JoinOperation,
-            'sembench-topk': TopKOperation}[spec['task']]
+            'sembench-topk': TopKOperation, 'sembench-aggregate': AggregateOperation}[spec['task']]

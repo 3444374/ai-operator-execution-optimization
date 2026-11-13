@@ -800,6 +800,63 @@ COUNT后、owner清理后、`audit_result`前。身份来自本次实际读取�
 本批C++、DSO、UDF、provider和模型协议未改，真实SQL／模型及保留raw bytes/rows的规模RSS仍待验证；
 cf220的120次真实运行、质量误差和v1时长保持原样。
 
+<a id="aggregate-system-runners"></a>
+## 各系统 runner 的聚合与完整查询接线
+
+基于`ce88968668d9ad7ac4dd8c7b06ae0070944c83fe`整合三条路径。固定SemBench c814e380、
+LOTUS1.2.4、Kalypso05024；原题source／关系／评分保留，LOTUS组合与Kalypso原生算法分列，
+没有新增逐题runner或另一套调度器。
+
+| 路径 | 实际修改及生命周期 | 尚未授予的资格 |
+|---|---|---|
+| LOTUS＋Daft | 同一原函数／QueryLM接每个实际批次，沿既有独立原生prompt worker；下一批前关闭当前worker，最后完整sink后ACK才关闭最后worker。生产旧prepare／finish调用迁移删除，冻结回放保留原消息／token／发生项身份映射。 | 真实目标tokenizer／模型、多层GPU、物理清理；TopK取消项仍停止，字符串provider没有逐行图像carrier。 |
+| LOTUS＋IMLane | 同一现有CLI接原Q5层次算法，复用SQLPredictions／VARCHAR／Arrow／provider／ACK；一个模型owner、每批真实SQL scope关闭后继续原算法。 | Linux真实SQL／DSO与模型；这是LOTUS over VARCHAR工程变体，不是作者聚合算法或论文Q7 UDF复现。 |
+| Kalypso | 同一KalypsoRunner增加SemAgg handler，共享任务只绑定原完整Aggregate输入和最终投影；05024 SemAgg／BlockingExecutor决定分块、并发和摘要归并。 | 真实服务serializer／tokenizer／模型与物理退出；其他连续算子、结构化Extract、多模态尚未接线。 |
+
+Daft和IMLane的真实摘要内容决定后续LOTUS层次批数，动态总数保持未知，配置提供有限永久预算；
+Kalypso N>1每次至少归并两个context，调用上界N−1，N≤1保留作者零调用／原文透传。
+原生idx=-1不是源lineage，不能据此补造所有源行关联。三条路径都不借用已完成的旧模型资格。
+
+软件检查使用临时输入、实际原题／原评分与原SDK／作者方法，模型、KV及部分进程为明确fixture：
+
+| 整合检查 | 运行方法数 | 通过／跳过 | 逐项结果 SHA-256 |
+|---|---:|---|---|
+| IMLane聚合／共享原题受影响回归 | 87 | 83／4 | `560226fcb232b3cc2ff49e2efdfb79ae7ba19a1475c387d013d917b1f91b4e2a` |
+| Kalypso原聚合及旧系统handler | 90 | 88／2 | `4deabf3d46447f385a7d1bfab57cdd7b0c25e81bfca455057cf0d7f570be495a` |
+| Daft完整查询／ACK及服务结果字段 | 60 | 60／0 | `21339c8a9f0a812f4bfc8026bb5341db39327e977471e0c130410b7208289093` |
+
+三组有交集，去重为225个不同方法，219通过、6跳过，不能相加为237项资格；0真实模型／GPU。
+Daft包含实际本地0.7.21 CPU图与软件模型、受限CPU子进程READY／ACK，IMLane包含实际Arrow／provider／
+relation ACK但SQL进程是fixture，Kalypso执行固定Git方法体的SemAgg／BlockingExecutor／parse/build及
+显式软件KV/API，均不等于完整目标环境。跳过是本次未绑定真实MMQA／Medical、单独SDK或tokenizer，
+不能直接推出数据不存在。完整计划、逐项ID、脱敏输出、patch及源码摘要保留在同名私有交接中。
+
+保留并修复的有效失败：Daft旧worker可在父query sink前关闭，新增明确release ACK；独立复核发现
+按时sink后的final close被查询截止误拒，现及时ACK后使用单独cleanup额度，中间关闭仍消耗原查询期限。
+Kalypso作者worker吞掉预算拒绝时可能只返回一份部分摘要，真实原方法软件反例先失败；现记录已有trace的
+aggregate拒绝事件，后审计使run失败，保留result而不产成功quality，不改作者归并算法。
+早期夹具的字段顺序／退出主异常、准确只读help子进程与guard路径错误均有原件，未据此重跑模型。
+
+三条新路径分别使用`lotus_daft.source_to_sink.v1`、`lotus_imlane.source_to_sink.v1`、
+`kalypso.source_to_sink.v1`直接记录fresh source→完整内存结果。原生必要交接／中间关闭保留，内部observer／
+provider同步I/O仍在区间，各自冷暖及剩余成本明确；不贴统一v3、不减去估算。
+LOTUS附着服务没有远端READY观察，旧startup=False／attached-ready文字改为未知；实际HTTP等待仍在区间。
+原打点、旧时长与调用行为未变。其余未接线与原生限制继续见当前能力表，不宣称整个接入完成。
+
+<a id="native-051-minimal-model"></a>
+## 051639 最小真实模型回执
+
+服务器协调者在准确`0516391a0e88ad0d22c49d110a0f5c91ec10bf69`完成103项CPU及四次真实请求：
+独立IMLane Q3输入32行、3次请求、COUNT=0；LOTUS＋Ray原Q5 sf25源25行选16行，原单叶1次请求、
+F1=1。均终态、无重试。Ray cold source→完整sink为70.494273555秒，IMLane ready区间2.4022秒，
+不能据此互相比性能；多层／并发及新视觉GPU路径未验。
+
+Ray原外层状态仍保留失败：私有审计把整数request_id与引擎字符串ID直接比较，原生产query已完成，
+固定SDK的转换规则和保存原件离线核对通过；首次清理拒绝及后续准确清理补充各自保留。
+本接入会话逐字复核1578份payload加清单与归档一致，1136个snapshot源Git blob等于准确提交；
+没有重跑模型或改写旧失败。首次本地校验误把全部1136源文件当作code目录1117文件的计数断言失败，
+按实际另19个追踪文件核完全部快照，失败原因保留。归档身份见下表，不授予本批新runner的模型资格。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -826,6 +883,7 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | cb754 LOTUS full256 CPU＋GPU | 105729722 | 1269 | `8f7fb25b14800c0076c0cfcd3a3b22a50357bdd4149ef8d73ade435e0e3c8bd5` |
 | 0755 Extract阶段准备CPU | 3295145 | 1205 | `8b89d4b52fed0f5a7ba934ce5838c7f065a6338bf6d6b509dfe96479ea84b715` |
 | cf220原生IMLane Q3模型 | 779015 | 138 | `304bdd0206a3d1e1c5da8a74987a660021d14bd3210a648d01a5c35a02a97ae4` |
+| 051639最小CPU＋模型 | 3930503 | 1578 | `a6d9e929568bad9f9f8e74ddcb9d3cdf406f06aa6d76147a4872834b4ed572e0` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

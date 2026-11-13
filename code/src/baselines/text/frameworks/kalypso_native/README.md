@@ -424,3 +424,22 @@ SemBench runner 完成或多阶段已支持。新结构的 CPU 生命周期检�
 不能直接改分派再删除旧实现；它们属于同一Kalypso系统的两种前端合同，不是两套系统baseline。
 旧profile也已把结果编码放到sink后、trace核查前，后验失败保留原扁平结果和主异常，不产成功quality；
 23项相关CPU检查通过，受控完整查询仍为29秒，0模型／GPU。其余输入、提示、原评分、分派和外部关闭归属保持。
+
+<a id="native-aggregate"></a>
+## 原生 SemAgg
+
+`task="sembench-aggregate"`复用同一个`KalypsoRunner`，仅增加原生算子handler。
+当前绑定原MMQA Q5的完整title／text选择、最终`_output`投影和原评分；固定05024的`SemAgg`
+拥有token分块、BlockingExecutor并发8、8192输出上限和数据依赖的多层归并，不改成LOTUS算法。
+`expected_rows`是实际源发生项，`expected_calls=null`，`max_native_calls=max(0,N-1)`为归并物理上界；
+零／单行保留作者无调用的空输出／原文透传，不能假设每行一个模型请求。
+
+现有prepare-native-cpu与CPU CLI同样支持此task，只能核初始chunks和完整初始prompt；后续prompt依赖
+实际摘要，报告明确不授予完整生成token资格。作者归并后的原生idx=-1原样保留，不发明源lineage。
+结果context按固定作者包装精确可逆解包，API实际原文与最终输出在sink后核对。
+作者worker可能吞掉API预算拒绝并返回部分摘要；现有trace增加aggregate拒绝观测，后审计令整查询失败，
+保留原返回结果且不产成功quality，不修改作者算法或重试。
+
+独立`kalypso.source_to_sink.v1`包含现存同步observer开销，额外预检和事后评分在外；
+真实作者服务、serializer、tokenizer、模型与物理退出仍待验。
+[原方法差分与失败记录](../../../../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#aggregate-system-runners)不授予其他连续算子或多模态支持。

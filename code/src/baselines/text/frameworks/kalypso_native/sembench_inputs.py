@@ -22,7 +22,8 @@ def make_query(cfg,qid,task='movie-q9',*,kind='map'):
             raise ValueError('Bound native source data changed: '+name)
     # These stage metadata fields do not set author first-request SamplingParams.
     query=SemBenchTextQuery(cfg['sembench'],cfg['data_dir'],**binding,execution_id=qid,
-        model_name=cfg['model_name'],generation=GenerationSpec(max_tokens={'map':8192,'topk':5}.get(kind,8)),
+        model_name=cfg['model_name'],generation=GenerationSpec(max_tokens={'map':8192,'aggregate':8192,'topk':5}.get(kind,8)),
+        **(dict(aggregate_operator=True) if kind=='aggregate' else {}),
     )
     if not set(query.files)<=set(hashes):
         raise ValueError('Native query requires the complete original source and evaluation file hashes')
@@ -34,7 +35,7 @@ def make_query(cfg,qid,task='movie-q9',*,kind='map'):
 
 
 def prepare(cfg,spec,directory,operation,*,kind='map'):
-    count=spec['expected_rows'] if kind=='topk' else spec['expected_calls']
+    count=spec['expected_rows'] if kind in ('topk','aggregate') else spec['expected_calls']
     empty_topk=kind=='topk' and count==0 and operation is None
     if not empty_topk and (operation is None or operation.describe()['kind'] != kind
             or len(operation.records) != count):
@@ -62,9 +63,9 @@ def prepare(cfg,spec,directory,operation,*,kind='map'):
     with path.open('x',newline='') as out:
         w=csv.DictWriter(out,fieldnames=['data']);w.writeheader();w.writerows({'data':v['data']} for v in values)
     table=Path(cfg['map_prompt_root'])/(spec['query_id']+'.json');table.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
-    instruction=(None if empty_topk else operation.instruction) if kind=='topk' else operation.stage.method.instruction
+    instruction=(None if empty_topk else operation.instruction) if kind in ('topk','aggregate') else operation.stage.method.instruction
     extra={}
-    if kind=='topk':
+    if kind in ('topk','aggregate'):
         from .topk_binding import criterion
         extra['native_instruction']=None if empty_topk else criterion(instruction,operation.columns)
     with table.open('x') as out:json.dump(dict(query_id=spec['query_id'],instruction=instruction,rows=values,**extra),out,ensure_ascii=False)

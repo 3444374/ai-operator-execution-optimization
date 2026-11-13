@@ -84,6 +84,23 @@ class TopKOperation:
 
 
 @dataclass(frozen=True)
+class AggregateOperation:
+    """The original complete input relation; the backend owns its reduction."""
+    frame: object
+    model_name: str
+    generation: object
+    instruction: str
+    records: tuple[RecordOccurrence, ...]
+    columns: tuple[str, ...]
+
+    def describe(self):
+        return dict(kind='aggregate', input_rows=len(self.records), expected_model_calls=None,
+            call_count_kind='backend-owned reduction, not one request per source row',
+            input_columns=list(self.frame.columns), model_columns=list(self.columns),
+            instruction=self.instruction, result_cache=False)
+
+
+@dataclass(frozen=True)
 class JoinOperation:
     """The author's exact Join; every ordered left/right pair is a request."""
     frame: object
@@ -165,20 +182,26 @@ def _operation(kind, frame, args, kwargs, *, model_name, generation, query_id):
                      **{label: str(right_row[column]) for label, column in right.items()}}))
         return JoinOperation(frame.copy(deep=True), right_frame.copy(deep=True), model_name, generation,
                              values['join_instruction'], tuple(records), tuple(left) + tuple(right), strategy)
-    if kind == 'topk':
-        if len(args) != 1 or kwargs != dict(K=len(frame), method='quick', return_stats=True):
-            raise ValueError('ordinary quick TopK with K=N and original statistics is required')
-        columns = tuple(lotus.nl_expression.parse_cols(args[0]))
+    if kind in ('topk', 'agg'):
+        if kind == 'topk':
+            if len(args) != 1 or kwargs != dict(K=len(frame), method='quick', return_stats=True):
+                raise ValueError('ordinary quick TopK with K=N and original statistics is required')
+            instruction = args[0]
+        else:
+            instruction = _operator_arguments(args, kwargs, ('user_instruction',))['user_instruction']
+        columns = tuple(lotus.nl_expression.parse_cols(instruction))
         if not columns or any(column not in frame.columns for column in columns):
-            raise ValueError('TopK instruction must reference present source columns')
+            raise ValueError(('TopK' if kind == 'topk' else 'Aggregate') + ' instruction must reference present source columns')
         if (generation.response_format is not None or generation.logprobs is not None
                 or generation.repetition_penalty != 1):
-            raise ValueError('ordinary TopK uses plain binary answers without helper sampling')
+            raise ValueError('ordinary TopK uses plain binary answers without helper sampling' if kind == 'topk'
+                             else 'native aggregate owns its output format and sampling')
         records = tuple(RecordOccurrence(query_id + '-row-' + str(i), i,
             int(label) if isinstance(label, Integral) else label,
             {column: str(row[column]) for column in columns})
             for i, (label, row) in enumerate(frame[list(columns)].iterrows()))
-        return TopKOperation(frame.copy(deep=True), model_name, generation, args[0], records, columns)
+        operation_type = TopKOperation if kind == 'topk' else AggregateOperation
+        return operation_type(frame.copy(deep=True), model_name, generation, instruction, records, columns)
     if kind in ('filter', 'map'):
         values = _operator_arguments(args, kwargs, ('user_instruction',),
                                      ('suffix',) if kind == 'map' else ())
@@ -214,7 +237,7 @@ def _operators(handler):
     originals = []
     with _OPERATOR_SCOPE, lotus.settings.context(enable_cache=False):
         try:
-            for kind in ('filter', 'map', 'extract', 'topk', 'join'):
+            for kind in ('filter', 'map', 'extract', 'topk', 'join', 'agg'):
                 cls = type(getattr(pd.DataFrame(), 'sem_' + kind))
                 original = cls.__call__
                 originals.append((cls, original))
@@ -256,7 +279,8 @@ class SemBenchTextQuery:
 
     def __init__(self, checkout, data_dir, scenario, query_id, *, execution_id,
                  model_name, generation, scale_factor=None, ranking=None, image_join=False,
-                 lm_options=None, visual_query=False, manifest=None, manifest_digest=None):
+                 lm_options=None, visual_query=False, manifest=None, manifest_digest=None,
+                 aggregate_operator=False):
         from .sembench_medical import FULL_SCALE_FACTOR, TEXT_QUERY_IDS as MEDICAL_QUERY_IDS, text_files
         from .sembench_mmqa import TEXT_QUERY_IDS as MMQA_QUERY_IDS
         from .sembench_ecomm import TEXT_QUERY_IDS as ECOMM_QUERY_IDS, TEXT_FILE
@@ -264,6 +288,8 @@ class SemBenchTextQuery:
         from src.baselines.image.sembench_mmqa import IMAGE_QUERY_IDS
 
         query = str(query_id).lower().removeprefix('q')
+        if aggregate_operator and (scenario != 'mmqa' or query != '5'):
+            raise ValueError('the native aggregate frontier requires an original aggregate task')
         if image_join and not (scenario == 'mmqa' and query in IMAGE_QUERY_IDS):
             raise ValueError('the original image Join binding supports MMQA Q2a/Q2b/Q7')
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
@@ -324,6 +350,28 @@ class SemBenchTextQuery:
                 data_dir=self.data_dir, manifest=self.manifest, manifest_digest=manifest_digest)
             self.frames, self.files, self.operation = {}, files, None
             self._run_original = self.visual_task.execute
+            return
+        if aggregate_operator:
+            from . import sembench_mmqa_aggregate as aggregate
+            from src.baselines.sembench_lotus import OriginalLotusQuery
+
+            self.aggregate_inputs = dict(source=aggregate.input_identity(self.data_dir))
+            self.aggregate_task = OriginalLotusQuery(self.checkout, scenario, query,
+                inputs=self.aggregate_inputs, data_dir=self.data_dir)
+            self.frames, self.files = {}, {aggregate.INPUT_FILE: self.aggregate_inputs['source']}
+            self._run_original = self.aggregate_task.execute
+            self.operation = None
+
+            def capture(kind, frame, args, kwargs, invoke):
+                self.operation = _operation(kind, frame, args, kwargs, model_name=model_name,
+                    generation=generation, query_id=execution_id)
+                raise _Captured()
+
+            with _operators(capture):
+                try:
+                    self._original()
+                except _Captured:
+                    pass
             return
         if scenario == 'mmqa' and query == '5':
             from lotus.models import LM
@@ -458,7 +506,7 @@ class SemBenchTextQuery:
                 policy='complete original LOTUS visual query and native algorithms; '
                        'original source policy retained; result cache disabled; no warmup or retry',
                 original_selection_and_postprocessing=True)
-        if self.aggregate_task is not None:
+        if self.aggregate_task is not None and self.operation is None:
             return dict(schema='semloom.sembench_text_query.v1', sembench_commit=SEMBENCH_COMMIT,
                 scenario=self.scenario, query='Q'+self.query, query_id=self.query_id,
                 files=self.files, operation=None, algorithm='native_hierarchical_aggregate',
@@ -480,8 +528,10 @@ class SemBenchTextQuery:
                                   else 0 if operation is None else operation['expected_model_calls']),
             **(dict(maximum_model_calls=self.visual_inputs['maximum_model_calls'])
                if self.visual_inputs is not None else {}),
-            policy='explicit exact ordinary-operator profile; not the official runner default; '
-                   'result cache disabled; no warmup or retry',
+            policy=('original aggregate frontier; backend owns reduction algorithm; result cache disabled; no warmup'
+                    if operation is not None and operation['kind'] == 'aggregate' else
+                    'explicit exact ordinary-operator profile; not the official runner default; '
+                    'result cache disabled; no warmup or retry'),
             label_scope=('original Medical patient labels used only for evaluation'
                          if self.scenario == 'medical' else
                          'original full Cars labels used only for evaluation'
@@ -530,7 +580,7 @@ class SemBenchTextQuery:
         for TopK. Later inputs come from the original query's intermediate
         relations. The default keeps the existing single-operator return shape.
         """
-        if self.aggregate_task is not None or self.visual_query:
+        if (self.aggregate_task is not None and self.operation is None) or self.visual_query:
             raise ValueError('this task needs the complete original query LM boundary')
         self.verify_source()
         if multiple:
