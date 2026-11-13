@@ -358,8 +358,8 @@ ACK／parser／完整查询与评分复用。当前Q1模板及离线helper迁移
 `6fda2713870f3675feb4a75b65f352f0002763f5`。12／12 Linux CPU、0skip；原Movie Q8选中120项Map和
 MMQA Q4实际24项Extract走真实作者VARCHAR SQL／Arrow／IPC／ACK、真实renderer和软件答复，
 发生项、原关系及原SDK参考检查通过。Extract原JSON由任务补齐。DSO／薄driver／kernel未改，0模型。
-Map首轮已执行SQL，但私有参考callback误把sem_map的DataFrame按TopK(frame,stats)拆包；
-生产代码未改，仅修正该harness后补Map软件门，原失败保留。不能把参考脚本失败改成第一次全通过。
+Map首轮在原题参考准备门失败，尚未进入SQL／renderer／模型：私有callback误把sem_map的DataFrame按TopK(frame,stats)拆包。
+生产代码未改，仅修正该harness后补Map软件门，实际Map SQL执行一次；原失败保留，不能写成第一次全通过。
 
 同一原Q9前8项、完整11列派生输入随后只运行一轮真实TopK。1个原生模型服务跨4批作者SQL，
 批次为7／2／3／1，共13个成功终态，unknown／retry／额外warmup／原parser回退均0；
