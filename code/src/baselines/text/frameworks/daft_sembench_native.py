@@ -70,3 +70,108 @@ def native_sampling_params(sampling_params):
         from vllm.sampling_params import StructuredOutputsParams
         options['structured_outputs'] = StructuredOutputsParams(**options['structured_outputs'])
     return SamplingParams(**options)
+
+
+def _message_columns(requests):
+    """Bind the static-system content-parts shape supported by native prompt."""
+    import base64
+    import binascii
+    from daft.ai.openai.protocols.prompter import OpenAIPrompter
+
+    rows, seen, system, shape = [], set(), None, None
+    for request in requests:
+        call_id, messages = request['call_id'], request['messages']
+        if not isinstance(call_id, str) or not call_id or call_id in seen:
+            raise ValueError('native message batches require unique nonempty call_id values')
+        seen.add(call_id)
+        if (len(messages) != 2 or any(set(message) != {'role', 'content'} for message in messages)
+                or messages[0]['role'] != 'system' or not isinstance(messages[0]['content'], str)
+                or messages[1]['role'] != 'user' or not isinstance(messages[1]['content'], list)
+                or not messages[1]['content']):
+            raise ValueError('native message batches support system text and one user content-parts array')
+        if system is None:
+            system = messages[0]['content']
+        elif system != messages[0]['content']:
+            raise ValueError('native prompt requires one static system message per batch')
+        parts, kinds = [], []
+        for part in messages[1]['content']:
+            kind = part.get('type')
+            if kind == 'text' and set(part) == {'type', 'text'} and isinstance(part['text'], str):
+                text = part['text']
+                url = text.lower().split('?')[0].split('#')[0]
+                if (url.startswith(('http://', 'https://'))
+                        and url.endswith(tuple(OpenAIPrompter.IMAGE_EXTENSIONS | OpenAIPrompter.VIDEO_EXTENSIONS))):
+                    raise ValueError('native prompt would infer an image/video URL from an original text part')
+                value = text
+            elif (kind == 'image_url' and set(part) == {'type', 'image_url'}
+                    and set(part['image_url']) == {'url'} and isinstance(part['image_url']['url'], str)):
+                prefix, separator, encoded = part['image_url']['url'].partition(',')
+                if not separator or prefix != 'data:image/png;base64':
+                    raise ValueError('native image parts require PNG data URIs')
+                try:
+                    value = base64.b64decode(encoded, validate=True)
+                except (binascii.Error, ValueError) as error:
+                    raise ValueError('native PNG messages require canonical base64') from error
+                if (not value.startswith(b'\x89PNG\r\n\x1a\n')
+                        or base64.b64encode(value).decode('ascii') != encoded):
+                    raise ValueError('native PNG messages require canonical PNG data URIs')
+            else:
+                raise ValueError('native prompt cannot preserve this original content part')
+            parts.append(value)
+            kinds.append(kind)
+        if shape is None:
+            shape = kinds
+        elif shape != kinds:
+            raise ValueError('native prompt requires the same content-part layout per batch')
+        rows.append(dict(call_id=call_id, **{'part_' + str(i): value for i, value in enumerate(parts)}))
+    return system, rows
+
+
+def execute_prepared_messages(requests, *, model, sampling_params, provider_options, on_result_ready=None):
+    """Run original message batches with Daft's builtin OpenAI/vLLM API graph.
+
+    The caller owns the isolated worker and releases its SDK client resources by
+    process exit after the complete query sink ACK. No model is owned or closed
+    here, and native SDK client close is not claimed.
+    """
+    from copy import deepcopy
+    import daft
+    from daft.ai.openai.provider import OpenAIProvider
+    from daft.functions.ai import prompt
+
+    if daft.get_or_infer_runner_type() != 'native':
+        raise ValueError('this binding requires the Daft native runner in its caller process')
+    metadata = dict(backend='daft-native-ai', daft_version=daft.__version__,
+        provider='builtin OpenAI chat completions over a vLLM-compatible service',
+        native_api_name='daft.functions.ai.prompt', model=model, logical_inference_rows=len(requests),
+        sampling_params=deepcopy(sampling_params), model_process_owned=False, model_close_receipt=None,
+        client_resource_release='caller-owned isolated worker process exit; SDK explicit client close unverified')
+    result = dict(predictions=[], metadata=metadata)
+    try:
+        system, rows = _message_columns(requests)
+        effective = deepcopy(sampling_params)
+        if 'repetition_penalty' in effective:
+            penalty = effective.pop('repetition_penalty')
+            extra = effective.get('extra_body')
+            if extra is not None and (not isinstance(extra, dict) or 'repetition_penalty' in extra):
+                raise ValueError('repetition_penalty must have one unambiguous native API value')
+            effective['extra_body'] = dict(extra or {}, repetition_penalty=penalty)
+        metadata['native_sampling_params'] = deepcopy(effective)
+        if rows:
+            frame = daft.from_pylist(rows).with_column('generated_text', prompt(
+                [daft.col(name) for name in rows[0] if name != 'call_id'],
+                provider=OpenAIProvider(**dict(provider_options)), model=model,
+                system_message=system, use_chat_completions=True, return_format=None, **effective))
+            returned = frame.select('call_id', 'generated_text').collect().to_pylist()
+            by_id = {row['call_id']: row for row in returned}
+            if (len(by_id) != len(returned) or by_id.keys() != {row['call_id'] for row in requests}
+                    or any(not isinstance(row['generated_text'], str) for row in returned)):
+                raise ValueError('native messages returned duplicate, missing or invalid occurrences')
+            result['predictions'] = [by_id[row['call_id']] for row in requests]
+        metadata['result_ready_monotonic_ns'] = time.monotonic_ns()
+        if on_result_ready is not None:
+            on_result_ready(result)
+    except BaseException as error:
+        error.native_query_report = result
+        raise
+    return result

@@ -1,0 +1,36 @@
+{
+  "schema": "semloom.native_daft_sembench.v1",
+  "sembench_checkout": "<SEMBENCH_C814_CHECKOUT>",
+  "data_dir": "<FROZEN_ANIMALS_DATA_DIRECTORY>",
+  "scenario": "animals",
+  "query": "Q7",
+  "query_id": "LOTUS-DAFT-ANIMALS-Q7-ATTACHED-UNIQUE-RUN-ID",
+  "visual_query": true,
+  "manifest": null,
+  "manifest_digest": null,
+  "scale_factor": 64,
+  "model_name": "openai/local-vision-model",
+  "model": "local-vision-model",
+  "sampling_params": {
+    "n": 1,
+    "max_tokens": 8192,
+    "temperature": 0,
+    "top_p": 1,
+    "seed": 0,
+    "stop": [],
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "repetition_penalty": 1,
+    "response_format": null
+  },
+  "engine_kwargs": {},
+  "provider_options": {"max_retries": 0},
+  "native_openai": {
+    "base_url_env": "DAFT_OPENAI_BASE_URL",
+    "api_key_env": "DAFT_OPENAI_API_KEY"
+  },
+  "max_model_calls": 128,
+  "query_timeout_s": 600,
+  "cleanup_s": 120,
+  "stop_grace_s": 8
+}

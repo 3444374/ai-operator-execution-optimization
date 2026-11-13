@@ -5,6 +5,7 @@ preflight and final GPU/SHM observation. This entry never installs or retries.
 """
 
 import argparse
+from contextlib import nullcontext
 import hashlib
 import json
 import math
@@ -37,7 +38,7 @@ def configuration(value):
     fields |= {'requests_path', 'requests_sha256', 'request_budget'}
     if value.get('schema') != 'semloom.native_daft_map.v1':
         raise ValueError('native Daft worker requires prepared prompts from the original query task layer')
-    if set(value) - {'wait_for_result_release'} != fields:
+    if set(value) - {'wait_for_result_release', 'native_openai'} != fields:
         raise ValueError('native Daft configuration fields do not match its query schema')
     if type(value.get('wait_for_result_release', False)) is not bool:
         raise ValueError('wait_for_result_release must be boolean')
@@ -53,7 +54,41 @@ def configuration(value):
     if (type(value['request_budget']) is not dict
             or set(value['request_budget']) != {'path', 'budget_id', 'limit', 'unit_id'}):
         raise ValueError('prepared native prompts require an explicit claimed request budget')
+    if 'native_openai' in value:
+        native_openai_options(value)
     return value
+
+
+def native_openai_options(config):
+    """Resolve the attached native provider without writing credentials to packets."""
+    reference = config['native_openai']
+    if (type(reference) is not dict or set(reference) != {'base_url_env', 'api_key_env'}
+            or any(type(value) is not str or not value for value in reference.values())):
+        raise ValueError('native_openai requires the endpoint and key environment variable names')
+    if config['engine_kwargs'] or {'base_url', 'api_key'} & config['provider_options'].keys():
+        raise ValueError('attached OpenAI uses environment credentials and no local vLLM engine options')
+    return dict(config['provider_options'], base_url=os.environ[reference['base_url_env']],
+                api_key=os.environ[reference['api_key_env']])
+
+
+def _http_report(events):
+    requests = [event for event in events if event['event'] == 'request']
+    responses = {event['attempt']: event for event in events if event['event'] == 'http_response'}
+    ends = {event['attempt']: event for event in events if event['event'] == 'http_finished'}
+    calls = []
+    for request in requests:
+        attempt = request['attempt']
+        response, end = responses.get(attempt), ends.get(attempt)
+        calls.append(dict(request, response=None if response is None else response['response'],
+            http_status=None if response is None else response['status'],
+            finished_ns=None if end is None else end['monotonic_ns'],
+            error_type=None if end is None else end['error_type']))
+    return dict(scope='native OpenAI HTTP attempts; graph owns row association; no engine or kernel evidence',
+        provider='Daft builtin OpenAI', requests=calls, reserved_attempts=len(requests),
+        http_send_entries=sum(event['event'] == 'http_started' for event in events),
+        unresolved=sum(call['finished_ns'] is None or call['error_type'] is not None for call in calls),
+        raw_HTTP_call_id_association_available=False, model_process_owned=False,
+        SDK_explicit_client_close_observed=False)
 
 
 class QueryDeadline:
@@ -151,11 +186,13 @@ def run_worker(config, directory, *, execute_query=None):
         raise ValueError('prepared native Map packet digest changed')
     packet = json.loads(raw)
     query_input = packet['requests']
-    if (packet['schema'] != 'semloom.native_daft_prompts.v1'
+    attached = 'native_openai' in config
+    input_field = 'messages' if attached else 'prompt'
+    if (packet['schema'] != ('semloom.native_daft_messages.v1' if attached else 'semloom.native_daft_prompts.v1')
             or not query_input
-            or any(type(row) is not dict or set(row) != {'call_id', 'prompt'}
+            or any(type(row) is not dict or set(row) != {'call_id', input_field}
                    or not isinstance(row['call_id'], str) or not row['call_id']
-                   or not isinstance(row['prompt'], str) for row in query_input)
+                   or not isinstance(row[input_field], list if attached else str) for row in query_input)
             or len({row['call_id'] for row in query_input}) != len(query_input)):
         raise ValueError('native Map packet requires complete prompts and unique occurrence IDs')
     source = dict(requests_sha256=config['requests_sha256'], rows=len(query_input))
@@ -164,7 +201,11 @@ def run_worker(config, directory, *, execute_query=None):
     if ready_path.exists():
         raise FileExistsError('native query output must not reuse an earlier result')
 
+    http_events = []
+
     def ready(result):
+        if attached:
+            result['metadata']['native_api'] = _http_report(http_events)
         timestamp = result['metadata']['result_ready_monotonic_ns']
         publish_private_json(ready_path, dict(schema=schema + '.result_ready.v1',
             result_ready_monotonic_ns=timestamp, worker_started_monotonic_ns=started,
@@ -181,11 +222,16 @@ def run_worker(config, directory, *, execute_query=None):
         source=source, warmup=0, whole_query_retries=0, performance_claim=False,
         model_ready_query_seconds=None, physical_gpu_exit_confirmed=None,
         result_artifact='result-ready.json', worker_started_monotonic_ns=started)
+    if attached:
+        report.update(provider='Daft builtin OpenAI', model_process_owned=False,
+            client_release_boundary='isolated worker process exit after result ACK; explicit SDK client close unobserved',
+            remote_service_shutdown_owned=False)
     primary = None
     try:
         if execute_query is None:
-            from src.baselines.text.frameworks.daft_sembench_native import execute_prepared_map
-            execute_query = execute_prepared_map
+            from src.baselines.text.frameworks import daft_sembench_native
+            execute_query = (daft_sembench_native.execute_prepared_messages if attached
+                             else daft_sembench_native.execute_prepared_map)
         from src.observability.native_model_api_trace import writer
         from src.experiments.attempt_ledger import AttemptBudget
         from src.experiments.shared_request_budget import SharedClaimedUnit
@@ -197,11 +243,31 @@ def run_worker(config, directory, *, execute_query=None):
             raise ValueError('remaining physical allowance cannot cover the complete native query')
         def reserve(call_id, request_id, prompt):
             unit.reserve(content_digest(dict(call_id=call_id, request_id=request_id, prompt=prompt)))
-        result = execute_query(query_input, model=config['model'],
-            on_native_event=writer(directory), before_generate=reserve,
-            sampling_params=native_sampling, engine_kwargs=config['engine_kwargs'],
-            provider_options=config['provider_options'], on_result_ready=ready,
-            close_timeout_s=config['cleanup_s'] - config['stop_grace_s'])
+        arguments = dict(model=config['model'], sampling_params=native_sampling, on_result_ready=ready)
+        observation = nullcontext()
+        if attached:
+            from src.observability.httpx_observer import _observe_native_httpx_client
+            options = native_openai_options(config)
+            emit = writer(directory)
+            def record(event):
+                event = dict(event)
+                body = event.pop('body', None)
+                if body is not None:
+                    event['messages_sha256'] = content_digest(body['messages'])
+                    event['model'] = body['model']
+                http_events.append(event)
+                emit(event['event'], **{key: value for key, value in event.items() if key != 'event'})
+            observation = _observe_native_httpx_client(unit, record,
+                options['base_url'].rstrip('/') + '/chat/completions', timeout_s=config['query_timeout_s'])
+            arguments['provider_options'] = options
+        else:
+            arguments.update(on_native_event=writer(directory), before_generate=reserve,
+                engine_kwargs=config['engine_kwargs'], provider_options=config['provider_options'],
+                close_timeout_s=config['cleanup_s'] - config['stop_grace_s'])
+        with observation:
+            result = execute_query(query_input, **arguments)
+        if attached:
+            result['metadata']['native_api'] = _http_report(http_events)
         report.update(status='completed', model_close_receipt=result['metadata']['model_close_receipt'])
         report['native_api'] = result['metadata']['native_api']
     except BaseException as error:
@@ -209,6 +275,10 @@ def run_worker(config, directory, *, execute_query=None):
         partial = getattr(error, 'native_query_report', None)
         report.update(error_type=type(error).__name__, error=redact_text(str(error)),
             model_close_receipt=getattr(error, 'model_close_report', None))
+        if attached:
+            report['native_api'] = _http_report(http_events)
+            if partial is not None:
+                partial['metadata']['native_api'] = report['native_api']
         if partial is not None:
             report['native_api'] = partial['metadata'].get('native_api')
             if report['model_close_receipt'] is None:
