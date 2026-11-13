@@ -1295,6 +1295,14 @@ Join首个新fixture误读原metric键f1而非f1_score，修测试后原评分�
 在base也复现，只修为核所需CLI标志／真实data-dir，不改CLI迎合测试，首次输出均保留。
 新Join模型与当前计时路径的Linux／模型／真实秒数尚未验，不转授7fb4 Q8或旧a110成绩。
 
+后续完整原函数差分发现独立Filter Q1/Q2的全阴性空结果漏了movieId、reviewText两列；
+现恢复原三列object空表，非空RangeIndex及其他查询不变。共同差分对固定c814完整原函数和
+真实LOTUS SDK提供软件答复，覆盖Q1–Q10的空源、重复与索引、全阴性及无候选四类输入，
+Q9显式选Map；40个子例核列、dtype、行、索引及重复全部一致。首次6个失败均为上述空表差异，原输出保留。
+SDK只在该参考测试内部加载，独立生产路径与四项fresh-process禁LOTUS检查保持。
+主线程在干净导出上复核任务层与两个runner共74项全部通过、0skip／模型／GPU；结果SHA-256为`b28a6a7f30188c1778e0239573d031423bae684f9629dc47ea00bbe4a54d97b8`。
+这验证普通关系结果合同，不表示JSON提示等价于LOTUS或新增模型质量资格。
+
 <a id="native-q8-7fb4-model"></a>
 ## 7fb4 独立原生 Ray／Daft Q8 真实模型
 

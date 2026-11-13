@@ -137,6 +137,8 @@ class MovieFilterTask:
             return pd.DataFrame({'positive_review_cnt': [len(kept)]})
         if self.query == '4':
             return pd.DataFrame({'positivity_ratio': [len(kept)/len(source.positions) if source.positions else 0.0]})
+        if not kept:
+            return pd.DataFrame(columns=['reviewId', 'movieId', 'reviewText'])
         return source.frame.iloc[kept[:5]][['reviewId']].reset_index(drop=True)
 
     def prepare_evaluation(self):

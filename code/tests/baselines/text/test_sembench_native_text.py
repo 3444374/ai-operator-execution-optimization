@@ -138,13 +138,14 @@ class NativeTextTaskTests(unittest.TestCase):
                     source = task.read_source()
                     self.assertEqual(task.requests(source), [])
                     result = task.finish(source, [])
-                    expected = ({'reviewId': []} if query == 'Q2' else
+                    expected = ({'reviewId': [], 'movieId': [], 'reviewText': []} if query == 'Q2' else
                                 {'positive_review_cnt': [0]} if query == 'Q3' else
                                 {'positivity_ratio': [0.0]})
                     self.assertEqual(result.to_dict(orient='list'), expected)
         task = MovieFilterTask(self.source_file([]), 'Q1')
         source = task.read_source()
-        self.assertEqual(task.finish(source, []).to_dict(orient='list'), {'reviewId': []})
+        self.assertEqual(task.finish(source, []).to_dict(orient='list'),
+                         {'reviewId': [], 'movieId': [], 'reviewText': []})
 
     def test_missing_review_is_explicit_empty_text_and_still_requires_a_response(self):
         task = MovieFilterTask(self.source_file())
@@ -234,6 +235,94 @@ class NativeTextTaskTests(unittest.TestCase):
             text=True, capture_output=True, timeout=90, env=dict(os.environ))
         self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
         self.assertIn('LOTUS imports and network denied', result.stdout)
+
+    def test_complete_movie_sinks_match_original_functions_and_real_sdk_software_answers(self):
+        import importlib.util
+        from contextlib import ExitStack, redirect_stdout
+        import socket
+
+        checkout = self.official_checkout()
+        if any(importlib.util.find_spec(name) is None for name in ('lotus', 'litellm')):
+            self.skipTest('the original-query differential requires the real LOTUS SDK, without a model')
+        with ExitStack() as scope:
+            scope.enter_context(patch.dict(os.environ, dict(HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1',
+                HF_DATASETS_OFFLINE='1', LITELLM_LOCAL_MODEL_COST_MAP='True', CUDA_VISIBLE_DEVICES='')))
+            scope.enter_context(patch.object(socket.socket, 'connect', side_effect=AssertionError(
+                'ordinary sink differential must not access a network')))
+            # Import only inside this optional reference check. Neither the
+            # production task nor fresh-process independence proofs import it.
+            import lotus
+            import pandas as pd
+            from tests.experiments.test_sembench_text_original import OriginalSemBenchTextTests
+            from src.baselines.text.sembench_text import SemBenchTextQuery
+            from src.serving.backends.vllm_protocol import GenerationSpec
+            from src.serving.backends.vllm_engine import VllmEngine
+            from src.serving.backends.vllm_async_engine import VllmAsyncEngine
+
+            for engine in (VllmEngine, VllmAsyncEngine):
+                scope.enter_context(patch.object(engine, '__init__', side_effect=AssertionError(
+                    'ordinary sink differential must not construct a model engine')))
+            scope.enter_context(lotus.settings.context(enable_cache=False))
+            temporary = scope.enter_context(tempfile.TemporaryDirectory(prefix='native-movie-sink-reference-'))
+            directory = Path(temporary)
+            reference = OriginalSemBenchTextTests()
+            reference.data = directory
+            reference.generation = GenerationSpec(max_tokens=32, temperature=0, seed=0)
+            rows = [
+                ('duplicate', 'taken_3', 'same review', 'POSITIVE', '5/5'),
+                ('outside', 'other_movie', 'outside review', 'NEGATIVE', '1/5'),
+                ('duplicate', 'taken_3', 'same review', 'NEGATIVE', '1/5'),
+                *[('taken-'+str(i), 'taken_3', 'taken review '+str(i), 'POSITIVE', '4/5') for i in range(5)],
+                ('ant-duplicate', 'ant_man_and_the_wasp_quantumania', 'same ant', 'POSITIVE', '5/5'),
+                ('ant-other', 'ant_man_and_the_wasp_quantumania', 'negative ant', 'NEGATIVE', '1/5'),
+                ('ant-duplicate', 'ant_man_and_the_wasp_quantumania', 'same ant', 'POSITIVE', '5/5'),
+                *[('ant-'+str(i), 'ant_man_and_the_wasp_quantumania', 'ant review '+str(i), 'NEGATIVE', '2/5') for i in range(3)],
+            ]
+            frame = pd.DataFrame(rows, columns=['reviewId', 'id', 'reviewText', 'scoreSentiment', 'originalScore'])
+            pd.DataFrame(dict(id=['taken_3', 'other_movie', 'ant_man_and_the_wasp_quantumania'],
+                audienceScore=[20, 30, 10])).to_csv(directory/'Movies.csv', index=False)
+            cases = [('zero-source', frame.iloc[:0]), ('duplicates-and-original-index', frame),
+                     ('no-filter-or-join-matches', frame), ('no-selected-frontier', frame.iloc[[1]])]
+            for case, source_frame in cases:
+                source_frame.to_csv(directory/'Reviews.csv', index=False)
+                for query_id in range(1, 11):
+                    with self.subTest(case=case, query=query_id), redirect_stdout(io.StringIO()):
+                        # Q9's reference and independent task both select Map
+                        # explicitly; the other references use the existing helper.
+                        query = (SemBenchTextQuery(checkout, directory, 'movie', '9',
+                            execution_id='ordinary-map-reference', model_name='openai/local-fixture',
+                            generation=reference.generation, ranking='map') if query_id == 9
+                            else reference._query('movie', str(query_id)))
+                        count = 0 if query.operation is None else query.operation.describe()['expected_model_calls']
+                        if query_id <= 7:
+                            slots = [False if case == 'no-filter-or-join-matches' else i % 3 != 0 for i in range(count)]
+                            raw_answers = [str(value) for value in slots]
+                            key = 'keep'
+                        elif query_id == 8:
+                            slots = [('POSITIVE', 'NEGATIVE')[i % 2] for i in range(count)]
+                            raw_answers, key = slots, 'sentiment'
+                        else:
+                            slots = [[2.675, 'invalid', 7, '4.5', 'NaN'][i % 5] for i in range(count)]
+                            raw_answers, key = [str(value) for value in slots], 'score'
+                        if query.operation is None:
+                            self.assertEqual(count, 0)
+                            with patch.object(lotus.models.LM, '__call__', side_effect=AssertionError('empty query called LM')):
+                                expected = query._original()
+                        elif query_id in (5, 6, 7):
+                            expected, messages = reference._join_reference(query, raw_answers)
+                            self.assertEqual(len(messages), count)
+                        else:
+                            expected, batches = reference._reference(query, raw_answers)
+                            self.assertEqual(sum(len(messages) for messages, _ in batches), count)
+                        task = movie_text_task(directory/'Reviews.csv', query_id, 'native-reference-'+str(query_id),
+                            ranking='map' if query_id == 9 else None,
+                            movies_csv=directory/'Movies.csv' if query_id == 10 else None)
+                        source = task.read_source()
+                        self.assertEqual(task.model_request_count(source), count)
+                        predictions = [dict(call_id=request['call_id'], generated_text=json.dumps({key: value}))
+                            for request, value in zip(task.requests(source), slots, strict=True)]
+                        actual = task.finish(source, reversed(predictions))
+                        pd.testing.assert_frame_equal(actual, expected)
 
 
 class NativeMovieMapTests(unittest.TestCase):
