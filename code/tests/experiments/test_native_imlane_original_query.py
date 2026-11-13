@@ -29,11 +29,13 @@ class OriginalQueryTests(unittest.TestCase):
         self.native=carrier.NativeAggregateTests();self.native.setUp();self.addCleanup(self.native.doCleanups)
         self.engines=[]
 
-    def config(self,scenario,query,inputs,*,allowance=64):
-        service,_=self.visual.config(scenario,query)
+    def config(self,scenario,query,inputs,*,allowance=64,scale_factor=None):
+        scale={} if scale_factor is None else dict(scale_factor=scale_factor)
+        service,_=self.visual.config(scenario,query,**scale)
         task=dict(scenario=scenario,query=query)
         task.update(dict(image_join=True) if scenario=='mmqa' else dict(visual_query=True))
-        task.update({name:str(value) for name,value in inputs.items() if name!='data_dir'})
+        task.update({name:str(value) if isinstance(value,Path) else value for name,value in inputs.items() if name!='data_dir'})
+        task.update(scale)
         from src.baselines.text.sembench_text import SemBenchTextQuery
         from src.serving.backends.vllm_protocol import GenerationSpec
         original=SemBenchTextQuery(self.visual.checkout,inputs.get('data_dir'),scenario,query,
@@ -84,14 +86,14 @@ class OriginalQueryTests(unittest.TestCase):
             return await worker.ModelWorker({},model,asyncio.Event(),budget=unit).batch(request)
         return lambda request,unit:asyncio.run(execute(request,unit))
 
-    def compare(self,scenario,query,inputs,*,mode='success',ordered_result=True):
+    def compare(self,scenario,query,inputs,*,mode='success',ordered_result=True,allowance=64,scale_factor=None):
         import numpy as np
         state=np.random.get_state()
         self.addCleanup(np.random.set_state,state)
         self.last_rng_state=[state[0],state[1].tolist(),int(state[2]),int(state[3]),float(state[4])]
-        service,config=self.config(scenario,query,inputs)
+        service,config=self.config(scenario,query,inputs,allowance=allowance,scale_factor=scale_factor)
         reference=fixture.NativeHTTPReplies(self,scenario,query=query,mode=mode)
-        expected,_,_=self.visual.invoke(service,inputs,reference,allowance=64)
+        expected,_,_=self.visual.invoke(service,inputs,reference,allowance=allowance)
         actual=fixture.NativeHTTPReplies(self,scenario,query=query,mode=mode)
         np.random.set_state(state)
         report=self.native.invoke(config,reply_batch=self.replies(actual))
@@ -103,7 +105,11 @@ class OriginalQueryTests(unittest.TestCase):
             # actual indices in both reports; tied duplicate positions may vary.
             self.assertEqual(report['result']['columns'],expected['result']['columns'])
             self.assertCountEqual(report['result']['data'],expected['result']['data'])
-        self.assertEqual(report['quality'],expected['quality'])
+        actual_quality,expected_quality=deepcopy(report['quality']),deepcopy(expected['quality'])
+        if scenario=='animals' and query in ('Q3','Q10'):
+            # The original gold SQL returns every tied maximum without ORDER BY.
+            self.assertCountEqual(actual_quality.pop('ground_truth'),expected_quality.pop('ground_truth'))
+        self.assertEqual(actual_quality,expected_quality)
         self.assertEqual(Counter(content_digest(r['body']['messages']) for r in actual.requests),
                          Counter(content_digest(r['body']['messages']) for r in reference.requests))
         self.assertEqual(report['budget']['consumed_requests'],expected['model_calls'])
@@ -112,9 +118,11 @@ class OriginalQueryTests(unittest.TestCase):
         self.assertFalse(report['ipc']['independent_image_processor_reference_verified'])
         self.assertEqual(report['query_clock_version'],'lotus_imlane.source_to_sink.v1')
         events=self.native.last.events
-        self.assertEqual(sum(name=='model-close' for name,_ in events),1)
-        self.assertLessEqual(max(stamp for name,stamp in events if name=='sql-close'),report['result_ready_monotonic_ns'])
-        self.assertLessEqual(report['result_ready_monotonic_ns'],next(stamp for name,stamp in events if name=='model-close'))
+        closes=[stamp for name,stamp in events if name=='model-close']
+        sql_closes=[stamp for name,stamp in events if name=='sql-close']
+        self.assertEqual(len(closes),len(self.native.last.services))
+        if sql_closes:self.assertLessEqual(max(sql_closes),report['result_ready_monotonic_ns'])
+        if closes:self.assertLessEqual(report['result_ready_monotonic_ns'],closes[0])
         directories=[item['directory'] for item in report['provider_batches']]
         self.assertEqual(len(directories),len(set(directories)))
         for metadata in report['provider_batches']:
@@ -138,6 +146,99 @@ class OriginalQueryTests(unittest.TestCase):
             self.assertEqual(sql['input_rows'],sum(len(read_json(path)['calls']) for path in
                 Path(provider['directory']).glob('*.terminal.json')))
         return batches
+
+    def compare_evaluation_failure(self,scenario,query,inputs,*,scale_factor=None):
+        service,config=self.config(scenario,query,inputs,scale_factor=scale_factor)
+        reference=fixture.NativeHTTPReplies(self,scenario,query=query)
+        with self.assertRaises(ValueError) as expected:self.visual.invoke(service,inputs,reference,allowance=64)
+        policy=fixture.NativeHTTPReplies(self,scenario,query=query)
+        with self.assertRaises(ValueError) as actual:self.native.invoke(config,reply_batch=self.replies(policy))
+        self.assertEqual(str(actual.exception),str(expected.exception))
+        self.assertEqual(entry.result_value(actual.exception.query_result),entry.result_value(expected.exception.query_result))
+        self.assertEqual(Counter(content_digest(row['body']['messages']) for row in policy.requests),
+                         Counter(content_digest(row['body']['messages']) for row in reference.requests))
+        failed=read_json(self.native.last.output/'worker.json')
+        self.assertIn('full_sink_observed_monotonic_ns',failed)
+        self.assertNotIn('quality',failed);self.assertEqual(failed['status'],'failed')
+        self.assertEqual(failed['budget']['consumed_requests'],len(policy.requests))
+        self.assertTrue((self.native.last.output/'full-sink-observed.json').exists())
+        self.assertEqual(sum(name=='model-close' for name,_ in self.native.last.events),1)
+        self.assertEqual(sum(name=='sql-open' for name,_ in self.native.last.events),
+                         sum(name=='sql-close' for name,_ in self.native.last.events))
+        print('CPU_EXPECTED_ORIGINAL_ERROR',scenario,query,type(actual.exception).__name__,str(actual.exception))
+        return failed,policy,config
+
+    def test_visual_input_kinds_share_original_factory_and_complete_native_relation(self):
+        import pandas as pd
+        cases=[('animals',query,self.visual.animals_inputs,None) for query in ('Q3','Q10')]
+        cases += [('mmqa',query,self.visual.mmqa_inputs,None) for query in ('Q2a','Q7')]
+        cases += [('cars',query,self.visual.cars_inputs,7) for query in ('Q3','Q8')]
+        cases += [('medical',query,self.visual.medical_inputs,29) for query in ('Q3','Q9')]
+        cases += [('ecomm',query,lambda q=query:self.visual.ecomm_outfit_inputs(q),None)
+                  for query in ('Q2','Q4','Q6','Q8','Q9','Q13')]
+        for scenario,query,source,scale in cases:
+            with self.subTest(scenario=scenario,query=query):
+                inputs=source()
+                if scenario=='ecomm' and query=='Q8':
+                    # Reuse the established Ray fixture's long-description input;
+                    # the original Q8 predicate must select a real left row.
+                    path=Path(inputs['data_dir'])/'styles_details.parquet'
+                    frame=pd.read_parquet(path)
+                    frame.at[0,'productDescriptors']={'description':{'value':'long description '*200}}
+                    frame.to_parquet(path,index=False)
+                if scenario=='ecomm' and query=='Q4':
+                    failed,policy,_=self.compare_evaluation_failure(scenario,query,inputs)
+                    self.assertEqual(len(policy.requests),5) # duplicate ids/images are not removed
+                    self.assertEqual(failed['provider_batches'][0]['native_sampling']['structured_outputs'],{'json_object':True})
+                    continue
+                report,policy,config=self.compare(scenario,query,inputs,scale_factor=scale)
+                batches=self.assert_native_batches(report)
+                if scale is not None:
+                    self.assertIs(type(config['task']['scale_factor']),int)
+                    self.assertEqual(report['source']['visual_inputs']['scale_factor'],scale)
+                if scenario=='cars':self.assertGreater(report['model_calls'],10)
+                if scenario=='medical' and query=='Q9' or scenario=='ecomm' and query=='Q9':
+                    self.assertTrue(all(len(policy.image_uris(row['body']))==2 for row in policy.requests))
+                if scenario=='ecomm' and query=='Q6':self.assertEqual(report['model_calls'],2)
+                if scenario=='ecomm' and query=='Q9':self.assertEqual(report['model_calls'],25)
+                print('CPU_VISUAL_INPUT',scenario,query,'scale',scale,'batch_sizes',
+                    [len(batch['requests']) for batch in batches],'result_rows',len(report['result']['data']))
+
+    def test_medical_small_gold_keeps_original_error_and_full_gold_keeps_prelimit_input(self):
+        self.compare_evaluation_failure('medical','Q8',self.visual.medical_inputs(),scale_factor=29)
+        report,_,_=self.compare('medical','Q8',self.visual.medical_inputs(103),scale_factor=29,allowance=128)
+        self.assertGreater(report['model_calls'],100)
+        self.assertEqual(len(report['result']['data']),100)
+        self.assert_native_batches(report)
+        print('CPU_MEDICAL_PRELIMIT','model_calls',report['model_calls'],'sink_rows',len(report['result']['data']))
+
+    def test_empty_visual_relations_keep_actual_model_allocation_and_original_sink(self):
+        report,_,_=self.compare('medical','Q9',self.visual.medical_inputs(),scale_factor=29,mode='no_matches')
+        self.assertEqual(report['result']['data'],[])
+        inputs=self.visual.ecomm_outfit_inputs('Q8') # no >=3000-character descriptions
+        report,_,_=self.compare('ecomm','Q8',inputs)
+        self.assertEqual(report['model_calls'],0);self.assertEqual(report['provider_batches'],[])
+        self.assertEqual(report['result']['data'],[])
+        # Expected total is unknown at preflight; keep the real allocated owner
+        # visible even though this actual original graph made no model requests.
+        self.assertIsNone(report['source']['expected_model_calls'])
+        self.assertEqual(len(self.native.last.services),1)
+        print('CPU_EMPTY_VISUAL','ecomm Q8','model_calls',report['model_calls'],'allocated_owners',len(self.native.last.services))
+
+    def test_missing_visual_asset_fails_before_any_native_model_or_sql(self):
+        inputs=self.visual.cars_inputs()
+        service,config=self.config('cars','Q3',inputs,scale_factor=7)
+        import pandas as pd
+        from src.baselines.text.sembench_cars import visual_files
+        images=visual_files(7)[1]
+        Path(pd.read_csv(Path(inputs['data_dir'])/images).iloc[0]['image_path']).unlink()
+        reference=fixture.NativeHTTPReplies(self,'cars',query='Q3')
+        with self.assertRaises(FileNotFoundError) as expected:self.visual.invoke(service,inputs,reference,allowance=64)
+        with self.assertRaises(FileNotFoundError) as actual:
+            self.native.invoke(config,reply_batch=self.replies(fixture.NativeHTTPReplies(self,'cars',query='Q3')))
+        self.assertEqual(str(actual.exception),str(expected.exception))
+        self.assertEqual(self.native.last.events,[]);self.assertEqual(self.native.last.services,[])
+        self.assertFalse(self.native.last.output.exists())
 
     def test_original_branch_joins_keep_all_filters_actual_inputs_and_full_relations(self):
         for query,filters in (('Q10',3),('Q11',4)):

@@ -18,7 +18,7 @@
 | [qualify_varchar.py](qualify_varchar.py)、[C++ driver](varchar_qualification.cpp)、[fixture](varchar_fixture.py) | 零模型 VARCHAR 的真实 DSO／PROCESS／THREAD 资格入口；原作者与 schema-child 工程版分开记录 |
 | [native_imlane_relation.py](../../src/experiments/native_imlane_relation.py)、[relation_handoff.hpp](relation_handoff.hpp) | 在完整原查询 sink 就绪前持有 native driver／DuckDB result；ACK后退出、审计与作者关闭分开 |
 | [sembench.cpp](sembench.cpp)、[sembench_udf.py](sembench_udf.py) | 工程版 VARCHAR 原生投影：call_id／messages_json 入，原模型文本出；不实现替代 parser |
-| [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | 单 Map／Extract 与 TopK 的模型 owner、预算、完整 sink 与监督；旧 Q1 配置仅作格式兼容 |
+| [native_imlane_sembench.py](../../src/experiments/native_imlane_sembench.py) | 完整 LOTUS 原题及既有 Map／Extract／TopK profile 的模型 owner、预算、完整 sink 与监督；旧 Q1 配置仅作格式兼容 |
 | [native_imlane_topk.py](../../src/experiments/native_imlane_topk.py) | 原 LOTUS quick 比较批次交既有 VARCHAR prediction；完整原排名／评分不变 |
 | [native_imlane_filters.py](../../src/experiments/native_imlane_filters.py) | 复用 SemBench 捕获的单 Filter；源规模与预算从本次输入冻结，原版 TINYINT、完整原查询 sink 后 ACK |
 
@@ -563,7 +563,9 @@ worker已移除纯文本类型限制，将同一完整对象交`generate`，保�
 图像行核原消息、native input type、展开token数组及usage，独立processor／像素tensor资格明确未取得。
 
 当前软件差分覆盖Animals Q1/Q7两遍完整输入、MMQA非空Q2b Join→JSON Extract、E-Commerce Q12实际survivors，
-原空路径KeyError保持；随后Q10/Q11分支和Q14原group线程也通过软件差分，其他原题及真实Linux SQL／VLM／物理清理另验。
+原空路径KeyError保持；随后Q10/Q11分支和Q14原group线程也通过软件差分。
+后续原题模块12／12覆盖Animals其余单Filter、MMQA Q2a/Q7、Cars／Medical单图和双图、E-Commerce单算子与Join，
+保留原关系、LIMIT前输入及原评分失败，见[输入类别边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-original-input-kinds)。真实Linux SQL／VLM／物理清理另验。
 [110项整合检查与目标边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-original-query)
 包含旧文本／TopK／零输入／IPC行为，不把软件模型当真实VLM。
 独立`lotus_imlane.source_to_sink.v1`含必要SQL／ACK／scope关闭、provider配置／指纹／回执I/O，

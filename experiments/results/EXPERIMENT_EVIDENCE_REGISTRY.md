@@ -48,6 +48,10 @@
 [IMLane分支／groupby](diagnostics/sembench_native_integration_20261112/README.md#imlane-branches-groupby)
 原Q10/Q11多分支与Q14四个原生group线程在既有runner软件通过，无生产修改；受影响模块8／8，通过范围与前110重叠。
 原RNG／官方无index关系、SDK选列限制、唯一预算／provider与失败清理各自保留，0模型／SQL／GPU。
+[IMLane原题输入类别](diagnostics/sembench_native_integration_20261112/README.md#imlane-original-input-kinds)
+仅补既有模块测试与fixture比较，生产零修改；整合独立12／12通过，包含前8项，不重复累加。
+覆盖单图／双图、原关系连接、完整候选及LIMIT前输入；重复ID／小gold的原评分异常与完整sink保留，
+未知请求总数的空查询仍如实记录已分配owner。0模型／真实SQL／GPU，不授予目标质量或性能资格。
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

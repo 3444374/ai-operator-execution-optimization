@@ -729,7 +729,9 @@ Ray／Daft 的 CLIP 图仍是独立嵌入路径；Q7 的资格不扩大为其他
 原Extract的JSON约束继续经sampling_params的structured_outputs传递，不依赖return_format。
 该SDK的OpenAI provider另支持图像bytes／File等原生输入。这不等于当前已接视觉任务，也不能把
 某个provider的接口限制扩成整个Daft不支持视觉；选择其他provider还须验证原消息／PNG、重试／预算、发生项关联和完整生命周期。
-IMLane／Kalypso 当前视觉绑定未建立，不由此推断整个上游系统永远不支持视觉。
+LOTUS＋IMLane的同一[完整原题profile](../../integrations/imlane_duckdb/README.md#同一-runner-的完整-lotus-原题)已接视觉消息和原生multimodal载体，
+单图／双图、Join后Extract及实际survivors有软件差分，真实Linux SQL／VLM另验；Kalypso当前文本前端尚未接视觉载体。
+这些接点范围不代表整个上游系统的视觉能力边界。
 原 LOTUS 明确不支持的音频题留空，其余未验证能力另记。
 
 CPU 视觉夹具使用真实 ImageArray、原 PNG 格式化、原 Filter／Join／Extract 解析与关系结果。

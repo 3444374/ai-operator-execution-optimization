@@ -975,6 +975,30 @@ Q10／Q11及所有旧case保持精确完整结果断言。组内模型错误经�
 所有SQL scope关闭、最终模型只关闭一次，失败LM批次保留，不产完整sink或成功quality。
 数据、renderer／generate与SQL仍是明确软件fixture；没有真实模型／SQL／GPU，不授予并发SQL、多Job或目标性能结论。
 
+<a id="imlane-original-input-kinds"></a>
+## IMLane 原题输入类别的软件覆盖
+
+基于43d6fe0b1只补同一完整原题模块，生产代码未改。ROOT从干净Git导出叠加唯一测试文件，
+独立运行整份模块12／12通过、0skip，结果SHA为`da60d9ac22c3ca338db4a10b2a8e444093604289e2c8bbfd25760f5f76a1b565`。
+其中前8项与上一批重叠，不能累加为20或把旧110再加12；本批0真实模型／SQL／GPU。
+
+使用既有临时输入及明确软件SQL／renderer／generate，原函数、SDK、Arrow、provider、ModelWorker和ACK实际执行。
+新增14个原题case中，13个完整结果／评分与原服务软件参考一致；E-Commerce Q4保留5个重复发生项，
+完整5行JSON Extract相同后，两边原GenericEvaluator的ARI均抛同一ValueError，按失败对照验收而非成功评分。
+
+| 输入类别 | 实际观察及保留的原行为 |
+|---|---|
+| Animals Q3/Q10、MMQA Q2a/Q7 | 四题均实际4次请求；Animals原gold SQL无ORDER BY，只对并列金标比较multiset，原结果和指标断言保持。 |
+| Cars Q3/Q8，整数scale7 | 原连接后分别14／15次请求，完整sink为10／2行，LIMIT不减少前置请求。 |
+| Medical Q3/Q9，整数scale29 | 分别7／10次请求，Q9每个发生项保留两张图；原完整结果／评分相同。 |
+| E-Commerce Q2/Q4/Q6/Q8/Q9/Q13 | 单算子、描述Join及图像self-join共用原factory；Q6实际2次，Q9保留全部25对及每对两图。Q8临时合法长描述使真实Join非空，原SDK多列选列限制不改。Q4原评分异常如上。 |
+| Medical Q8完整输入与原失败 | 小gold在完整sink之后保留原采样ValueError；足量gold输入实际104次请求后保留原LIMIT100及原评分，不裁掉第101次之后输入。 |
+| 空关系与缺图 | Medical Q9无匹配保留空sink；E-Commerce Q8实际0次、总数预期None，原runner仍保守分配1个owner，如实记录，不把未知写成0。缺Cars图在模型／SQL／输出创建前报相同FileNotFoundError。 |
+
+测试helper仅把Path转为字符串，scale_factor保留整数，allowance原样传两侧；没有修改原数据定义、
+原查询、原评分器或生产算法。首轮E-Commerce Q4原评分错误保留，随后加入完整sink／原异常／失败状态和关闭的共同对照，
+没有删重复行或改gold凑成功。真实资产、Linux作者SQL／DSO／IPC／物理清理、VLM／独立processor参考及性能仍待验。
+
 <a id="kalypso-3500-single-reduction"></a>
 ## Kalypso 原Q5 单次真实归约及环境缺口
 
