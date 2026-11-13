@@ -28,7 +28,8 @@ import importlib.abc,socket,sys
 forbidden=[]
 class NoSDK(importlib.abc.MetaPathFinder):
  def find_spec(self,fullname,*args):
-  if (fullname.split('.')[0] in {'lotus','daft','vllm','transformers'}
+  if (fullname.split('.')[0] in {'lotus','daft','vllm','torch','transformers'}
+      or fullname=='src.experiments.native_daft_sembench'
       or fullname=='src.baselines.text.sembench_text'
       or fullname=='src.semantic_methods.lotus' or fullname.startswith('src.semantic_methods.lotus.')):
    forbidden.append(fullname)
@@ -84,8 +85,8 @@ finally:write_private_json(directory/'fixture-imports.json',dict(forbidden_impor
 
 class SoftwareSupervisor:
     """Real prepared-worker ACK owner; observe one known software child only."""
-    def __init__(self, mode='success'):
-        self.mode, self.calls = mode, []
+    def __init__(self, mode='success', *, program=CPU_WORKER):
+        self.mode, self.calls, self.program = mode, [], program
 
     def __call__(self, config, directory, **options):
         from src.experiments import lotus_records_supervisor as processes
@@ -94,7 +95,7 @@ class SoftwareSupervisor:
             # The host sandbox denies global psutil/sysctl process enumeration.
             # This fixture observes its Popen child, not host/GPU/tree cleanup.
             new_private_directory(output)
-            fixture_command = [sys.executable, '-B', '-c', CPU_WORKER, str(config), str(directory), self.mode]
+            fixture_command = [sys.executable, '-B', '-c', self.program, str(config), str(directory), self.mode]
             process = subprocess.Popen(fixture_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             deadline = time.monotonic() + kwargs['timeout_s']
             try:
@@ -585,6 +586,286 @@ print(json.dumps(dict(status=report['status'],result=report['result'],quality=re
                 self.assertEqual(value['loaded_forbidden'], [])
                 self.assertEqual(value['result']['data'], expected)
                 self.assertEqual(value['quality']['original_metric'][metric], score)
+
+
+ATTACHED_WORKER = IMPORT_GUARD + r'''
+import asyncio,json,time
+import httpx
+from pathlib import Path
+from src.experiments.native_daft_query import run_worker
+from src.baselines.text.frameworks.daft_sembench_native import effective_openai_messages
+from src.infrastructure.private_artifacts import read_json,write_private_json
+config,directory,mode=read_json(sys.argv[1]),Path(sys.argv[2]),sys.argv[3]
+attempts=0
+async def send(client,request,*args,**kwargs):
+ global attempts
+ attempts+=1
+ assert str(request.url)=='http://localhost:18473/v1/chat/completions'
+ assert request.headers['authorization']=='Bearer software-key'
+ if mode=='failure' or mode=='unknown-recovered' and attempts==1:
+  raise httpx.ReadTimeout('software API response unknown',request=request)
+ if mode=='retry' and attempts==1:
+  return httpx.Response(503,request=request,json=dict(error='software native retry fixture'))
+ body=json.loads(request.content)
+ content=body['messages'][1]['content']
+ text=json.loads(content if isinstance(content,str) else content[0]['text'])['text']
+ generated=json.dumps(dict(keep=text.startswith('good')))
+ response=dict(id='software-'+directory.parent.name+'-'+str(attempts),model=body['model'],
+  choices=[dict(index=0,message=dict(role='assistant',content=generated),finish_reason='stop')],
+  usage=dict(prompt_tokens=1,completion_tokens=1,total_tokens=2))
+ return httpx.Response(200,request=request,json=response)
+httpx.AsyncClient.send=send
+
+def execute(rows,*,model,sampling_params,provider_options,on_result_ready):
+ async def all_rows():
+  predictions=[]
+  async with httpx.AsyncClient(headers={'authorization':'Bearer '+provider_options['api_key']}) as client:
+   for row in rows:
+    body=dict(sampling_params,model=model,messages=row['messages'] if mode=='raw' else effective_openai_messages(row['messages']))
+    for retry in range(2):
+     try:
+      response=await client.post(provider_options['base_url'].rstrip('/')+'/chat/completions',json=body)
+      if response.status_code==503 and retry==0:continue
+      response.raise_for_status()
+      break
+     except httpx.ReadTimeout:
+      if mode!='unknown-recovered' or retry:raise
+    predictions.append(dict(call_id=row['call_id'],generated_text=response.json()['choices'][0]['message']['content']))
+  return list(reversed(predictions))
+ result=dict(predictions=asyncio.run(all_rows()),metadata=dict(
+  result_ready_monotonic_ns=time.monotonic_ns(),model_close_receipt=None,model_process_owned=False,
+  message_encoding='daft.openai.system_single_user.parts.v1',target_renderer_equivalence_verified=None))
+ on_result_ready(result)
+ return result
+try:run_worker(config,directory,execute_query=execute)
+finally:write_private_json(directory/'fixture-imports.json',dict(forbidden_import_attempts=forbidden,real_native_SDK=False,actual_models=0))
+'''
+
+
+@unittest.skipUnless(CHECKOUT and all(importlib.util.find_spec(name) for name in ('pandas','duckdb','cdlib')),
+                     'requires pinned SemBench and existing CPU scorer dependencies')
+class AttachedDaftSessionTests(unittest.TestCase):
+    setUp = IndependentDaftQueryTests.setUp
+    write_rows = IndependentDaftQueryTests.write_rows
+
+    def config(self):
+        config = IndependentDaftQueryTests.config(self)
+        config.pop('max_model_calls')
+        return dict(config, schema=driver.ATTACHED_SCHEMA, max_http_attempts=8, session_timeout_s=45,
+            native_openai=dict(base_url_env='CPU_DAFT_SESSION_BASE', api_key_env='CPU_DAFT_SESSION_KEY'),
+            provider_options=dict(max_retries=0))
+
+    def invoke(self, *, mode='success', config=None, identity_probe=None):
+        self.output = self.root / ('session-' + mode)
+        self.supervisor = SoftwareSupervisor(mode, program=ATTACHED_WORKER)
+        with patch.dict(os.environ, CPU_DAFT_SESSION_BASE='http://localhost:18473/v1',
+                        CPU_DAFT_SESSION_KEY='software-key'):
+            return driver.run_attached_session(config or self.config(), self.output,
+                model_python=sys.executable, supervise=self.supervisor, identity_probe=identity_probe)
+
+    @staticmethod
+    def identity(pid=222):
+        return dict(observed_monotonic_ns=time.monotonic_ns(), host_id='software-host',
+            service_pid=111, service_create_time=10., model_processes=[dict(pid=pid,create_time=20.)])
+
+    def test_two_fresh_queries_share_one_permanent_budget_with_ACK_and_fresh_owner_proof(self):
+        snapshots = []
+        def probe():
+            snapshots.append(len(snapshots))
+            if len(snapshots) == 3:
+                with self.csv.open('a') as stream:
+                    stream.write('taken_3,new,good new,POSITIVE\n')
+            return self.identity()
+        report = self.invoke(config=dict(self.config(), max_http_attempts=9), identity_probe=probe)
+        self.assertEqual(report['status'], 'completed')
+        self.assertTrue(report['model_owner_reused'])
+        self.assertTrue(report['warm_qualified'])
+        self.assertFalse(report['target_native_model_qualified'])
+        self.assertIsNone(report['service_ready_before_session'])
+        self.assertIsNone(report['model_startup_seconds'])
+        self.assertFalse(report['remote_service_shutdown_owned'])
+        self.assertFalse(report['HTTP_JSONL_evidence_used'])
+        self.assertIn('worker.json', report['HTTP_evidence_source'])
+        self.assertEqual([row['result']['data'] for row in report['queries']], [[[2]], [[3]]])
+        self.assertEqual([row['physical_HTTP_attempts'] for row in report['queries']], [4,5])
+        self.assertEqual(report['physical_HTTP_attempts'], 9)
+        self.assertEqual(len(report['budget']['units']), 1)
+        workers = [read_json(path/'worker.json') for _, path in self.supervisor.calls]
+        for row, terminal in zip(report['queries'], workers):
+            self.assertEqual(row['quality']['original_metric']['absolute_error'], 0)
+            self.assertEqual(row['HTTP_audit']['unresolved_attempts'], 0)
+            self.assertFalse(row['HTTP_audit']['raw_HTTP_call_id_association_available'])
+            self.assertLessEqual(row['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
+            self.assertLessEqual(row['sink_ready_ns'], row['source_audit_started_ns'])
+            self.assertTrue(terminal['result_release']['confirmed'])
+            self.assertFalse(terminal['model_process_owned'])
+            self.assertFalse(terminal['remote_service_shutdown_owned'])
+        packets = [read_json(path)['request_budget'] for path, _ in self.supervisor.calls]
+        self.assertEqual(packets[0], packets[1])
+        self.assertLess(report['queries'][0]['client_worker_exit_observed_ns'], report['queries'][1]['source_start_ns'])
+        from src.experiments.shared_request_budget import SharedClaimedUnit
+        from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
+        unit = SharedClaimedUnit(self.output/'physical-budget.sqlite',
+            AttemptBudget(self.config()['query_id'], 9), 'session')
+        with self.assertRaisesRegex(BudgetExhausted, 'closed'):
+            unit.reserve('0'*64)
+
+    def test_missing_stale_or_endpoint_only_probe_keeps_warm_unknown(self):
+        for index, probe in enumerate((None, lambda: dict(self.identity(), observed_monotonic_ns=0),
+                                       lambda: dict(endpoint='http://localhost:18473/v1'))):
+            with self.subTest(index=index):
+                self.root = Path(self.temporary.name) / str(index)
+                self.root.mkdir()
+                report = self.invoke(identity_probe=probe)
+                self.assertEqual(len(report['queries']), 2)
+                self.assertIsNone(report['model_owner_reused'])
+                self.assertIsNone(report['warm_qualified'])
+
+    def test_owner_change_stops_before_second_worker_and_retains_first_complete_result(self):
+        calls = []
+        def probe():
+            calls.append(1)
+            return self.identity(222 if len(calls) < 3 else 333)
+        with self.assertRaisesRegex(RuntimeError, 'owner changed') as caught:
+            self.invoke(identity_probe=probe)
+        report = caught.exception.query_report
+        self.assertEqual(len(self.supervisor.calls), 1)
+        self.assertEqual(report['queries'][0]['result']['data'], [[2]])
+        self.assertIsNone(report['queries'][1]['source_start_ns'])
+        self.assertFalse(report['model_owner_reused'])
+        self.assertIsNone(report['warm_qualified'])
+        self.assertEqual(report['physical_HTTP_attempts'], 4)
+
+    def test_retry_attempts_are_charged_and_exhaustion_never_starts_another_worker(self):
+        report = self.invoke(mode='retry', config=dict(self.config(), max_http_attempts=10))
+        self.assertEqual([row['physical_HTTP_attempts'] for row in report['queries']], [5,5])
+        self.assertEqual(report['physical_HTTP_attempts'], 10)
+        self.assertTrue(all(row['HTTP_audit']['successful_responses'] == 4 for row in report['queries']))
+        with self.assertRaisesRegex(ValueError, 'exhausted') as caught:
+            self.invoke(mode='exhausted', config=dict(self.config(), max_http_attempts=4))
+        self.assertEqual(len(self.supervisor.calls), 1)
+        self.assertEqual(caught.exception.query_report['physical_HTTP_attempts'], 4)
+        self.assertEqual(caught.exception.query_report['queries'][0]['result']['data'], [[2]])
+
+    def test_failed_or_unknown_HTTP_stops_next_round_and_preserves_raw_evidence(self):
+        for mode in ('failure', 'unknown-recovered', 'raw'):
+            with self.subTest(mode=mode), self.assertRaises((RuntimeError,ValueError)) as caught:
+                self.invoke(mode=mode)
+            report = caught.exception.query_report
+            self.assertEqual(len(self.supervisor.calls), 1)
+            self.assertEqual(report['status'], 'failed')
+            self.assertIsNone(report['warm_qualified'])
+            row = report['queries'][0]
+            self.assertNotIn('quality', row)
+            terminal = read_json(self.output/'query-1/native-worker/worker.json')
+            self.assertEqual(terminal['native_api'], row['native_api'])
+            self.assertTrue(terminal['native_api']['requests'])
+            self.assertTrue((self.output/'query-1/prepared-messages.json').exists())
+            if mode == 'failure':
+                self.assertEqual(row['physical_HTTP_attempts'], 1)
+                self.assertEqual(row['native_api']['unresolved'], 1)
+                self.assertNotIn('result', row)
+            else:
+                self.assertEqual(row['result']['data'], [[2]])
+                self.assertTrue(row['result_release']['confirmed'])
+                self.assertEqual(row['physical_HTTP_attempts'], 5 if mode == 'unknown-recovered' else 4)
+                if mode == 'unknown-recovered':
+                    self.assertEqual(row['native_api']['unresolved'], 1)
+
+    def test_post_sink_encoding_or_persistence_failures_keep_primary_and_complete_raw_sink(self):
+        failure = RuntimeError('official evaluation failed')
+        from src.baselines.text.sembench_native_text import MovieFilterTask
+        with patch.object(MovieFilterTask, 'evaluate', side_effect=failure), \
+                patch.object(MovieFilterTask, 'encode_result', side_effect=TypeError('software encode failure')):
+            with self.assertRaises(RuntimeError) as caught:
+                self.invoke(mode='encoding')
+        self.assertIs(caught.exception, failure)
+        report = failure.query_report
+        self.assertEqual(len(self.supervisor.calls), 1)
+        self.assertEqual(failure.session_results[0].iloc[0,0], 2)
+        self.assertEqual(report['queries'][0]['result_encoding_error_type'], 'TypeError')
+        self.assertNotIn('quality', report['queries'][0])
+        self.assertTrue(report['queries'][0]['result_release']['confirmed'])
+        self.assertEqual(report['physical_HTTP_attempts'], 4)
+        original = driver._save_artifact
+        write_failure = OSError('software per-query report write failed')
+        def save(path, value, **options):
+            if path.name == 'driver.json':
+                raise write_failure
+            return original(path, value, **options)
+        with patch.object(driver, '_save_artifact', side_effect=save):
+            with self.assertRaises(OSError) as caught:
+                self.invoke(mode='write-failure')
+        self.assertIs(caught.exception, write_failure)
+        report = write_failure.query_report
+        self.assertEqual(len(self.supervisor.calls), 1)
+        self.assertEqual(report['queries'][0]['result']['data'], [[2]])
+        self.assertEqual(report['queries'][0]['status'], 'failed')
+        self.assertNotIn('quality', report['queries'][0])
+
+    def test_finite_allowance_is_checked_before_requests_and_missing_gold_precedes_budget(self):
+        from src.baselines.text.sembench_native_text import MovieFilterTask
+        with patch.object(MovieFilterTask, 'requests', side_effect=AssertionError('no request allocation')) as requests:
+            with self.assertRaisesRegex(ValueError, 'remaining HTTP allowance') as caught:
+                self.invoke(mode='too-small', config=dict(self.config(), max_http_attempts=3))
+        requests.assert_not_called()
+        self.assertEqual(self.supervisor.calls, [])
+        self.assertEqual(caught.exception.query_report['physical_HTTP_attempts'], 0)
+        config = dict(self.config(), query='Q10', movies_csv=str(self.root/'missing-Movies.csv'))
+        with self.assertRaises(FileNotFoundError) as caught:
+            self.invoke(mode='missing-gold', config=config)
+        self.assertEqual(self.supervisor.calls, [])
+        self.assertFalse((self.output/'physical-budget.sqlite').exists())
+        self.assertEqual(caught.exception.query_report['queries'], [])
+
+    def test_attached_CLI_checks_explicit_schema_without_worker_or_budget_and_requires_same_layout(self):
+        path = self.root/'attached-config.json'
+        write_private_json(path, self.config())
+        output = self.root/'unused'
+        with patch.dict(os.environ, CPU_DAFT_SESSION_BASE='http://localhost:18473/v1',
+                        CPU_DAFT_SESSION_KEY='software-key'), \
+                patch.object(driver, 'run_attached_session', side_effect=AssertionError('no native execution')):
+            for action in ('check','attached-session'):
+                with self.subTest(action=action), redirect_stdout(StringIO()) as stream:
+                    self.assertEqual(driver.main([action,'--config',str(path),'--output-dir',str(output)]), 0)
+                self.assertEqual(json.loads(stream.getvalue())['schema'], driver.ATTACHED_SCHEMA)
+            for change in (dict(max_http_attempts=7), dict(engine_kwargs=dict(tensor_parallel_size=1)),
+                           dict(sampling_params=dict(n=1,response_format=dict(type='json_object'),stream=True))):
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    driver.check_attached_session(dict(self.config(), **change))
+        self.assertFalse(output.exists())
+        rows = [dict(call_id=str(i), messages=[dict(role='system',content=system),dict(role='user',content='text')])
+                for i, system in enumerate(('zebra','impala'))]
+        with self.assertRaisesRegex(ValueError, 'one static system'):
+            driver._attached_layout(rows)
+
+    def test_fresh_attached_driver_and_actual_worker_forbid_LOTUS_and_engines_through_official_score(self):
+        program = IMPORT_GUARD + r'''
+import json
+from src.experiments.sembench_native_daft import run_attached_session
+from src.infrastructure.private_artifacts import read_json
+from tests.experiments.test_sembench_native_daft import SoftwareSupervisor,ATTACHED_WORKER
+report=run_attached_session(read_json(sys.argv[1]),sys.argv[2],model_python=sys.executable,
+ supervise=SoftwareSupervisor(program=ATTACHED_WORKER))
+assert not forbidden
+assert not [name for name in sys.modules if name.startswith(('lotus','daft','vllm','torch','transformers'))
+ or name=='src.experiments.native_daft_sembench' or name.startswith('src.semantic_methods.lotus')]
+print(json.dumps(dict(status=report['status'],scores=[q['quality']['original_metric'] for q in report['queries']],
+ forbidden_import_attempts=forbidden,actual_models=0,native_SDK_executed=False)))
+'''
+        config = self.root/'fresh.json'
+        write_private_json(config, self.config())
+        result = subprocess.run([sys.executable,'-B','-c',program,str(config),str(self.root/'fresh')],
+            capture_output=True,text=True,env=dict(os.environ,PYTHONPATH=CODE,
+                CPU_DAFT_SESSION_BASE='http://localhost:18473/v1',CPU_DAFT_SESSION_KEY='software-key'),timeout=45)
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        value = json.loads(result.stdout.splitlines()[-1])
+        self.assertEqual(value['status'], 'completed')
+        self.assertEqual([score['absolute_error'] for score in value['scores']], [0,0])
+        for index in (1,2):
+            imports = read_json(self.root/'fresh'/('query-'+str(index))/'native-worker/fixture-imports.json')
+            self.assertEqual(imports['forbidden_import_attempts'], [])
+            self.assertEqual(imports['actual_models'], 0)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,30 @@
+{
+  "schema": "semloom.sembench_native_daft_attached_session.v1",
+  "sembench_checkout": "<SEMBENCH_C814_CHECKOUT>",
+  "reviews_csv": "<FROZEN_MOVIE_REVIEWS_CSV>",
+  "query": "Q8",
+  "query_id": "NATIVE-DAFT-ATTACHED-UNIQUE-SESSION-ID",
+  "model": "<SERVED_MODEL_ID>",
+  "sampling_params": {
+    "n": 1,
+    "response_format": {
+      "type": "json_object"
+    },
+    "temperature": 0,
+    "max_tokens": 128
+  },
+  "engine_kwargs": {},
+  "provider_options": {
+    "max_retries": 0,
+    "timeout": 60
+  },
+  "native_openai": {
+    "base_url_env": "SEMLOOM_DAFT_OPENAI_BASE_URL",
+    "api_key_env": "SEMLOOM_DAFT_OPENAI_API_KEY"
+  },
+  "max_http_attempts": 4096,
+  "session_timeout_s": 180,
+  "query_timeout_s": 60,
+  "cleanup_s": 15,
+  "stop_grace_s": 3
+}
