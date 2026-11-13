@@ -19,7 +19,7 @@
 | 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 文件输入与公共 CLIP 实现 |
 | CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[软件检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
 | LOTUS＋Daft完整查询 | [worker／监督入口](../src/experiments/native_daft_query.py) | 原题／LOTUS语义；本地字符串provider或外部服务图像profile；[配置与调用](#native-daft-prepared-worker) |
-| 独立原生Ray／Daft文本任务 | [Ray](../src/experiments/sembench_native_ray.py)、[Daft](../src/experiments/sembench_native_daft.py) | Movie Q1–Q4 Filter、Q8／显式Q9／Q10 Map统一语义工程对照，原评分，无LOTUS提示／解析；[调用](#independent-native-text-runners) |
+| 独立原生Ray／Daft文本任务 | [Ray](../src/experiments/sembench_native_ray.py)、[Daft](../src/experiments/sembench_native_daft.py) | Movie Filter／Map／Q5–Q7 exact pair Join统一语义工程对照，原评分，无LOTUS提示／解析；[调用](#independent-native-text-runners) |
 | DuckDB＋作者IMLane Q3 | [构建／接线](../integrations/imlane_duckdb/README.md)、[软件CPU](../src/experiments/native_imlane_query.py)、[模型worker](../src/experiments/native_imlane_model_query.py) | 作者SQL／Arrow；模型worker拥有独立baseline服务，software CLI不会启动模型 |
 | 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) | [格式／NA 说明](analysis/OFFLINE_RESULTS.md) |
 | 准确历史树恢复 | [materialize_native_baseline.py](experiments/materialize_native_baseline.py) | 只还原与核验，不运行模型 |
@@ -63,7 +63,7 @@ request_budget是已claim的永久额度。名称中的Map是既有运输schema�
 ## 独立原生文本任务 runner
 
 [Ray模板](../configs/sembench_native_ray.example.json)和[Daft模板](../configs/sembench_native_daft.example.json)
-通过同一任务工厂绑定Movie Q1–Q4 Filter、Q8分类Map、显式Q9评分Map和Q10分组平均；
+通过同一任务工厂绑定Movie Q1–Q4 Filter、Q5–Q7 exact pair Join、Q8分类Map、显式Q9评分Map和Q10分组平均；
 原题的目标、源顺序、最终关系和评分保留，项目JSON提示／解析独立于LOTUS。
 身份为“统一语义工程对照”，不称作者原版。示例128次预算与128输出token只作显式配置示例，正式运行按输入与模型声明。
 Q8配置`query="Q8"`，Q9须同时声明`query="Q9"`与`ranking="map"`；其他题不给ranking，TopK不从此获得支持。
@@ -72,6 +72,9 @@ Q10声明`query="Q10"`、`movies_csv="<FROZEN_MOVIES_CSV>"`并省略ranking；�
 再沿原groupby／两位小数舍入形成完整电影关系。两类任务统一的`prepare_evaluation()`在模型／扣额／source计时前
 冻结Q10的Movies.csv字节及`id/audienceScore`列，缺文件／列立即失败；原评分只消费该快照，不重读gold。
 其他题不给movies_csv。金标不是模型输入，也不作为Q10查询的Reviews读取或物化成本。
+Q5–Q7沿同一配置选择题号：完整N²有向配对含self／重复reviewId，随后才按原ID不等过滤，Q5/Q6最后取10项、Q7保留全部。
+这是项目exact JSON pair算法，原生API拥有推理／调度，不称作者高层Join方法。check及run均用轻量`model_request_count(source)`
+在构造N²消息前检查实际有限额度；不足不分配配对消息、不调用模型，不按N(N−1)、唯一文本或LIMIT估预算。
 
 ```bash
 PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_ray check --config "$RAY_CONFIG"

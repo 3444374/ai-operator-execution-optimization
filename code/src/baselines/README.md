@@ -221,6 +221,8 @@ Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不�
 [独立任务层](text/sembench_native_text.py)定义Movie Filter／Map的源、条件、最终关系和原官方评分，
 同类算子共用项目JSON提示／解析，不导入LOTUS SDK、提示构造器或解析代码。
 Q1/Q2在全部合格源行完成Filter后取原顺序前五项；Q3为COUNT，Q4为原分母上的比例。
+Q5–Q7共用exact JSON pair任务：先完成含self／重复ID的N²有向配对，按True序列恢复Join索引后再去等ID，
+Q5/Q6最后head10，Q7完整；方向、重复与索引空洞保留，原Q5五列／Q6Q7零列空结果不统一改写。
 Q8保留taken_3分类计数、补零及排序；Q9须显式选择Map，保留完整评分关系、合法小数及原数值默认3的后处理。
 Q10复用同一评分Map处理全部物理源行，沿原pandas分组、Python平均与两位舍入；空源及全空id的原不同结果形态保留。
 无效JSON结构仍按项目语义合同失败；Q8/Q9各有独立提示身份，均不冒称原LOTUS formatter／parser。
@@ -230,6 +232,8 @@ Q10复用同一评分Map处理全部物理源行，沿原pandas分组、Python�
 每个系统一个runner：[Ray](../experiments/sembench_native_ray.py)使用公开LLM processor／原生AsyncLLM，
 [Daft](../experiments/sembench_native_daft.py)使用内置`vllm-prefix-caching`图和既有隔离worker／ACK关闭。
 两者只共享任务工厂、评分和观测工具；新增Map无需新增执行器，系统仍拥有批处理、调度及模型执行，没有逐题runner。
+所核固定版本公开AI接点提供生成／结构输出，未提供对应作者级语义Join／Aggregate／TopK算法；
+这里的pair predicate明确为项目exact工程方法，不把普通join/groupby/sort加prompt称作作者原算法。
 配置与CPU检查／显式运行命令见[脚本入口](../../scripts/README.md#independent-native-text-runners)。
 生成参数和预算必须显式声明，JSON约束来自本工程对照合同，不能套给LOTUS原Filter。
 Q10另显式给Movies.csv供原评分；两系统调用同一任务准备接口，在source计时和模型启动前冻结gold，
@@ -238,9 +242,11 @@ sink后评价只使用快照及其字节摘要，不让gold进入模型消息或
 独立时钟`native_ray.source_to_sink.v1`／`native_daft.source_to_sink.v1`包含fresh CSV、项目消息、
 原生冷启动／预测、严格解析及完整内存sink；各自同步观测／packet I/O仍披露，最终关闭、源审计、
 原评分及结果持久化在后。失败保留已完成结果及原异常，不留成功质量标签。
-[独立软件验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)已通过，模型调用为0；原生框架整图、真实模型、质量、物理退出及性能仍待目标验收。
+[独立软件验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)只授予其零模型范围；
+后续[7fb4 Q8](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q8-7fb4-model)已完成两系统原生图、120次真实模型及独立物理清理，其他原题／后续候选、warm与正式性能仍分别待验。
 [后续Map组合验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-map-runners)保留具体提示身份、原后处理、完整空表及失败来源，不与前批计数累加。
 [Q10分组与gold边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-q10-runners)复用同一原生图，不增加题目专用runner。
+[Join与计时组合](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-join-resident-accounting)记录完整配对、提前预算检查和resident统计后移；只授予其实际软件范围。
 现有Ray外部HTTP Q3继续保留其外部模型所有权，身份更正为LOTUS-compatible工程路径，不能重复统计为独立原生语义baseline。
 
 <a id="ray-native-prepared-sembench"></a>
@@ -371,6 +377,12 @@ PYTHONHASHSEED=3 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code "$DRIVER_PYTHON" -B \
 以及实际 generation/resources/profile；真实路径保存在仓库外。模型文件列表应列全实际权重、索引和配置，
 不能只填写示例的单个占位项。`occurrences_sha256` 由现有原查询的 `occurrence_digest` 产生。
 永久 SQLite 的各轮单位须由调用方预留且未被领取；worker 逐轮领取，失败不退还，结束后关闭该单位。
+
+resident F/M/E现显式延迟完整binding／LM统计，完整query sink之后、owner关闭之前只汇总一次；
+默认cold和其他borrowed stage调用不变。原后处理或后验统计失败仍保留原异常、已完成结果与晚到成本。
+已核固定可达原题未原地改写返回关系的既有值缓冲区，浅快照隔开新增列／重命名并保留原中间schema，免除整表值复制；
+没有修改pandas COW。真实请求身份／预算、原SDK工作与轻快照仍在区间，旧a110成绩不回填或扣减，
+具体范围见[计时收尾](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-join-resident-accounting)。
 
 原 stage 可借用 owner，成功或失败均由外层生命周期负责最终关闭；原 isolated 调用仍自行关闭。
 source→完整 sink 与最早脚本事件→sink、监督器 Popen 前事件→sink 分列；模型实际 ready、首原生提交、

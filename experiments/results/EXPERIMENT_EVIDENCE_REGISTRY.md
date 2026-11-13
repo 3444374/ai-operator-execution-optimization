@@ -98,6 +98,16 @@ Q8虽旧receipt标v3，仍含中间relation深拷贝／stage统计；Q10独立se
 共同任务准备在模型／扣额／source计时前冻结Movies金标，评分只消费快照；缺gold提前失败，模型消息无标签。
 三个受影响模块56个不同软件方法全部通过、0模型／GPU；包括前45项，不累加。真实Q10模型／质量／物理退出仍待验。
 
+[独立Join与resident统计后移](diagnostics/sembench_native_integration_20261112/README.md#native-join-resident-accounting)
+同一任务／runner接Q5–Q7完整N²后过滤与LIMIT，消息构造前统一计数；不称作者Join算法。
+resident F/M/E完整统计移到fullsink后，保留原失败／晚到成本；浅schema快照以真实原题验证，必要记账仍在内。
+干净组合五模块115个不同方法全部通过、0模型／GPU，含73个独立任务与42个resident方法；不累加先前／分任务计数，目标待验。
+
+[7fb4独立原生Q8模型](diagnostics/sembench_native_integration_20261112/README.md#native-q8-7fb4-model)
+同2000源、两系统各120真实终态，原始JSON及解析sentiment逐行相同；官方计数误差4.0431%，额外正确113／120。
+1669份payload、1158源码blob与原生事件／独立清理已核，首次辅助失败保留；无warm／正式排名。
+Daft未保存完整token ID数组，不能由原文一致推其token IDs相同；原vLLM版本／启动及内部I/O差异保持，不授予其他题或新计时路径资格。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

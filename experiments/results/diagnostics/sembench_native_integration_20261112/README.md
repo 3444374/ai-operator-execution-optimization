@@ -1263,6 +1263,68 @@ c814原评价允许该合法最大结果获得F1=1；不把它解读为逐图全
 后续仅修私有核对，不改query／模型原答／金标／评分。两项模型、事后audit和归档阶段的owned进程、
 GPU空闲、socket／SHM及租约清理均有实际通过回执。
 
+<a id="native-join-resident-accounting"></a>
+## 独立 exact pair Join 与 resident 统计后移
+
+在`f83b2cc9ae292a202b36f0094fbcaf9e0ab3b25c`干净导出上整合两项互不覆盖的修改。
+独立Ray／Daft的同一任务工厂增加`MovieJoinTask`，覆盖原Movie Q5同情感、Q6/Q7相反情感。
+所有题都筛选原Ant-Man电影关系，先完成left-major／right-minor的N²有向配对，含self与重复ID；
+只在全部预测后按True序列重建Join索引、移除相同reviewId，Q5/Q6再head10，Q7完整返回。
+方向、重复与索引空洞保持；非空实际三列，空Q5为原五列object表、Q6/Q7为原零列表，
+不按原docstring的错误列名或金标set去重改执行。原评分可无向化／去重，这不减少模型工作。
+
+新`model_request_count(source)`只做N或N²整数运算，不构造消息、不计算SHA；两个run与check共用，
+在消息展开前按本次鲜读源核有限预算。N=1仍需一次请求，不用N(N−1)、唯一文本或LIMIT代替。
+pair消息只含左右reviewText，沿项目严格JSON keep布尔解析；原题源／关系／评分保留，
+方法身份明确为`project exact Cartesian scalar pair predicate`，不是作者级Native Join或LOTUS Join。
+实际生成、批处理及调度仍由原生API拥有，没有新executor／调度器或逐题runner。
+
+LOTUS resident的F/M/E复用既有Join延迟记账模式：完整binding／LM／ready快照统计在full sink后只汇总一次；
+真实请求身份、预算与READY观察时点不移。默认cold及其他borrowed stage调用保留同步合同。
+原后处理失败也在owner close前记账；统计失败仍保存已完成结果，原异常及close阶段晚到成本继续留证，
+私有binding／LM引用在序列化前移除，不跨下一query悬挂。
+中间关系改为`copy(deep=False)`只冻结schema，不复制整表值缓冲区。
+已查固定resident可达原题无既有值缓冲区的原地写；E-Commerce Q7真实原函数新增id列、
+MMQA Q4对另造分组表rename，Movie评分构造新结果，均不需要深复制。真实Q7测试核旧schema与shares_memory，未改COW策略。
+必要provider记账、轻快照与SDK本身工作仍在区间，不能称完全无观测成本；旧a110时长不扣减、不回填。
+
+最终十个源／测试文件叠加后的五个完整模块115个不同软件方法全部通过、0skip／模型／GPU。
+其中独立任务／Ray／Daft73项，resident stage／driver42项；包括既有回归，不与分任务40／6／42或前56项累加。
+结果SHA-256为`af62265073aa4236cf6b4ece17cb565ec2d5f8342e468e803dc024bc0951fdc1`。
+Join首个新fixture误读原metric键f1而非f1_score，修测试后原评分不变；resident首次参数顺序断言
+在base也复现，只修为核所需CLI标志／真实data-dir，不改CLI迎合测试，首次输出均保留。
+新Join模型与当前计时路径的Linux／模型／真实秒数尚未验，不转授7fb4 Q8或旧a110成绩。
+
+<a id="native-q8-7fb4-model"></a>
+## 7fb4 独立原生 Ray／Daft Q8 真实模型
+
+运行`native-ray-daft-q8-7fb4ad-qualification-20261113-r1`冻结在
+`7fb4adca49c0d6fcdfabf6787f31c1eef4aa9382`。两边使用同一原2000×11 CSV与完整120个taken_3发生项，
+119个唯一消息仍执行120次；项目提示profile为`semloom.native_text_map.sentiment_json.v1`，
+无LOTUS提示／parser依赖，身份是“统一JSON工程对照”。各120实际native终态、unknown／retry／额外推理warmup为0，
+永久预算均完整扣除并关闭；原始生成JSON文本及解析sentiment逐行120／120相同。
+两边结果均NEG107／POS13，原gold106／14，官方relative_error0.04043126684636118；
+额外逐行诊断正确113／120，计数误差不能当分类准确度。它与上节LOTUS Q8的105／15是不同语义来源，不能因相同误差合为同一结果。
+
+| 冻结原生路径 | cold fresh source→完整内存sink | 原生版本与口径 |
+|---|---:|---|
+| Ray Data | 78.597339925秒，`native_ray.source_to_sink.v1` | Ray2.56.1／vLLM0.22.0；实际原生启动、必要读取、预算及同步observer写入在内 |
+| Daft | 59.122346378秒，`native_daft.source_to_sink.v1` | Daft0.7.21／vLLM0.25.1；实际原生启动、chat template、packet／digest／IPC及native写入在内 |
+
+两边均绑定Qwen2.5-7B-Instruct同一权重revision `a09a35458c702b33eeacc393d103063234e8bc28`，
+BF16／context32768／prefix cache开启已有相应实际回执。模型从已核本地文件加载，原生revision实参仍为None，
+不冒称远程revision参数被显式传入。声明生成n1／8192 token／temperature0／top_p1／seed0／空stop及原惩罚参数保留；
+逻辑API usage两边均14315／1080／15395。各自原生processor／容量与线程观察范围保留，不能声称超出已测字段的严格配置身份。
+Ray保存实际完整输入／输出token数组；Daft保存实际prompt SHA、token长度及输出SHA而未保存完整数组，
+不能由原文相同推断两边token IDs完全相同。kernel、纯GPU时长、成本仍未知。
+外层监督总时长、sink后关闭及审计单列，没有相减构造统一成绩；本轮没有warm或正式性能排名。
+
+私有归档1669个payload与1158源码Git blob、3个c814参考源码及执行packet／bundle均逐件核验，
+本接入会话没有复跑模型或评分。核验摘要SHA-256为`817b68f83153a7e5975d38a2885f091bdac8aa4a7ca6c896d30a4b7034c3b6c1`。
+首次CPU五项未绑定／私有序列化、SDK builder误触runtime初始化保护、bundle及两次archive失败原件保持；
+只复核缺项，最终45个不同CPU方法通过。query内部physical exit仍不明，独立host guard补证owned进程、
+GPU空闲、socket／SHM及租约释放通过；这些结果不授予Join、Q10或后续候选整体模型资格。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -1297,6 +1359,7 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | a1105 IMLane Q7参考恢复包 | 3683997 | 1492 | `0cae1fa63714d42c8ac671c0cec38de62038b5e07681df60470240ecc6560c2c` |
 | a1105 LOTUS Movie Q8首／暖轮 | 4256954 | 1315 | `5a4c447d64fa58ce56a66abb584640bcfe0020bb604d5811d7ad728e873017b4` |
 | a1105 LOTUS Animals Q10参考恢复包 | 3110267 | 1370 | `e45b1773729537c2a97155837a4d601388a5cca0e9735b3dd604e86fdcc4efcc` |
+| 7fb4 独立原生Ray／Daft Movie Q8 | 3738751 | 1669 | `e1e87b4b76bf6e8c763440ca61c06b0335a21f5720068ca3e0ae5a21cf535659` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。
