@@ -1,0 +1,300 @@
+"""Independent task/sink with a real supervised software child, no native SDK/model."""
+
+from contextlib import redirect_stdout
+from copy import deepcopy
+import csv
+import importlib.util
+from io import StringIO
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+from unittest.mock import patch
+
+from src.experiments import native_daft_query, sembench_native_daft as driver
+from src.infrastructure.private_artifacts import new_private_directory, read_json, write_private_json
+
+
+CHECKOUT = os.environ.get('SEMLOOM_NATIVE_TEST_CHECKOUT')
+CODE = str(Path(__file__).resolve().parents[2])
+
+
+IMPORT_GUARD = r'''
+import importlib.abc,socket,sys
+forbidden=[]
+class NoSDK(importlib.abc.MetaPathFinder):
+ def find_spec(self,fullname,*args):
+  if (fullname.split('.')[0] in {'lotus','daft','vllm','transformers'}
+      or fullname=='src.baselines.text.sembench_text'
+      or fullname=='src.semantic_methods.lotus' or fullname.startswith('src.semantic_methods.lotus.')):
+   forbidden.append(fullname)
+   raise AssertionError('independent software fixture imported forbidden SDK/semantics: '+fullname)
+sys.meta_path.insert(0,NoSDK())
+def offline(event,args):
+ if event in ('socket.connect','socket.bind') and args[0].family in (socket.AF_INET,socket.AF_INET6):
+  raise RuntimeError('software fixture forbids INET connect/bind')
+sys.addaudithook(offline)
+'''
+
+
+CPU_WORKER = IMPORT_GUARD + r'''
+import json,time
+from pathlib import Path
+from src.experiments.native_daft_query import run_worker
+from src.infrastructure.private_artifacts import read_json,write_private_json
+config,directory,mode=read_json(sys.argv[1]),Path(sys.argv[2]),sys.argv[3]
+def execute(rows,**options):
+ write_private_json(directory/'fixture-start.json',dict(role='software predictions; no native SDK/model',started_ns=time.monotonic_ns()))
+ predictions=[]
+ for row in rows:
+  options['before_generate'](row['call_id'],'software-'+row['call_id'],row['prompt'])
+  messages=json.loads(row['prompt'])
+  text=json.loads(messages[1]['content'])['text']
+  generated=json.dumps({'keep':text.startswith('good')}) if mode!='invalid' else '{"keep":"true"}'
+  predictions.append(dict(call_id=row['call_id'],generated_text=generated))
+ if mode=='missing':predictions.pop()
+ result=dict(predictions=predictions,metadata=dict(result_ready_monotonic_ns=time.monotonic_ns(),
+  native_api=dict(role='software fixture',generate_calls=len(rows),accepted=len(rows),final_events=len(rows),unresolved=0,errors=[]),model_close_receipt=None))
+ options['on_result_ready'](result)
+ close=dict(status='closed',role='software fixture, not a model shutdown',close_started_monotonic_ns=time.monotonic_ns())
+ write_private_json(directory/'fixture-close.json',close)
+ result['metadata']['model_close_receipt']=close
+ if mode=='close-error':
+  error=RuntimeError('software worker close failure')
+  error.model_close_report=dict(close,status='unknown')
+  raise error
+ return result
+try:run_worker(config,directory,execute_query=execute)
+finally:write_private_json(directory/'fixture-imports.json',dict(forbidden_import_attempts=forbidden,real_native_SDK=False,actual_models=0))
+'''
+
+
+class SoftwareSupervisor:
+    """Real prepared-worker ACK owner; observe one known software child only."""
+    def __init__(self, mode='success'):
+        self.mode, self.calls = mode, []
+
+    def __call__(self, config, directory, **options):
+        from src.experiments import lotus_records_supervisor as processes
+        self.calls.append((Path(config), Path(directory)))
+        def launch(command, output, **kwargs):
+            # The host sandbox denies global psutil/sysctl process enumeration.
+            # This fixture observes its Popen child, not host/GPU/tree cleanup.
+            new_private_directory(output)
+            fixture_command = [sys.executable, '-B', '-c', CPU_WORKER, str(config), str(directory), self.mode]
+            process = subprocess.Popen(fixture_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            deadline = time.monotonic() + kwargs['timeout_s']
+            try:
+                while True:
+                    kwargs['monitor'](())
+                    if process.poll() is not None:
+                        if process.returncode:
+                            raise RuntimeError('CPU software worker failed; see fixture-worker.log')
+                        return dict(status='CPU software child exited', scope='one known Popen child; tree/GPU unverified',
+                                    known_child_exit_confirmed=True, worker_exit=process.returncode)
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError('CPU software child exceeded its finite allowance')
+                    time.sleep(.005)
+            finally:
+                try:
+                    process.wait(timeout=kwargs['grace_s'])
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=kwargs['grace_s'])
+                raw, _ = process.communicate(timeout=kwargs['grace_s'])
+                from src.infrastructure.redact import redact_text
+                (Path(directory) / 'fixture-worker.log').write_text(redact_text(raw))
+        with patch.object(processes, 'supervise', side_effect=launch):
+            return native_daft_query.supervised_run(config, directory, **options)
+
+
+class SoftwareTokenizer:
+    def __init__(self):
+        self.messages = []
+
+    def apply_chat_template(self, messages, *, tokenize, add_generation_prompt):
+        assert tokenize is False and add_generation_prompt is True
+        self.messages.append(deepcopy(messages))
+        return json.dumps(messages, ensure_ascii=False)
+
+
+@unittest.skipUnless(CHECKOUT and all(importlib.util.find_spec(name) for name in ('pandas','duckdb','cdlib')),
+                     'requires the pinned SemBench checkout and existing CPU evaluator dependencies')
+class IndependentDaftQueryTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.csv = self.root / 'Reviews.csv'
+        rows = [('taken_3','r0','good duplicate','POSITIVE'), ('taken_3','r1','bad','NEGATIVE'),
+                ('other','r2','good other','POSITIVE'), ('taken_3','r3','good duplicate','POSITIVE'),
+                ('other','r4','good four','POSITIVE'), ('other','r5','good five','POSITIVE'),
+                ('other','r6','good six','POSITIVE'), ('taken_3','r7','','NEGATIVE')]
+        self.write_rows(rows)
+
+    def write_rows(self, rows):
+        with self.csv.open('w', newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerow(('id','reviewId','reviewText','scoreSentiment'))
+            writer.writerows(rows)
+
+    def config(self, query='Q3'):
+        return dict(schema=driver.SCHEMA, sembench_checkout=CHECKOUT, reviews_csv=str(self.csv),
+            query=query, query_id='native-daft-' + query, model='software-no-model',
+            sampling_params=dict(n=1, response_format=dict(type='json_object'), max_tokens=32, temperature=0),
+            engine_kwargs={}, provider_options={}, query_timeout_s=15, cleanup_s=4,
+            stop_grace_s=.5, max_model_calls=8)
+
+    def invoke(self, query='Q3', mode='success'):
+        self.tokenizer, self.supervisor = SoftwareTokenizer(), SoftwareSupervisor(mode)
+        self.output = self.root / ('run-' + query + '-' + mode)
+        return driver.run_query(self.config(query), self.output, model_python=sys.executable,
+                                tokenizer=self.tokenizer, supervise=self.supervisor)
+
+    def test_one_filter_family_reaches_complete_officially_scored_sinks_before_ACK_close(self):
+        expected = {'Q1':[['r0'],['r2'],['r3'],['r4'],['r5']], 'Q2':[['r0'],['r3']],
+                    'Q3':[[2]], 'Q4':[[.5]]}
+        for query in expected:
+            with self.subTest(query=query):
+                report = self.invoke(query)
+                self.assertEqual(report['status'], 'completed')
+                self.assertEqual(report['result']['data'], expected[query])
+                requests = 8 if query == 'Q1' else 4
+                self.assertEqual(report['physical_attempts_reserved'], requests)
+                self.assertEqual(report['logical_model_requests'], requests)
+                self.assertEqual(report['task']['comparison_identity'], '统一语义工程对照')
+                self.assertFalse(report['author_original_semantic_method'])
+                self.assertEqual(report['query_clock_version'], 'native_daft.source_to_sink.v1')
+                self.assertEqual(report['source_to_sink_seconds'],
+                    (report['sink_ready_ns'] - report['source_start_ns']) / 1e9)
+                worker = self.output / 'native-worker'
+                close, terminal = read_json(worker / 'fixture-close.json'), read_json(worker / 'worker.json')
+                self.assertLessEqual(report['preflight_finished_ns'], report['source_start_ns'])
+                self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
+                self.assertLessEqual(terminal['result_release']['released_monotonic_ns'], close['close_started_monotonic_ns'])
+                self.assertLessEqual(close['close_started_monotonic_ns'], report['source_audit_started_ns'])
+                self.assertLessEqual(report['sink_ready_ns'], report['evaluation_started_ns'])
+                self.assertTrue(terminal['result_release']['confirmed'])
+                self.assertEqual(read_json(worker / 'fixture-imports.json')['forbidden_import_attempts'], [])
+                self.assertTrue(report['supervision']['known_child_exit_confirmed'])
+                self.assertEqual(report['supervision']['worker_exit'], 0)
+                self.assertIsNone(report['physical_gpu_exit_confirmed'])
+                metric = report['quality']['original_metric']
+                self.assertEqual(metric['f1_score'] if query in ('Q1','Q2') else metric['absolute_error'],
+                                 1 if query in ('Q1','Q2') else 0)
+                self.assertNotIn('scoreSentiment', json.dumps(self.tokenizer.messages))
+                self.assertNotIn('POSITIVE', json.dumps(self.tokenizer.messages))
+                prompts = read_json(self.output / 'prepared-prompts.json')['requests']
+                self.assertEqual(len(prompts), requests)
+                self.assertEqual(len({row['call_id'] for row in prompts}), requests)
+
+    def test_zero_occurrences_keep_the_real_empty_sink_without_a_worker(self):
+        self.write_rows([('other','outside','good outside','POSITIVE')])
+        supervise = SoftwareSupervisor()
+        output = self.root / 'empty'
+        report = driver.run_query(self.config('Q3'), output, model_python=sys.executable,
+                                  tokenizer=SoftwareTokenizer(), supervise=supervise)
+        self.assertEqual(report['result']['data'], [[0]])
+        self.assertEqual(report['physical_attempts_reserved'], 0)
+        self.assertIsNone(report['model_ready_before_source'])
+        self.assertIsNone(report['model_startup_seconds'])
+        self.assertEqual(supervise.calls, [])
+        self.assertFalse((output / 'native-worker').exists())
+        self.assertGreaterEqual(report['source_to_sink_seconds'], 0)
+
+    def test_strict_parser_and_occurrence_failure_remain_failed_and_release_the_worker(self):
+        for mode in ('invalid','missing'):
+            with self.subTest(mode=mode), self.assertRaises(ValueError) as error:
+                self.invoke(mode=mode)
+            report = error.exception.query_report
+            self.assertEqual(report['status'], 'failed')
+            self.assertIsNone(report['sink_ready_ns'])
+            self.assertNotIn('quality', report)
+            self.assertEqual(report['physical_attempts_reserved'], 4)
+            self.assertTrue((self.output / 'native-worker/result-release.json').exists())
+
+    def test_close_failure_preserves_completed_sink_without_claiming_success(self):
+        with self.assertRaises(RuntimeError) as error:
+            self.invoke(mode='close-error')
+        report = error.exception.query_report
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(report['result']['data'], [[2]])
+        self.assertIsNotNone(report['source_to_sink_seconds'])
+        self.assertNotIn('quality', report)
+        self.assertEqual(report['physical_attempts_reserved'], 4)
+
+    def test_budget_and_configuration_rejections_precede_native_work(self):
+        config = self.config()
+        for change in (dict(schema='semloom.native_daft_sembench.v1'),
+                       dict(sampling_params=dict(n=1)),
+                       dict(sampling_params=dict(n=True,response_format=dict(type='json_object'))),
+                       dict(provider_options=dict(num_gpus=1))):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                driver.check(dict(config, **change))
+        config['max_model_calls'] = 1
+        supervise = SoftwareSupervisor()
+        with self.assertRaisesRegex(ValueError, 'finite native budget') as error:
+            driver.run_query(config, self.root / 'budget', model_python=sys.executable,
+                             tokenizer=SoftwareTokenizer(), supervise=supervise)
+        self.assertEqual(error.exception.query_report['physical_attempts_reserved'], 0)
+        self.assertEqual(supervise.calls, [])
+
+    def test_report_write_failure_keeps_the_completed_sink_and_original_exception(self):
+        original = driver._save_artifact
+        failure = OSError('software final report write failed')
+        def write(path, value, **options):
+            if path.name == 'driver.json':
+                raise failure
+            return original(path, value, **options)
+        with patch.object(driver, '_save_artifact', side_effect=write):
+            with self.assertRaises(OSError) as raised:
+                self.invoke()
+        self.assertIs(raised.exception, failure)
+        report = raised.exception.query_report
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(report['result']['data'], [[2]])
+        self.assertNotIn('quality', report)
+        self.assertEqual(report['physical_attempts_reserved'], 4)
+
+    def test_CLI_run_without_execution_flag_checks_only_and_allocates_no_output(self):
+        config = self.root / 'config.json'; write_private_json(config, self.config())
+        output = self.root / 'not-created'
+        for action in ('check','run'):
+            with self.subTest(action=action), redirect_stdout(StringIO()) as stream:
+                self.assertEqual(driver.main([action,'--config',str(config),'--output-dir',str(output)]), 0)
+            self.assertFalse(json.loads(stream.getvalue())['execution_enabled'])
+        self.assertFalse(output.exists())
+
+    def test_fresh_driver_and_worker_forbid_LOTUS_through_the_complete_official_score(self):
+        config = self.root / 'isolated-config.json'; write_private_json(config, self.config())
+        output = self.root / 'isolated'
+        program = IMPORT_GUARD + r'''
+import json
+from src.experiments.sembench_native_daft import run_query
+from src.infrastructure.private_artifacts import read_json
+from tests.experiments.test_sembench_native_daft import SoftwareTokenizer,SoftwareSupervisor
+report=run_query(read_json(sys.argv[1]),sys.argv[2],model_python=sys.executable,
+ tokenizer=SoftwareTokenizer(),supervise=SoftwareSupervisor())
+print(json.dumps(dict(status=report['status'],result=report['result'],quality=report['quality'],
+ forbidden_import_attempts=forbidden,loaded_forbidden=[name for name in sys.modules if name=='lotus'
+ or name.startswith('lotus.') or name=='src.baselines.text.sembench_text'
+ or name=='src.semantic_methods.lotus' or name.startswith('src.semantic_methods.lotus.')],
+ actual_models=0,native_SDK_executed=False)))
+'''
+        result = subprocess.run([sys.executable,'-B','-c',program,str(config),str(output)],
+            capture_output=True,text=True,env=dict(os.environ,PYTHONPATH=CODE),timeout=45)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        value = json.loads(result.stdout.splitlines()[-1])
+        self.assertEqual(value['status'], 'completed')
+        self.assertEqual(value['forbidden_import_attempts'], [])
+        self.assertEqual(value['loaded_forbidden'], [])
+        self.assertEqual(value['result']['data'], [[2]])
+        self.assertEqual(value['quality']['original_metric']['absolute_error'], 0)
+
+
+if __name__ == '__main__':
+    unittest.main()

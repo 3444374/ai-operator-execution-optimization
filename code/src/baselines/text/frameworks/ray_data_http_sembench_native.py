@@ -1,4 +1,4 @@
-"""Movie Q3 through Ray's public HTTP processor and a caller-owned local service.
+"""Legacy LOTUS-compatible Q3 through Ray HTTP and a caller-owned local service.
 
 This is a separate topology from the local vLLMEngineProcessor. Ray owns its
 native HTTP stage, batching and retries; this binding never starts or stops the
@@ -99,6 +99,9 @@ def execute_q3(
         raise ValueError('native Q3 requires unique eligible source occurrence IDs')
     metadata = dict(
         backend='ray-data-http-native', workload_binding='project-sembench-movie-q3',
+        baseline_identity='lotus-compatible-ray-http-q3',
+        semantic_profile='project LOTUS 1.2.4 non-CoT compatible prompt/parser; not independent native semantics',
+        author_original_semantic_method=False,
         profile='ray-data-http-external-vllm',
         scheduler_owner='Ray Data native HTTP processor; external model service owns inference',
         requested_config=dict(url=url, model=model, sampling_params=deepcopy(sampling)),

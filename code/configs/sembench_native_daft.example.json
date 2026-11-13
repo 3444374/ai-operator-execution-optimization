@@ -1,0 +1,20 @@
+{
+  "schema": "semloom.sembench_native_daft.v1",
+  "sembench_checkout": "<SEMBENCH_C814_CHECKOUT>",
+  "reviews_csv": "<FROZEN_MOVIE_REVIEWS_CSV>",
+  "query": "Q3",
+  "query_id": "NATIVE-DAFT-MOVIE-Q3-UNIQUE-RUN-ID",
+  "model": "<LOCAL_MODEL_AND_TOKENIZER_DIRECTORY>",
+  "sampling_params": {
+    "n": 1,
+    "max_tokens": 128,
+    "temperature": 0,
+    "response_format": {"type": "json_object"}
+  },
+  "engine_kwargs": {},
+  "provider_options": {},
+  "max_model_calls": 128,
+  "query_timeout_s": 600,
+  "cleanup_s": 120,
+  "stop_grace_s": 8
+}
