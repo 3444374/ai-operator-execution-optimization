@@ -21,6 +21,7 @@ LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当�
 | SemBench 图像准备 | [check_sembench_image_query.py](scripts/experiments/check_sembench_image_query.py) | Animals、MMQA、E-Commerce、Cars和Medical已接视觉题的输入／预算检查；[实际资格](INFRA_STATUS.md)按路径区分 |
 | LOTUS CLIP 检索 | [run_lotus_image_retrieval.py](scripts/experiments/run_lotus_image_retrieval.py) | 原检索方法与明确的图像执行 owner |
 | DuckDB＋作者 IMLane Q3 | [构建与接线](integrations/imlane_duckdb/README.md) | 原SQL／UDF路径；软件、冻结模型来源与当前计时资格分列，v2仍含内部同步回执开销 |
+| LOTUS＋IMLane 完整原题 | [同一runner／配置](integrations/imlane_duckdb/README.md#lotus-original-query) | 原函数、多批SQL／ACK和原生多模态载体；原JSON阶段采样保留，代表查询软件检查，真实SQL／VLM按来源另验 |
 | 观测与有限测试 | [record_observation](scripts/profiling/record_observation/README.md) | 使用既有监督与回执，不增加执行容量 |
 
 命令与正常配置入口见[脚本说明](scripts/README.md)。输入、私有 packet、模型环境、GPU 租约和实际版本应由每次运行绑定，

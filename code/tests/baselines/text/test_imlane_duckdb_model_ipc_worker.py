@@ -98,6 +98,12 @@ class FakeEngine:
             raise self.shutdown_error
 
 
+def multimodal_prompt():
+    return dict(type='multimodal', prompt_token_ids=[0, 1, 1, 1, 1, 2], fixture_index=0,
+        mm_kwargs={'image': [object()]}, mm_hashes={'image': ['software-image-hash']},
+        mm_placeholders={'image': [SimpleNamespace(offset=1, length=4)]})
+
+
 class ModelWorkerTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix='imlane-ipc-', dir='/tmp')
@@ -168,6 +174,75 @@ class ModelWorkerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response['status'], 'failed')
         self.assertEqual(unit.attempts, 1)
         self.assertTrue(response['calls'][0]['attempted'])
+
+    async def test_native_multimodal_object_json_sampling_context_and_budget_are_preserved(self):
+        unit = self.bound_budget(1)
+        await self.start()
+        self.engine.release.set()
+        prompt = multimodal_prompt()
+        with self.assertRaises(TypeError):
+            json.dumps(prompt)
+        messages = [[dict(role='user', content=[dict(type='text', text='Describe the image'),
+            dict(type='image_url', image_url={'url': 'data:image/png;base64,AAAA'})])]]
+        sampling = dict(PARAMS, max_tokens=8189, structured_outputs={'json_object': True})
+        with patch.object(self.engine.renderer, 'render_chat_async', return_value=([], [prompt])) as render:
+            response = await self.call(self.request(1, messages_batch=messages, sampling_params=sampling))
+            self.assertEqual(response['status'], 'succeeded')
+            render.assert_awaited_once()
+            self.assertEqual(render.await_args.args[0], messages)
+            actual, effective, _, _ = self.engine.calls[0]
+            self.assertIs(actual, prompt)
+            self.assertIs(actual['mm_kwargs']['image'][0], prompt['mm_kwargs']['image'][0])
+            self.assertTrue(effective.structured_outputs.json_object)
+            call, = response['calls']
+            self.assertEqual(call['rendered_prompt_type'], 'multimodal')
+            self.assertEqual(call['rendered_prompt_fields'], sorted(prompt))
+            self.assertEqual(call['rendered_prompt_token_ids'], prompt['prompt_token_ids'])
+            self.assertEqual(call['usage'], dict(prompt_tokens=6, completion_tokens=1, total_tokens=7))
+            self.assertEqual((call['requested_max_tokens'], call['resolved_max_tokens']), (8189, 8189))
+            self.assertNotIn('mm_kwargs', call)
+            # Expanded image placeholders count toward the same native context.
+            oversized = await self.call(self.request(1, messages_batch=messages,
+                sampling_params=dict(sampling, max_tokens=8190)))
+            self.assertEqual(oversized['status'], 'failed')
+            self.assertFalse(oversized['calls'][0]['attempted'])
+            exhausted = await self.call(self.request(1, messages_batch=messages, sampling_params=sampling))
+        self.assertEqual(exhausted['calls'][0]['error_type'], 'BudgetExhausted')
+        self.assertFalse(exhausted['calls'][0]['attempted'])
+        self.assertEqual(len(self.engine.calls), 1)
+        self.assertEqual(unit.attempts, 1)
+        self.assertFalse(self.engine.active)
+
+    async def test_multimodal_native_error_retains_charge_and_drains_same_prompt(self):
+        unit = self.bound_budget(1)
+        await self.start()
+        self.engine.fail_first = True
+        prompt = multimodal_prompt()
+        with patch.object(self.engine.renderer, 'render_chat_async', return_value=([], [prompt])):
+            response = await self.call(self.request(1, sampling_params=dict(PARAMS, max_tokens=8189)))
+        self.assertEqual(response['status'], 'failed')
+        self.assertEqual(response['error'], 'original native row failure')
+        self.assertTrue(response['calls'][0]['attempted'])
+        self.assertEqual(response['calls'][0]['rendered_prompt_type'], 'multimodal')
+        self.assertEqual(unit.attempts, 1)
+        self.assertIs(self.engine.calls[0][0], prompt)
+        self.assertEqual(len(self.engine.drained), 1)
+        self.assertFalse(self.engine.active)
+
+    async def test_non_token_or_multimodal_and_multiple_renderer_inputs_still_fail_before_generate(self):
+        unit = self.bound_budget(1)
+        await self.start()
+        for prompts in ([], [dict(type='embeds', prompt_token_ids=[0])],
+                        [dict(type='foreign', prompt_token_ids=[0])],
+                        [dict(type='token', prompt_token_ids=[0])]*2):
+            with self.subTest(prompts=prompts), patch.object(self.engine.renderer, 'render_chat_async',
+                                                            return_value=([], prompts)):
+                response = await self.call(self.request(1))
+            self.assertEqual(response['status'], 'failed')
+            self.assertEqual(response['calls'][0]['error_type'], 'ValueError')
+            self.assertFalse(response['calls'][0]['attempted'])
+        self.assertEqual(unit.attempts, 0)
+        self.assertEqual(self.engine.calls, [])
 
     async def test_bad_budget_is_rejected_before_model_construction(self):
         self.config['request_budget'] = {'limit': 25}
@@ -265,6 +340,8 @@ class ModelWorkerTests(unittest.IsolatedAsyncioTestCase):
         for _, sampling, _, _ in self.engine.calls:
             self.assertEqual(vars(sampling), dict(PARAMS, output_kind='final-only'))
         for call in response['calls']:
+            self.assertEqual(call['rendered_prompt_type'], 'token')
+            self.assertEqual(call['rendered_prompt_fields'], ['fixture_index', 'prompt_token_ids', 'type'])
             self.assertEqual((call['requested_max_tokens'], call['resolved_max_tokens'],
                               call['rendered_prompt_tokens']), (8192, 8192, 3))
             self.assertEqual(call['usage'], dict(prompt_tokens=3, completion_tokens=1, total_tokens=4))

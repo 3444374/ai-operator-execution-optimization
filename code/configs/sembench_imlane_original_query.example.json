@@ -1,0 +1,43 @@
+{
+  "schema": "semloom.imlane.lotus_query.v1",
+  "query_id": "imlane-owned-animals-q1-cold",
+  "sembench_checkout": "/path/to/verified-SemBench-c814e380",
+  "data_dir": null,
+  "input_sha256": {},
+  "model_name": "openai/local-vlm",
+  "tokenizer": "/path/to/verified-local-vlm-tokenizer",
+  "generation": {
+    "max_tokens": 8192,
+    "temperature": 0,
+    "top_p": 1,
+    "seed": 0,
+    "stop": [],
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "repetition_penalty": 1
+  },
+  "model_service": {
+    "model_python": "/path/to/existing-model-venv/bin/python",
+    "model": "/path/to/verified-local-vision-model",
+    "served_model_name": "local-vlm",
+    "dtype": "bfloat16",
+    "engine_options": {
+      "max_model_len": 32768,
+      "limit_mm_per_prompt": {
+        "image": 1
+      }
+    }
+  },
+  "max_model_calls": 64,
+  "query_timeout_s": 1200,
+  "cleanup_s": 120,
+  "stop_grace_s": 8,
+  "request_timeout_s": 1200,
+  "task": {
+    "scenario": "animals",
+    "query": "1",
+    "visual_query": true,
+    "manifest": "/path/to/verified-sf64-animals-manifest.json",
+    "manifest_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}

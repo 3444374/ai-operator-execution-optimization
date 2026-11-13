@@ -901,6 +901,62 @@ ROOT仅把no-op的timing_scope文字更正为“所需SQL仅在实际到达时�
 原DSO／UDF／ACK未修改。当前薄driver源码身份检查自动拒绝旧构建记录，Linux必须重链后验真实0行SQL／
 IPC及物理清理；本地参数体和软件SQL不能代替该目标资格。构建及原件入口复用既有说明，无第二套runner。
 
+<a id="imlane-original-query"></a>
+## IMLane 完整视觉原题与原生载体
+
+基于3500ef740整合仍固定原SemBench／LOTUS1.2.4的同一native_imlane_sembench runner，
+新增显式`semloom.imlane.lotus_query.v1` profile，复用原函数、QueryLM、已有VARCHAR SQLPredictions和模型owner，
+不是作者未公开的论文runner复现。各原生系统算法与工程变体身份继续分开。
+
+原实际LM批次分别写不可变provider配置与receipt目录，共用一个模型socket／永久unit；全局作者注册端点的
+SQL／配置／关闭scope串行保护，原SDK批次和实际survivors不改。原Extract的JSON object仅在native采样边界
+等价映射为structured_outputs，原SDK与实际native参数分别保存；新profile拒绝全局JSON／logprobs／repetition覆盖。
+旧schema／默认保留，不把typed prepared单算子入口变成第二套完整查询runner。
+
+依据固定[v0.25.1 renderer](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/renderers/base.py)、
+[EngineInput](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/inputs/engine.py)及
+[AsyncLLM.generate](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/engine/async_llm.py)，
+原模型桥的token-only条件确会拒绝真实multimodal输入。修正后把同一完整EngineInput交generate，
+不丢mm_kwargs/mm_hashes/mm_placeholders，也不dump图像tensor，仅观察类型与字段名。
+文本参考token规则不放松；只有真正image_url行可缺独立参考，须关联原消息、native multimodal类型、
+已展开输入token数组与usage，并明确独立processor参考未验证。这不是完整像素tensor／GPU证明。
+
+整合后的110个不同软件方法单次全过、0skip，结果SHA为`467401c11ee04b4905ca9d6cba417ce78009d6c04cb1e6f96692a84242bc371e`。包括carrier49与旧文本／
+Map／Extract／TopK、零输入、参数体和失败回执；这些与前文各批重叠，不累加为全套系统通过数。
+新视觉差分仍用临时PNG／CSV／Parquet和明确软件renderer／generate／SQL，走实际Arrow、provider wire、
+ModelWorker.batch/_row、原SDK及Python ACK：Animals Q1一批4、Q7两批各4完整输入；MMQA Q2b实际非空
+4次Join后4次JSON Extract；E-Commerce Q12文本4→图像3，空路径保留原KeyError。
+比较的是完整原函数／结果／原评分，实际坏input type、纯文本token被篡改、预算和后验失败保留原结果与失败状态。
+
+首次复用fixture误改stdlib socket，真实asyncio自管pipe拿到SoftwareSocket而失败；只将mock限制到
+provider模块socket命名空间后通过，原失败保留。provider单项最初沙箱bind拒绝与其后产品红／绿分开，
+获准的本地Unix软件fixture不访问TCP、真实服务或GPU。ROOT首次交付清单字段名校验错误在patch已应用后失败，
+核实际候选SHA后继续，未重复apply；首次无plan的launcher没有启动任何测试。两处私有harness失败均保留。
+
+独立`lotus_imlane.source_to_sink.v1`从需要模型时READY后的fresh source到完整原内存sink，
+含必要SQL／ACK／scope关闭、provider配置／指纹／回执I/O；事后token／关联／源审计、评分、最终模型关闭在外。
+zero/no-op无READY前提，不伪造统一v3或减掉估算成本。groupby／其他factory路由、本轮未测原题、
+Linux真实SQL／VLM／物理清理均未授予资格；807的单叶真实结果只属于其旧冻结来源。
+
+<a id="imlane-807-single-leaf"></a>
+## 807224 原LOTUS聚合 over IMLane 工程版
+
+`imlane-aggregate-807224-native-qualification-20261113-r1`固定807224dd7，31／31 LinuxCPU、
+一次真实VARCHAR SQL软件门后执行原sf25 Q5单叶：1次真实请求终态，未知／重试／额外语义预热0，
+输出Lizzy Caplan，原precision／recall／F1均1。它是LOTUS原SemAgg over VARCHAR-owned工程版，
+不是未修改作者DSO或作者聚合算法。
+
+Qwen2.5-7B-Instruct BF16、vLLM0.25.1；实际context32768、max_num_seqs128、batch tokens2048、
+GPU利用率配置0.92、prefix cache开启、结果缓存关闭；原generation输出上限8192、seed0，未在线调参。
+API逻辑prompt3442／completion5／total3447，金额、kernel和未独立观测项仍为空。
+ready-source→完整sink为5.09760984秒，含启动worker→同sink为45.612627451秒，模型启动31.43684386秒；
+必要SQL／ACK／scope关闭与同步receipt在v1区间，不与Ray冷区间排位或回填当前组合。
+
+执行／资源／租约释放通过。1367份payload加清单与归档逐字节一致，1143个snapshot源Git blob由本会话
+复核等于准确807提交，未重跑模型；本轮准备路径失败、stale console的051标签及ACK检查把纯文本当JSON的
+错误原件保留，源码与断言实际都绑定807。当前冻结sf25输入只有单叶，不能据此授多层或并发资格，
+更不授新完整视觉profile或整套SemBench通过。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -929,6 +985,7 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | cf220原生IMLane Q3模型 | 779015 | 138 | `304bdd0206a3d1e1c5da8a74987a660021d14bd3210a648d01a5c35a02a97ae4` |
 | 051639最小CPU＋模型 | 3930503 | 1578 | `a6d9e929568bad9f9f8e74ddcb9d3cdf406f06aa6d76147a4872834b4ed572e0` |
 | 051639 Ray Animals Q1 sf64 | 84905964 | 1431 | `8ce429180056911dc8e0d7e2ce67a0eda19a045fd85dc7cfc27e7818dad4fa02` |
+| 807224 IMLane Q5单叶 | 3741666 | 1367 | `e648fc1de0bcee4f4aad4cf0ca678f8b32bb7c12e498ac7dc6684c1a702361b0` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

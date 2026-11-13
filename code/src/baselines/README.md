@@ -96,6 +96,11 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
 另用实际 LOTUS 方法和 CPU 响应执行原生完整批次，验证结果身份、整批调用、用量和关闭；
 该检查不启动原生框架集群、作者服务或模型。Core 的分组、取消／失败回执及准备复用由原用例继续覆盖。
 
+[LOTUS＋IMLane完整原题profile](../../integrations/imlane_duckdb/README.md#lotus-original-query)
+复用同一CLI、原函数和QueryLM，实际后续批次通过既有VARCHAR／SQL／ACK；原生multimodal EngineInput不转为文本。
+每批原SDK／native采样、文本参考与图像证据分列。当前Animals／MMQA／E-Commerce代表查询只有软件整合资格，
+真实SQL／VLM及其他原题待验；它与不经LOTUS的原生Movie Q3、TINYINT profile不能重复计算成更多系统。
+
 ### 保留的边界问题记录
 
 | 现象／根因 | 处理 | 验证边界 |

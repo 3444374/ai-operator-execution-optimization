@@ -2,7 +2,7 @@
 
 Reuse the existing author/model owners, relation ACK and outer supervisor.
 The author owns prediction batches; original LOTUS/SemBench owns all semantics.
-This entry does not qualify the unmodified author or implement image support.
+The complete-query profile preserves original image messages; target VLM qualification is separate.
 """
 
 import argparse
@@ -38,6 +38,7 @@ from src.serving.backends.vllm_protocol import GenerationSpec
 SCHEMA = 'semloom.imlane.mmqa_q1.v1'
 TEXT_SCHEMA = 'semloom.imlane.prepared_text.v1'
 TOPK_SCHEMA = 'semloom.imlane.lotus_topk.v1'
+QUERY_SCHEMA = 'semloom.imlane.lotus_query.v1'
 VARIANT = 'varchar-owned-engineering'
 DSO_SHA256 = '5a172f77e9c46fae28f96251d20a022fda472749c1e858b2b2c25262eafa5fdd'
 CODE = Path(__file__).resolve().parents[2]
@@ -45,7 +46,7 @@ CODE = Path(__file__).resolve().parents[2]
 
 def _aggregation(value):
     task = value.get('task', {})
-    return (value.get('schema') == TEXT_SCHEMA and isinstance(task, dict)
+    return (value.get('schema') in (TEXT_SCHEMA, QUERY_SCHEMA) and isinstance(task, dict)
             and task.get('scenario') == 'mmqa' and str(task.get('query')).lower().removeprefix('q') == '5')
 
 
@@ -53,16 +54,25 @@ def configuration(value):
     fields = {'schema', 'query_id', 'sembench_checkout', 'data_dir', 'input_sha256', 'model_name',
               'tokenizer', 'generation', 'model_service', 'max_model_calls', 'query_timeout_s',
               'cleanup_s', 'stop_grace_s', 'request_timeout_s'}
-    task_profile = isinstance(value, dict) and value.get('schema') in (TEXT_SCHEMA, TOPK_SCHEMA)
+    task_profile = isinstance(value, dict) and value.get('schema') in (TEXT_SCHEMA, TOPK_SCHEMA, QUERY_SCHEMA)
     aggregate = isinstance(value, dict) and _aggregation(value)
     if (type(value) is not dict or set(value) != fields | ({'task'} if task_profile else set())
             | ({'token_counter'} if aggregate else set())
-            or value['schema'] not in (SCHEMA, TEXT_SCHEMA, TOPK_SCHEMA)):
+            or value['schema'] not in (SCHEMA, TEXT_SCHEMA, TOPK_SCHEMA, QUERY_SCHEMA)):
         raise ValueError('explicit native IMLane query configuration required')
+    task_options = {'scenario', 'query', 'scale_factor'}
+    if isinstance(value, dict) and value.get('schema') == QUERY_SCHEMA:
+        task_options |= {'ranking', 'visual_query', 'image_join', 'manifest', 'manifest_digest'}
     if task_profile and (type(value['task']) is not dict or not {'scenario', 'query'} <= value['task'].keys()
-            or value['task'].keys() - {'scenario', 'query', 'scale_factor'}):
+            or value['task'].keys() - task_options):
         raise ValueError('declare an original scenario/query task')
+    if value['schema'] == QUERY_SCHEMA and any(name in value['task'] and type(value['task'][name]) is not bool
+            for name in ('visual_query','image_join')):
+        raise ValueError('visual_query and image_join must be explicit booleans')
     generation = GenerationSpec.from_dict(value['generation'])
+    if value['schema'] == QUERY_SCHEMA and (generation.response_format is not None
+            or generation.logprobs is not None or generation.repetition_penalty != 1):
+        raise ValueError('complete original queries require plain base generation; each native operator owns its overrides')
     if aggregate and (generation.response_format is not None or generation.logprobs is not None
             or generation.repetition_penalty != 1):
         raise ValueError('native aggregation uses standard generation and the original unstructured parser')
@@ -106,12 +116,18 @@ def prepare_query(config):
     options = _aggregation_lm_options(config, generation) if _aggregation(config) else {}
     query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], task['scenario'], task['query'],
         execution_id=config['query_id'], model_name=config['model_name'], generation=generation,
-        scale_factor=task.get('scale_factor'), **(dict(lm_options=options) if options else {}))
+        scale_factor=task.get('scale_factor'), **(dict(lm_options=options) if options else {}),
+        **({name: task[name] for name in ('ranking','visual_query','image_join','manifest','manifest_digest')
+            if name in task} if config['schema'] == QUERY_SCHEMA else {}))
     if {name: value['sha256'] for name, value in query.files.items()} != config['input_sha256']:
         raise ValueError('original input files differ from their frozen identities')
-    if _aggregation(config):
-        if config['max_model_calls'] < query.describe()['minimum_model_calls']:
-            raise ValueError('the finite query allowance must cover the native aggregation minimum')
+    if _aggregation(config) or config['schema'] == QUERY_SCHEMA:
+        description = query.describe()
+        minimum = description.get('minimum_model_calls')
+        if minimum is None:
+            minimum = len(query.operation.records) if query.operation is not None else description['expected_model_calls']
+        if minimum is not None and config['max_model_calls'] < minimum:
+            raise ValueError('the finite query allowance must cover the original query minimum')
         return query, None, None, None, None
     if query.operation is not None and query.operation.describe()['kind'] not in ('map', 'extract'):
         raise ValueError('prepared VARCHAR binds ordinary text Map/Extract; use the existing Filter/Join/TopK profiles')
@@ -135,10 +151,11 @@ def check(config):
             maximum_model_calls=query.describe()['expected_model_calls'], model_calls=0,
             native_DSO_SQL_model_binding_qualified=False)
     query, method, prepared, requests, tokens = prepare_query(config)
-    if _aggregation(config):
+    if _aggregation(config) or config['schema'] == QUERY_SCHEMA:
         return dict(schema=config['schema'], status='passed_zero_model_source_check', variant=VARIANT,
             source=query.describe(), generation=asdict(query.generation), model_calls=0,
-            token_counter=config['token_counter'], native_DSO_SQL_model_binding_qualified=False)
+            **(dict(token_counter=config['token_counter']) if _aggregation(config) else {}),
+            native_DSO_SQL_model_binding_qualified=False, target_VLM_qualified=False)
     return dict(schema=config['schema'], status='passed_zero_model_source_check', variant=VARIANT,
         source=query.describe(), generation=asdict(query.generation if query.operation is None else query.operation.generation),
         prepared=prepared, requests=requests, token_ids=tokens,
@@ -195,7 +212,7 @@ class PreparedRelation:
         return audit_relation(self.prepared, self.relation)
 
 
-def audit_ipc(directory, requests, tokens, predictions, sampling):
+def audit_ipc(directory, requests, tokens, predictions, sampling, *, attempt_offset=0, native_input_only=False):
     """Correlate native batch positions and occurrence IDs, including equal messages."""
     expected = {row['call_id']:
                 (row['call_id'], ids, row['messages'])
@@ -224,102 +241,172 @@ def audit_ipc(directory, requests, tokens, predictions, sampling):
                     or call['requested_payload']['messages'] != messages
                     or batch['request']['messages_batch'][position] != messages):
                 raise ValueError('native batch position or original occurrence messages changed')
+            native_ids = response['rendered_prompt_token_ids']
+            if ids is None:
+                if (not native_input_only or not _image_message(messages)
+                        or response.get('rendered_prompt_type') != 'multimodal'
+                        or not {'prompt_token_ids','mm_kwargs','mm_hashes','mm_placeholders'} <= set(response.get('rendered_prompt_fields', []))
+                        or not isinstance(native_ids, list) or any(type(i) is not int or i < 0 for i in native_ids)
+                        or response.get('rendered_prompt_tokens') != len(native_ids)
+                        or response.get('usage', {}).get('prompt_tokens') != len(native_ids)):
+                    raise ValueError('image occurrence lacks native expanded multimodal input evidence')
+            elif native_ids != ids:
+                raise ValueError('native prompt tokens differ from the independent text reference')
             if (call['status'] != 'succeeded' or call['attempted'] is not True
                     or response['generated_text'] != outputs[call_id]
-                    or response['rendered_prompt_token_ids'] != ids
                     or response['requested_max_tokens'] != sampling['max_tokens']
                     or response['resolved_max_tokens'] != sampling['max_tokens']
                     or response['budget_attempt'] in attempts or response['request_id'] in request_ids):
                 raise ValueError('native text, tokens or charged request identity changed')
             seen.add(key); attempts.add(response['budget_attempt']); request_ids.add(response['request_id'])
             calls.append(dict(call_id=call_id, response=response))
-    if seen != set(expected) or attempts != set(range(1, len(expected) + 1)):
+    if seen != set(expected) or attempts != set(range(attempt_offset + 1, attempt_offset + len(expected) + 1)):
         raise ValueError('every source occurrence requires one identified charged native terminal result')
     return dict(calls=calls, native_generate_terminal_count=len(calls), retries=0,
                 first_engine_accept=None, kernel_count=None)
 
 
-def _run_original_query(query, config, args, build, service, window, report, unit, tokenizer):
-    """Original LM-driven query over the existing per-batch SQL projection.
+def _image_message(messages):
+    return any(isinstance(message.get('content'), list) and any(
+        part.get('type') == 'image_url' for part in message['content']) for message in messages)
 
-    Each batch returns its call_id/text relation, ACKs it, and closes its native
-    SQL scope before the original algorithm can consume those outputs. Only
-    the final original relation marks complete frontend readiness.
-    """
-    from .native_imlane_topk import SQLPredictions
+
+def _native_sampling(sampling):
+    native = dict(sampling)
+    response_format = native.pop('response_format', None)
+    if response_format is not None:
+        if response_format != {'type': 'json_object'} or native.get('structured_outputs', {'json_object': True}) != {'json_object': True}:
+            raise ValueError('only the original JSON-object response format maps to native structured outputs')
+        native['structured_outputs'] = {'json_object': True}
+    return native
+
+
+def _run_original_query(query, config, args, build, service, window, report, unit, tokenizer):
+    """Complete original query; serialized SQL carrier, one model/budget owner."""
+    from .native_imlane_topk import SQLPredictions, _token_reference
     from .native_service_query import native_query_settings
+    from src.baselines.text.frameworks.lotus_native_join import observe_native_join_inputs, describe_native_join_inputs
 
     predict_sql = SQLPredictions(args, build, service, window, config)
-    sampling = query.generation.kwargs()
+    carrier_lock = threading.Lock()
+    providers, join_inputs = [], []
 
     def predict(requests, *, sampling_params):
-        if sampling_params != sampling:
+        if config['schema'] != QUERY_SCHEMA and sampling_params != query.generation.kwargs():
             raise ValueError('this native query requires its declared standard generation in every batch')
-        if len(requests) > unit.remaining:
-            raise BudgetExhausted('the next original LM batch exceeds the remaining permanent query budget')
-        outputs = predict_sql(requests) if requests else {}
-        return dict(predictions=[dict(call_id=row['call_id'], generated_text=outputs[row['call_id']])
-                                 for row in requests])
+        effective = _native_sampling(sampling_params)
+        # The author uses a global registration endpoint. Protect only its SQL
+        # scope and bound provider configuration, without changing SDK batching.
+        with carrier_lock:
+            if len(requests) > unit.remaining:
+                raise BudgetExhausted('the next original LM batch exceeds the remaining permanent query budget')
+            if not requests:
+                return dict(predictions=[])
+            if service is None:
+                raise ValueError('a nonempty original LM batch requires its declared model owner')
+            index = len(providers)
+            directory = args.output/'model-calls'/('batch-'+str(index))
+            new_private_directory(directory)
+            provider = model_provider.configuration(dict(schema=model_provider.CONFIG_SCHEMA,
+                provider_mode='model', socket_path=str(service.socket_path), model=service.served_model_name,
+                sampling_params=effective, request_timeout_s=config['request_timeout_s'],
+                deadline_monotonic=window.query_deadline, receipt_dir=str(directory)))
+            path = directory/'provider.json'
+            write_private_json(path, provider)
+            entry = dict(index=index, directory=str(directory), original_sampling=dict(sampling_params),
+                         native_sampling=effective, attempt_offset=unit.attempts, requests=requests)
+            providers.append(entry)
+            args.workload_environment = {model_provider.CONFIG_ENV: str(path)}
+            outputs = predict_sql(requests)
+            predictions = [dict(call_id=row['call_id'], generated_text=outputs[row['call_id']]) for row in requests]
+            entry['predictions'] = predictions
+            return dict(predictions=predictions)
 
     lm, batches = make_query_lm(query, predict, **query.lm_options)
     execute = query.bind_original_execution()
     report.update(prediction_batches=predict_sql.reports, native_LM_execution_accounting_used=False,
-        semantic_owner='original LOTUS sem_agg hierarchy, token counting and parser',
+        semantic_owner='original LOTUS queries, accessors, token counting, hierarchy and parsers',
         baseline_identity='lotus-over-imlane-varchar-owned',
         author_lifecycle='fresh native SQL/author scope per original LM batch; one external model service',
+        carrier_concurrency='one SQL/configuration lifecycle at a time; global author registration endpoint',
         scheduler_owner='original LOTUS algorithm; native IMLane prediction batches and CPython execution',
-        query_clock_version='lotus_imlane.source_to_sink.v1',
-        token_counter=dict(config['token_counter'], max_ctx_len=lm.max_ctx_len,
-                           model_tokenizer_verified=False))
+        query_clock_version='lotus_imlane.source_to_sink.v1')
+    if _aggregation(config):
+        report['token_counter'] = dict(config['token_counter'], max_ctx_len=lm.max_ctx_len,
+                                       model_tokenizer_verified=False)
     primary = result = None
     try:
-        with native_query_settings(lm):
+        with native_query_settings(lm), observe_native_join_inputs(join_inputs):
             report['query_started_monotonic_ns'] = time.monotonic_ns()
             result = execute()
             ready = time.monotonic_ns()
         report.update(full_sink_observed_monotonic_ns=ready, result_ready_monotonic_ns=ready,
             source_to_sink_seconds=(ready-report['query_started_monotonic_ns'])/1e9,
             native_alive_after_sink=False,
-            native_alive_scope='every prediction SQL scope already closed; external model owner remains live',
+            native_alive_scope=('every prediction SQL scope already closed; external model owner remains live'
+                                if service is not None else 'no model or prediction SQL scope allocated'),
             source=query.describe())
+        if config['schema'] == QUERY_SCHEMA:
+            report.update(model_ready_before_source=True if service is not None else None,
+                model_ready_before_source_observed_ns=report.get('model_ready_observed_ns'))
         window.accept_ready(ready, clock='CLOCK_MONOTONIC')
         query.verify_source()
-        query.aggregate_task.validate_batch_sizes([len(batch['requests']) for batch in batches], result)
+        if query.aggregate_task is not None:
+            query.aggregate_task.validate_batch_sizes([len(batch['requests']) for batch in batches], result)
+        if query.visual_task is not None:
+            query.visual_task.validate_batch_sizes([len(batch['requests']) for batch in batches], result)
         requests = [row for batch in batches for row in batch['requests']]
-        predictions = [row for batch in batches for row in batch['predictions']]
         if unit.attempts != len(requests):
             raise ValueError('native permanent attempts differ from the complete original query')
-        tokens = [tokenizer.apply_chat_template(row['messages'], tokenize=True, add_generation_prompt=True)
-                  for row in requests]
-        ipc = audit_ipc(args.output/'model-calls', requests, tokens, predictions, sampling)
-        report.update(ipc=ipc, semantic=audit_query_batches(batches), model_calls=len(requests),
-            quality=json_metric(query.evaluate(result)),
-            native_API_usage={key: sum(call['response']['usage'][key] for call in ipc['calls'])
-                              for key in ('prompt_tokens', 'completion_tokens', 'total_tokens')})
+        calls = []
+        image_calls = 0
+        for entry in providers:
+            rows = entry['requests']
+            if tokenizer is None and any(not _image_message(row['messages']) for row in rows):
+                from transformers import AutoTokenizer
+                tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
+            tokens = [None if _image_message(row['messages']) else _token_reference(tokenizer, row['messages']) for row in rows]
+            image_calls += sum(ids is None for ids in tokens)
+            ipc = audit_ipc(Path(entry['directory']), rows, tokens, entry['predictions'], entry['native_sampling'],
+                attempt_offset=entry['attempt_offset'], native_input_only=True)
+            calls.extend(ipc['calls'])
+        if len({call['response']['request_id'] for call in calls}) != len(calls):
+            raise ValueError('native request identity was reused across original LM batches')
+        semantic = audit_query_batches(batches)
+        semantic['native_join_inputs'] = describe_native_join_inputs(join_inputs)
+        report.update(ipc=dict(calls=calls, native_generate_terminal_count=len(calls), retries=0,
+            independent_image_processor_reference_verified=False if image_calls else None,
+            image_occurrences=image_calls, text_token_reference='independent tokenizer; unchanged original text audit',
+            image_token_evidence='native renderer expanded arrays and EngineInput type; independent processor unverified'),
+            semantic=semantic, model_calls=len(requests), quality=json_metric(query.evaluate(result)),
+            native_API_usage={key: sum(call['response']['usage'][key] for call in calls)
+                              for key in ('prompt_tokens','completion_tokens','total_tokens')})
         return result
     except BaseException as error:
         primary = error
         error.query_result = result
         raise
     finally:
+        report['provider_batches'] = [{key:value for key,value in entry.items() if key not in ('requests','predictions')}
+                                      for entry in providers]
         report['native_lm_batches'] = [dict(index=index, status=batch['status'],
             occurrences=len(batch['requests']), sampling_params=batch['sampling_params'])
-            for index, batch in enumerate(batches)]
+            for index,batch in enumerate(batches)]
         try:
             write_private_json(args.output/'original-lm-batches.json',
-                [{key: value for key, value in batch.items() if key != 'native'} for batch in batches])
+                [{key:value for key,value in batch.items() if key != 'native'} for batch in batches])
         except BaseException as error:
             if primary is None:
                 error.query_result = result
                 raise
             primary.add_note('original LM batch persistence also failed: '+type(error).__name__)
 
-
 def run_worker(args, config, *, service_factory=ModelService):
     worker_entered = time.monotonic_ns()
     config, generation = configuration(config)
     topk = config['schema'] == TOPK_SCHEMA
     aggregate = _aggregation(config)
+    full_query = config['schema'] == QUERY_SCHEMA
     query = tokenizer = None
     if topk:
         from transformers import AutoTokenizer
@@ -361,18 +448,19 @@ def run_worker(args, config, *, service_factory=ModelService):
         unit = ledger.claim_shared_unit('query')
         descriptor = dict(path=str(ledger.path), budget_id=budget.budget_id, limit=allowance, unit_id='query')
         sampling = generation.kwargs()
-        needs_model = aggregate or bool(query.describe()['expected_model_calls'])
+        needs_model = aggregate or query.describe()['expected_model_calls'] is None or bool(query.describe()['expected_model_calls'])
         if needs_model:
             service = service_factory(dict(config['model_service'], request_budget=descriptor),
                 args.output / 'model-service', environment=dict(os.environ), deadline=window.query_deadline,
                 cleanup_deadline=window.begin_cleanup, stop_budget=args.stop_budget,
                 stop_grace_s=config['stop_grace_s'])
-            provider = model_provider.configuration(dict(schema=model_provider.CONFIG_SCHEMA,
-                provider_mode='model', socket_path=str(service.socket_path), model=service.served_model_name,
-                sampling_params=sampling, request_timeout_s=config['request_timeout_s'],
-                deadline_monotonic=window.query_deadline, receipt_dir=str(args.output / 'model-calls')))
-            write_private_json(args.output / 'model-provider.json', provider)
-            args.workload_environment = {model_provider.CONFIG_ENV: str(args.output / 'model-provider.json')}
+            if not (aggregate or full_query):
+                provider = model_provider.configuration(dict(schema=model_provider.CONFIG_SCHEMA,
+                    provider_mode='model', socket_path=str(service.socket_path), model=service.served_model_name,
+                    sampling_params=sampling, request_timeout_s=config['request_timeout_s'],
+                    deadline_monotonic=window.query_deadline, receipt_dir=str(args.output / 'model-calls')))
+                write_private_json(args.output / 'model-provider.json', provider)
+                args.workload_environment = {model_provider.CONFIG_ENV: str(args.output / 'model-provider.json')}
         with service if service is not None else nullcontext():
             if service is not None:
                 report['model_ready_observed_ns'] = time.monotonic_ns()
@@ -382,13 +470,14 @@ def run_worker(args, config, *, service_factory=ModelService):
             else:
                 report['model_owner'] = dict(allocated=False)
                 report['model_startup_seconds'] = None
-            if aggregate:
-                if service.ready_info['max_model_len'] != query.lm_options['max_ctx_len']:
+            if aggregate or full_query:
+                if aggregate and service.ready_info['max_model_len'] != query.lm_options['max_ctx_len']:
                     raise ValueError('the actual native model context differs from the LOTUS aggregation context')
                 try:
                     result = _run_original_query(query, config, args, build, service, window, report, unit, tokenizer)
                 finally:
-                    service.begin_cleanup(window.begin_cleanup())
+                    if service is not None:
+                        service.begin_cleanup(window.begin_cleanup())
             elif topk:
                 try:
                     result = run_topk(query, config, args, build, service, window, report, unit, tokenizer)
@@ -453,7 +542,8 @@ def run_worker(args, config, *, service_factory=ModelService):
         if report.get('full_sink_observed_monotonic_ns') is not None:
             report['cold_worker_entry_to_sink_seconds'] = (
                 report['full_sink_observed_monotonic_ns'] - worker_entered) / 1e9
-            report['ready_source_to_sink_seconds'] = report.get('source_to_sink_seconds')
+            report['ready_source_to_sink_seconds'] = (None if full_query and service is None
+                                                     else report.get('source_to_sink_seconds'))
         report['timing_scope'] = ('source_to_sink_seconds/ready_source_to_sink_seconds: model-ready then fresh '
             'CSV/source, original prompt preparation, '
             'required native transport/projection, original parser and complete memory sink; '
@@ -461,9 +551,10 @@ def run_worker(args, config, *, service_factory=ModelService):
             'neither clock includes post-sink audit, evaluation, persistence or final model close; '
             'TopK includes each required prediction SQL scope close before the next original comparison. '
             'Worker entry excludes host preflight/lease and Python import/CLI before run_worker.')
-        if aggregate:
-            report['timing_scope'] = ('independent lotus_imlane.source_to_sink.v1: model-ready then fresh original source, '
-                'native LOTUS hierarchy and full result; each batch includes necessary CSV/SQL, relation publication, '
+        if aggregate or full_query:
+            report['timing_scope'] = ('independent lotus_imlane.source_to_sink.v1: fresh original source after model-ready when a model is needed; '
+                'zero/no-op has no READY prerequisite; '
+                'original LOTUS operators/algorithms and full result; each batch includes necessary CSV/SQL, relation publication, '
                 'mapping, ACK and native scope close before the next original stage; synchronous provider fingerprints, '
                 'permanent attempt reservation and receipt I/O remain included. Input/LM/tokenizer preflight, '
                 'post-sink audits, evaluation, final persistence and model close are excluded. '

@@ -39,6 +39,12 @@
 移除原版Filter／Join接点的非空限制，真实空算子与原函数no-op分列；38／38本地软件通过、0模型／GPU。
 原DSO不改，薄driver须重链，Linux真实空SQL／清理待验，不能由无调用授予算子或性能资格。
 
+[IMLane完整原题profile与multimodal载体](diagnostics/sembench_native_integration_20261112/README.md#imlane-original-query)
+同一runner接真实后续批次与逐批JSON采样；native EngineInput不转成文本，图像与文本证据界面分开。
+110／110受影响软件方法通过、0模型／GPU，旧失败保留；代表视觉原题软件通过不授予真实SQL／VLM或其他factory路由资格。
+[807224原Q5工程版单叶](diagnostics/sembench_native_integration_20261112/README.md#imlane-807-single-leaf)
+31项LinuxCPU、1次真实请求、原F1=1，1367份原件核验；cold／ready区间、工程版身份与多层／并发未验分列。
+
 [Kalypso零发生项](diagnostics/sembench_native_integration_20261112/README.md#kalypso-empty-frontier)
 修正无依据的正数frontier限制、空trace／owner检查和CPU空统计；82个不同软件方法为80通过、
 2项真实tokenizer未绑定跳过，首失败保留。原数据选择／关系／评分和作者算法不变，未运行模型／GPU或服务器。

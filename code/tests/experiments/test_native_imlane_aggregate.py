@@ -54,7 +54,7 @@ class NativeAggregateTests(unittest.TestCase):
         return service, config, data
 
     def invoke(self, config, *, mode='compact', bad_ids=False, close_failure=False, audit_failure=False,
-               ready_context=None):
+               ready_context=None, reply_batch=None):
         import httpx
         from src.experiments import native_imlane_topk as prediction
 
@@ -94,6 +94,8 @@ class NativeAggregateTests(unittest.TestCase):
                 self.report['status'] = 'closed'
 
         def reply(request):
+            if reply_batch is not None:
+                return reply_batch(request, services[0].unit)
             calls = []
             for position,messages in enumerate(request['messages_batch']):
                 attempt = services[0].unit.reserve(content_digest(messages))
@@ -129,8 +131,9 @@ class NativeAggregateTests(unittest.TestCase):
                 records = list(csv.DictReader(stream))
             table = pa.table({'c0':[row['call_id'] for row in records],
                               'c1':[row['messages_json'] for row in records]})
-            with patch.dict(os.environ,environment), patch.object(model_provider.socket,'socket',
-                    side_effect=lambda *args:SoftwareSocket(reply)):
+            with patch.dict(os.environ,environment), patch.object(model_provider,'socket',SimpleNamespace(
+                    AF_UNIX=model_provider.socket.AF_UNIX,SOCK_STREAM=model_provider.socket.SOCK_STREAM,
+                    socket=lambda *args:SoftwareSocket(reply))):
                 texts = sembench_udf.infer_prepared(table).to_pylist()
             predictions = [dict(call_id=row['call_id'],**text) for row,text in zip(records,texts,strict=True)]
             if bad_ids: predictions[0]['call_id'] = 'foreign-occurrence'

@@ -199,8 +199,10 @@ class ModelWorker:
                                             output_kind=self.model.final_only),
                                        self.model.sampling_type, self.model.structured_outputs_type)
             _, prompts = await self.model.engine.renderer.render_chat_async([messages], self.model.chat_params)
-            if len(prompts) != 1 or prompts[0].get('type') != 'token':
-                raise ValueError('native text chat renderer did not return one token prompt')
+            if len(prompts) != 1 or prompts[0].get('type') not in ('token', 'multimodal'):
+                raise ValueError('native chat renderer did not return one token or multimodal prompt')
+            call.update(rendered_prompt_type=prompts[0]['type'],
+                        rendered_prompt_fields=sorted(prompts[0]))
             prompt_ids = prompts[0]['prompt_token_ids']
             length = self.model.engine.vllm_config.model_config.max_model_len
             call.update(rendered_prompt_tokens=len(prompt_ids), max_model_len=length,

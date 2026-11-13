@@ -536,6 +536,39 @@ IPC／ACK／scope关闭及现存provider指纹、额度预扣和回执I/O；事�
 原SDK空输入错误保持，部分预测不冒充完整查询。已有软件差分覆盖单层、摘要驱动多层及失败保留，
 Linux真实SQL／DSO、目标模型与物理清理仍待验，见[分路径验收](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#aggregate-system-runners)。
 
+<a id="lotus-original-query"></a>
+## 同一 runner 的完整 LOTUS 原题
+
+[`native_imlane_sembench`](../../src/experiments/native_imlane_sembench.py)的同一`check/run` CLI新增显式
+`semloom.imlane.lotus_query.v1` profile，旧Map／Extract／Q5／TopK schema与默认合同保持。
+[Animals配置示例](../../configs/sembench_imlane_original_query.example.json)仅提供占位路径／摘要，
+运行前须绑定真实source、模型和本次资源／永久预算；没有另一个逐题runner。
+
+`task`复用既有scenario/query及可选scale_factor、ranking、visual_query、image_join、manifest、manifest_digest。
+Animals用`visual_query=true`和manifest/digest、data_dir=null；MMQA图文Join用`image_join=true`和data_dir；
+Cars／Medical／E-Commerce视觉原题用`visual_query=true`及data_dir，文件命名的scale保持原作者合同。
+visual_query/image_join若提供必须是JSON bool。原题factory负责有效题目／source／评分；可绑定不等于已实际验证。
+QUERY profile的base generation须plain，Extract自己的JSON参数来自原SDK，不用全局格式改写Filter／Join。
+原Q5仍要求上一节的真实token_counter/context声明。
+
+完整原函数经同一QueryLM产生真实LM批次。每批有不可变的provider配置与receipt目录，共用一个模型socket和永久unit；
+原SDK的`response_format={"type":"json_object"}`在native边界等价转为`structured_outputs`，两种采样记录分别保留。
+全局作者注册端点的一次SQL／配置／关闭scope用锁保护，保留原SDK批次，native IMLane／vLLM仍拥有行batch和执行。
+当前carrier一次一个SQL scope，不声称并发SQL或跨查询模型复用。
+
+vLLM0.25.1的[renderer](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/renderers/base.py)返回
+[EngineInput](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/inputs/engine.py)，图像是`multimodal`而非`token`。
+worker已移除纯文本类型限制，将同一完整对象交`generate`，保留mm_kwargs/mm_hashes/mm_placeholders，
+只记录input type和字段名，不复制／序列化图像tensor。文本行仍严格核对独立tokenizer参考；
+图像行核原消息、native input type、展开token数组及usage，独立processor／像素tensor资格明确未取得。
+
+当前软件差分覆盖Animals Q1/Q7两遍完整输入、MMQA非空Q2b Join→JSON Extract、E-Commerce Q12实际survivors，
+原空路径KeyError保持；其余原题、分支/groupby、真实Linux SQL／VLM／物理清理另验。
+[110项整合检查与目标边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-original-query)
+包含旧文本／TopK／零输入／IPC行为，不把软件模型当真实VLM。
+独立`lotus_imlane.source_to_sink.v1`含必要SQL／ACK／scope关闭、provider配置／指纹／回执I/O，
+完整原函数返回后才核对／评分／最终关闭；零/no-op没有READY前提。不是统一v3性能成绩。
+
 ## LOTUS quick TopK 与 VARCHAR prediction
 
 [TopK配置](../../configs/sembench_imlane_topk.example.json)复用上面的`native_imlane_sembench`
