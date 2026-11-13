@@ -176,13 +176,22 @@ Cars原2026常量／两种权重、E-Commerce重复索引后写及原ARI错误�
 
 [独立Daft附加服务会话](diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)
 同一runner／builtin OpenAI graph执行两轮fresh任务，共享永久HTTP预算及既有worker／ACK；四模块120项全过、0模型／SDK部署。
-offline四函数逐字保持，外部服务由外层拥有；缺真实模型身份warm=None，实际SDK／模型／cache及性能待验。
+初始offline四函数当时逐字保持，后续查询批次另列；外部服务由外层拥有，缺真实模型身份warm=None；后续具名模型回执不转授其他组合。
 原JSONL缺口如实披露，核验使用worker.json HTTP原件，不借旧冷成绩或同endpoint授予暖轮。
 
 [独立runner依赖批次与图文任务](diagnostics/sembench_native_integration_20261112/README.md#native-query-batches-visual-families)
 两系统沿同一query_batches边界，任务保原关系／评分和独立JSON身份；Medical／Cars图像、E-Commerce图文与MMQA视觉Join／后继Extract进入同一工厂。
 212项整合、后续61项受影响检查及18条实际driver软件查询通过，0模型；不累加重复用例或授予真实资产／VLM资格。
-E-Commerce Q10/Q11、Q14等明确未接；新增Q2b空Extract保原错误，LOTUS已有空schema适配另列。
+8cd初始Q10/Q11未接，后续依赖配对另列；Q14仍未接，新增Q2b空Extract保原错误，LOTUS已有空schema适配另列。
+
+[E-Commerce依赖配对](diagnostics/sembench_native_integration_20261112/README.md#native-ecommerce-dependent-outfits)
+同一任务／两系统runner接Q10/Q11完整独立Filter与真实后继Join；实际配对在消息展开前检查额度，保原关系与工程方法身份。
+135项相关软件检查和六条完整driver软件查询通过，0模型；不借软件授予真实资产／VLM、TopK或作者算法资格。
+
+[606f Medical Q10真实完整源](diagnostics/sembench_native_integration_20261112/README.md#medical-q10-606f-model)
+原生Ray1200条及Daft同模型owner两轮各1200条，完整诊断关系／原评分与清理保留；1193相同、七条差异单列。
+两份归档3976payload完整校验及三份生产源码核对；只重算预测投影，未重算质量或重跑模型。
+低质量与冷暖时钟分列，不作正式排名／全部系统资格，Serve环境和真实非空Q2b仍待验。
 
 [Daft具名Q7／Q2b／Q8模型回执](diagnostics/sembench_native_integration_20261112/README.md#daft-6c75-4793-606f-model)
 6c75 LOTUS＋Daft Animals Q7、4793 LOTUS＋Daft Q2b与606f独立JSON Daft Q8按准确来源分列；Q2b不计为独立原生Daft。

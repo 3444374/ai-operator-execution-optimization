@@ -163,8 +163,8 @@ Python可用run_attached_session(..., identity_probe=host_probe)：当场返回o
 即使PID一致也不证明cache／权重或进程内重构状态；真实模型资格与性能仍另验。
 本profile使用worker.json.native_api原始HTTP指纹／答复和永久预算，已知可选JSONL writer缺口明确记录，不假称完整JSONL。
 初始[软件验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)没有启动服务／模型／GPU；606f Movie Q8的[后续实机回执](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-6c75-4793-606f-model)按冻结来源单列。
-同一工厂接受Medical Q3/Q8/Q9、Cars Q3/Q8、E-Commerce Q2/Q4/Q6/Q8/Q9/Q12/Q13和MMQA Q2a/Q2b/Q7；
-场景／data_dir及Medical／Cars原scale参数沿既有配置，不新增题目CLI。首次计数是依赖查询的下界，预算还须覆盖实际后继批次与重试；
+同一工厂接受Medical Q3/Q8/Q9、Cars Q3/Q8、E-Commerce Q2/Q4/Q6/Q8/Q9/Q10/Q11/Q12/Q13和MMQA Q2a/Q2b/Q7；
+场景／data_dir及Medical／Cars原scale参数沿既有配置，不新增题目CLI。已知独立Filter总量是依赖查询的下界，预算还须覆盖实际后继批次与重试；Q10/Q11先检查实际配对数再构造消息，不用理论最大值或题号设上限；
 Q2b真实非空Extract、所有新视觉组合及Ray Serve暖轮仍另验，见[范围](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-batches-visual-families)。
 
 ## Movie session 配置

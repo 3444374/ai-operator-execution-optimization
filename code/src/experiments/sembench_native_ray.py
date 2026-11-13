@@ -184,10 +184,14 @@ def _predict_query_batches(task, source, owner, *, sampling, unit, directory, fi
             sink(complete.value)
             return
         while True:
-            requests.extend(pending)
             counts.append(len(pending))
             if len(pending) > unit.remaining:
+                if isinstance(pending, list):
+                    requests.extend(pending)
                 raise BudgetExhausted('permanent budget cannot cover the next complete native batch')
+            if not isinstance(pending, list):
+                pending = list(pending)
+            requests.extend(pending)
             if processor_options is not None:
                 images = any(isinstance(message['content'], list)
                     and any(part.get('type') == 'image_url' for part in message['content'])
@@ -208,7 +212,8 @@ def _predict_query_batches(task, source, owner, *, sampling, unit, directory, fi
                     raise RuntimeError('native charged attempts differ from complete batch occurrences')
             except BaseException:
                 # Preserve locally constructed dependent work, without submitting it.
-                requests.extend(following)
+                if isinstance(following, list):
+                    requests.extend(following)
                 counts.append(len(following))
                 raise
             pending = following

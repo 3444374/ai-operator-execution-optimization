@@ -124,7 +124,7 @@ class NativeTextTaskTests(unittest.TestCase):
             for scenario, queries, task_type in (
                     ('medical', ('Q3', 'Q8', 'Q9'), MedicalVisualTask),
                     ('cars', ('Q3', 'Q8'), CarsVisualTask),
-                    ('ecomm', ('Q2', 'Q4', 'Q6', 'Q8', 'Q9', 'Q12', 'Q13'), EcommerceVisualTask)):
+                    ('ecomm', ('Q2', 'Q4', 'Q6', 'Q8', 'Q9', 'Q10', 'Q11', 'Q12', 'Q13'), EcommerceVisualTask)):
                 for query in queries:
                     config = dict(scenario=scenario, data_dir='/not-read/'+scenario,
                                   query=query, query_id=scenario+'-visual-factory')

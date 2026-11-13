@@ -244,7 +244,7 @@ Q10复用同一评分Map处理全部物理源行，沿原pandas分组、Python�
 同一工厂的`scenario=medical`接[Medical文本任务](text/sembench_native_medical.py)Q1/Q4/Q10；
 实际scale只选择原CSV文件，Q4普通patient/symptoms内连接及重复加权平均保留，Q1返回原Series，Q10保留完整诊断关系。
 金标在模型前冻结，真实源读取／普通Join／全部推理／完整sink在查询内；评分使用sink副本，避免原Q10评分的小写转换污染完整结果。
-Medical原函数／SDK软件差分与同两runner消费者范围见[接线记录](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-medical-text-family)，尚无本JSON组合模型资格。
+Medical原函数／SDK软件差分与同两runner消费者范围见[接线记录](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-medical-text-family)；Q10已有[606f完整源模型回执](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#medical-q10-606f-model)，Q1/Q4及新图像组合另验。
 
 同一工厂的`scenario=cars`接[Cars任务](text/sembench_native_cars.py)Q1/Q4/Q10，保原CSV采样路径、普通merge、
 Series／完整诊断关系及Q4的`2026 - mean(year)`；query按投诉加权而gold按车辆计算的原差异不改。
@@ -306,7 +306,7 @@ Q7的zebra与impala两次Filter都处理完整N行，保留两遍实际图像处
 [native_query_batches](text/sembench_native_text.py)让既有单批任务沿同一路径执行。
 [Ray runner](../experiments/sembench_native_ray.py)及[Daft runner](../experiments/sembench_native_daft.py)拥有原生提交、预算、终态和关闭；
 任务没有执行调度器、后端分支或逐题runner。下一阶段仅从实际前序输出生成；首次已知计数在构造消息前检查，
-后续实际批次在原生提交前检查余量。未知总量保留None，不用最大值伪作实际请求。
+后续实际批次在消息展开及原生提交前检查余量：依赖配对用普通sized iterable，先len再读取配对图片／构造消息；没有执行策略或DSL。未知总量保留None，不用最大值伪作实际请求。
 空批不创建原生worker；末批完整sink在最终ACK／释放前形成，必要的中间worker退出仍在查询内。
 原source／关系后处理及严格JSON解析保留，评分、额外身份审计和结果写盘在完整sink后。
 
@@ -316,7 +316,7 @@ Q7的zebra与impala两次Filter都处理完整N行，保留两遍实际图像处
 |---|---|---|
 | [Medical图像](image/sembench_native_medical.py) | Q3／Q8／Q9 | patient与图像普通merge、完整单图／双图Filter后LIMIT；原scale只选择文件 |
 | [Cars图像](image/sembench_native_cars.py) | Q3／Q8 | 普通merge、Q3 Manual谓词、完整Filter后原投影／LIMIT；其余图像算法未接 |
-| [E-Commerce图文](image/sembench_native_ecommerce.py) | Q2／Q4／Q6／Q8／Q9／Q12／Q13 | Q4重复索引后写；Q8/Q9完整exact pair及原索引回连；Q12文本Filter→实际幸存图片Extract；Q10/Q11依赖Join、Q14 TopK未接 |
+| [E-Commerce图文](image/sembench_native_ecommerce.py) | Q2／Q4／Q6／Q8／Q9／Q10／Q11／Q12／Q13 | Q4重复索引后写；Q8/Q9完整pair；Q10/Q11独立Filter分支→真实依赖配对；Q12文本→图片Extract；Q14 TopK未接 |
 | [MMQA图文](image/sembench_native_mmqa.py) | Q2a／Q2b／Q7 | 原os.listdir顺序、所有有向候选、Q7无Europe预筛；Q2b仅真实Join匹配进入颜色Extract |
 
 均为项目独立JSON工程语义，不导入LOTUS SDK／提示／解析，不能称作者算法。

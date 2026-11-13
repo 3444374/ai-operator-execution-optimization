@@ -1008,6 +1008,33 @@ class NativeMultistageTests(unittest.TestCase):
         self.assertIn('generator-close', state.events)
         self.assertIn('close', state.events)
 
+    def test_dependent_pair_budget_precedes_message_materialization(self):
+        config = self.config(limit=4)
+        class Pairs:
+            def __len__(self):
+                return 1000000
+            def __iter__(self):
+                raise AssertionError('budget rejection expanded dependent pairs')
+        with recorded_processor(self.reply) as state:
+            task = DependentTableTask(self.source, 'deferred', state.events)
+            original = task.query_batches
+            def deferred(source):
+                program = original(source)
+                try:
+                    predictions = yield next(program)
+                    program.send(predictions)
+                    yield Pairs()
+                finally:
+                    program.close()
+            task.query_batches = deferred
+            with self.assertRaisesRegex(BudgetExhausted, 'next complete native batch') as caught:
+                run_query(task, config, self.root/'query', checkout='fixture')
+        self.assertEqual(caught.exception.query_report['request_batch_counts'], [3,1000000])
+        self.assertEqual(caught.exception.query_report['logical_requests'], 3)
+        self.assertEqual(caught.exception.query_report['physical_attempts_reserved'], 3)
+        self.assertEqual(len(state.requests), 3)
+        self.assertIn('generator-close', state.events)
+
     def test_offline_unknown_batch_blocks_next_submission_and_final_unknown_preserves_sink(self):
         for unknown_batch in (1,2):
             with self.subTest(unknown_batch=unknown_batch), tempfile.TemporaryDirectory() as temporary:

@@ -553,8 +553,9 @@ def native_query_batches(task, source):
     """Yield actual native batches and return the complete query relation.
 
     A task with dependent operators owns its ordinary Python query generator.
-    Existing tasks delegate one batch. Runners own submission, finite physical
-    budgets and result-release timing; this boundary has no execution policy.
+    Existing tasks delegate one batch. Each batch is a sized iterable; runners
+    check its count before materialization and native submission. Runners own
+    finite physical budgets and result-release timing, not query semantics.
     """
     if hasattr(task, 'query_batches'):
         return (yield from task.query_batches(source))

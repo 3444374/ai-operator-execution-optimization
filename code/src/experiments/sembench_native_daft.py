@@ -121,7 +121,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
             raise ValueError('the finite native budget cannot cover the eligible source')
         query = native_query_batches(task, source)
         pending = next(query)
-        requests.extend(pending)
+        if isinstance(pending, list):
+            requests.extend(pending)
         report['native_batches'] = []
 
         def advance(predictions):
@@ -137,7 +138,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
                         raise TimeoutError('independent Daft complete sink exceeded its query allowance')
                     return
                 if pending:
-                    requests.extend(pending)
+                    if isinstance(pending, list):
+                        requests.extend(pending)
                     return
                 report['native_batches'].append(dict(index=len(report['native_batches']),
                     logical_requests=0, status='completed', native_worker_started=False))
@@ -150,6 +152,9 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
             report['native_batches'].append(batch)
             if len(batch_requests) > unit.remaining:
                 raise ValueError('the finite native budget cannot cover the next complete query batch')
+            if not isinstance(batch_requests, list):
+                batch_requests = list(batch_requests)
+                requests.extend(batch_requests)
             if not batch_requests:
                 advance([])
             else:
@@ -455,7 +460,8 @@ def run_attached_session(config, directory, *, model_python, supervise=supervise
                     raise ValueError('the remaining HTTP allowance cannot cover the complete fresh source')
                 query = native_query_batches(task, source)
                 pending = next(query)
-                requests.extend(pending)
+                if isinstance(pending, list):
+                    requests.extend(pending)
                 current['native_batches'] = []
                 audit_inputs = []
 
@@ -472,7 +478,8 @@ def run_attached_session(config, directory, *, model_python, supervise=supervise
                                 raise TimeoutError('the attached Daft complete sink exceeded its query allowance')
                             return
                         if pending:
-                            requests.extend(pending)
+                            if isinstance(pending, list):
+                                requests.extend(pending)
                             return
                         current['native_batches'].append(dict(index=len(current['native_batches']),
                             logical_requests=0, status='completed', native_worker_started=False))
@@ -486,6 +493,9 @@ def run_attached_session(config, directory, *, model_python, supervise=supervise
                     terminal_path = None
                     if len(batch_requests) > unit.remaining:
                         raise ValueError('the remaining HTTP allowance cannot cover the next complete query batch')
+                    if not isinstance(batch_requests, list):
+                        batch_requests = list(batch_requests)
+                        requests.extend(batch_requests)
                     if not batch_requests:
                         advance([])
                     else:

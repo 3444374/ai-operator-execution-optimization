@@ -1730,12 +1730,12 @@ Ray在一个查询owner内推进批次，Daft复用既有逐批worker／IPC／AC
 最后完整sink在末批ACK之前，前序必要退出仍计入查询。普通关系、真实读数和图像处理保持在查询内。
 本次替代runner旧单批执行主体，既有文本入口／profile保留有效用途；没有长期保留第二套逐题执行器。
 
-| 同一任务工厂场景 | 本批接入 | 仍未接入或未验证 |
+| 同一任务工厂场景 | 8cd初始接入 | 当时范围及后续 |
 |---|---|---|
 | Animals | Q7按原两遍完整source分为N／N Filter，其余Q1/Q3/Q10保持一批 | 新分批组合模型／Daft图像资格另验；0d0cc模型成绩属于旧平铺源码 |
 | Medical | Q3／Q8完整单图Filter后原LIMIT；Q9普通三表merge后双图Filter | 新JSON视觉组合、真实原图绑定／VLM待验 |
 | Cars | Q3普通merge＋Manual＋完整Filter＋原head10；Q8完整Filter后原head100 | 其他原题未接；真实资产／VLM待验 |
-| E-Commerce | Q2 Filter、Q4 Extract、Q6 Map、Q8/Q9 exact pair、Q12文本Filter→实际幸存图片Extract、Q13图文Filter | Q10/Q11依赖Join、Q14 TopK未接；真实资产／模型待验 |
+| E-Commerce | Q2 Filter、Q4 Extract、Q6 Map、Q8/Q9 exact pair、Q12文本Filter→实际幸存图片Extract、Q13图文Filter | Q10/Q11当时未接，后续见[依赖Join](#native-ecommerce-dependent-outfits)；Q14及真实资产／模型待验 |
 | MMQA | Q2a／Q7完整视觉exact pair；Q2b真实Join匹配→颜色Extract | 新JSON组合模型待验，尚无真实非空后继Extract资格；Q5原生归约未接 |
 
 这些场景任务由Ray和Daft同一配置工厂选择；Ray显式打开prepare_image_stage，Daft图文显式选择attached-session。
@@ -1760,6 +1760,29 @@ Daft真实子进程／IPC／ACK及HTTP记账、Ray录制processor与任务结果
 证据SHA-256为`3d351eaa015fa6aae994705693fb4c8a5d6331cad3a59ddd8b13f29ec192308d`、
 `be7810e74663a3c25b808abc50ba65478889f2520c6bac4e49ebff10cc8bb9ee`。
 前两次消费者helper漏checkout／图像开关的失败保留，仅修本地验证配置，没有更改生产语义。
+
+<a id="native-ecommerce-dependent-outfits"></a>
+## E-Commerce 多分支 Filter 与依赖 Join
+
+8cd108a83后在同一个EcommerceVisualTask接Q10/Q11，不新增系统runner：Q10原色彩／price<=1000预筛后，
+三次完整Filter得到footwear／bottomwear／topwear，再执行两次真实依赖Join；Q11三次完整Filter和price<=500后的accessories Filter，
+先footwear×accessories、bottomwear×topwear，再对实际两侧结果作最终Join，原四ID顺序不变。
+每个分支都按原顺序独立执行，不因前一Join为空而跳过Q11另一独立Join；原普通merge、重复源行、标签回连、
+冒号改名和最终字符串ID保留。工程JSON提供完整标题／描述和图像，不冒称原LOTUS多列选择行为或作者Join算法。
+
+初始计数是实际必需的全部独立Filter请求，后继总量保持None；每个真实配对批次是普通sized iterable，
+原生runner先检查len再展开消息／解码配对图片，避免真实后继关系扩大时在额度拒绝前构造N×M消息。
+没有预设题号规模、任意行数限制、最大值冒充实际调用或额外计划框架；空配对不读图、不创建native worker。
+原生调度、永久预算与ACK机制保持；原先单批主体已由现查询级路径替代，保留的字符串profile仍用于有效纯文本任务。
+
+四个受影响完整模块135项通过、0skip／模型／GPU；包含两题的非空、首Join为空、Filter全False原函数／SDK软件差分，
+完整原关系和原评分相同，Q11独立第二Join的实际工作保持。
+三个原生入口的新增拒绝用例用一百万对的未展开迭代器证明在构造消息前停止；这里只验证有限预算边界，不是规模性能结果。
+第一轮测试错误预期原SDK不进入零大小batch_completion已保留，改正软件断言后通过；生产代码未为其增加空分支。
+另用两原生runner壳实际接Q10的6／6／6／2／2批次和Q11的6／6／6／5／2／1／2批次，
+每例Ray一遍、Daft附加服务两遍，共六条完整软件查询流程，结果和原评分一致；不授予真实E-Commerce资产／VLM或正式性能资格。
+整合软件结果SHA-256为`5894d38665bf4943d1b4719f14ae9fef92a3b09d0e7bf323fbb7149d257fe681`，
+六条消费者结果为`117df4f52692da228d17790d1da12fee861de9c8e6626e22c0f74f1097278185`。
 
 <a id="daft-6c75-4793-606f-model"></a>
 ## Daft 三条具名模型回执及 Q2b 标签更正
@@ -1794,6 +1817,28 @@ run报告内部target_native_model_qualified=False不是自我授证；外层实
 `bf7d504daef3fd09480e6522cda26d74ac0de257701923a6851e07b33e0f2488`。
 金标候选交集复核SHA-256为`4f610db316d7d1d29ac4e527299306e783d1918476566b0d0e34a1e172d8a7bd`。
 不同语义、冷暖与计时范围不互排，不把Q8复用结果转授新视觉／多阶段或Ray Serve。
+
+<a id="medical-q10-606f-model"></a>
+## 606f Medical Q10 完整源 Extract
+
+只读核验固定606f8b34a、原SemBench c814和两份服务器归档，不重跑模型／评分。
+原文件后缀scale11112及11112行金标不等于模型输入行数：真实症状源1200行，每轮全部执行，完整sink为1200×2诊断关系。
+三份生产源码与本地冻结Git逐字相同；Ray2628份、Daft1348份声明payload逐件与归档核字节／SHA，
+全部原生预测按物理源位置重建到完整诊断列，JSON null按已公布合同物化为字符串None，不静默重试或改金标。
+
+| 路径 | 真实请求与原F1 | 实测时钟 |
+|---|---|---|
+| 独立JSON Ray，单冷 | 1200终态，F1=0.3044844036 | source→完整sink 80.886512009秒，含原生懒启动 |
+| 独立JSON Daft，服务就绪后首次 | 1200终态，F1=0.3032953430 | 34.222731663秒，服务启动42.058288603秒另列 |
+| 同Daft实际模型owner重复 | 1200终态，F1=0.3139864316 | 34.653651831秒，同外部模型owner，客户端worker另建 |
+
+Daft两轮1193条解析结果相同、七条不同，按物理发生位置保留；原答案差异／低质量不被最终执行成功覆盖。
+prefix cache开启、结果缓存关闭，无额外推理预热／整题重试；native/API终态与永久计费、资源清理按原件核。
+这是统一JSON工程对照，不是作者原版算法；Ray冷与Daftready首／重复口径不能横向排位，不能转授图像或新依赖查询资格。
+Daft实际generate输入token数组、输出ID、重复HTTP一一关联等未知点仍保留；Ray Serve环境缺口及真实非空Q2b Extract待验。
+复核只重算原始预测→sink投影，质量引用归档保存的原评价，未重算金标评分。
+
+原件复核SHA-256：`fa3f029e3d8e77fbd7f64a95320fe7c5bbc9c9206cf0fb861f52981d5014e248`。
 
 ## 原件恢复与独立核验
 
@@ -1840,6 +1885,8 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 6c75 LOTUS＋Daft Animals Q7 sf64 | 3361273 | 1482 | `34e53d7269e3efa1c3105b2c21e5c62cf536b49abd8859581b2f8dbe64eb10b1` |
 | 4793 LOTUS＋Daft MMQA Q2b sf25 | 240934848 | 1425 | `1d87ce019eec252036af50850ce5d28b3b3f118ffefde23bf9cec6ca598324c4` |
 | 606f 独立JSON Daft Movie Q8同owner两轮 | 3790208 | 1482 | `b1aee233c72bdbcce806fd6a1ab70437bf3dff3700b97071735335d089b35930` |
+| 606f 独立JSON Ray Medical Q10完整1200行 | 4447628 | 2628 | `e5dcff3e78389d7579d9986f8fd1107e48d44a9c438af5232cf240859e71c4cd` |
+| 606f 独立JSON Daft Medical Q10同owner两轮 | 7076616 | 1348 | `6c105a256431036c47720bc70f457d51b6aa9542f9c082069b285734a75c6780` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

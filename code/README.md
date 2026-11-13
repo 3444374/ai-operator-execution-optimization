@@ -20,7 +20,7 @@ LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当�
 | 原生 LOTUS 外部服务查询 | [run_sembench_lotus_query.py](scripts/experiments/run_sembench_lotus_query.py) | 图像／多模态原题与 Q5 原分层聚合共用查询生命周期、原评价和逐 POST 预算 |
 | LOTUS＋Daft 完整原题 | [查询接线](src/experiments/native_daft_sembench.py) | 原文本模型 worker，或[外部 OpenAI 兼容服务模板](configs/sembench_daft_native_openai.example.json)接原视觉消息；共用原题及 LOTUS 语义 |
 | 独立原生 Ray／Daft 任务 | [Ray runner](src/experiments/sembench_native_ray.py)、[Daft runner](src/experiments/sembench_native_daft.py) | 文本与图文任务共用[任务工厂](src/baselines/text/sembench_native_text.py)和查询级依赖批次；Ray图像processor／Daft附加服务执行原生图，Daft本地字符串profile仍拒绝图片；统一JSON工程对照，无LOTUS语义依赖；[覆盖与待接项](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-batches-visual-families) |
-| 原生系统持续模型profile | 同一[Ray runner](src/experiments/sembench_native_ray.py)的Serve会话与同一[Daft runner](src/experiments/sembench_native_daft.py)的附加服务会话 | 两遍fresh查询、原任务／评分及有限预算；Daft Movie Q8已有具名同模型owner回执，Ray Serve及新多阶段组合另验；[调用](scripts/README.md#native-daft-attached-session) |
+| 原生系统持续模型profile | 同一[Ray runner](src/experiments/sembench_native_ray.py)的Serve会话与同一[Daft runner](src/experiments/sembench_native_daft.py)的附加服务会话 | 两遍fresh查询、原任务／评分及有限预算；Daft Movie Q8及Medical Q10已有具名同模型owner回执，Ray Serve及新多阶段组合另验；[调用](scripts/README.md#native-daft-attached-session) |
 | SemBench 图像准备 | [check_sembench_image_query.py](scripts/experiments/check_sembench_image_query.py) | Animals、MMQA、E-Commerce、Cars和Medical已接视觉题的输入／预算检查；[实际资格](INFRA_STATUS.md)按路径区分 |
 | LOTUS CLIP 检索 | [run_lotus_image_retrieval.py](scripts/experiments/run_lotus_image_retrieval.py) | 原检索方法与明确的图像执行 owner |
 | DuckDB＋作者 IMLane Q3 | [构建与接线](integrations/imlane_duckdb/README.md) | 原SQL／UDF路径；软件、冻结模型来源与当前计时资格分列，v2仍含内部同步回执开销 |

@@ -108,6 +108,7 @@ class NativeEcommerceTests(unittest.TestCase):
         batches, generator = [], task.query_batches(source)
         requests = next(generator)
         for values in plans:
+            requests = list(requests)
             batches.append(deepcopy(requests))
             predictions = list(reversed(self.predictions(requests, values)))
             try:
@@ -262,8 +263,8 @@ class NativeEcommerceTests(unittest.TestCase):
             wrong[0]['generated_text'] = value
             with self.subTest(value=value), self.assertRaises(ValueError):
                 task.finish(source, wrong)
-        for query in ('Q10', 'Q11', 'Q14'):
-            with self.assertRaisesRegex(ValueError, 'Join and TopK'):
+        for query in ('Q14',):
+            with self.assertRaisesRegex(ValueError, 'TopK'):
                 self.task(query)
         mixed = self.task('Q12')
         for value in ('{"id":true,"brand":"x","category":"y"}',
@@ -322,6 +323,7 @@ class NativeEcommerceTests(unittest.TestCase):
                 self.assertEqual(task.evaluate(source, result, checkout=CHECKOUT, evaluation=evaluation),
                                  self.original_quality(query, expected))
                 self.assertEqual(len({r['call_id'] for r in batches[0]}), count)
+
                 self.assertEqual(self.images([r['messages'] for r in batches[0]]), self.images(original_batches[0]))
                 self.assertEqual(len(source.image_reads), len(source.right_frame))
                 self.assertNotIn('REFERENCE_ONLY', json.dumps(batches))
@@ -332,6 +334,72 @@ class NativeEcommerceTests(unittest.TestCase):
                     self.assertEqual(set(evidence), {'productDisplayName', 'productDescriptors'})
                     self.assertGreater(len(evidence['productDescriptors']), 3000)
                 task.verify_source(source)
+
+    def outfit_inputs(self):
+        import pandas as pd
+
+        path = self.data / 'styles_details.parquet'
+        styles = pd.read_parquet(path)
+        styles['baseColour'] = 'Black'
+        styles['price'] = [80, 80, 80, 80, 700]
+        styles.to_parquet(path, index=False)
+
+    def test_dependent_outfits_match_complete_original_relations_and_actual_stage_counts(self):
+        self.outfit_inputs()
+        footwear = [True, True, False, False, False, False]
+        bottomwear = [False, False, True, False, False, False]
+        topwear = [False, False, False, True, False, False]
+        for query in ('Q10', 'Q11'):
+            for mode in ('match', 'first-join-empty', 'no-filter-match'):
+                with self.subTest(query=query, mode=mode):
+                    task = self.task(query)
+                    evaluation = task.prepare_evaluation()
+                    source = task.read_source()
+                    self.assertEqual(task.model_request_count(source), 23 if query == 'Q11' else 18)
+                    self.assertIsNone(task.describe(source)['expected_model_calls'])
+                    filters = [footwear, bottomwear, topwear]
+                    if query == 'Q11':
+                        filters.append([False, False, False, False, True])
+                    if mode == 'no-filter-match':
+                        filters = [[False]*len(flags) for flags in filters]
+                    first = [True, False] if mode == 'match' else [False, False] if mode == 'first-join-empty' else []
+                    joins = [first]
+                    if query == 'Q11':
+                        joins.append([True] if mode != 'no-filter-match' else [])
+                    joins.append([True] if mode == 'match' else [])
+                    plans = [[dict(keep=value) for value in flags] for flags in filters+joins]
+                    actual, batches = self.drive(task, source, plans)
+                    expected, original = self.original(query,
+                        ['True' if value else 'False' for flags in filters+joins for value in flags])
+                    self.assertEqual(task.encode_result(actual), task.encode_result(expected))
+                    self.assertEqual([len(rows) for rows in batches], [len(flags) for flags in filters+joins])
+                    self.assertEqual([len(rows) for rows in original], [len(flags) for flags in filters+joins])
+                    self.assertEqual(source.query_batch_counts, [len(flags) for flags in filters+joins])
+                    self.assertEqual(task.evaluate(source, actual, checkout=CHECKOUT, evaluation=evaluation),
+                                     self.original_quality(query, expected))
+                    self.assertEqual(len({row['call_id'] for rows in batches for row in rows}), sum(map(len, batches)))
+                    for rows in batches[len(filters):]:
+                        for row in rows:
+                            self.assertEqual(len(self.images([row['messages']])), 2)
+                    task.verify_source(source)
+
+    def test_dependent_pair_count_does_not_materialize_messages_or_read_pair_images(self):
+        self.outfit_inputs()
+        for query, filters in [('Q10', 3), ('Q11', 4)]:
+            task = self.task(query)
+            source = task.read_source()
+            program = task.query_batches(source)
+            requests = next(program)
+            for index in range(filters):
+                count = len(requests)
+                predictions = self.predictions(requests, [dict(keep=True)]*count)
+                with patch.object(task, '_product_pair_messages', side_effect=AssertionError('expanded pair work')):
+                    requests = program.send(predictions)
+            reads = len(source.image_reads)
+            with patch.object(task, '_image', side_effect=AssertionError('pair count decoded an image')):
+                self.assertEqual(len(requests), 30 if query == 'Q11' else 36)
+                self.assertEqual(len(source.image_reads), reads)
+            program.close()
 
     def test_join_repeated_index_labels_IDs_and_NaNs_keep_original_joinback_expansion(self):
         for query, missing_ids in [('Q8', True), ('Q9', False)]:

@@ -133,8 +133,8 @@ class SoftwareTokenizer:
 
 
 class DependentQueryFixture:
-    def __init__(self, task, *, empty=False):
-        self.task, self.empty = task, empty
+    def __init__(self, task, *, empty=False, deferred=False):
+        self.task, self.empty, self.deferred = task, empty, deferred
 
     def __getattr__(self, name):
         return getattr(self.task, name)
@@ -143,6 +143,14 @@ class DependentQueryFixture:
         from src.baselines.text.sembench_native_text import TextFilterTask
         first = self.task.requests(source)
         predictions = yield first
+        if self.deferred:
+            class Pairs:
+                def __len__(self):
+                    return 1000000
+                def __iter__(self):
+                    raise AssertionError('budget rejection expanded dependent pairs')
+            yield Pairs()
+            raise AssertionError('insufficient budget resumed the dependent task')
         keep = {row['call_id']: TextFilterTask.parse(row['generated_text']) for row in predictions}
         selected = [] if self.empty else [row for row in first if keep[row['call_id']]]
         second = [dict(row, call_id=row['call_id']+'-followup') for row in selected]
@@ -271,6 +279,20 @@ class IndependentDaftQueryTests(unittest.TestCase):
         self.assertEqual(report['unsubmitted_logical_requests'], 2)
         self.assertFalse(report['native_batches'][-1]['native_worker_started'])
         self.assertNotIn('result', report)
+
+    def test_dependent_pair_budget_precedes_message_materialization(self):
+        factory = driver.task_from_config
+        supervisor = SoftwareSupervisor()
+        with patch.object(driver, 'task_from_config', side_effect=lambda config: DependentQueryFixture(factory(config), deferred=True)):
+            with self.assertRaisesRegex(ValueError, 'next complete query batch') as caught:
+                driver.run_query(dict(self.config(), max_model_calls=5), self.root/'deferred-budget',
+                    model_python=sys.executable, tokenizer=SoftwareTokenizer(), supervise=supervisor)
+        self.assertEqual(len(supervisor.calls), 1)
+        report = caught.exception.query_report
+        self.assertEqual(report['logical_model_requests'], 4)
+        self.assertEqual(report['physical_attempts_reserved'], 4)
+        self.assertEqual(report['native_batches'][-1]['logical_requests'], 1000000)
+        self.assertFalse(report['native_batches'][-1]['native_worker_started'])
 
     def test_one_filter_family_reaches_complete_officially_scored_sinks_before_ACK_close(self):
         expected = {'Q1':[['r0'],['r2'],['r3'],['r4'],['r5']], 'Q2':[['r0'],['r3']],
@@ -760,6 +782,18 @@ class AttachedDaftSessionTests(unittest.TestCase):
         self.assertEqual(query['native_api']['unresolved'], 1)
         self.assertNotIn('result', query)
         self.assertIsNone(report['warm_qualified'])
+
+    def test_attached_dependent_pair_budget_precedes_message_materialization(self):
+        factory = driver.task_from_config
+        with patch.object(driver, 'task_from_config', side_effect=lambda config: DependentQueryFixture(factory(config), deferred=True)):
+            with self.assertRaisesRegex(ValueError, 'next complete query batch') as caught:
+                self.invoke()
+        self.assertEqual(len(self.supervisor.calls), 1)
+        query = caught.exception.query_report['queries'][0]
+        self.assertEqual(query['logical_model_requests'], 4)
+        self.assertEqual(query['physical_HTTP_attempts'], 4)
+        self.assertEqual(query['native_batches'][-1]['logical_requests'], 1000000)
+        self.assertFalse(query['native_batches'][-1]['native_worker_started'])
 
     def test_two_fresh_queries_share_one_permanent_budget_with_ACK_and_fresh_owner_proof(self):
         snapshots = []
