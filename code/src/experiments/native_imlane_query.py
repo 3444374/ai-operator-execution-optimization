@@ -6,6 +6,8 @@ checks. This CPU entry never loads a model or substitutes a records execution.
 
 import argparse
 import csv
+import hashlib
+import io
 import math
 import os
 from pathlib import Path
@@ -14,7 +16,7 @@ import threading
 import time
 
 from src.baselines.text.sembench_movie_native import (
-    evaluate_q3, load_q3_source, q3_messages,
+    describe_q3_source, evaluate_q3, load_q3_source, q3_messages, read_q3_source,
 )
 from src.infrastructure.private_artifacts import (
     content_digest, file_identity, new_private_directory, open_private_text,
@@ -23,27 +25,50 @@ from src.infrastructure.private_artifacts import (
 from src.infrastructure.redact import redact_text
 
 
+def _write_input_rows(stream, rows):
+    writer = csv.DictWriter(stream, fieldnames=('occurrence_id', 'id', 'reviewId', 'reviewText'))
+    writer.writeheader()
+    writer.writerows(rows)
+
+
 def _export_source(source, directory):
     directory = Path(directory)
     new_private_directory(directory)
     with open_private_text(directory / 'input.csv', newline='') as stream:
-        writer = csv.DictWriter(stream, fieldnames=('occurrence_id', 'id', 'reviewId', 'reviewText'))
-        writer.writeheader()
-        writer.writerows(source['rows'])
+        _write_input_rows(stream, source['rows'])
+
+
+def materialize_input(reviews_csv, directory, *, provider_mode):
+    """Read and export the real gold-free input, without audit-only hashing."""
+    if provider_mode not in {'model', 'software_ipc'}:
+        raise ValueError('declare model or software_ipc input explicitly')
+    source = read_q3_source(reviews_csv)
+    directory = Path(directory)
+    _export_source(source, directory)
+    return dict(raw_bytes=source['raw_bytes'], rows=source['rows'],
+        original_csv=str(Path(reviews_csv).resolve()), provider_mode=provider_mode)
+
+
+def publish_input_packet(directory, snapshot):
+    """Publish identity after execution, using the exact materialized snapshot."""
+    directory = Path(directory)
+    expected = io.StringIO(newline='')
+    _write_input_rows(expected, snapshot['rows'])
+    data = expected.getvalue().encode('utf-8')
+    input_identity = dict(sha256=hashlib.sha256(data).hexdigest(), bytes=len(data))
+    if file_identity(directory / 'input.csv') != input_identity:
+        raise ValueError('native IMLane input.csv changed after materialization')
+    packet = dict(schema='semloom.imlane.duckdb.q3.input.v1', provider_mode=snapshot['provider_mode'],
+        original_csv=snapshot['original_csv'], source=describe_q3_source(snapshot),
+        input=input_identity)
+    write_private_json(directory / 'packet.json', packet)
+    return packet
 
 
 def prepare_input(reviews_csv, directory, *, provider_mode):
-    """Export the full gold-free model input without constructing software replies."""
-    if provider_mode not in {'model', 'software_ipc'}:
-        raise ValueError('declare model or software_ipc input explicitly')
-    source = load_q3_source(reviews_csv)
-    directory = Path(directory)
-    _export_source(source, directory)
-    packet = dict(schema='semloom.imlane.duckdb.q3.input.v1', provider_mode=provider_mode,
-        original_csv=str(Path(reviews_csv).resolve()), source=source['source'],
-        input=file_identity(directory / 'input.csv'))
-    write_private_json(directory / 'packet.json', packet)
-    return packet
+    """Keep the immediate input-plus-packet contract for existing CPU callers."""
+    snapshot = materialize_input(reviews_csv, directory, provider_mode=provider_mode)
+    return publish_input_packet(directory, snapshot)
 
 
 def prepare_fixture(reviews_csv, directory):

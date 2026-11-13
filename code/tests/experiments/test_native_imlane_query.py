@@ -1,6 +1,7 @@
 """Full-cohort export and saved-result audit without an author/model runtime."""
 
 import csv
+import hashlib
 from contextlib import chdir
 import os
 from pathlib import Path
@@ -9,7 +10,9 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
-from src.experiments.native_imlane_query import audit_result, prepare_fixture, run_fixture, software_reply
+from src.experiments.native_imlane_query import (
+    audit_result, materialize_input, prepare_fixture, prepare_input, publish_input_packet, run_fixture, software_reply,
+)
 from src.baselines.text.sembench_movie_native import load_q3_source, q3_messages
 from src.infrastructure.private_artifacts import content_digest, read_json, write_private_json
 
@@ -40,6 +43,40 @@ class NativeIMLanePacketTests(unittest.TestCase):
         with patch.dict(os.environ, {'SEMLOOM_IMLANE_Q3_REPLIES': str(self.packet / 'replies.json')}):
             self.assertEqual(software_reply([q3_messages(row['reviewText']) for row in rows[1:]]),
                              ['Answer: True', 'Answer: False'])
+
+    def test_deferred_packet_preserves_immediate_contract_without_identity_in_materialization(self):
+        immediate = self.root/'immediate'
+        expected = prepare_input(self.source, immediate, provider_mode='software_ipc')
+        deferred = self.root/'deferred'
+        with patch('src.baselines.text.sembench_movie_native.hashlib.sha256',
+                   side_effect=AssertionError('source interval computed an audit hash')), \
+                patch('src.experiments.native_imlane_query.file_identity',
+                      side_effect=AssertionError('source interval re-read input identity')):
+            snapshot = materialize_input(self.source, deferred, provider_mode='software_ipc')
+        self.assertFalse((deferred/'packet.json').exists())
+        self.assertEqual((deferred/'input.csv').read_bytes(), (immediate/'input.csv').read_bytes())
+        self.assertEqual(publish_input_packet(deferred, snapshot), expected)
+
+    def test_deferred_identity_comes_from_actual_source_bytes_even_if_source_changes(self):
+        original = self.source.read_bytes()
+        directory = self.root/'deferred'
+        snapshot = materialize_input(self.source, directory, provider_mode='software_ipc')
+        self.source.write_bytes(original + b'\n')
+        packet = publish_input_packet(directory, snapshot)
+        self.assertEqual(packet['source']['sha256'], hashlib.sha256(original).hexdigest())
+        self.assertEqual(packet['source']['bytes'], len(original))
+        with self.assertRaisesRegex(ValueError, 'source changed'):
+            audit_result(directory, self.root/'not-read.json', self.root/'not-read',
+                         'software-checkout', provider_mode='software_ipc')
+
+    def test_deferred_packet_rejects_input_mutated_after_export(self):
+        directory = self.root/'deferred'
+        snapshot = materialize_input(self.source, directory, provider_mode='software_ipc')
+        path = directory/'input.csv'
+        path.write_bytes(path.read_bytes() + b'\n')
+        with self.assertRaisesRegex(ValueError, 'input.csv changed after materialization'):
+            publish_input_packet(directory, snapshot)
+        self.assertFalse((directory/'packet.json').exists())
 
     def receipts(self):
         source = load_q3_source(self.source)

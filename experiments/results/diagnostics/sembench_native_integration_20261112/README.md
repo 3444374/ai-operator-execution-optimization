@@ -657,12 +657,12 @@ E-Commerce Q12、Cars Q3、Medical Q9，以及Q5单请求和多层长摘要。
 整合来源`cf2208960225cb64e8aba3b338d028bda5ec33ef`的薄driver、worker和软件检查，
 复用现有作者prediction SQL／Python UDF／独立模型服务；不另建第二套Q3执行器。
 该路径的题目合同不导入LOTUS，明确参考1.2.4 non-CoT规则；它不是作者未公开的论文Q7 UDF复现，
-也不与LOTUS over IMLane组合路径重复统计。三份生产／测试源码与该来源保持相同Git blob。
-只更正其README把DOUBLE Map误标为Q3时钟的文字，DOUBLE继续使用`sembench.source_to_sink.v3`。
+也不与LOTUS over IMLane组合路径重复统计。cf220初次整合时三份生产／测试源码保持相同Git blob，
+只更正README把DOUBLE Map误标为Q3时钟的文字；DOUBLE继续使用`sembench.source_to_sink.v3`，后续Python拆分另记如下。
 
 模型与作者runtime就绪后，真实CSV读取、必要输入物化／交接、DuckDB扫描与普通谓词、
 prediction及C++完整COUNT进入`imlane.q3.source_to_sink.v1`。额外COUNT／EXPLAIN在完整COUNT
-时间戳后，worker冷区间另记；当前输入packet的摘要和元数据写入仍在主区间，
+时间戳后，worker冷区间另记；该冻结来源的输入packet摘要和元数据写入仍在当次主区间，
 不是其他路径排除额外审计后的统一成绩，不作事后相减。
 整合后的30项本地软件检查通过，0模型／原生SQL；Linux薄driver、SQL和模型事实来自下述协调者回执。
 
@@ -675,8 +675,30 @@ vLLM0.25.1，原生prefix cache开启、结果缓存关闭。
 重新关联原消息和答复，重算原parser、COUNT与官方评分，结果一致；没有重跑SQL或模型。
 120次API发生项与原账本／请求身份分列，独立物理调用、kernel、价格和输出token ID数组仍未知。
 首轮私有审计误将API次数当作必须填入的物理计数而失败，修正私有断言后保持原未知项，失败记录保留。
-不据此声称质量达标、整个IMLane runner或全部SemBench已通过。当前组合只继承相同源码身份，
-不把冻结原件改记为新组合运行。
+不据此声称质量达标、整个IMLane runner或全部SemBench已通过。初次整合继承相同源码身份，
+冻结原件不改记为后续组合或新时钟运行。
+
+<a id="native-imlane-q3-input-audit-v2"></a>
+### 后续 Python 输入物化与身份审计拆分
+
+真实source读取／parse／投影与四列CSV写出、flush/fsync仍在查询内；SHA、额外统计和packet发布移到
+COUNT后、owner清理后、`audit_result`前。身份来自本次实际读取字节与投影行，使用同一个writer重建
+期望导出字节，再与实际`input.csv`核对；源或导出文件后续变化不能获得成功。现有`prepare_input`
+仍即时导出并发布packet，软件fixture的调用和数据合同保持。失败也保留可发布的源证据，一次性发布失败
+不覆盖原native错误，也不因清理再尝试不确定的同一写入。
+
+这次只排除了outer source/packet层，Python时钟命名`imlane.q3.source_to_sink.v2`，原生COUNT marker v1单列。
+沿完整调用链复核发现，成功Arrow batch在COUNT前仍同步发布UDF receipt和provider started/terminal，
+并计算消息／请求／响应指纹；这些尚未后置。IPC、client关闭、失败terminal监测与额度预扣是必要carrier，
+不能为计时整体挪走。因此没有采用最初候选的统一v3标签；相同起止事件也不能证明额外审计全排除。
+成功审计的query-scope留存及COUNT后可靠flush/确认、实时失败控制与完整审计payload的分离仍待闭合。
+
+现有输入／worker及直接native语义检查在隔离组合51项全过；12种临时CSV乘3种mode的36组旧／新
+`input.csv`和`packet.json`逐字节相同。受控软件区间包含2秒读取、3秒导出及5秒完整COUNT，后置
+身份／统计／发布注入的31秒未进入10秒查询值；这些是软件时钟表征，不是数据库或模型延迟。
+首轮过严harness拦截了NumPy的只读`lscpu`探测，失败输出与放行准确探测后的通过结果分别保留。
+本批C++、DSO、UDF、provider和模型协议未改，真实SQL／模型及保留raw bytes/rows的规模RSS仍待验证；
+cf220的120次真实运行、质量误差和v1时长保持原样。
 
 ## 原件恢复与独立核验
 

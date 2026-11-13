@@ -153,11 +153,19 @@ IPC减少TCP／HTTP协议、每行HTTP请求和HTTPX依赖，但仍有进程切�
 
 Movie Q3 的独立 SQL 入口在模型与作者 runtime 就绪后开始读取原 CSV，源转换、临时 CSV 交接、
 DuckDB 扫描、普通筛选、prediction 与 COUNT 都进入 `ready_source_to_sink_seconds`。
-`query_clock_version=imlane.q3.source_to_sink.v1` 的终点为 C++ 完整 COUNT 物化时刻；额外源计数、
-EXPLAIN、审计、持久化和关闭不延长它。`cold_worker_entry_to_sink_seconds` 另含准备与启动，
-两者不混比；源转换仍有当前输入 packet 的身份摘要开销，不从测量中估算扣除。
-本次需重建 Q3 薄 driver；旧二进制/历史时长不回填。仅 Python 软件生命周期检查不代表新 Linux SQL
-或模型资格；冻结来源的目标回执及原件独立核验范围见[接入报告](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-imlane-q3-cf220)。
+Python wrapper的`query_clock_version=imlane.q3.source_to_sink.v2`从真实读取开始，到C++完整COUNT物化时刻。
+原source字节及投影行保留到后置审计；source/input身份、额外统计和packet JSON在owner清理后发布，
+仍核对实际读取快照与实际导出内容，发布只尝试一次。`prepare_input`的CPU即时packet合同保持。
+原生marker另存`native_query_clock_version=imlane.q3.source_to_sink.v1`；无marker的旧driver只保留
+观测返回的诊断包络，新版本留空。`cold_worker_entry_to_sink_seconds`另含准备与启动，两者不混比。
+
+**v2仍不是统一的`sembench.source_to_sink.v3`。** UDF/provider的消息指纹及同步回执写盘仍在COUNT前；
+必要IPC、额度预扣及失败控制也在内。不能把后置读取这些回执当作其写盘已排除，更不事后减去估算成本。
+真正后置成功审计还需COUNT后、所属进程退出前的可靠flush/确认，失败终态和额度预扣仍须即时保留。
+本批没有改C++、DSO、UDF/provider或其协议，已有合格COUNT marker的driver可继续绑定，不重复编译未变源码。
+仅Python软件检查不代表新Linux SQL或模型资格；cf220的packet-inclusive v1成绩保持，
+见[冻结来源](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-imlane-q3-cf220)及
+[v2拆分范围](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-imlane-q3-input-audit-v2)。
 
 完整2000源物化计入查询scope，普通筛选仍由DuckDB完成，正常逻辑量120。
 审计用同worker的调用起止区间连接UDF与IPC批次，再逐position核对occurrence，重复消息不靠全局Counter掩盖交换。

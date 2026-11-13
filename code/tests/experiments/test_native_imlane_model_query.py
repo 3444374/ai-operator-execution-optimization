@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, Mock, patch
 from src.experiments.native_imlane_model_query import (
     QueryWindow, audit_model_result, configuration, run_worker, supervised_run,
 )
-from src.experiments.native_imlane_query import prepare_input
+from src.experiments.native_imlane_query import materialize_input, prepare_input
 from src.baselines.text.sembench_movie_native import load_q3_source, q3_messages
 from src.infrastructure.private_artifacts import content_digest, read_json, write_private_json
 
@@ -444,17 +444,20 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
         def prepare(*args, **kwargs):
             self.events.append('source-read')
             source_started.append(time.monotonic_ns())
-            return prepare_input(*args, **kwargs)
+            return materialize_input(*args, **kwargs)
 
-        with patch('src.experiments.native_imlane_model_query.prepare_input', side_effect=prepare):
+        with patch('src.experiments.native_imlane_model_query.materialize_input', side_effect=prepare):
             report = run_worker(self.args, service_factory=self.factory)
         self.assertEqual(self.events[:4], ['model-start', 'author-start', 'source-read', 'native-query'])
-        self.assertEqual(report['query_clock_version'], 'imlane.q3.source_to_sink.v1')
+        self.assertEqual(report['query_clock_version'], 'imlane.q3.source_to_sink.v2')
+        self.assertEqual(report['native_query_clock_version'], 'imlane.q3.source_to_sink.v1')
         ready = read_json(self.args.output / 'query.json')['result_ready_monotonic_ns']
         self.assertLessEqual(report['source_started_ns'], source_started[0])
         self.assertLessEqual(source_started[0], ready)
         self.assertLessEqual(ready, report['owned_cleanup_completed_monotonic_ns'])
         self.assertLessEqual(ready, report['audit_started_monotonic_ns'])
+        self.assertLessEqual(report['owned_cleanup_completed_monotonic_ns'], report['input_audit_started_monotonic_ns'])
+        self.assertLessEqual(report['input_audit_ended_monotonic_ns'], report['audit_started_monotonic_ns'])
         self.assertEqual(report['ready_source_to_sink_seconds'],
                          (ready - report['source_started_ns']) / 1e9)
         self.assertGreaterEqual(report['cold_worker_entry_to_sink_seconds'],
@@ -473,7 +476,89 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
         with patch.object(worker, 'read_json', side_effect=read):
             report = run_worker(self.args, service_factory=self.factory)
         self.assertIsNone(report['query_clock_version'])
+        self.assertIsNone(report['native_query_clock_version'])
         self.assertIn('ready_source_to_sink_seconds', report)
+
+    def test_source_clock_keeps_real_materialization_and_excludes_deferred_identity_cost(self):
+        import src.experiments.native_imlane_model_query as worker
+        import src.experiments.native_imlane_query as packet
+        from integrations.imlane_records import owner
+
+        now = [1000.0]
+        window = QueryWindow(1200, 120, 8, clock=lambda: now[0], cleanup_path=self.args.output/'cleanup-start.json')
+        read, export, describe, identity, write = (packet.read_q3_source, packet._export_source,
+            packet.describe_q3_source, packet.file_identity, packet.write_private_json)
+        spawn = owner.spawn.side_effect
+        self.service.__enter__.side_effect = lambda: now.__setitem__(0, now[0]+90) or self.service
+
+        def cost(function, seconds):
+            def wrapped(*args, **kwargs):
+                result = function(*args, **kwargs)
+                now[0] += seconds
+                return result
+            return wrapped
+
+        def driver(*args, **kwargs):
+            self.assertTrue((self.args.output/'input/input.csv').exists())
+            self.assertFalse((self.args.output/'input/packet.json').exists())
+            now[0] += 5
+            return spawn(*args, **kwargs)
+
+        with patch.object(worker, 'QueryWindow', return_value=window), \
+                patch.object(worker.time, 'monotonic', side_effect=lambda: now[0]), \
+                patch.object(worker.time, 'monotonic_ns', side_effect=lambda: int(now[0]*1e9)), \
+                patch.object(packet, 'read_q3_source', side_effect=cost(read, 2)), \
+                patch.object(packet, '_export_source', side_effect=cost(export, 3)), \
+                patch.object(packet, 'describe_q3_source', side_effect=cost(describe, 7)), \
+                patch.object(packet, 'file_identity', side_effect=cost(identity, 11)), \
+                patch.object(packet, 'write_private_json', side_effect=cost(write, 13)), \
+                patch.object(owner, 'spawn', side_effect=driver):
+            report = run_worker(self.args, service_factory=self.factory)
+        self.assertEqual(report['query_clock_version'], 'imlane.q3.source_to_sink.v2')
+        self.assertEqual(report['native_query_clock_version'], 'imlane.q3.source_to_sink.v1')
+        self.assertEqual(report['ready_source_to_sink_seconds'], 10)
+        self.assertEqual(report['cold_worker_entry_to_sink_seconds'], 100)
+        self.assertEqual(report['input_audit_ended_monotonic_ns']-report['input_audit_started_monotonic_ns'], 31_000_000_000)
+        self.assertLessEqual(report['owned_cleanup_completed_monotonic_ns'], report['input_audit_started_monotonic_ns'])
+        self.assertLessEqual(report['input_audit_ended_monotonic_ns'], report['audit_started_monotonic_ns'])
+
+    def test_post_result_packet_failure_is_not_retried_or_reported_as_a_complete_query(self):
+        failure = OSError('CPU packet publication failed')
+        with patch('src.experiments.native_imlane_model_query.publish_input_packet', side_effect=failure) as publish:
+            with self.assertRaises(OSError) as caught:
+                run_worker(self.args, service_factory=self.factory)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(publish.call_count, 1)
+        self.audit.assert_not_called()
+        self.assertIn('model-close', self.events)
+        self.assertTrue((self.args.output/'result-ready.json').exists())
+        report = read_json(self.args.output/'worker.json')
+        self.assertEqual(report['status'], 'failed')
+        self.assertIn('input_audit_ended_monotonic_ns', report)
+
+    def test_native_failure_keeps_packet_evidence_after_cleanup(self):
+        failure = RuntimeError('CPU native query failed before COUNT')
+        with patch('integrations.imlane_records.owner.spawn', side_effect=failure):
+            with self.assertRaises(RuntimeError) as caught:
+                run_worker(self.args, service_factory=self.factory)
+        self.assertIs(caught.exception, failure)
+        self.audit.assert_not_called()
+        self.assertIn('model-close', self.events)
+        self.assertTrue((self.args.output/'input/packet.json').exists())
+        self.assertFalse((self.args.output/'result-ready.json').exists())
+        self.assertEqual(read_json(self.args.output/'worker.json')['error_type'], 'RuntimeError')
+
+    def test_packet_failure_after_native_failure_keeps_the_native_error_and_one_attempt(self):
+        failure = RuntimeError('CPU native query failed before COUNT')
+        with patch('integrations.imlane_records.owner.spawn', side_effect=failure), \
+                patch('src.experiments.native_imlane_model_query.publish_input_packet',
+                      side_effect=OSError('CPU packet failure')) as publish:
+            with self.assertRaises(RuntimeError) as caught:
+                run_worker(self.args, service_factory=self.factory)
+        self.assertIs(caught.exception, failure)
+        self.assertEqual(publish.call_count, 1)
+        self.assertIn('input audit publication also failed: OSError', failure.__notes__)
+        self.assertEqual(read_json(self.args.output/'worker.json')['error_type'], 'RuntimeError')
 
     def test_public_software_mode_cannot_accidentally_start_a_real_model(self):
         with patch('integrations.imlane_duckdb.model_service.ModelService') as real:

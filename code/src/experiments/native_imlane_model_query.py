@@ -15,7 +15,7 @@ import signal
 import threading
 import time
 
-from src.experiments.native_imlane_query import audit_result, prepare_input
+from src.experiments.native_imlane_query import audit_result, materialize_input, publish_input_packet
 from src.infrastructure.private_artifacts import (
     content_digest, new_private_directory, publish_private_json, read_json, write_private_json,
 )
@@ -245,11 +245,31 @@ def run_worker(args, *, service_factory=None):
         model_requests=None, physical_gpu_exit_confirmed=None, outer_host_lease_required=True,
         kind=args.kind, warmup_semantic_requests=0, whole_query_retries=0,
         source_preparation_in_cold_scope=True, service_close=None)
+    report['source_to_sink_timing_scope'] = ('fresh original CSV read/parse, occurrence projection, necessary input.csv '
+        'materialization/flush, native driver/SQL/Arrow/UDF/provider and complete COUNT; '
+        'outer source/packet identity hashes and statistics, packet JSON, evaluation and owner close excluded; '
+        'UDF/provider fingerprints and synchronous request receipts remain included, along with necessary IPC, '
+        'attempt reservation and failure control; this is not the shared v3 comparison scope')
     args.scopes = []
     args.stop_budget = owner.StopBudget(threading.Event())
     previous = {number: signal.signal(number, args.stop_budget.signal)
                 for number in (signal.SIGTERM, signal.SIGINT)}
     primary = service = None
+    pending_input = None
+
+    def publish_source_audit():
+        nonlocal pending_input
+        snapshot, pending_input = pending_input, None
+        if snapshot is None:
+            return
+        # Transfer once before I/O. A partial/uncertain publication must never
+        # be retried by failure cleanup against the same exclusive artifact.
+        report['input_audit_started_monotonic_ns'] = time.monotonic_ns()
+        try:
+            report['source'] = publish_input_packet(args.output / 'input', snapshot)['source']
+        finally:
+            report['input_audit_ended_monotonic_ns'] = time.monotonic_ns()
+
     try:
         config = configuration(read_json(args.config))
         mode = config['provider_mode']
@@ -297,8 +317,8 @@ def run_worker(args, *, service_factory=None):
                         scope.check()
                         service.check()
                         report['source_started_ns'] = time.monotonic_ns()
-                        report['source'] = prepare_input(Path(config['reviews_csv']).resolve(),
-                            args.output / 'input', provider_mode=mode)['source']
+                        pending_input = materialize_input(Path(config['reviews_csv']).resolve(),
+                            args.output / 'input', provider_mode=mode)
                         command = [str(args.driver), '--input', str(args.output / 'input/input.csv'),
                             '--module', str(kernel_root / 'q3_udf.py'), '--function', 'infer_q3',
                             '--kind', args.kind, '--output', str(args.output / 'query.json')]
@@ -326,7 +346,10 @@ def run_worker(args, *, service_factory=None):
                             if window.ready_ns is not None:
                                 if 'result_ready_monotonic_ns' not in report:
                                     native = read_json(args.output / 'query.json')
-                                    report['query_clock_version'] = native.get('query_clock_version')
+                                    native_version = native.get('query_clock_version')
+                                    report['native_query_clock_version'] = native_version
+                                    report['query_clock_version'] = ('imlane.q3.source_to_sink.v2'
+                                        if native_version == 'imlane.q3.source_to_sink.v1' else None)
                                     report['result_ready_monotonic_ns'] = window.ready_ns
                                     report['ready_source_to_sink_seconds'] = (window.ready_ns - report['source_started_ns']) / 1e9
                                     report['cold_worker_entry_to_sink_seconds'] = window.ready_ns / 1e9 - window.started
@@ -353,6 +376,7 @@ def run_worker(args, *, service_factory=None):
         if time.monotonic() > window.begin_cleanup():
             raise TimeoutError('native model Q3 cleanup exceeded its single allowance')
         report['owned_cleanup_completed_monotonic_ns'] = time.monotonic_ns()
+        publish_source_audit()
         report['audit_started_monotonic_ns'] = time.monotonic_ns()
         audit = audit_model_result(args.output, args.sembench_checkout)
         write_private_json(args.output / 'audit.json', audit)
@@ -379,6 +403,14 @@ def run_worker(args, *, service_factory=None):
                     else:
                         primary.add_note('model service cleanup also failed: ' + type(error).__name__)
                 report['service_close'] = service.report
+        try:
+            publish_source_audit()
+        except BaseException as error:
+            if primary is None:
+                primary = error
+                report.update(status='failed', error_type=type(error).__name__, error=redact_text(str(error)))
+            else:
+                primary.add_note('input audit publication also failed: ' + type(error).__name__)
         for number, handler in previous.items():
             signal.signal(number, handler)
         report['deadline'] = window.report()

@@ -39,8 +39,8 @@ def q3_decision(text):
     return True if 'true' in answer else False if 'false' in answer else True
 
 
-def load_q3_source(path):
-    """Keep every source occurrence and original value; never expose gold to AI."""
+def read_q3_source(path):
+    """Read the actual input once, retaining its bytes for later identity audit."""
     data = Path(path).read_bytes()
     labeled = list(csv.DictReader(io.StringIO(data.decode('utf-8'), newline='')))
     required = {'id', 'reviewId', 'reviewText', 'scoreSentiment'}
@@ -49,15 +49,26 @@ def load_q3_source(path):
     rows = [dict(occurrence_id=f'q3-row-{position:08d}', **{
         column: row[column] for column in ('id', 'reviewId', 'reviewText')})
         for position, row in enumerate(labeled)]
+    return dict(raw_bytes=data, rows=rows, labeled=labeled)
+
+
+def describe_q3_source(snapshot):
+    """Describe the bytes actually read; do not re-read a mutable source file."""
+    rows, data = snapshot['rows'], snapshot['raw_bytes']
     eligible = [row for row in rows if row['id'] == 'taken_3']
-    return dict(rows=rows, labeled=labeled, source=dict(
-        sha256=hashlib.sha256(data).hexdigest(), bytes=len(data), rows=len(rows),
+    return dict(sha256=hashlib.sha256(data).hexdigest(), bytes=len(data), rows=len(rows),
         unique_review_ids=len({row['reviewId'] for row in rows}),
         eligible_rows=len(eligible), logical_model_requests=len(eligible),
         eligible_empty_reviews=sum(row['reviewText'] == '' for row in eligible),
         prompt_profile=Q3_PROMPT_PROFILE, instruction=Q3_INSTRUCTION,
         predicate=dict(column='id', operator='eq', value='taken_3'),
-        result_column='positive_review_cnt'))
+        result_column='positive_review_cnt')
+
+
+def load_q3_source(path):
+    """Keep the established complete source/identity contract for audit callers."""
+    snapshot = read_q3_source(path)
+    return dict(rows=snapshot['rows'], labeled=snapshot['labeled'], source=describe_q3_source(snapshot))
 
 
 def evaluate_q3(source, predictions, *, positive_review_cnt, checkout):

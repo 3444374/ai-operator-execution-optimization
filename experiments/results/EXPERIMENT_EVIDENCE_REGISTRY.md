@@ -24,6 +24,11 @@
 COUNT相对误差50%，packet摘要仍计时；138份原件已核SHA及保存IPC／原parser／官方评分，
 API次数与未知物理计数分列，不将原件核验冒充本会话复跑或组合成绩。
 
+[后续输入审计拆分](diagnostics/sembench_native_integration_20261112/README.md#native-imlane-q3-input-audit-v2)
+另记51项软件检查和36组CSV/packet字节等价。Python时钟独立命名IMLane v2，原生v1保留；
+UDF/provider同步成功回执和指纹仍在COUNT内，故未采纳最初统一v3标签，不将外层后置当作整条链统一。
+必要额度/失败控制保留，新SQL／模型／规模RSS资格仍待验证。
+
 [主报告](diagnostics/sembench_native_integration_20261112/README.md)登记完整 Movie source 修复后的
 Kalypso Join 样本64次、原作者 TopK 样本16次真实请求，以及 IMLane Boolean Join 的三道真实零模型 SQL 门。
 各自固定来源、算法、时钟、私有归档摘要和未知项；历史回放不记新模型质量，样本资格不外推全量或组合树。
