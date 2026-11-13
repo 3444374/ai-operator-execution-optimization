@@ -1,7 +1,7 @@
-"""Original single-operator SemBench text and explicit image Join input boundaries.
+"""Original SemBench queries and explicit prepared-operator input boundaries.
 
 The upstream query still owns selection and relational postprocessing. An
-execution adapter binds its one accessor. Prepared image Join is explicitly
+execution adapter may bind one accessor or the complete original function. Image Join is explicitly
 selected; it does not broaden the text record graphs' modality support.
 """
 
@@ -260,11 +260,11 @@ class SemBenchTextQuery:
         from .sembench_mmqa import TEXT_QUERY_IDS as MMQA_QUERY_IDS
         from .sembench_ecomm import TEXT_QUERY_IDS as ECOMM_QUERY_IDS, TEXT_FILE
         from .sembench_cars import FULL_SCALE_FACTOR as CARS_SCALE, TEXT_QUERY_IDS as CARS_QUERY_IDS, text_files as cars_files
-        from src.baselines.image.sembench_mmqa import SINGLE_JOIN_QUERY_IDS
+        from src.baselines.image.sembench_mmqa import IMAGE_QUERY_IDS
 
         query = str(query_id).lower().removeprefix('q')
-        if image_join and not (scenario == 'mmqa' and query in SINGLE_JOIN_QUERY_IDS):
-            raise ValueError('the prepared image Join binding supports original MMQA Q2a/Q7')
+        if image_join and not (scenario == 'mmqa' and query in IMAGE_QUERY_IDS):
+            raise ValueError('the original image Join binding supports MMQA Q2a/Q2b/Q7')
         if not ((scenario == 'movie' and query in MOVIE_QUERY_IDS)
                 or (scenario == 'mmqa' and query in MMQA_QUERY_IDS) or image_join
                 or (scenario == 'medical' and query in MEDICAL_QUERY_IDS)
@@ -283,7 +283,7 @@ class SemBenchTextQuery:
         self.ranking = ranking or 'map'
         self.model_name, self.generation = model_name, generation
         self.data_dir = Path(data_dir).resolve()
-        self.visual_inputs = None
+        self.visual_task = None
         self.evaluation_files = set()
         if scenario == 'movie':
             names = ['Reviews.csv'] + (['Movies.csv'] if query == '10' else [])
@@ -307,7 +307,10 @@ class SemBenchTextQuery:
             names = [TEXT_FILE]
         elif image_join:
             from src.baselines.image.sembench_mmqa import describe_inputs
-            self.visual_inputs = describe_inputs(self.checkout, self.data_dir, query)
+            from src.baselines.image.sembench_original import OriginalVisualQuery
+            inputs = describe_inputs(self.checkout, self.data_dir, query)
+            self.visual_task = OriginalVisualQuery(self.checkout, scenario, query,
+                inputs=inputs, data_dir=self.data_dir)
             names = [Path(self.visual_inputs['table']['path']).name]
         elif query == '1':
             names = ['ben_piazza.csv', 'ben_piazza_text_data.csv']
@@ -317,6 +320,10 @@ class SemBenchTextQuery:
             names = ['tampa_international_airport.csv']
         self.frames, self.files = {}, {}
         for name in names:
+            if self.visual_task is not None:
+                table = self.visual_inputs['table']
+                self.files[name] = {key: table[key] for key in ('sha256', 'bytes', 'rows', 'columns')}
+                continue
             path = self.data_dir / name
             before = file_identity(path)
             self.frames[name] = self._read_file(path)
@@ -344,6 +351,10 @@ class SemBenchTextQuery:
 
         return pd.read_parquet(path) if path.suffix == '.parquet' else pd.read_csv(path)
 
+    @property
+    def visual_inputs(self):
+        return None if self.visual_task is None else self.visual_task.inputs
+
     def _load(self, name, **kwargs):
         if name not in self.frames or kwargs not in ({}, {'sep': ',', 'quotechar': '"'}):
             raise ValueError('unexpected input requested by the selected original query')
@@ -366,9 +377,8 @@ class SemBenchTextQuery:
         if self.scenario == 'ecomm':
             from .sembench_ecomm import bind_original_query
             return bind_original_query(self.checkout, self.query, self._load, data_dir=self.data_dir)
-        if self.visual_inputs is not None:
-            from src.baselines.image.sembench_mmqa import bind_original_query
-            return bind_original_query(self.checkout, self.data_dir, self.query, load_data=self._load)
+        if self.visual_task is not None:
+            return self.visual_task.execute
         from .sembench_mmqa import bind_original_query
         return bind_original_query(self.checkout, self.query, self._load)
 
@@ -386,7 +396,10 @@ class SemBenchTextQuery:
                if self.scenario == 'medical' else {}),
             **(dict(scale_factor=self.scale_factor, scale_unit='authored Cars sample; model rows follow original complaint joins')
                if self.scenario == 'cars' else {}),
-            expected_model_calls=0 if operation is None else operation['expected_model_calls'],
+            expected_model_calls=(None if self.visual_inputs is not None and self.query == '2b'
+                                  else 0 if operation is None else operation['expected_model_calls']),
+            **(dict(maximum_model_calls=self.visual_inputs['maximum_model_calls'])
+               if self.visual_inputs is not None else {}),
             policy='explicit exact ordinary-operator profile; not the official runner default; '
                    'result cache disabled; no warmup or retry',
             label_scope=('original Medical patient labels used only for evaluation'
@@ -411,6 +424,9 @@ class SemBenchTextQuery:
 
     def verify_source(self):
         """Audit execution-file identities; gold-only snapshots are not query input."""
+        if self.visual_task is not None:
+            self.visual_task.verify_inputs()
+            return
         for name, identity in self.files.items():
             if name in self.evaluation_files:
                 continue
@@ -418,40 +434,68 @@ class SemBenchTextQuery:
             expected_identity = dict(sha256=identity['sha256'], bytes=identity['bytes'])
             if file_identity(path) != expected_identity:
                 raise ValueError('SemBench input changed after preflight')
-        if self.visual_inputs is not None:
-            from src.baselines.image.sembench_mmqa import describe_inputs
-            if describe_inputs(self.checkout, self.data_dir, self.query) != self.visual_inputs:
-                raise ValueError('MMQA image Join input or image order changed after preflight')
 
-    def bind_execution(self):
+    def bind_execution(self, *, multiple=False):
         """Check source before timing and bind a real scan of the original query.
 
         The caller records its full sink, then calls verify_source outside that
         interval. execute() retains the combined checked entry for other callers.
+
+        multiple=True calls execute_operator(operation, invoke) for each actual
+        operator in original query order and returns (result, reports). Each
+        callback returns its native report containing frame, plus native_stats
+        for TopK. Later inputs come from the original query's intermediate
+        relations. The default keeps the existing single-operator return shape.
         """
         self.verify_source()
+        if multiple:
+            return lambda execute_operator: self._execute_bound(execute_operator, multiple=True)
         return self._execute_bound
 
-    def _execute_bound(self, execute_operator):
+    def bind_original_execution(self):
+        """Bind the full original function, including its actual later stages.
+
+        The query owns intermediate relations and further semantic calls. A
+        backend supplies its LM prediction seam for the whole query; unlike the
+        prepared single-operator entry this boundary never invents a frontier
+        result or limits the number of operators.
+        """
+        self.verify_source()
+        return self._execute_original_bound
+
+    def _read_execution_files(self):
+        if self.visual_task is not None:
+            # Its original source reader runs inside the actual original query.
+            return
         for name in self.files:
             if name in self.evaluation_files:
                 continue
             path = self.data_dir / name
             self.frames[name] = self._read_file(path)
+
+    def _execute_original_bound(self):
+        self._read_execution_files()
+        return self._original()
+
+    def _execute_bound(self, execute_operator, *, multiple=False):
+        self._read_execution_files()
         used = False
         operator_report = None
+        reports = []
 
         def dispatch(kind, frame, args, kwargs, invoke):
             nonlocal used, operator_report
-            if used or self.operation is None:
+            if (used and not multiple) or self.operation is None:
                 raise ValueError('the query emitted an undeclared additional semantic operator')
             actual = _operation(kind, frame, args, kwargs, model_name=self.model_name,
-                                generation=self.generation, query_id=self.query_id)
-            if (actual.describe() != self.operation.describe() or not frame.equals(self.operation.frame)
+                                generation=self.generation,
+                                query_id=(self.query_id if not used else self.query_id + '-operator-' + str(len(reports))))
+            if not used and (actual.describe() != self.operation.describe() or not frame.equals(self.operation.frame)
                     or kind == 'join' and not actual.right_frame.equals(self.operation.right_frame)):
                 raise ValueError('the original operator input or arguments changed after preflight')
             used = True
             operator_report = execute_operator(actual, invoke)
+            reports.append(operator_report)
             if kind == 'topk':
                 return operator_report['frame'], operator_report['native_stats']
             return operator_report['frame']
@@ -460,12 +504,13 @@ class SemBenchTextQuery:
             with _operators(dispatch):
                 result = self._original()
         except BaseException as error:
-            if operator_report is not None:
+            error.query_operator_reports = reports
+            if operator_report is not None and not hasattr(error, 'operator_report'):
                 error.operator_report = operator_report
             raise
         if self.operation is not None and not used:
             raise ValueError('the original query omitted its declared semantic operator')
-        return result, operator_report
+        return result, reports if multiple else operator_report
 
     def evaluate(self, result):
         if self.scenario == 'movie':
@@ -484,8 +529,7 @@ class SemBenchTextQuery:
             from .sembench_ecomm import evaluate_original, TEXT_FILE
             return evaluate_original(self.checkout, self.query, result, data_dir=self.data_dir,
                                      source_identity=self.files[TEXT_FILE])
-        if self.visual_inputs is not None:
-            from src.baselines.image.sembench_mmqa import evaluate_original
-            return evaluate_original(self.checkout, self.query, result)
+        if self.visual_task is not None:
+            return self.visual_task.evaluate(result)
         from .sembench_mmqa import evaluate_original
         return evaluate_original(self.checkout, self.query, result)

@@ -198,7 +198,9 @@ class OriginalMMQAImageTests(unittest.TestCase):
                 config = dict(profile={},budget=budget,
                     ray_native=dict(engine_kwargs={},processor_options=dict(prepare_image_stage=True)))
                 engine = EngineSpec(model_path='CPU-no-model',model_python='unused',driver_python='unused')
-                with recorded_processor({row['call_id']:row['generated_text'] for row in responses}) as sdk:
+                def reply(row, request):
+                    return responses[int(row['call_id'].rsplit('-', 1)[1])]['generated_text']
+                with recorded_processor(reply) as sdk:
                     report = driver.run_query(config,query,engine,None,root)
                 self.assertEqual(report['status'],'completed')
                 self.assertEqual(report['result'],result_value(expected))
@@ -209,7 +211,7 @@ class OriginalMMQAImageTests(unittest.TestCase):
                 self.assertLessEqual(report['sink_ready_ns'],report['native']['events']['close_started_ns'])
                 self.assertFalse(sdk.initialized)
 
-    def test_prepared_image_join_requires_native_image_stage_and_rejects_second_operator(self):
+    def test_image_query_requires_native_image_stage_and_complete_followup_budget(self):
         from src.baselines.text.sembench_text import SemBenchTextQuery
         from src.experiments.sembench_text_query import check, query_from_config
         from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
@@ -229,9 +231,135 @@ class OriginalMMQAImageTests(unittest.TestCase):
             check(dict(base,ray_native=dict(processor_options={})),query,engine)
         with self.assertRaises(ValueError):
             query_from_config(base, CHECKOUT, self.data, generation)
-        with self.assertRaisesRegex(ValueError, 'Q2a/Q7'):
-            SemBenchTextQuery(CHECKOUT, self.data, 'mmqa', '2b', execution_id='unsupported-chain',
-                model_name='openai/local-image-fixture', generation=generation, image_join=True)
+        mixed = query_from_config(dict(config, query='2b'), CHECKOUT, self.data, generation)
+        self.assertIsNone(mixed.describe()['expected_model_calls'])
+        self.assertEqual(mixed.describe()['maximum_model_calls'], 20)
+        with self.assertRaisesRegex(ValueError, 'max_model_calls'):
+            check(dict(config, query='2b'), mixed, engine)
+
+    def test_native_ray_query_runs_extract_on_actual_join_matches_or_empty_path(self):
+        from PIL import Image
+        from src.baselines.text.sembench_prepared import result_value
+        from src.baselines.text.sembench_text import SemBenchTextQuery
+        from src.experiments.native_ray_sembench import run_query
+        from src.experiments.attempt_ledger import AttemptBudget
+        from src.experiments.cell_budget import CellBudgetLedger
+        from src.serving.backends.vllm_protocol import EngineSpec, GenerationSpec
+        from tests.baselines.text.ray_native_fixtures import recorded_processor
+
+        for none_match in (False, True):
+            with self.subTest(none_match=none_match):
+                expected, reference_batches = self._run('2b', none_match=none_match)
+                query = SemBenchTextQuery(CHECKOUT, self.data, 'mmqa', '2b',
+                    execution_id='complete-image-chain', model_name='openai/local-image-fixture',
+                    generation=GenerationSpec(max_tokens=8192, stop=()), image_join=True)
+                root = self.data / ('full-query-empty' if none_match else 'full-query-nonempty'); root.mkdir()
+                budget = dict(path=str(root/'budget.sqlite'), id='full-query', limit=20, unit_id='query')
+                ledger = CellBudgetLedger.create(Path(budget['path']), AttemptBudget(budget['id'], 20), deadline_utc=None)
+                ledger.reserve_unit('query', 20)
+                config = dict(profile={}, budget=budget,
+                    ray_native=dict(engine_kwargs={}, processor_options=dict(prepare_image_stage=True)))
+                engine = EngineSpec(model_path='CPU-no-model', model_python='unused', driver_python='unused')
+
+                def answer(row, request):
+                    if request['sampling_params'].get('structured_outputs') == {'json_object': True}:
+                        return '{"color":"blue"}'
+                    parts = [part for message in request['messages'] if isinstance(message['content'], list)
+                             for part in message['content'] if part['type'] == 'image_url']
+                    with Image.open(io.BytesIO(base64.b64decode(parts[0]['image_url']['url'].split(',', 1)[1]))) as image:
+                        blue = image.convert('RGB').getpixel((0, 0)) == (0, 0, 255)
+                    return 'Reasoning:\nsoftware answer\nAnswer: ' + str(blue and not none_match)
+
+                with recorded_processor(answer) as sdk:
+                    report = run_query(config, query, engine, None, root)
+                self.assertEqual(report['result'], result_value(expected))
+                self.assertEqual(report['quality'], query.evaluate(expected))
+                self.assertEqual(report['physical_attempts_reserved'], 10 if none_match else 15)
+                self.assertEqual(sdk.events.count('init'), 1)
+                self.assertEqual(sdk.events.count('close'), 1)
+                self.assertEqual(len({row['call_id'] for row in sdk.requests}), len(sdk.requests))
+                actual_messages = [row['messages'] for row in sdk.requests]
+                self.assertEqual(actual_messages, [message for messages, options in reference_batches for message in messages])
+                self.assertLess(report['sink_ready_ns'], report['native']['events']['close_started_ns'])
+                batches = json.loads((root/'native-lm-batches.json').read_text())
+                self.assertEqual([len(batch['requests']) for batch in batches if batch['requests']],
+                                 [10] if none_match else [10, 5])
+                if not none_match:
+                    self.assertEqual(batches[1]['sampling_params']['response_format'], {'type': 'json_object'})
+                    native = json.loads((root/'native-predictions.json').read_text())
+                    self.assertEqual(native['batches'][1]['native_sampling_params']['structured_outputs'], {'json_object': True})
+                self.assertFalse(sdk.initialized)
+
+    def test_shared_operator_callback_consumes_real_followup_relation_and_keeps_stage_ids(self):
+        import lotus
+        from src.baselines.text.sembench_prepared import make_query_lm, result_value
+        from src.baselines.text.sembench_text import SemBenchTextQuery
+        from src.serving.backends.vllm_protocol import GenerationSpec
+
+        expected, reference = self._run('2b')
+        query = SemBenchTextQuery(CHECKOUT, self.data, 'mmqa', '2b', execution_id='operator-chain',
+            model_name='openai/local-image-fixture', generation=GenerationSpec(max_tokens=8192, stop=()), image_join=True)
+        stages = []
+
+        def predict(requests, *, sampling_params):
+            batch = len(stages) - 1
+            self.assertEqual([row['messages'] for row in requests], reference[batch][0])
+            answers = []
+            for row in requests:
+                if batch:
+                    answers.append('{"color":"blue"}')
+                    continue
+                parts = [part for message in row['messages'] if isinstance(message['content'], list)
+                         for part in message['content'] if part['type'] == 'image_url']
+                from PIL import Image
+                with Image.open(io.BytesIO(base64.b64decode(parts[0]['image_url']['url'].split(',', 1)[1]))) as image:
+                    blue = image.convert('RGB').getpixel((0, 0)) == (0, 0, 255)
+                answers.append('Reasoning:\nsoftware answer\nAnswer: ' + str(blue))
+            return dict(predictions=[dict(call_id=row['call_id'], generated_text=text)
+                for row, text in zip(requests, answers, strict=True)][::-1])
+
+        lm, batches = make_query_lm(query, predict)
+
+        def execute(operation, invoke):
+            stages.append(operation)
+            return dict(frame=invoke(), native_owner='software fixture')
+
+        with lotus.settings.context(lm=lm, enable_cache=False):
+            result, reports = query.bind_execution(multiple=True)(execute)
+        self.assertEqual(result_value(result), result_value(expected))
+        self.assertEqual([op.describe()['kind'] for op in stages], ['join', 'extract'])
+        self.assertEqual([len(op.records) for op in stages], [10, 5])
+        ids = [record.row_id for op in stages for record in op.records]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertTrue(all(record.row_id.startswith('operator-chain-operator-1-') for record in stages[1].records))
+        self.assertEqual(len(reports), 2)
+        self.assertEqual([len(batch['requests']) for batch in batches], [10, 5])
+
+    def test_shared_operator_failure_preserves_completed_reports_and_current_failure(self):
+        import lotus
+        from src.baselines.text.sembench_prepared import make_query_lm
+        from src.baselines.text.sembench_text import SemBenchTextQuery
+        from src.serving.backends.vllm_protocol import GenerationSpec
+
+        query = SemBenchTextQuery(CHECKOUT, self.data, 'mmqa', '2b', execution_id='failing-chain',
+            model_name='openai/local-image-fixture', generation=GenerationSpec(), image_join=True)
+        completed = []
+        lm, _ = make_query_lm(query, lambda requests, **kw: dict(predictions=[dict(
+            call_id=row['call_id'], generated_text='Reasoning:\nsoftware answer\nAnswer: True') for row in requests]))
+
+        def execute(operation, invoke):
+            if operation.describe()['kind'] == 'extract':
+                error = RuntimeError('software second-stage failure')
+                error.operator_report = dict(status='failed', kind='extract')
+                raise error
+            report = dict(frame=invoke(), status='completed')
+            completed.append(report)
+            return report
+
+        with lotus.settings.context(lm=lm, enable_cache=False), self.assertRaises(RuntimeError) as caught:
+            query.bind_execution(multiple=True)(execute)
+        self.assertEqual(caught.exception.query_operator_reports, completed)
+        self.assertEqual(caught.exception.operator_report, dict(status='failed', kind='extract'))
 
     def test_prepared_image_join_detects_changed_pixels_before_native_execution(self):
         from PIL import Image
@@ -241,7 +369,7 @@ class OriginalMMQAImageTests(unittest.TestCase):
         query = SemBenchTextQuery(CHECKOUT, self.data, 'mmqa', '2a', execution_id='image-identity',
             model_name='openai/local-image-fixture', generation=GenerationSpec(), image_join=True)
         Image.new('RGB', (5, 3), (0, 255, 0)).save(self.data / 'images' / GOLD_IMAGE)
-        with self.assertRaisesRegex(ValueError, 'image Join input'):
+        with self.assertRaisesRegex(ValueError, 'visual input changed'):
             query.bind_execution()
 
     def test_ray_worker_rejects_images_changed_since_checked_snapshot_before_budget_claim(self):
@@ -263,7 +391,7 @@ class OriginalMMQAImageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'fresh source differs'):
             driver.run_query(config,query,EngineSpec(model_path='unused',model_python='unused',
                 driver_python='unused'),None,root,
-                execute=lambda *args,**kwargs:self.fail('changed image allocated native graph'))
+                scope=lambda *args,**kwargs:self.fail('changed image allocated native graph'))
         self.assertEqual(ledger.snapshot()['units'][0]['claimed'],0)
 
     def test_all_visual_joins_request_native_zero_shot_cot(self):
@@ -395,7 +523,7 @@ class OriginalMMQAImageTests(unittest.TestCase):
         self.assertTrue(all(value is None for value in report["results"].values()))
         self.assertIn('image Join wired', report['baseline_states']['ray-data'])
         mixed = check(CHECKOUT, 'mmqa', '2b', data_dir=self.data)
-        self.assertIn('not wired', mixed['baseline_states']['ray-data'])
+        self.assertIn('Q2b follows actual Join matches', mixed['baseline_states']['ray-data'])
 
     def test_check_cli_writes_private_report_and_keeps_source_bytes(self):
         from src.experiments.sembench_image_query import main

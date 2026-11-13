@@ -12,7 +12,7 @@
 | 原生 LOTUS 视觉运行 | [run_sembench_lotus_image_query.py](experiments/run_sembench_lotus_image_query.py) | 已有原生 VLM 服务上的完整查询、原评价和逐 POST 预算；[配置](#sembench-native-vlm-run) |
 | SemBench 图像准备 | [check_sembench_image_query.py](experiments/check_sembench_image_query.py) | 只读输入和像素身份／调用预算，不启动模型；[范围](#sembench-image-preparation) |
 | Cars 原 CSV 准备 | [prepare_sembench_cars_inputs.py](data/prepare_sembench_cars_inputs.py) | 从现成四表元数据调用原分层抽样，无图音下载；[来源与范围](../src/baselines/README.md#cars-original-csv-preparation) |
-| 补充 Movie／MMQA／Medical 文本 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询的一个普通 F/M/E、原评价与既有原生图；[逐题规模和限制](../src/baselines/README.md#additional-sembench-text) |
+| LOTUS原题与后端选择 | [run_sembench_text_query.py](experiments/run_sembench_text_query.py) | 原查询／评价；原生Ray可运行实际多批和MMQA Join→Extract，其他接点保留各自已接形态；[范围和限制](../src/baselines/README.md#additional-sembench-text) |
 | 原生 LOTUS MMQA Q5 聚合 | [run_sembench_lotus_mmqa_aggregate.py](experiments/run_sembench_lotus_mmqa_aggregate.py) | 原分层聚合、无模型首层预检、外部服务及逐 POST 预算；[配置](#sembench-native-mmqa-aggregate) |
 | 矩阵／连续查询／原生 LOTUS 对照 | [run_movie_records_matrix.py](experiments/run_movie_records_matrix.py) | 由计划选择 `backend` 与生命周期，`lotus-native` 走本地模型 IPC |
 | 独立作者 Kalypso | [服务](experiments/run_kalypso_native_server.py)、[查询](experiments/run_kalypso_sembench_query.py)、[CPU](experiments/check_kalypso_native_cpu.py) | 旧 Movie Filter、原题文本 Filter／Map／Join 及[原生完整排名 TopK](../src/baselines/text/frameworks/kalypso_native/README.md#原生完整排名-topk)共用维护 CLI；保留原关系、评分和各原生算法，目标资格按源码分列 |
@@ -83,10 +83,11 @@ Ray 的原生完整查询使用 [ray_native 配置](../configs/sembench_ray_nati
 的 `--config / --sembench-checkout / --data-dir / --tokenizer / --reference / --output-dir` 参数。
 保存答复按 occurrence 绑定，不能把模型答复按并发抵达顺序或提示去重后分配。
 计时、原生版本、预算与退出条件见 [Ray 内存 sink](../src/baselines/README.md#ray-native-prepared-sembench)。
-MMQA Q2a／Q7图像Join也使用这个既有CLI：在仓库外Ray原生配置中选择`scenario=mmqa`、
-`query=2a/7`、实际VLM，并设置`ray_native.processor_options.prepare_image_stage=true`。
+MMQA Q2a／Q2b／Q7也使用这个既有CLI：在仓库外Ray原生配置中选择`scenario=mmqa`、
+`query=2a/2b/7`、实际VLM，并设置`ray_native.processor_options.prepare_image_stage=true`。
 `--data-dir`指向原CSV及`images/`的场景根；预算按原L×R候选发生项，不能按图片数或唯一文本数计数。
-使用`check/run`和现有监督；普通文本`fixture`不声明图像Join资格，Q2b混合链仍未接线。
+Q2b的预算上界为2×L×R，实际Extract只消费原Join匹配行；同一query owner在完整sink后关闭。
+使用`check/run`和现有监督；普通文本`fixture`不授予新多阶段或VLM资格。
 
 ```sh
 PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py prepare-mmqa-text \

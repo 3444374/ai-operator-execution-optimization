@@ -11,6 +11,7 @@ from pathlib import Path
 import time
 from urllib.parse import urlsplit
 
+from src.baselines.image.sembench_original import OriginalVisualQuery
 from src.infrastructure.private_artifacts import (
     json_metric, new_private_directory, read_json, write_private_json,
 )
@@ -125,57 +126,25 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         writer = BufferedEvents(Path(directory) / "native-http.jsonl")
         audit = _NativeCalls(writer, config["model_name"])
         lm = _make_lm(config)
-        if config["scenario"] == "animals":
-            from src.baselines.image.sembench_animals import AnimalsDataset, bind_original_query, evaluate_original
-            source = AnimalsDataset(Path(checkout), Path(manifest), manifest_digest)
-            execute_query = bind_original_query(checkout, source.bind_frame(), inputs["query_id"])
-        elif config["scenario"] == "mmqa":
-            from src.baselines.image.sembench_mmqa import bind_original_query, evaluate_original
-            execute_query = bind_original_query(checkout, data_dir, config["query"])
-        elif config['scenario'] in ('cars', 'medical'):
-            import pandas as pd
-            if config['scenario'] == 'cars':
-                from src.baselines.text.sembench_cars import bind_original_query, evaluate_visual_original, verify_visual_inputs
-            else:
-                from src.baselines.text.sembench_medical import bind_original_query, evaluate_visual_original, verify_visual_inputs
-            execute_query = bind_original_query(checkout, config['query'],
-                lambda name, **kwargs: pd.read_csv(Path(data_dir) / name, **kwargs),
-                data_dir=data_dir, scale_factor=inputs['scale_factor'])
-        else:
-            import pandas as pd
-            from src.baselines.text.sembench_ecomm import bind_original_query, evaluate_original, verify_visual_inputs
-            execute_query = bind_original_query(checkout, config["query"],
-                lambda name, **kwargs: pd.read_parquet(Path(data_dir) / name, **kwargs), data_dir=data_dir)
+        query = OriginalVisualQuery(checkout, config['scenario'], config['query'], inputs=inputs,
+            data_dir=data_dir, manifest=manifest, manifest_digest=manifest_digest)
         report["preflight_finished_ns"] = time.monotonic_ns()
         with native_query_settings(lm), observe_native_join_inputs(join_inputs), \
                 audit.observe_lm(lm, kind='native_query' if config['scenario'] == 'ecomm' else None):
             with observe_native_httpx(budget, audit.record, checked["endpoint"], timeout_s=config["query_timeout_s"]):
                 report["source_started_ns"] = time.monotonic_ns()
-                result = execute_query()
+                result = query.execute()
                 # The original relation is ready before observer teardown or audit.
                 report["sink_ready_ns"] = time.monotonic_ns()
                 report["source_to_sink_seconds"] = (report["sink_ready_ns"] - report["source_started_ns"]) / 1e9
         report["post_sink_audit_started_ns"] = time.monotonic_ns()
         try:
-            if config["scenario"] == "animals":
-                source.read()
-                expected_stages = [inputs["rows"]] * inputs["native_filter_passes"]
-            elif config["scenario"] == "mmqa":
-                if check(config, checkout, data_dir=data_dir)["inputs"] != inputs:
-                    raise ValueError("MMQA visual input changed while executing the original query")
-                expected_stages = [inputs["exact_join_candidates"]]
-                if inputs["query"] == "Q2b":
-                    expected_stages.append(len(result))
-            elif config['scenario'] in ('cars', 'medical'):
-                verify_visual_inputs(inputs)
-                expected_stages = [inputs['expected_model_calls']]
-            else:
-                verify_visual_inputs(inputs)
-                expected_stages = [inputs["filter_occurrences"], len(result)] if inputs['query'] == 'Q12' else None
-                first = inputs['first_operator']['expected_model_calls']
-                if (audit.lm_calls and audit.lm_calls[0]['input_occurrences'] != first
-                        or not audit.lm_calls and first):
-                    raise RuntimeError('native query first operator differs from the original source frontier')
+            query.verify_inputs()
+            expected_stages = query.expected_batch_sizes(result)
+            first = query.first_operator_occurrences
+            if first is not None and (audit.lm_calls and audit.lm_calls[0]['input_occurrences'] != first
+                    or not audit.lm_calls and first):
+                raise RuntimeError('native query first operator differs from the original source frontier')
             if (expected_stages is not None and [stage["input_occurrences"] for stage in audit.lm_calls] != expected_stages
                     or any(stage["post_attempts"] is not None and stage["post_attempts"] != stage["input_occurrences"]
                            for stage in audit.lm_calls)):
@@ -191,15 +160,7 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         evaluated = time.monotonic()
         report["evaluation_started_ns"] = time.monotonic_ns()
         try:
-            if config["scenario"] == "animals":
-                quality = evaluate_original(checkout, result, source.frame(references=True), inputs["query_id"])
-            elif config["scenario"] == "ecomm":
-                quality = evaluate_original(checkout, config["query"], result, data_dir=data_dir,
-                    source_identity=inputs['gold_source_identity'])
-            elif config['scenario'] in ('cars', 'medical'):
-                quality = evaluate_visual_original(checkout, config['query'], result, inputs)
-            else:
-                quality = evaluate_original(checkout, config["query"], result)
+            quality = query.evaluate(result)
             report["quality"] = json_metric(quality)
         finally:
             report["evaluation_finished_ns"] = time.monotonic_ns()

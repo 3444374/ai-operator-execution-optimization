@@ -136,6 +136,7 @@ class ServiceFixture:
                 stack.enter_context(patch.object(module, "input_identity", self.identity))
             elif self.kind == "mmqa":
                 module = sembench_mmqa
+                stack.enter_context(patch.object(module, "describe_inputs", lambda *a, **k: self.check()["inputs"]))
             else:
                 module = sembench_animals
                 stack.enter_context(patch.object(module, "AnimalsDataset",

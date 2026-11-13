@@ -12,6 +12,68 @@ from src.infrastructure.private_artifacts import content_digest, json_metric
 from src.semantic_methods.lotus.record_method import LotusRecordMethod
 
 
+def make_query_lm(query, predict):
+    """Run complete original LOTUS queries over a backend's native predictions.
+
+    LOTUS owns the accessors, actual later inputs, prompts, parsers, algorithms
+    and final relation. The backend receives each real LM batch, owns execution
+    and closes at query scope. It does not use LOTUS LM execution/cache/usage;
+    backend receipts are the accounting source, including unknown usage.
+    """
+    from lotus.models import LM
+    from lotus.types import LMOutput
+
+    batches = []
+
+    class QueryLM(LM):
+        def __call__(self, messages, show_progress_bar=True, progress_bar_desc='', **kwargs):
+            index = len(batches)
+            requests = [dict(call_id=f'{query.query_id}-batch-{index}-row-{position}',
+                             messages=deepcopy(message))
+                        for position, message in enumerate(messages)]
+            sampling = dict(query.generation.kwargs(), **kwargs)
+            if sampling.get('logprobs') is False:
+                sampling['logprobs'] = None
+            if (sampling.get('structured_outputs') == {'json_object': True}
+                    and sampling.get('response_format') == {'type': 'json_object'}):
+                sampling.pop('response_format')
+            batch = dict(requests=requests, operator_kwargs=deepcopy(kwargs),
+                sampling_params=deepcopy(sampling), status='submitted')
+            # Retain submitted batches on failure; no retry or fallback is made.
+            batches.append(batch)
+            try:
+                native = predict(requests, sampling_params=sampling)
+                batch['native'] = native
+                predictions = native['predictions']
+                by_id = {row['call_id']: row['generated_text'] for row in predictions}
+                if (len(by_id) != len(predictions)
+                        or set(by_id) != {row['call_id'] for row in requests}):
+                    raise ValueError('native query predictions require every unique batch occurrence')
+                batch.update(status='completed', predictions=predictions)
+                return LMOutput(outputs=[by_id[row['call_id']] for row in requests])
+            except BaseException as error:
+                batch.update(status='failed', error_type=type(error).__name__)
+                if 'native' not in batch and hasattr(error, 'native_query_report'):
+                    batch['native'] = error.native_query_report
+                raise
+
+    # The native algorithms still use LM token estimation and generation
+    # metadata. max_batch_size belongs to LOTUS execution, which this seam does
+    # not run; no value is used to split a backend's real batch.
+    return QueryLM(query.model_name, **query.generation.kwargs()), batches
+
+
+def audit_query_batches(batches):
+    """Associate raw replies with actual SDK batches after the complete sink."""
+    calls = []
+    for index, batch in enumerate(batches):
+        calls.extend(dict(call_id=row['call_id'], batch=index, source_position=position,
+            messages_sha256=content_digest(row['messages']),
+            status='succeeded') for position, row in enumerate(batch['requests']))
+    return dict(calls=calls, batches=len(batches), native_lm_execution_used=False,
+                semantic_owner='original LOTUS accessors/algorithms', usage_owner='native backend receipts')
+
+
 def prepare(query, tokenizer=None, *, prompt_columns=None):
     if query.operation is None:
         return None, [], []

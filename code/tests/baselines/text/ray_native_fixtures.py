@@ -71,9 +71,10 @@ def recorded_processor(replies, *, transform=lambda rows: rows, close_error=None
                         events.extend(dict(event=event, attempt=attempt, monotonic_ns=time.monotonic_ns())
                                       for event in ('native_generate_submitted', 'native_generate_terminal'))
                         output.append(postprocess(dict(row, **request,
-                            generated_text=replies[row['call_id']], request_id='fixture-'+row['call_id'])))
-                    Path(spec['output'], 'native-events-software.jsonl').write_text(
-                        ''.join(json.dumps(event)+'\n' for event in events))
+                            generated_text=(replies(row, request) if callable(replies)
+                                            else replies[row['call_id']]), request_id='fixture-'+row['call_id'])))
+                    with Path(spec['output'], 'native-events-software.jsonl').open('a') as stream:
+                        stream.write(''.join(json.dumps(event)+'\n' for event in events))
                     return transform(output[::-1])
                 return Dataset(read)
         return Processor()

@@ -560,6 +560,44 @@ E-Commerce只处理此前保留的完整成员缓存，未新增网络请求、�
 本会话独立核验的是检查／恢复脚本、记录和清单归档，未重新读取服务器上的全部恢复数据；
 成员CRC与恢复事实由保留的原执行记录支持。原下载和未完成尾部继续保留。
 
+<a id="full-query-runner-boundary"></a>
+## 完整原题与查询级 owner 的公共边界
+
+本次工程修改针对共享接点只允许一次语义调用的限制，不增加逐题执行器。任务提供
+`bind_execution(multiple=True)`的实际算子callback与`bind_original_execution()`的完整原函数入口；
+前者返回完整结果和按原执行顺序排列的报告，后者由原LOTUS SDK自行决定实际LM批次、后续输入和最终关系。
+默认单算子合同仅保留给尚未迁移的记录图，不由此声称所有后端支持混合查询。
+
+LOTUS＋Ray已使用完整原函数及一个query级runtime，每个实际LM批次仍由Ray原生processor
+拥有chat template／tokenization／batching／模型actor。JSON Extract显式映射到原生structured outputs，
+首个非空批次才启动runtime，完整原sink后统一关闭；不声明跨批模型复用或物理GPU退出。
+LOTUS视觉服务和Ray任务共用同一视觉原题对象，保留原函数及评分，删除被替代的MMQA cached reader
+及Ray“准备首阶段再重跑原查询恢复结果”的编排。历史单批回放入口迁移到新occurrence ID，
+原中间关系的复核在软件回放中完成，不重复原生执行／预算请求。
+
+隔离HEAD导出后仅覆盖本次源码，明确排除已取消Daft动作的三文件草稿；12模块共191项不同
+软件检查为188通过、3跳过。跳过分别为独立Daft SDK与未绑定的真实Medical、MMQA资产，
+不解释为数据不存在。官方MMQA Q2b的临时2图／5表行保留原PNG／CoT／JSON：实际10个Join
+答复后分别走5行非空Extract和空第二阶段，完整消息／原结果／原评分与直接SDK软件参考一致。
+Movie Q9 quick的8行软件输入保留28次比较、7批及原rank-to-score；相同消息不合并发生项。
+另覆盖中途失败、主异常与关闭失败、sink后审计失败保留结果、预算关闭、原先单算子／驻留路径及原服务时钟。
+
+首轮44项中的三项失败是旧夹具仍替换已绑定默认parser及使用过严的相同mock时刻先后断言；
+改为真实parser回调故障与非倒退事件断言后，扩大整合检查通过。首轮输出保留，不改成全通过。
+独立源码复核另发现参数映射问题：原Filter的`logprobs=False`与
+[vLLM0.22的关闭表示None](https://github.com/vllm-project/vllm/blob/v0.22.0/vllm/sampling_params.py#L220)
+不同；接点只把明确False转为None，保留数值0。显式generation与原Extract的等价JSON object约束
+合并一次，真实冲突仍拒绝；原operator kwargs和有效／原生参数分开留存，未测这些差异的GPU开销。
+原SDK参数红失败、首轮夹具对duplicate index原生标签写回的错误预期及未绑定checkout的跳过均保留，
+没有改原parser或索引行为来消除失败。
+本地验证模型／GPU／真实外部服务请求0；软件检查不是目标Ray／vLLM多批资格，旧dde单批真机成绩不转授当前源码。
+LOTUS＋Ray／Daft与不经LOTUS执行的原生系统路径按语义和执行归属分列，不重复统计baseline；
+当前Ray完整查询报告使用`semloom.sembench_text_result.v2`：`native.batches`记录各次原生预测，
+查询级`events`记录owner关闭；原始答复只存`native-predictions.json`，查询摘要和请求文件按call ID关联，
+不再嵌套复制预测。默认旧记录图的v1和历史单批文件不改写，回放调用者已迁移新结构；
+v2及单副本输出的受影响40项另通过，属于上述191个用例，不累加通过数。
+整体接入仍有[当前缺口](../../../../code/INFRA_STATUS.md#current-refactor-status)。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

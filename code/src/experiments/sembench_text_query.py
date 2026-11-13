@@ -32,7 +32,7 @@ def configuration(path):
             or value.keys() - required - {'budget', 'owner_config', 'scale_factor', 'lifecycle', 'resident', 'ray_native', 'ranking'}
             or value['schema'] != 'semloom.sembench_text_run.v1'
             or value['backend'] not in BACKENDS or type(value['profile']) is not dict):
-        raise ValueError('an explicit single-operator SemBench native configuration is required')
+        raise ValueError('an explicit SemBench LOTUS query/backend configuration is required')
     engine = EngineSpec.from_dict(value['engine'])
     generation_config = value['generation']
     if isinstance(generation_config, dict):
@@ -61,7 +61,7 @@ def configuration(path):
         raise ValueError('the existing Daft chain profile accepts runner_threads only')
     elif value['backend'] == 'imlane' and profile:
         raise ValueError('IMLane uses its existing author owner/resource configuration')
-    if value['backend'] != 'lotus-native' and resources.cpu_workers != 1:
+    if value['backend'] != 'lotus-native' and 'ray_native' not in value and resources.cpu_workers != 1:
         raise ValueError('the existing finite native record graphs support cpu_workers=1')
     if value['backend'] == 'imlane':
         resources.request_capacity()
@@ -78,10 +78,10 @@ def configuration(path):
 
 def query_from_config(config, checkout, data_dir, generation):
     from src.baselines.text.sembench_text import SemBenchTextQuery
-    from src.baselines.image.sembench_mmqa import SINGLE_JOIN_QUERY_IDS
+    from src.baselines.image.sembench_mmqa import IMAGE_QUERY_IDS
 
     image_join = (config['scenario'] == 'mmqa'
-        and str(config['query']).lower().removeprefix('q') in SINGLE_JOIN_QUERY_IDS
+        and str(config['query']).lower().removeprefix('q') in IMAGE_QUERY_IDS
         and config.get('ray_native', {}).get('processor_options', {}).get('prepare_image_stage') is True)
 
     return SemBenchTextQuery(checkout, data_dir, config['scenario'], config['query'],
@@ -92,18 +92,18 @@ def query_from_config(config, checkout, data_dir, generation):
 
 def check(config, query, engine):
     kind = None if query.operation is None else query.operation.describe()['kind']
-    native_ray_join = kind == 'join' and config['backend'] == 'ray-data' and 'ray_native' in config
-    if kind in ('join', 'topk') and not native_ray_join:
+    native_ray = config['backend'] == 'ray-data' and 'ray_native' in config
+    if kind in ('join', 'topk') and not native_ray:
         if config['backend'] != 'lotus-native' or config.get('lifecycle', 'isolated') != 'resident':
             raise ValueError('native ' + {'join': 'Join', 'topk': 'TopK'}[kind]
                              + ' requires the explicit native LOTUS resident owner')
-    elif kind not in (None, 'filter', 'map', 'extract') and not native_ray_join:
+    elif kind not in (None, 'filter', 'map', 'extract') and not native_ray:
         raise ValueError('unsupported semantic operator for this text entry: ' + kind)
     description = query.describe()
     if description.get('visual_inputs') is not None and not (config['backend'] == 'ray-data' and 'ray_native' in config
             and config['ray_native']['processor_options'].get('prepare_image_stage') is True):
         raise ValueError('prepared image Join requires the explicit native Ray image preparation stage')
-    expected = description['expected_model_calls']
+    expected = description.get('maximum_model_calls', description['expected_model_calls'])
     if engine.max_model_calls is None or engine.max_model_calls < expected:
         raise ValueError('engine.max_model_calls must cover the complete original operator')
     if engine.max_model_len is not None and query.generation.max_tokens > engine.max_model_len:

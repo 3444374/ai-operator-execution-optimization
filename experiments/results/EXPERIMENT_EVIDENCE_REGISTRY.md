@@ -2,6 +2,11 @@
 
 ## 2026-11-12：SemBench 原生接入的分路径验收
 
+[完整查询公共边界](diagnostics/sembench_native_integration_20261112/README.md#full-query-runner-boundary)
+另记录原函数／实际中间关系、LOTUS＋Ray查询级runtime与共用视觉任务的工程修改：191项软件检查为
+188通过、3个环境／资产未绑定跳过，0模型／GPU。临时Q2b的非空／空第二阶段与8行quick多批
+只授予对应软件接线范围；各系统原生路径和LOTUS组合身份分列，旧目标成绩不转授新公共边界。
+
 [主报告](diagnostics/sembench_native_integration_20261112/README.md)登记完整 Movie source 修复后的
 Kalypso Join 样本64次、原作者 TopK 样本16次真实请求，以及 IMLane Boolean Join 的三道真实零模型 SQL 门。
 各自固定来源、算法、时钟、私有归档摘要和未知项；历史回放不记新模型质量，样本资格不外推全量或组合树。

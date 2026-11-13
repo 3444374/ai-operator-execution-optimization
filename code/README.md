@@ -13,7 +13,7 @@ LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当�
 | 任务 | 入口 | 职责 |
 |---|---|---|
 | Movie Q1/Q2/Q3/Q4 普通 Filter | [run_lotus_records_movie.py](scripts/experiments/run_lotus_records_movie.py) | 原输入、任务与评价，选择执行适配；Q4 为完整输入上的正面比例 |
-| SemBench 文本单算子及显式Ray图像Join | [run_sembench_text_query.py](scripts/experiments/run_sembench_text_query.py) | 原查询选择／汇总与评价；MMQA Q2a/Q7需原生图像stage，Q9 TopK需LOTUS resident；[实际范围](src/baselines/README.md#additional-sembench-text) |
+| SemBench LOTUS原题与后端选择 | [run_sembench_text_query.py](scripts/experiments/run_sembench_text_query.py) | 原查询／评分共用；显式Ray原生路径支持实际多批、MMQA Join→Extract及quick TopK，目标资格另验；[实际范围](src/baselines/README.md#additional-sembench-text) |
 | 完整查询矩阵／连续查询 | [run_movie_records_matrix.py](scripts/experiments/run_movie_records_matrix.py) | 显式 backend、生命周期、额度与时钟 |
 | 原生 LOTUS 对照 | [lotus_native_local.py](src/baselines/text/frameworks/lotus_native_local.py) | 原算子／LM／LiteLLM batch_completion；仅 provider 使用现有模型 IPC |
 | 独立 Kalypso 对照 | [作者适配说明](src/baselines/text/frameworks/kalypso_native/README.md) | 保留作者服务、参数与调度；不是 LOTUS 后端 |

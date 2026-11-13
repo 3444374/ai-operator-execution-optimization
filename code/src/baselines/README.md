@@ -189,31 +189,42 @@ close 可能与 driver 后处理重叠。严格 host controller 入口仍未知�
 仍未取得资格。保留每个系统自己的依赖版本，不以迁移到统一 vLLM 为前提。
 
 <a id="ray-native-prepared-sembench"></a>
-### Ray 原生完整查询的内存 sink
+### LOTUS＋Ray 原生执行的完整查询 sink
 
 现有 `run_sembench_text_query.py` 使用
 [显式 `ray_native` 配置](../../configs/sembench_ray_native.example.json)时，调用
-[原生 processor 接点](text/frameworks/ray_data_sembench_native.py)的 `execute_prepared`。
+[原生 processor 接点](text/frameworks/ray_data_sembench_native.py)的 `query_scope`／`owner.predict`。
 Ray Data LLM processor 拥有图、chat template、tokenization、batching、模型 actor 和调度；
-[准备及完成接口](text/sembench_prepared.py)复用原 LOTUS 消息/parser 与固定 SemBench 原查询。
+[完整查询预测接点](text/sembench_prepared.py)让原 LOTUS SDK 实际构造消息、解析并继续执行固定 SemBench 原函数。
 不调用 SemLoom Core、原自写记录链或 HTTP 替代模型。
-该接口也支持单个 exact Join；TopK、Aggregate 和混合多算子不从此路径取得支持。
+这条路径的身份是 **LOTUS＋Ray 原生执行**；它不是另一个独立 Ray 语义 baseline。
+同一个查询 owner 接受原算法实际产生的多批预测，不按题号或固定阶段数复制执行器。
+Movie Q9 quick TopK 和 MMQA Q2b Join→Extract 已通过下述完整原题软件差分；
+Aggregate 及其他尚未绑定的原题不从此取得资格。
 
-同一入口可显式运行MMQA原Q2a／Q7图像Join：配置`scenario=mmqa`及所选题，
+同一入口可显式运行MMQA原Q2a／Q2b／Q7：配置`scenario=mmqa`及所选题，
 在`ray_native.processor_options`中设置`prepare_image_stage=true`，绑定实际VLM／processor环境。
 共享任务读取原CSV和`images/`，保留原目录顺序、左右关系及L×R预算；原函数仍拥有Join和最后投影。
 普通无歧义列名及`:left/:right`引用均按原字段绑定；原`ReasoningStrategy.ZS_COT`在准备和结果恢复时保留。
 完整原PNG消息直接交Ray原生图像准备、chat template、tokenization和vLLM actor，不把图片路径当普通文本。
 像素／编码身份在源起点前和sink后核对，worker也核对已检查的图像快照；实际读图和PNG准备仍在完整区间内。
-该显式图像能力不开放普通记录图、其他后端或Q2b的Join→Extract。当前90项不同软件检查通过；
-原生Ray图像processor／完整token／目标VLM资格仍待验，冷模型启动仍计入查询。
+Q2b由原函数把实际Join结果交给原Extract，JSON约束显式映射为原生vLLM `structured_outputs`；
+空匹配不预造非空第二阶段，预算上界为两倍L×R、实际扣除按原生请求发生。
+该能力不转授普通记录图、其他后端或新的多批目标资格。旧90项及dde单批来源保持原身份，
+当前公共边界的目标processor／完整token／VLM与跨批清理仍待验；必要原生启动计入查询。
 
 [查询编排](../experiments/native_ray_sembench.py)重新读取已核输入，按 occurrence `call_id` 接收完整预测。
-`materialize().take_all()` 后，在 `ray.shutdown()` 前执行原 parser 和完整关系查询；
+每次原LM调用交给原生 `materialize().take_all()`，原SDK收到答复后继续解析和后续算子；
+整次原函数返回后才 `ray.shutdown()`。一个runtime不表示跨批模型actor或模型实例复用。
 原查询返回的内存结果立即标记 `sink_ready_ns`。`source_to_sink_seconds` 包含本轮新鲜 source/prepare、
 Ray/模型启动及原关系计算；消息摘要、关系序列化、评价、持久化和关闭在 sink 后另记事件。
 `sembench.source_to_sink.v3` 的起点位于输入身份／配置核对、预算领取之后；准备的是已绑定输入，
-原查询在完成 parser／关系计算时仍重新读取 CSV，完整文件摘要在 sink 后核对，没有跳过实际读取。
+原查询开始时真实读取CSV，图像在实际算子格式化时读取，不先准备首阶段再重跑原函数恢复关系。
+完整文件摘要和逐消息摘要在sink后核对；原始批次／答复按独立call_id保存，价格／用量以真实backend回执为准。
+该完整查询结果schema为`semloom.sembench_text_result.v2`；`native.batches`保留实际预测批次，
+query级`events`保留最后关闭，旧单批报告与默认记录图v1不回填或改记。
+原始预测只存`native-predictions.json`；查询摘要保留call ID／消息摘要，
+`native-lm-batches.json`保存原请求和原／有效参数，不再嵌套复制同一批预测。
 `query_seconds` 仍是包含审计和 runtime close 的较宽区间，不能代替 sink 指标。
 最早 host/controller 入口未在此 worker 观察，保持空值；AsyncLLM 首提交、末确认终态与构造返回事件
 保存在 `native-events-*.jsonl` 并在查询报告汇总，不能称为引擎接受或 GPU kernel 时间。
@@ -231,7 +242,19 @@ actor setup hook 复用已核 Q7 的版本相关接点；SDK、跨解释器加�
 及已有答复；已观察到 sink 不会因此擦除。外层继续使用既有 host 租约、资源监督和物理清理，
 `ray.shutdown` 的 driver 断开本身不证明模型进程、SHM 或 GPU 已释放。
 `startup_timeout_s + query_timeout_s + 30` 是既有监督器的 worker 总窗口，包含其退出预留；
-不是独立 host 全流程期限。此入口只实现单冷，不声称同 owner 暖轮。
+不是独立 host 全流程期限。此入口只实现单次冷查询，不声称同模型owner暖轮。
+
+公共任务的`bind_execution(multiple=True)`按原函数的真实算子顺序调用
+`execute(operation, invoke)`，返回`(完整结果, 算子报告列表)`；callback返回含`frame`的报告，
+TopK另含`native_stats`。首算子保留旧记录ID，后续记录加`operator-N`区分，后续输入来自真实中间关系。
+`bind_original_execution()`则不截获算子，直接运行完整原函数；`make_query_lm`按实际LM批次使用
+`query_id-batch-N-row-M`关联原生预测。默认`bind_execution()`仍服务尚未迁移的单算子记录图，
+不假定它们自动具备多阶段能力。结果写盘、额外审计和评价均在完整sink之后。
+
+[视觉原题对象](image/sembench_original.py)由原生LOTUS服务与上述Ray查询任务共同使用，
+接收已有输入快照，拥有原函数、真实后续关系、输入复核和原评分，不拥有模型／预算／时钟。
+MMQA不再另设cached CSV reader来准备首阶段后重跑恢复；被替代的`load_data`接线已移除。
+typed callback中的`operation.frame`保留原dtype；记录字段不是原生图像payload的替身。
 
 CPU 回放使用 `python -m tests.baselines.text.replay_ray_sembench --help`，Ray API 与模型为明确的软件替身。
 Movie Q10 的 2,000 条真实保存答复保留 1,864 个不同提示及 136 个重复提示 occurrence；

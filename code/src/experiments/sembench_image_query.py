@@ -47,9 +47,8 @@ def check(checkout, scenario, query, *, data_dir=None, manifest=None, manifest_d
     if scenario == 'animals':
         ray_binding = "native Animals VLM Filter entry wired; this input/service is not qualified by preflight"
     elif scenario == 'mmqa':
-        from src.baselines.image.sembench_mmqa import SINGLE_JOIN_QUERY_IDS
-        if str(query).lower().removeprefix('q') in SINGLE_JOIN_QUERY_IDS:
-            ray_binding = "native Ray prepared image Join wired with prepare_image_stage; native processor/model qualification pending"
+        ray_binding = "original LOTUS complete image Join wired over native Ray with prepare_image_stage; " \
+            "Q2b follows actual Join matches into original Extract; new query-scope processor/model qualification pending"
     return dict(schema="semloom.sembench_image_query_check.v1", status="prepared_cpu_only",
         scenario=scenario, query=inputs["query"], inputs=inputs,
         execution_enabled=False, model_calls=0, requests_reserved=0, requests_claimed=0,

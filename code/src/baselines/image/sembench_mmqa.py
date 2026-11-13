@@ -17,7 +17,6 @@ from src.infrastructure.private_artifacts import file_identity
 
 
 IMAGE_QUERY_IDS = ("2a", "2b", "7")
-SINGLE_JOIN_QUERY_IDS = ("2a", "7")
 
 
 def _query_id(query_id):
@@ -101,7 +100,7 @@ def run_original_query(checkout, data_dir, query_id):
     return bind_original_query(checkout, data_dir, query_id)()
 
 
-def bind_original_query(checkout, data_dir, query_id, *, load_data=None):
+def bind_original_query(checkout, data_dir, query_id):
     """Bind the original complete Join/Extract query outside its timed scan."""
     import pandas as pd
 
@@ -116,7 +115,7 @@ def bind_original_query(checkout, data_dir, query_id, *, load_data=None):
         expected = "tampa_international_airport.csv" if query == "7" else "ap_warrior.csv"
         if name != expected:
             raise ValueError("unexpected MMQA visual source")
-        return pd.read_csv(data / name, **kwargs) if load_data is None else load_data(name, **kwargs)
+        return pd.read_csv(data / name, **kwargs)
 
     owner.load_data = load
     execute = getattr(owner, "_execute_q" + query)

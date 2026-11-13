@@ -11,7 +11,7 @@ from pathlib import Path
 import socket
 from unittest.mock import patch
 
-from src.baselines.text.sembench_prepared import prepare
+from src.baselines.text.sembench_prepared import prepare, make_query_lm, result_value
 from src.experiments.sembench_text_query import configuration, query_from_config, check, run_worker
 from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
 from src.experiments.cell_budget import CellBudgetLedger
@@ -36,7 +36,8 @@ def replay(config_path, checkout, data_dir, tokenizer_path, reference, output):
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True, trust_remote_code=False)
     tokens = [tokenizer.apply_chat_template(message, tokenize=True, add_generation_prompt=True) for message in messages]
     assert tokens == reference['token_ids']
-    by_id = {row['call_id']: text for row, text in zip(requests, reference['texts'], strict=True)}
+    by_id = {f'{query.query_id}-batch-0-row-{position}': text
+             for position, text in enumerate(reference['texts'])}
     assert len(by_id) == len(requests)
     budget = dict(path=str(output/'budget.sqlite'), id=query.query_id, limit=len(requests), unit_id='query')
     config['budget'] = budget
@@ -49,8 +50,27 @@ def replay(config_path, checkout, data_dir, tokenizer_path, reference, output):
     assert report['result'] == reference['result']
     assert report['quality'] == reference['quality']
     semantic = report['semantic']
-    assert semantic['operator_relation'] == reference['relation']
-    assert [row['text'] for row in semantic['calls']] == reference['texts']
+    # The current runner executes the complete original function directly.
+    # Reconstruct this historical fixture's single operator outside its clock,
+    # without a second native graph or any additional budget/model attempt.
+    import lotus
+    relations = []
+    def saved(requests, *, sampling_params):
+        assert [row['messages'] for row in requests] == messages
+        return dict(predictions=[dict(call_id=row['call_id'], generated_text=by_id[row['call_id']])
+                                 for row in requests])
+    lm, _ = make_query_lm(query, saved)
+    def observe(operation, invoke):
+        frame = invoke()
+        relations.append(result_value(frame))
+        return dict(frame=frame)
+    with lotus.settings.context(lm=lm, enable_cache=False):
+        replayed, _ = query.bind_execution()(observe)
+    assert relations == [reference['relation']]
+    assert result_value(replayed) == reference['result']
+    native = read_json(output/'native-predictions.json', max_bytes=32*1024**2)
+    predictions = {row['call_id']: row['generated_text'] for batch in native['batches'] for row in batch['predictions']}
+    assert [predictions[row['call_id']] for row in semantic['calls']] == reference['texts']
     assert [row['source_position'] for row in semantic['calls']] == [row['source_position'] for row in calls]
     assert report['sink_ready_ns'] <= report['semantic_audit_started_ns'] <= report['semantic_audit_finished_ns']
     assert report['sink_ready_ns'] < report['native']['events']['close_started_ns']

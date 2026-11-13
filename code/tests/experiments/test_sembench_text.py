@@ -132,6 +132,20 @@ class TextEntryTests(unittest.TestCase):
         config, _, _, _ = entry.configuration(template)
         self.assertIn('ray_native', config)
 
+    def test_native_ray_uses_its_runtime_capacity_without_old_record_worker_limit(self):
+        template = Path(__file__).parents[2] / 'configs/sembench_ray_native.example.json'
+        config = json.loads(template.read_text())
+        config['resources']['cpu_workers'] = 2
+        with tempfile.TemporaryDirectory() as raw:
+            path = Path(raw)/'native.json'
+            path.write_text(json.dumps(config))
+            _, _, _, resources = entry.configuration(path)
+            self.assertEqual(resources.cpu_workers, 2)
+            config.pop('ray_native')
+            path.write_text(json.dumps(config))
+            with self.assertRaisesRegex(ValueError, 'record graphs'):
+                entry.configuration(path)
+
     def test_exact_join_checks_native_ray_processor_without_borrowing_old_record_graph_support(self):
         from src.serving.backends.vllm_protocol import EngineSpec
         engine=EngineSpec(model_path='/tmp/model',model_python='/tmp/python',driver_python='/tmp/python',max_model_calls=6)
