@@ -1,6 +1,6 @@
-"""Independent Movie Filter tasks over Daft's native AI prompt graph.
+"""Independent Movie JSON tasks over Daft's native AI prompt graph.
 
-The JSON Boolean semantics are an engineering comparison shared with other
+The JSON task semantics are an engineering comparison shared with other
 native systems, not an author method or a LOTUS prompt/parser implementation.
 The existing prepared worker owns native model execution and ACK-based close.
 """
@@ -12,7 +12,7 @@ import math
 from pathlib import Path
 import time
 
-from src.baselines.text.sembench_native_text import MovieFilterTask
+from src.baselines.text.sembench_native_text import movie_text_task
 from src.baselines.text.sembench_source import verify_checkout
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
@@ -30,15 +30,17 @@ def configuration(config):
     fields = {'schema', 'sembench_checkout', 'reviews_csv', 'query', 'query_id', 'model',
               'sampling_params', 'engine_kwargs', 'provider_options', 'max_model_calls',
               'query_timeout_s', 'cleanup_s', 'stop_grace_s'}
-    if type(config) is not dict or set(config) != fields or config['schema'] != SCHEMA:
-        raise ValueError('an explicit independent native Daft Movie Filter configuration is required')
-    task = MovieFilterTask(config['reviews_csv'], config['query'], config['query_id'])
+    if (type(config) is not dict or not fields <= config.keys()
+            or config.keys() - fields - {'ranking'} or config['schema'] != SCHEMA):
+        raise ValueError('an explicit independent native Daft Movie JSON configuration is required')
+    task = movie_text_task(config['reviews_csv'], config['query'], config['query_id'],
+                           ranking=config.get('ranking'))
     for name in ('sampling_params', 'engine_kwargs', 'provider_options'):
         if type(config[name]) is not dict:
             raise ValueError(name + ' must be an explicit native object')
     if (type(config['sampling_params'].get('n')) is not int or config['sampling_params']['n'] != 1
             or config['sampling_params'].get('response_format') != task.response_format):
-        raise ValueError('native Movie Filter requires n=1 and the independent JSON object response format')
+        raise ValueError('native Movie tasks require n=1 and the independent JSON object response format')
     for name in ('query_timeout_s', 'cleanup_s', 'stop_grace_s'):
         value = config[name]
         if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
@@ -77,8 +79,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
     directory = Path(directory)
     new_private_directory(directory)
     report = dict(schema='semloom.sembench_native_daft.result.v1', status='failed',
-        baseline_identity='daft-native-independent-text-filter', comparison_identity='统一语义工程对照',
-        semantic_owner='independent TextFilterTask JSON Boolean prompt/parser',
+        baseline_identity='daft-native-project-json', comparison_identity='统一语义工程对照',
+        semantic_owner='independent text task JSON prompt/parser',
         execution_owner='Daft native vllm-prefix-caching AI expression',
         author_original_semantic_method=False, lotus_sdk_required=False,
         worker_entry_ns=started, source_start_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
@@ -86,7 +88,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
         model_startup_seconds=None, physical_gpu_exit_confirmed=None, performance_claim=False,
         warmup=0, whole_query_retries=0,
         timing_scope='fresh CSV read, independent messages, native chat template, prepared packet/digest I/O, '
-            'cold native Daft graph and native evidence I/O, IPC/polling, complete strict Boolean relation sink; '
+            'cold native Daft graph and native evidence I/O, IPC/polling, complete strict task JSON relation sink; '
             'preflight, tokenizer loading and budget claim precede source; final native close/process exit, '
             'source identity audit, official evaluation and result persistence follow sink')
     ledger = unit = primary = source = frame = None
@@ -144,7 +146,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
             report.update(model_ready_before_source=None, model_close_receipt=None,
                           no_model_reason='no eligible semantic occurrences; no native worker or model started')
         if unit.attempts != len(requests):
-            raise RuntimeError('permanent physical attempts differ from independent Filter occurrences')
+            raise RuntimeError('permanent physical attempts differ from independent task occurrences')
         report['source_audit_started_ns'] = time.monotonic_ns()
         task.verify_source(source)
         report['task'] = task.describe(source)

@@ -216,17 +216,19 @@ Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不�
 仍未取得资格。保留每个系统自己的依赖版本，不以迁移到统一 vLLM 为前提。
 
 <a id="independent-native-text"></a>
-### 独立原生 Ray／Daft 文本 Filter
+### 独立原生 Ray／Daft 文本任务
 
-[独立任务层](text/sembench_native_text.py)定义Movie Q1–Q4的源、条件、最终关系和原官方评分，
-同类Filter共用严格JSON布尔提示／解析，不导入LOTUS SDK、提示构造器或解析代码。
+[独立任务层](text/sembench_native_text.py)定义Movie Filter／Map的源、条件、最终关系和原官方评分，
+同类算子共用项目JSON提示／解析，不导入LOTUS SDK、提示构造器或解析代码。
 Q1/Q2在全部合格源行完成Filter后取原顺序前五项；Q3为COUNT，Q4为原分母上的比例。
+Q8保留taken_3分类计数、补零及排序；Q9须显式选择Map，保留完整评分关系、合法小数及原数值默认3的后处理。
+无效JSON结构仍按项目语义合同失败；Q8/Q9各有独立提示身份，均不冒称原LOTUS formatter／parser。
 重复reviewId按发生位置分别请求，不用ID去重或LIMIT提前减少语义工作。
 这是“统一语义工程对照”，不是作者原版或官方SemBench系统runner。
 
 每个系统一个runner：[Ray](../experiments/sembench_native_ray.py)使用公开LLM processor／原生AsyncLLM，
 [Daft](../experiments/sembench_native_daft.py)使用内置`vllm-prefix-caching`图和既有隔离worker／ACK关闭。
-两者只共享任务、评分和观测工具；系统仍拥有批处理、调度及模型执行，没有逐题runner。
+两者只共享任务工厂、评分和观测工具；新增Map无需新增执行器，系统仍拥有批处理、调度及模型执行，没有逐题runner。
 配置与CPU检查／显式运行命令见[脚本入口](../../scripts/README.md#independent-native-text-runners)。
 生成参数和预算必须显式声明，JSON约束来自本工程对照合同，不能套给LOTUS原Filter。
 
@@ -234,6 +236,7 @@ Q1/Q2在全部合格源行完成Filter后取原顺序前五项；Q3为COUNT，Q4
 原生冷启动／预测、严格解析及完整内存sink；各自同步观测／packet I/O仍披露，最终关闭、源审计、
 原评分及结果持久化在后。失败保留已完成结果及原异常，不留成功质量标签。
 [独立软件验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)已通过，模型调用为0；原生框架整图、真实模型、质量、物理退出及性能仍待目标验收。
+[后续Map组合验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-map-runners)保留具体提示身份、原后处理、完整空表及失败来源，不与前批计数累加。
 现有Ray外部HTTP Q3继续保留其外部模型所有权，身份更正为LOTUS-compatible工程路径，不能重复统计为独立原生语义baseline。
 
 <a id="ray-native-prepared-sembench"></a>

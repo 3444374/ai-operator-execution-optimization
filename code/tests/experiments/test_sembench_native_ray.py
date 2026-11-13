@@ -81,6 +81,24 @@ class RunnerTests(unittest.TestCase):
         self.assertGreaterEqual(report['sink_ready_ns'], report['source_started_ns'])
         self.assertEqual(report['result']['data'], [[1]])
 
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_empty_source_keeps_ready_not_applicable_without_starting_native_execution(self):
+        from src.baselines.text.frameworks.ray_data_sembench_native import _NativeQueryOwner
+        from src.baselines.text.sembench_native_text import movie_text_task
+
+        source = self.root / 'Reviews.csv'
+        pd.DataFrame([dict(reviewId='unselected', id='other', reviewText='Good',
+                           scoreSentiment='POSITIVE')]).to_csv(source, index=False)
+        task = movie_text_task(source, 'Q3', 'empty')
+        with patch.object(_NativeQueryOwner, '_start', side_effect=AssertionError('native startup forbidden')):
+            report = run_query(task, self.config, self.root / 'query', checkout=os.environ['SEMBENCH_CHECKOUT'])
+        self.assertEqual(report['status'], 'completed')
+        self.assertEqual(report['result']['data'], [[0]])
+        self.assertEqual(report['logical_requests'], 0)
+        self.assertEqual(report['physical_attempts_reserved'], 0)
+        self.assertIsNone(report['model_ready_before_source'])
+        self.assertIn('not started', report['model_ready_before_source_reason'])
+
     def test_parse_failure_keeps_raw_predictions_without_successful_sink(self):
         with recorded_processor({'0': 'invalid', '1': '{"keep":false}'}) as state:
             with self.assertRaisesRegex(ValueError, 'strict Boolean') as raised:
@@ -174,6 +192,42 @@ class RunnerTests(unittest.TestCase):
                           for row in state.requests], ['Good', 'Bad'])
 
     @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_map_tasks_reuse_the_native_processor_and_complete_official_sinks(self):
+        from src.baselines.text.sembench_native_text import movie_text_task
+
+        for query in ('Q8', 'Q9'):
+            with self.subTest(query=query):
+                root = self.root / query
+                root.mkdir()
+                source = root / 'Reviews.csv'
+                movie = 'taken_3' if query == 'Q8' else 'ant_man_and_the_wasp_quantumania'
+                pd.DataFrame([
+                    dict(reviewId='outside', id='other', reviewText='Outside', scoreSentiment='POSITIVE', originalScore='4/5'),
+                    dict(reviewId='good', id=movie, reviewText='Good', scoreSentiment='POSITIVE', originalScore='5/5'),
+                    dict(reviewId='bad', id=movie, reviewText='Bad', scoreSentiment='NEGATIVE', originalScore='1/5'),
+                ]).to_csv(source, index=False)
+                ledger = CellBudgetLedger.create(root / 'budget.sqlite',
+                    AttemptBudget(query, 2), deadline_utc=time.time() + 120)
+                ledger.reserve_unit('query', 2)
+                config = dict(self.config, budget=dict(path=str(ledger.path), id=query, limit=2, unit_id='query'))
+                task = movie_text_task(source, query, 'native', ranking='map' if query == 'Q9' else None)
+                values = ({'sentiment': 'POSITIVE'}, {'sentiment': 'NEGATIVE'}) if query == 'Q8' else ({'score': 5}, {'score': 1})
+                with recorded_processor({f'native-row-{index}': json.dumps(value)
+                                         for index, value in zip((1, 2), values)}) as state:
+                    report = run_query(task, config, root / 'query', checkout=os.environ['SEMBENCH_CHECKOUT'])
+                expected = [['NEGATIVE', 1], ['POSITIVE', 1]] if query == 'Q8' else [['good', 5.0], ['bad', 1.0]]
+                self.assertEqual(report['result']['data'], expected)
+                self.assertEqual(report['status'], 'completed')
+                self.assertEqual(report['baseline_identity'], 'ray-native-project-json')
+                self.assertEqual(report['physical_attempts_reserved'], 2)
+                self.assertIn('original_metric', report['quality'])
+                metric = report['quality']['original_metric']
+                self.assertAlmostEqual(metric['absolute_error'] if query == 'Q8' else metric['spearman_correlation'],
+                                       0 if query == 'Q8' else 1)
+                self.assertNotIn('originalScore', json.dumps(state.requests))
+                self.assertGreaterEqual(report['evaluation_started_ns'], report['sink_ready_ns'])
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
     def test_CLI_checks_without_claiming_budget_or_starting_native_execution(self):
         from src.experiments import sembench_native_ray as entry
 
@@ -190,6 +244,29 @@ class RunnerTests(unittest.TestCase):
                 with self.subTest(action=action), redirect_stdout(StringIO()) as output:
                     self.assertEqual(entry.main([action, '--config', str(path)]), 0)
                 self.assertFalse(json.loads(output.getvalue())['execution_enabled'])
+        self.assertEqual(self.ledger.snapshot(), before)
+
+    @unittest.skipUnless(os.environ.get('SEMBENCH_CHECKOUT'), 'bind the fixed official SemBench checkout')
+    def test_CLI_dispatches_maps_and_requires_the_explicit_Q9_map_profile(self):
+        from src.experiments import sembench_native_ray as entry
+
+        source = self.root / 'Reviews.csv'
+        pd.DataFrame([dict(reviewId='row', id='ant_man_and_the_wasp_quantumania', reviewText='Good',
+                           scoreSentiment='POSITIVE', originalScore='5/5')]).to_csv(source, index=False)
+        base = dict(self.config, schema='semloom.sembench_native_ray.v1',
+            sembench_checkout=os.environ['SEMBENCH_CHECKOUT'], reviews_csv=str(source), query_id='CLI')
+        path = self.root / 'config.json'
+        before = self.ledger.snapshot()
+        with patch.object(entry, 'run_query', side_effect=AssertionError('native execution forbidden')):
+            for task in (dict(query='Q8'), dict(query='Q9', ranking='map')):
+                path.write_text(json.dumps(dict(base, **task)))
+                with self.subTest(task=task), redirect_stdout(StringIO()) as output:
+                    self.assertEqual(entry.main(['check', '--config', str(path)]), 0)
+                self.assertEqual(json.loads(output.getvalue())['task']['query'], task['query'])
+            for task in (dict(query='Q9'), dict(query='Q9', ranking='topk'), dict(query='Q8', ranking='map')):
+                path.write_text(json.dumps(dict(base, **task)))
+                with self.subTest(task=task), self.assertRaises(ValueError):
+                    entry.main(['check', '--config', str(path)])
         self.assertEqual(self.ledger.snapshot(), before)
 
     def test_fresh_subprocess_forbids_lotus_imports(self):
@@ -209,6 +286,7 @@ from tests.experiments.test_sembench_native_ray import RunnerTests
 suite = unittest.TestSuite([RunnerTests('test_native_processor_and_complete_sink_before_close')])
 if os.environ.get('SEMBENCH_CHECKOUT'):
     suite.addTest(RunnerTests('test_neutral_movie_task_and_official_evaluator'))
+    suite.addTest(RunnerTests('test_map_tasks_reuse_the_native_processor_and_complete_official_sinks'))
 result = unittest.TextTestRunner().run(suite)
 assert not any(forbidden(name) for name in sys.modules)
 raise SystemExit(not result.wasSuccessful())

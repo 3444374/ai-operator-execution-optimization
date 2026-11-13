@@ -15,7 +15,8 @@ import unittest
 from unittest.mock import patch
 
 from src.baselines.text.sembench_native_text import (
-    COMPARISON_IDENTITY, MovieFilterTask, PROMPT_PROFILE, TextFilterTask,
+    COMPARISON_IDENTITY, MovieFilterTask, MovieMapTask, PROMPT_PROFILE, TextFilterTask,
+    movie_text_task,
 )
 
 
@@ -230,6 +231,206 @@ class NativeTextTaskTests(unittest.TestCase):
             print('four original evaluator bindings passed; LOTUS imports and network denied')
         ''')
         result = subprocess.run([sys.executable, '-c', script, str(path), checkout],
+            text=True, capture_output=True, timeout=90, env=dict(os.environ))
+        self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+        self.assertIn('LOTUS imports and network denied', result.stdout)
+
+
+class NativeMovieMapTests(unittest.TestCase):
+    def source_file(self, rows=None):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        path = Path(directory.name) / 'Reviews.csv'
+        stream = io.StringIO(newline='')
+        writer = csv.writer(stream)
+        writer.writerow(['id', 'reviewId', 'reviewText', 'scoreSentiment', 'originalScore'])
+        writer.writerows(rows if rows is not None else [
+            ('another', 'outside', 'unselected', 'POSITIVE', '5/5'),
+            ('taken_3', 'duplicate', 'wonderful', 'POSITIVE', '5/5'),
+            ('taken_3', 'duplicate', 'bad', 'NEGATIVE', '1/5'),
+            ('taken_3', 'third', 'good', 'POSITIVE', '4/5'),
+            ('ant_man_and_the_wasp_quantumania', 'score-dup', 'dislike', 'NEGATIVE', '1/5'),
+            ('ant_man_and_the_wasp_quantumania', 'score-dup', 'love', 'POSITIVE', '5/5'),
+            ('ant_man_and_the_wasp_quantumania', 'score-third', 'neutral', 'NEGATIVE', '3/5'),
+        ])
+        path.write_bytes(stream.getvalue().encode())
+        return path
+
+    @staticmethod
+    def replies(task, source, values):
+        key = 'sentiment' if task.query == '8' else 'score'
+        return [dict(call_id=request['call_id'], generated_text=json.dumps({key: value}))
+                for request, value in zip(task.requests(source), values, strict=True)]
+
+    def test_factory_preserves_filter_and_requires_explicit_map_ranking(self):
+        path = Path('/not-read-by-the-constructor/Reviews.csv')
+        with patch.object(Path, 'read_bytes', side_effect=AssertionError('constructor I/O')):
+            for query in range(1, 5):
+                task = movie_text_task(path, query, 'filter-run')
+                self.assertIs(type(task), MovieFilterTask)
+                self.assertEqual(task.query, str(query))
+            self.assertIs(type(movie_text_task(path, 'Q8')), MovieMapTask)
+            self.assertEqual(movie_text_task(path, 'Q9', ranking='map').ranking, 'map')
+            for query, ranking in [('Q1', 'map'), ('Q8', 'map'), ('Q9', None),
+                                   ('Q9', 'topk'), ('Q5', None)]:
+                with self.subTest(query=query, ranking=ranking), self.assertRaises(ValueError):
+                    movie_text_task(path, query, ranking=ranking)
+
+    def test_q8_counts_complete_occurrences_pads_zero_and_sorts_original_columns(self):
+        task = movie_text_task(self.source_file(), 'Q8', 'sentiment-run')
+        source = task.read_source()
+        self.assertEqual(source.positions, (1, 2, 3))
+        replies = self.replies(task, source, ['POSITIVE', 'NEGATIVE', 'POSITIVE'])
+        result = task.finish(source, reversed(replies))
+        self.assertEqual(result.to_dict(orient='list'), dict(
+            scoreSentiment=['NEGATIVE', 'POSITIVE'], count=[1, 2]))
+        all_positive = task.finish(source, self.replies(task, source, ['POSITIVE']*3))
+        self.assertEqual(all_positive.to_dict(orient='list'), dict(
+            scoreSentiment=['NEGATIVE', 'POSITIVE'], count=[0, 3]))
+        self.assertNotEqual(replies[0]['call_id'], replies[1]['call_id'])
+
+    def test_q9_preserves_decimal_scores_order_duplicates_and_original_default_three(self):
+        values = [1, 2.5, '4.5', 'bad', 0, 6, None, True, 'NaN', 'Infinity']
+        rows = [('ant_man_and_the_wasp_quantumania', 'duplicate', str(i), 'NEGATIVE', '1/5')
+                for i in range(len(values))]
+        task = movie_text_task(self.source_file(rows), 'Q9', 'scores', ranking='map')
+        source = task.read_source()
+        result = task.finish(source, reversed(self.replies(task, source, values)))
+        self.assertEqual(list(result.columns), ['reviewId', 'reviewScore'])
+        self.assertEqual(list(result['reviewId']), ['duplicate']*len(values))
+        self.assertEqual(list(result['reviewScore']), [1.0, 2.5, 4.5]+[3.0]*7)
+
+    def test_map_strict_json_envelope_and_sentiment_are_not_silent_defaults(self):
+        for query in ['Q8', 'Q9']:
+            task = movie_text_task(self.source_file(), query, ranking='map' if query == 'Q9' else None)
+            source = task.read_source()
+            key = 'sentiment' if query == 'Q8' else 'score'
+            value = 'POSITIVE' if query == 'Q8' else 4
+            complete = self.replies(task, source, [value]*len(source.positions))
+            for text in ['4', 'Answer: 4', '{"wrong":4}', '[]', None,
+                         '{"'+key+'":4,"extra":0}', '{"'+key+'":4,"'+key+'":4}',
+                         '{"'+key+'":NaN}']:
+                with self.subTest(query=query, text=text), self.assertRaises(ValueError):
+                    task.finish(source, [dict(complete[0], generated_text=text)]+complete[1:])
+        task = movie_text_task(self.source_file(), 'Q8')
+        source = task.read_source()
+        for value in ['positive', 'NEUTRAL', None, True, 1]:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                task.finish(source, self.replies(task, source, [value]*len(source.positions)))
+
+    def test_map_requires_exact_prediction_coverage_for_both_bindings(self):
+        for query in ['Q8', 'Q9']:
+            task = movie_text_task(self.source_file(), query, ranking='map' if query == 'Q9' else None)
+            source = task.read_source()
+            value = 'POSITIVE' if query == 'Q8' else 4
+            complete = self.replies(task, source, [value]*len(source.positions))
+            for replies in [complete[:-1], complete+[complete[0]],
+                            complete[:-1]+[dict(complete[-1], call_id='foreign')]]:
+                with self.subTest(query=query, replies=replies), self.assertRaises(ValueError):
+                    task.finish(source, replies)
+
+    def test_empty_map_selections_have_zero_requests_and_complete_sinks(self):
+        import pandas as pd
+
+        for rows in [[], [('another', 'outside', 'unselected', 'POSITIVE', '5/5')]]:
+            for query in ['Q8', 'Q9']:
+                with self.subTest(rows=rows, query=query):
+                    task = movie_text_task(self.source_file(rows), query, ranking='map' if query == 'Q9' else None)
+                    source = task.read_source()
+                    self.assertEqual(task.requests(source), [])
+                    result = task.finish(source, [])
+                    expected = (pd.DataFrame(dict(scoreSentiment=['NEGATIVE', 'POSITIVE'], count=[0, 0]))
+                                if query == 'Q8' else pd.DataFrame(columns=['reviewId', 'reviewScore']))
+                    pd.testing.assert_frame_equal(result, expected)
+
+    def test_map_prompts_exclude_ids_and_gold_and_snapshot_audit_is_post_sink(self):
+        for query, movie_id in [('Q8', 'taken_3'), ('Q9', 'ant_man_and_the_wasp_quantumania')]:
+            rows = [(movie_id, 'hidden-row-a', 'text\n«好»', 'HIDDEN-LABEL-A', '99/100'),
+                    (movie_id, 'hidden-row-b', 'text\n«好»', 'HIDDEN-LABEL-B', '88/100')]
+            path = self.source_file(rows)
+            task = movie_text_task(path, query, 'map-id', ranking='map' if query == 'Q9' else None)
+            source = task.read_source()
+            requests = task.requests(source)
+            self.assertEqual(requests[0]['messages'], requests[1]['messages'])
+            self.assertNotEqual(requests[0]['call_id'], requests[1]['call_id'])
+            prompt = json.dumps(requests[0]['messages'])
+            for hidden in ['hidden-row', 'HIDDEN-LABEL', '99/100', '88/100', 'scoreSentiment', 'originalScore', movie_id]:
+                self.assertNotIn(hidden, prompt)
+            self.assertEqual(json.loads(requests[0]['messages'][1]['content']), {'text': 'text\n«好»'})
+            with patch.object(Path, 'read_bytes', side_effect=AssertionError('metadata I/O')):
+                metadata = task.describe(source)
+            self.assertEqual(metadata['source']['sha256'], hashlib.sha256(source.raw_bytes).hexdigest())
+            self.assertEqual(metadata['expected_model_calls'], 2)
+            self.assertEqual(metadata['comparison_identity'], COMPARISON_IDENTITY)
+            self.assertFalse(metadata['author_original_semantic_method'])
+            self.assertEqual(metadata['model_columns'], ['reviewText'])
+            self.assertEqual(task.response_format, {'type': 'json_object'})
+            path.write_bytes(path.read_bytes()+b'\n')
+            with self.assertRaisesRegex(ValueError, 'changed'):
+                task.verify_source(source)
+
+    def test_map_source_requires_its_actual_gold_column_before_any_requests(self):
+        for query, required, unused in [('Q8', 'scoreSentiment', 'originalScore'),
+                                        ('Q9', 'originalScore', 'scoreSentiment')]:
+            path = self.source_file()
+            task = movie_text_task(path, query, ranking='map' if query == 'Q9' else None)
+            frame = task.read_source().frame
+            frame.drop(columns=[unused]).to_csv(path, index=False)
+            self.assertEqual(len(task.requests(task.read_source())), 3)
+            frame.drop(columns=[required]).to_csv(path, index=False)
+            with self.subTest(query=query), self.assertRaisesRegex(ValueError, 'original labeled'):
+                task.read_source()
+
+    def official_checkout(self):
+        checkout = os.environ.get('SEMLOOM_NATIVE_TEST_CHECKOUT')
+        if not checkout:
+            self.skipTest('bind the fixed public SemBench checkout for original evaluator checks')
+        return checkout
+
+    def test_map_reuses_official_evaluation_with_duplicate_ids_and_decimal_score(self):
+        from src.baselines.text.sembench_movie import evaluate_original
+
+        for query, values in [('Q8', ['POSITIVE', 'NEGATIVE', 'POSITIVE']), ('Q9', [1, 5, 2.5])]:
+            task = movie_text_task(self.source_file(), query, ranking='map' if query == 'Q9' else None)
+            source = task.read_source()
+            result = task.finish(source, self.replies(task, source, values))
+            actual = task.evaluate(source, result, checkout=self.official_checkout())
+            self.assertEqual(actual, evaluate_original(self.official_checkout(), int(task.query), result, source.frame))
+            self.assertTrue(actual['sembench_commit'].startswith('c814e380'))
+            if query == 'Q8':
+                self.assertEqual(actual['original_metric']['relative_error'], 0.0)
+            else:
+                self.assertAlmostEqual(actual['original_metric']['spearman_correlation'], 1.0)
+            self.assertEqual(task.encode_result(result)['columns'], list(result.columns))
+
+    def test_fresh_process_map_evaluation_has_no_lotus_or_network_dependency(self):
+        script = textwrap.dedent('''
+            import importlib.abc, json, socket, sys
+            class NoLotus(importlib.abc.MetaPathFinder):
+                def find_spec(self, fullname, path=None, target=None):
+                    blocked = ('lotus', 'semantic_methods.lotus', 'src.semantic_methods.lotus',
+                        'src.baselines.text.sembench_text', 'src.baselines.text.sembench_prepared',
+                        'src.baselines.text.sembench_movie_native', 'src.baselines.text.movie_tasks',
+                        'src.baselines.text.movie_records')
+                    if any(fullname == name or fullname.startswith(name+'.') for name in blocked):
+                        raise AssertionError('forbidden LOTUS dependency: '+fullname)
+            sys.meta_path.insert(0, NoLotus())
+            def denied(*args, **kwargs):
+                raise AssertionError('external network is forbidden')
+            socket.socket.connect = denied
+            socket.create_connection = denied
+            from src.baselines.text.sembench_native_text import movie_text_task
+            for query, key, value in [('Q8', 'sentiment', 'POSITIVE'), ('Q9', 'score', 2.5)]:
+                task = movie_text_task(sys.argv[1], query, ranking='map' if query == 'Q9' else None)
+                source = task.read_source()
+                result = task.finish(source, [dict(call_id=r['call_id'], generated_text=json.dumps({key:value}))
+                                             for r in task.requests(source)])
+                assert task.evaluate(source, result, checkout=sys.argv[2])['sembench_commit'].startswith('c814e380')
+                task.verify_source(source)
+                assert task.describe(source)['expected_model_calls'] == len(source.positions)
+            print('independent Map tasks and official evaluation; LOTUS imports and network denied')
+        ''')
+        result = subprocess.run([sys.executable, '-c', script, str(self.source_file()), self.official_checkout()],
             text=True, capture_output=True, timeout=90, env=dict(os.environ))
         self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
         self.assertIn('LOTUS imports and network denied', result.stdout)

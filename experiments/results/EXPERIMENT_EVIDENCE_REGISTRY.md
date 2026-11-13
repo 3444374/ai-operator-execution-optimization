@@ -80,6 +80,12 @@
 不增加实际调用。26个不同软件方法全部通过、0模型／原DSO／GPU；原关系／JSON阶段／计时不变，
 冻结服务器helper与历史成功／失败证据保留准确恢复树，不把格式收尾当作新模型资格。
 
+[独立原生文本Map](diagnostics/sembench_native_integration_20261112/README.md#independent-native-map-runners)
+同一任务工厂增加Q8分类、显式Q9评分Map，复用两系统runner／native graph，无逐题执行器或LOTUS依赖。
+保留原补零排序、完整发生项、合法小数／默认3及空表类型；独立JSON提示身份与原关系后处理分开。
+干净组合45个不同方法全部通过、0模型／GPU；分任务检查与旧Filter回归不累加，初始API红与浮点fixture失败保留。
+真实模型／质量／物理退出／公平性能pending，不能借用旧LOTUS Map或TopK成绩。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。

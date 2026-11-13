@@ -54,7 +54,9 @@ def execute(rows,**options):
   options['before_generate'](row['call_id'],'software-'+row['call_id'],row['prompt'])
   messages=json.loads(row['prompt'])
   text=json.loads(messages[1]['content'])['text']
-  generated=json.dumps({'keep':text.startswith('good')}) if mode!='invalid' else '{"keep":"true"}'
+  if mode=='sentiment':generated=json.dumps({'sentiment':'POSITIVE' if text.startswith('good') else 'NEGATIVE'})
+  elif mode=='score':generated=json.dumps({'score':5 if text.startswith('good') else 1})
+  else:generated=json.dumps({'keep':text.startswith('good')}) if mode!='invalid' else '{"keep":"true"}'
   predictions.append(dict(call_id=row['call_id'],generated_text=generated))
  if mode=='missing':predictions.pop()
  result=dict(predictions=predictions,metadata=dict(result_ready_monotonic_ns=time.monotonic_ns(),
@@ -142,17 +144,20 @@ class IndependentDaftQueryTests(unittest.TestCase):
             writer.writerow(('id','reviewId','reviewText','scoreSentiment'))
             writer.writerows(rows)
 
-    def config(self, query='Q3'):
-        return dict(schema=driver.SCHEMA, sembench_checkout=CHECKOUT, reviews_csv=str(self.csv),
+    def config(self, query='Q3', *, ranking=None):
+        config = dict(schema=driver.SCHEMA, sembench_checkout=CHECKOUT, reviews_csv=str(self.csv),
             query=query, query_id='native-daft-' + query, model='software-no-model',
             sampling_params=dict(n=1, response_format=dict(type='json_object'), max_tokens=32, temperature=0),
             engine_kwargs={}, provider_options={}, query_timeout_s=15, cleanup_s=4,
             stop_grace_s=.5, max_model_calls=8)
+        if ranking is not None:
+            config['ranking'] = ranking
+        return config
 
-    def invoke(self, query='Q3', mode='success'):
+    def invoke(self, query='Q3', mode='success', *, ranking=None):
         self.tokenizer, self.supervisor = SoftwareTokenizer(), SoftwareSupervisor(mode)
         self.output = self.root / ('run-' + query + '-' + mode)
-        return driver.run_query(self.config(query), self.output, model_python=sys.executable,
+        return driver.run_query(self.config(query, ranking=ranking), self.output, model_python=sys.executable,
                                 tokenizer=self.tokenizer, supervise=self.supervisor)
 
     def test_one_filter_family_reaches_complete_officially_scored_sinks_before_ACK_close(self):
@@ -191,6 +196,29 @@ class IndependentDaftQueryTests(unittest.TestCase):
                 prompts = read_json(self.output / 'prepared-prompts.json')['requests']
                 self.assertEqual(len(prompts), requests)
                 self.assertEqual(len({row['call_id'] for row in prompts}), requests)
+
+    def test_map_tasks_reuse_the_same_worker_and_original_scored_sinks(self):
+        report = self.invoke('Q8', 'sentiment')
+        self.assertEqual(report['result']['data'], [['NEGATIVE', 2], ['POSITIVE', 2]])
+        self.assertEqual(report['quality']['original_metric']['absolute_error'], 0)
+        self.assertEqual(report['baseline_identity'], 'daft-native-project-json')
+        self.assertEqual(report['physical_attempts_reserved'], 4)
+        self.assertTrue(report['result_release']['confirmed'])
+        with self.csv.open('w', newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerow(('id', 'reviewId', 'reviewText', 'scoreSentiment', 'originalScore'))
+            writer.writerows([
+                ('other', 'outside', 'good outside', 'POSITIVE', '4/5'),
+                ('ant_man_and_the_wasp_quantumania', 'good', 'good score', 'POSITIVE', '5/5'),
+                ('ant_man_and_the_wasp_quantumania', 'bad', 'bad score', 'NEGATIVE', '1/5'),
+            ])
+        report = self.invoke('Q9', 'score', ranking='map')
+        self.assertEqual(report['result']['data'], [['good', 5.0], ['bad', 1.0]])
+        self.assertAlmostEqual(report['quality']['original_metric']['spearman_correlation'], 1)
+        self.assertEqual(report['physical_attempts_reserved'], 2)
+        terminal = read_json(self.output / 'native-worker/worker.json')
+        self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
+        self.assertNotIn('originalScore', json.dumps(self.tokenizer.messages))
 
     def test_zero_occurrences_keep_the_real_empty_sink_without_a_worker(self):
         self.write_rows([('other','outside','good outside','POSITIVE')])
@@ -267,6 +295,26 @@ class IndependentDaftQueryTests(unittest.TestCase):
             with self.subTest(action=action), redirect_stdout(StringIO()) as stream:
                 self.assertEqual(driver.main([action,'--config',str(config),'--output-dir',str(output)]), 0)
             self.assertFalse(json.loads(stream.getvalue())['execution_enabled'])
+        self.assertFalse(output.exists())
+
+    def test_CLI_dispatches_maps_and_requires_the_explicit_Q9_map_profile(self):
+        path = self.root / 'map-config.json'
+        output = self.root / 'not-created'
+        with self.csv.open('w', newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerow(('id', 'reviewId', 'reviewText', 'scoreSentiment', 'originalScore'))
+            writer.writerow(('taken_3', 'row', 'good', 'POSITIVE', '5/5'))
+        with patch.object(driver, 'run_query', side_effect=AssertionError('native execution forbidden')):
+            for query, ranking in (('Q8', None), ('Q9', 'map')):
+                config = self.config(query, ranking=ranking)
+                path.write_text(json.dumps(config))
+                with self.subTest(query=query), redirect_stdout(StringIO()) as stream:
+                    self.assertEqual(driver.main(['check', '--config', str(path)]), 0)
+                self.assertEqual(json.loads(stream.getvalue())['task']['query'], query)
+            for query, ranking in (('Q9', None), ('Q9', 'topk'), ('Q8', 'map')):
+                path.write_text(json.dumps(self.config(query, ranking=ranking)))
+                with self.subTest(query=query, ranking=ranking), self.assertRaises(ValueError):
+                    driver.main(['check', '--config', str(path)])
         self.assertFalse(output.exists())
 
     def test_fresh_driver_and_worker_forbid_LOTUS_through_the_complete_official_score(self):

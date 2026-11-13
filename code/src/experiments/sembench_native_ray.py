@@ -1,4 +1,4 @@
-"""Project-owned Boolean tasks through Ray's native public LLM processor.
+"""Project-owned JSON tasks through Ray's native public LLM processor.
 
 This is independent of LOTUS prompts, parsers and execution. The caller owns
 the existing supervised worker, host lease and physical resource checks.
@@ -23,14 +23,14 @@ def _sampling(config):
     sampling = dict(config['sampling_params'])
     if (type(sampling.get('n')) is not int or sampling['n'] != 1
             or sampling.get('structured_outputs') != {'json_object': True}):
-        raise ValueError('native Boolean tasks require n=1 and native JSON-object generation')
+        raise ValueError('native JSON tasks require n=1 and native JSON-object generation')
     return sampling
 
 
 def run_query(task, config, directory, *, checkout, scope=query_scope):
     """Keep fresh source, prediction, strict parsing and full sink inside one owner.
 
-    ``task`` is a neutral MovieFilterTask. ``budget`` identifies a previously
+    ``task`` is a neutral Movie text task. ``budget`` identifies a previously
     reserved permanent unit; native AsyncLLM.generate charges each occurrence.
     Sampling and engine settings are explicit and retain native Ray execution.
     """
@@ -39,8 +39,10 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
     directory = Path(directory).resolve()
     new_private_directory(directory)
     report = dict(schema='semloom.sembench_native_ray.result.v1', status='failed',
-        baseline_identity='ray-native-project-boolean', backend='ray-data-native',
-        semantic_owner='project unified Boolean semantics; not author-original or LOTUS semantics',
+        baseline_identity='ray-native-project-json', backend='ray-data-native',
+        comparison_identity='统一语义工程对照',
+        semantic_owner='project unified JSON task semantics; not author-original or LOTUS semantics',
+        author_original_semantic_method=False, lotus_sdk_required=False,
         execution_owner='Ray Data public LLM processor',
         worker_entry_ns=entered, source_started_ns=None, sink_ready_ns=None,
         source_to_sink_seconds=None, query_clock_version='native_ray.source_to_sink.v1',
@@ -48,7 +50,7 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
         model_ready_before_source_reason='lazy query scope; native model starts in the first nonempty prediction batch',
         physical_gpu_exit_confirmed=None, performance_claim=False, warmup_calls=0,
         result_cache_enabled=False, requested_generate_retries=0,
-        timing_scope='fresh CSV read, project messages, native startup/prediction, strict Boolean parsing and complete memory sink; '
+        timing_scope='fresh CSV read, project messages, native startup/prediction, strict task JSON parsing and complete memory sink; '
             'mandatory budget reservation and synchronous native observer writes included; '
             'source verification, evaluation, result persistence and final runtime close excluded')
     source = result = native = ledger = unit = primary = None
@@ -79,6 +81,9 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
             source = task.read_source()
             requests = task.requests(source)
             report['logical_requests'] = len(requests)
+            if not requests:
+                report.update(model_ready_before_source=None,
+                    model_ready_before_source_reason='no eligible occurrences; native runtime and model were not started')
             if len(requests) > unit.remaining:
                 raise BudgetExhausted('permanent budget cannot cover every source occurrence')
             batch = owner.predict(requests, sampling_params=sampling)
@@ -139,10 +144,11 @@ def main(argv=None):
     config = read_json(args.config)
     if config.get('schema') != 'semloom.sembench_native_ray.v1':
         raise ValueError('an explicit independent native Ray configuration is required')
-    from src.baselines.text.sembench_native_text import MovieFilterTask
+    from src.baselines.text.sembench_native_text import movie_text_task
     from src.baselines.text.sembench_source import verify_checkout
     verify_checkout(config['sembench_checkout'])
-    task = MovieFilterTask(config['reviews_csv'], config['query'], config['query_id'])
+    task = movie_text_task(config['reviews_csv'], config['query'], config['query_id'],
+                           ranking=config.get('ranking'))
     if args.action == 'check' or not args.execute_model:
         _sampling(config)
         source = task.read_source()

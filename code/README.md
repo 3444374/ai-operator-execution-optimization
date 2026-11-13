@@ -19,7 +19,7 @@ LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当�
 | 独立 Kalypso 对照 | [作者适配说明](src/baselines/text/frameworks/kalypso_native/README.md) | 保留作者服务、参数与调度；不是 LOTUS 后端 |
 | 原生 LOTUS 外部服务查询 | [run_sembench_lotus_query.py](scripts/experiments/run_sembench_lotus_query.py) | 图像／多模态原题与 Q5 原分层聚合共用查询生命周期、原评价和逐 POST 预算 |
 | LOTUS＋Daft 完整原题 | [查询接线](src/experiments/native_daft_sembench.py) | 原文本模型 worker，或[外部 OpenAI 兼容服务模板](configs/sembench_daft_native_openai.example.json)接原视觉消息；共用原题及 LOTUS 语义 |
-| 独立原生 Ray／Daft 文本 Filter | [Ray runner](src/experiments/sembench_native_ray.py)、[Daft runner](src/experiments/sembench_native_daft.py) | Movie Q1–Q4共用[独立任务层](src/baselines/text/sembench_native_text.py)；统一语义工程对照，无 LOTUS 提示／解析依赖；[调用](scripts/README.md#independent-native-text-runners) |
+| 独立原生 Ray／Daft 文本任务 | [Ray runner](src/experiments/sembench_native_ray.py)、[Daft runner](src/experiments/sembench_native_daft.py) | Movie Q1–Q4 Filter、Q8及显式Q9 Map共用[独立任务层](src/baselines/text/sembench_native_text.py)；统一语义工程对照，无 LOTUS 提示／解析依赖；[调用](scripts/README.md#independent-native-text-runners) |
 | SemBench 图像准备 | [check_sembench_image_query.py](scripts/experiments/check_sembench_image_query.py) | Animals、MMQA、E-Commerce、Cars和Medical已接视觉题的输入／预算检查；[实际资格](INFRA_STATUS.md)按路径区分 |
 | LOTUS CLIP 检索 | [run_lotus_image_retrieval.py](scripts/experiments/run_lotus_image_retrieval.py) | 原检索方法与明确的图像执行 owner |
 | DuckDB＋作者 IMLane Q3 | [构建与接线](integrations/imlane_duckdb/README.md) | 原SQL／UDF路径；软件、冻结模型来源与当前计时资格分列，v2仍含内部同步回执开销 |
@@ -53,7 +53,7 @@ LOTUS 提供可选兼容方法与对照。PG 实现和资料归档保留，当�
 
 LOTUS＋Daft／Ray Data／IMLane共享原题与LOTUS方法，只适配实际执行；各系统拥有自己的图、模型和关闭责任。
 独立原生Ray／Daft使用各自原生AI接口和项目独立提示／解析，不依赖LOTUS SDK或语义实现；
-当前Movie Q1–Q4的共同JSON布尔合同是“统一语义工程对照”，不是作者原版算法或官方runner复现。
+当前Movie Filter／Map的项目JSON合同是“统一语义工程对照”，不是作者原版算法或官方runner复现。
 IMLane作者SQL路径另列，已有LOTUS兼容题目合同也不改称作者论文中未公开的UDF。
 共享输入、评分、IPC或清理工具不表示共享Core调度，也不把同一实现重复统计为多个baseline。
 原生 LOTUS 使用原 LM 的 `max_batch_size`，配置必须显式声明；没有用 Core 请求窗口代替它。

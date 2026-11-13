@@ -1176,6 +1176,35 @@ Map／Extract预算从“必须等于N”改为“有限且至少覆盖N”，�
 准确恢复树和迁移说明见[退役来源](../../../reproduction/native_baselines/README.md#retired-imlane-q1-schema)。
 本批不修改build输入／DSO，不增加新的Linux SQL或模型资格。
 
+<a id="independent-native-map-runners"></a>
+## 独立原生文本 Map 复用同一系统 runner
+
+从`e3ad235080bbb875eafbd632da31b93989a17ec0`继续扩展任务层，不增加执行器：
+`movie_text_task`工厂保留原Q1–Q4 Filter，增加同一`MovieMapTask`的Q8分类与显式Q9评分Map。
+Ray／Daft仍各用原runner、公开native graph、预算及原结果交接／关闭；配置只选择query及Q9所需`ranking="map"`。
+Q9缺少ranking、选择TopK或给其他题ranking在执行前拒绝，未恢复取消的TopK动作。
+
+固定c814的Q8原目标为taken_3完整情感分类计数；保留value_counts、缺类别补零及按scoreSentiment排序。
+Q9 Map原目标为指定Ant-Man电影的完整reviewId／reviewScore关系；保留原顺序、重复发生项、
+float转换、合法1–5小数与非数／越界默认3.0的普通后处理。空Q9仍返回原两列object类型表，不造模型请求。
+项目提示与JSON解析独立：Q8单sentiment键，Q9单score键；坏JSON、重复／额外键失败，
+已抽取score再进入原普通数值后处理。提示profile分别为`semloom.native_text_map.sentiment_json.v1`与
+`semloom.native_text_map.score_json.v1`，不是原LOTUS提示／parser或作者原版算法。
+原数据的scoreSentiment／originalScore只供官方评分；缺必要列在模型前失败，标签与ID不进入消息。
+既有Filter提示／实现不改，原源快照、完整sink、失败留证、预算及计时仍保留。
+
+两个runner的顶层身份收敛为`ray-native-project-json`／`daft-native-project-json`，具体语义仍取task的prompt_profile，
+不将旧Boolean或LOTUS目标证据转授Map。只读复核另确认Ray零发生项不启动runtime／模型，
+其ready字段改为不适用并记录原因，零调用不虚报模型就绪；源起止、结果与额度不变。
+
+干净e3ad导出叠加六个源／测试文件，三个完整受影响模块45个不同方法全部通过、0skip／模型／GPU。
+结果SHA-256为`3e48ef09cfdf07f735533bdaf6160620bd18d5fe73e00cf10ab4044ea7f13fd1`。
+覆盖新Map原评分、补零／空表schema与dtype、合法小数／默认3、重复／缺失答复、坏JSON、缺金标列、
+两系统完整sink／ACK／失败收尾、CLI分支及fresh进程禁止LOTUS导入；旧Filter回归包含在45项，不累加前批计数。
+分任务初始新增API缺失的红输出、原SciPy评分`0.9999999999999999`与1精确断言失败保留；
+后者只改fixture的浮点比较，原评分不变。分任务4项／22项与本组合重叠，不再相加。
+没有运行实际Ray／Daft模型图或新模型；Map目标质量、物理清理、完整Q9输入与公平性能均pending。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
