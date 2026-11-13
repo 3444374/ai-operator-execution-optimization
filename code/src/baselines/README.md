@@ -150,7 +150,7 @@ Daft复测使用[新worker／监督入口](../experiments/native_daft_query.py)�
 外部调用方继续负责host租约、永久额度、preflight、离线评价和最终物理GPU／SHM检查。
 
 <a id="daft-native-prepared-sembench"></a>
-### Daft 原生 AI 的完整文本查询入口
+### LOTUS＋Daft 原生 AI 的完整查询入口
 
 完整 SemBench 调用走本节和下节的共享查询入口；旧 Daft `execute_q3`、独立tokenizer／Filter／COUNT图
 和 `semloom.native_daft_q3.v1` 配置已删除。原题 Q1–Q4 与 Join 通过同一 prepared packet及原 sink；
@@ -182,13 +182,20 @@ Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON �
 （本地`huggingface_tokenizer_file`的path／sha256／tokenizer_id／tokenizer_revision）和
 `native_lm_max_ctx_len`，与`engine_kwargs.max_model_len`及实际声明的tokenizer一致。
 原LOTUS拥有分块、token计数、摘要依赖、parser和最终`_output`；动态总数保持未知，有限预算按实际调用扣除。
-现有字符串prompt provider尚无逐行图像carrier；TopK取消项保持停止，其他多模态／分组查询不由该路径授予支持。
+现有字符串prompt provider尚无逐行图像carrier；图像使用下述独立profile。TopK取消项保持停止，分组并发尚未由该路径授予支持。
 
-已查固定Daft0.7.21内置provider没有逐行raw conversation入口；`prompt(list[Expression])`是同一user的内容parts，
-不是多轮消息。OpenAI／LM Studio可构造固定system＋单user并支持图像bytes/File，但会重建对话；
-受限消息形态是否与原LOTUS完整内容／顺序等价尚未实现或验证，不能把`data:image`字符串当图像代替。
-自定义Prompter可保持Daft调度，但属于新增provider工程变体；当前vLLM字符串profile不借用该能力。
-原Extract的JSON object还需chat-completions原文本返回，不能用Pydantic parse的结构返回冒充原parser。
+另有[外部OpenAI兼容服务模板](../../configs/sembench_daft_native_openai.example.json)，沿同一原题runner与worker：
+Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不增加自定义provider或Prompter。
+仅接同一system＋单user内容数组；文本与PNG data URI还原为有类型的原生列，固定布局、图像字节及顺序按原消息核对。
+不把该API说成任意raw conversation接口；多轮、字符串user、额外图像detail和未验证形态明确拒绝，原Q12混合文本阶段仍待接。
+原Extract的JSON-object只在该阶段透传，沿chat-completions返回原文本，仍交原LOTUS parser。
+`native_openai`只引用endpoint／key环境变量名；禁止同时声明本地模型构造，外部模型由调用方拥有。
+原生SDK重试策略照配置，HTTP发送前占永久预算；driver仅在完整sink后核对实际请求／响应。
+结果行关联由原生Daft的call_id列承担；重复消息的HTTP答复目前仅按整批关联，不虚报逐行HTTP绑定。
+未观测远端READY／启动或显式SDK client close；隔离worker在release ACK后退出，不能据此证明远端模型退出。
+真实Daft0.7.21图＋软件API已验证Animals单图、Medical双图和Q2b非空Join→Extract的消息等价；
+完整worker／ACK与原题的软件验证另列[报告](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-attached-visual)。
+没有真实模型／服务器资格，也不借用本地字符串profile的旧成绩。
 
 每批原生READY后，driver将预测交回原题；随后原题产生下一批或完整sink，显式ACK才允许当前worker关闭。
 中间worker必须先关闭再启动下一批，最后worker在完整sink之后关闭；不存在自建模型池或跨批复用声明。
@@ -207,6 +214,27 @@ Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON �
 完成 2000/120/120 次真实单冷、完整原 sink 和逐条审计，零 unknown、零重试，物理清理完成。
 这些成绩绑定原提交；当前整合仅重跑受影响 CPU 回归。其余题按各自冻结回执判断，同 owner 暖轮
 仍未取得资格。保留每个系统自己的依赖版本，不以迁移到统一 vLLM 为前提。
+
+<a id="independent-native-text"></a>
+### 独立原生 Ray／Daft 文本 Filter
+
+[独立任务层](text/sembench_native_text.py)定义Movie Q1–Q4的源、条件、最终关系和原官方评分，
+同类Filter共用严格JSON布尔提示／解析，不导入LOTUS SDK、提示构造器或解析代码。
+Q1/Q2在全部合格源行完成Filter后取原顺序前五项；Q3为COUNT，Q4为原分母上的比例。
+重复reviewId按发生位置分别请求，不用ID去重或LIMIT提前减少语义工作。
+这是“统一语义工程对照”，不是作者原版或官方SemBench系统runner。
+
+每个系统一个runner：[Ray](../experiments/sembench_native_ray.py)使用公开LLM processor／原生AsyncLLM，
+[Daft](../experiments/sembench_native_daft.py)使用内置`vllm-prefix-caching`图和既有隔离worker／ACK关闭。
+两者只共享任务、评分和观测工具；系统仍拥有批处理、调度及模型执行，没有逐题runner。
+配置与CPU检查／显式运行命令见[脚本入口](../../scripts/README.md#independent-native-text-runners)。
+生成参数和预算必须显式声明，JSON约束来自本工程对照合同，不能套给LOTUS原Filter。
+
+独立时钟`native_ray.source_to_sink.v1`／`native_daft.source_to_sink.v1`包含fresh CSV、项目消息、
+原生冷启动／预测、严格解析及完整内存sink；各自同步观测／packet I/O仍披露，最终关闭、源审计、
+原评分及结果持久化在后。失败保留已完成结果及原异常，不留成功质量标签。
+[独立软件验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)已通过，模型调用为0；原生框架整图、真实模型、质量、物理退出及性能仍待目标验收。
+现有Ray外部HTTP Q3继续保留其外部模型所有权，身份更正为LOTUS-compatible工程路径，不能重复统计为独立原生语义baseline。
 
 <a id="ray-native-prepared-sembench"></a>
 ### LOTUS＋Ray 原生执行的完整查询 sink

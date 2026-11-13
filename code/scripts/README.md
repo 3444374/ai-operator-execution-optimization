@@ -18,7 +18,8 @@
 | 完整查询观测 | [record_observation/workflow.py](profiling/record_observation/workflow.py) | [契约和账本](profiling/record_observation/README.md)，不新增容量 |
 | 文件图像与LOTUS检索 | [文件清单](data/build_image_file_manifest.py)、[检索](experiments/run_lotus_image_retrieval.py) | 文件输入与公共 CLIP 实现 |
 | CLIP pooling能力检查 | [监督](profiling/run_vllm_clip_pooling_gate.py)、[worker](profiling/gate_vllm_clip_pooling.py) | 保留独立模型检查与退出状态；结构化环境记录复用现有脱敏，非凭据设置保持；[软件检查](../../experiments/results/diagnostics/records_runtime_refactor_20261104/README.md#clip-harness-environment-recording) |
-| 原生Daft完整文本查询 | [worker／监督入口](../src/experiments/native_daft_query.py) | 官方原题／prepared prompts、READY及独立关闭时钟；[配置与调用](#native-daft-prepared-worker) |
+| LOTUS＋Daft完整查询 | [worker／监督入口](../src/experiments/native_daft_query.py) | 原题／LOTUS语义；本地字符串provider或外部服务图像profile；[配置与调用](#native-daft-prepared-worker) |
+| 独立原生Ray／Daft文本Filter | [Ray](../src/experiments/sembench_native_ray.py)、[Daft](../src/experiments/sembench_native_daft.py) | Movie Q1–Q4统一语义工程对照，原评分，无LOTUS提示／解析；[调用](#independent-native-text-runners) |
 | DuckDB＋作者IMLane Q3 | [构建／接线](../integrations/imlane_duckdb/README.md)、[软件CPU](../src/experiments/native_imlane_query.py)、[模型worker](../src/experiments/native_imlane_model_query.py) | 作者SQL／Arrow；模型worker拥有独立baseline服务，software CLI不会启动模型 |
 | 离线结果读取 | [summarize_offline_results.py](analysis/summarize_offline_results.py) | [格式／NA 说明](analysis/OFFLINE_RESULTS.md) |
 | 准确历史树恢复 | [materialize_native_baseline.py](experiments/materialize_native_baseline.py) | 只还原与核验，不运行模型 |
@@ -31,7 +32,8 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 没有将 Core 替身当作原生执行资格。
 
 <a id="native-daft-prepared-worker"></a>
-## 原生 Daft prepared worker 与监督
+<a id="native-daft-prepared-worker"></a>
+## LOTUS＋Daft prepared worker 与监督
 
 主driver在取得现有host租约、永久次数claim和当前环境preflight后，调用
 `src.experiments.native_daft_query.supervised_run(config_path, new_private_directory, model_python=..., monitor=...)`。
@@ -46,11 +48,35 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 request_budget是已claim的永久额度。名称中的Map是既有运输schema，F／M／E和exact Join共用，
 不表示worker拥有Map或Q3语义。旧Q3源码／配置从[准确历史来源](../../experiments/reproduction/native_baselines/README.md#retired-daft-q3-native-binding)恢复。
 
+[外部服务模板](../configs/sembench_daft_native_openai.example.json)沿同一`sembench`动作，
+仅将packet改为`semloom.native_daft_messages.v1`的完整原消息。
+`native_openai`只保存endpoint／key的环境变量名，`engine_kwargs`必须为空，远端模型归调用方所有。
+不把该LOTUS＋Daft图像profile称作独立原生语义runner。
+
 `result-ready.json`先保存一次完整预测，`worker.json`记录执行／关闭回执，`deadline.json`记录实际READY时钟；
 原生物化或READY已失败时保存`failed-result.json`而不报READY。附加写入失败不覆盖原异常或supervisor的清理报告。
 正常关闭与最终TERM/KILL共用一份配置的cleanup预算；无READY时按完整query期限停止。
 `completed`不是物理GPU退出证明。原完整查询在driver接收READY时先完成内存sink，审计／评价与写盘另计；
 复用保存答复，不重新运行AI图。历史Q3失败仍见[原诊断报告](../../experiments/results/diagnostics/native_sembench_q3_20261106/README.md)。
+
+<a id="independent-native-text-runners"></a>
+## 独立原生文本 Filter runner
+
+[Ray模板](../configs/sembench_native_ray.example.json)和[Daft模板](../configs/sembench_native_daft.example.json)
+绑定同一Movie Q1–Q4任务对象；原题的目标、源顺序、最终关系和评分保留，项目JSON布尔提示／严格解析独立于LOTUS。
+身份为“统一语义工程对照”，不称作者原版。示例128次预算与128输出token只作显式配置示例，正式运行按输入与模型声明。
+
+```bash
+PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_ray check --config "$RAY_CONFIG"
+PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_daft check --config "$DAFT_CONFIG"
+```
+
+`run`仍须显式`--execute-model --output-dir "$NEW_PRIVATE_OUTPUT"`，Daft另给`--model-python "$DAFT_NATIVE_PYTHON"`。
+缺少执行标志只检查CPU输入，不claim预算或启动模型。Ray配置引用外层已预留的永久预算unit及模型Python；
+Daft复用既有隔离worker／监督／READY→完整sink→ACK关闭协议，在私有输出目录内声明本查询预算。
+外层仍负责环境preflight、host租约／监督和最终GPU／SHM清理，CLI不替代这些条件。
+两者冷查询均从fresh CSV到完整内存sink，包含必要准备和已披露的内部观测I/O；最终关闭、源身份审计、
+官方评分与结果写盘在后。源码与软件检查范围见[原生对照说明](../src/baselines/README.md#independent-native-text)。
 
 ## Movie session 配置
 

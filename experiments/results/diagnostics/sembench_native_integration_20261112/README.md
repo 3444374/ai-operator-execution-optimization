@@ -1028,8 +1028,8 @@ create＋reserve_unit后在新输出slot、相同15永久上界执行，源码�
 协调回执`imlane-visual-q7-4073f0a-native-qualification-20261113-r1`固定4073f0a5e：
 110CPU与128条原像素／native CPU消息门通过，但真实作者SQL在prediction前读取CSV失败；
 默认maximum_line_size=2097152字节，小于实际2293907字节。软件generate及真实模型调用均0，完整sink未到达。
-本会话核对本地BLOCKER／HANDOFF／FREEZE的来源一致，原关键文件SHA已留；完整远端原件包仍待原测试会话恢复，
-不将此写成全部payload已本地复核。首次私有guard失败、当前SQL失败和原预算保持，资源／租约释放由协调回执报告。
+当时本会话只核对本地BLOCKER／HANDOFF／FREEZE及关键文件SHA；完整原件随后已无损恢复并逐件核验，
+见[冻结Q7回执](#q7-ray-imlane-frozen-model)。首次私有guard失败、SQL失败和原预算保持，不能把旧4073记为修复后通过。
 
 固定作者072f的7件CSV源码Git blob／SHA已独立核对：0不表示无限，行长比较无该特例，
 原错误建议实际长度加1；reader buffer另有独立默认值。修复仅在现有sembench.cpp薄driver顺序测量CSV最大记录的真实字节数，
@@ -1048,8 +1048,8 @@ ROOT从干净aab09192f导出叠加唯一C++及测试文件，独立9／9通过�
 随后要求测量报错或由原DuckDB拒绝非法source，未为测试添加生产兜底。
 
 本地未编译完整Linux driver、未重编DSO、未执行原作者SQL／IPC／模型／GPU。
-下一步由原测试会话在核现有Ray Q7作业／租约后，重链并以原完整消息验真实SQL／IPC／ACK，再按原计划验VLM；
-不得缩图、改源、拆批绕过，也不重跑旧模型成绩掩盖失败。当前仍不能称Animals Q7的IMLane模型或整套接入完成。
+后续原测试会话已在a110完成薄driver重链、原SQL／IPC／ACK及sf64两阶段VLM，见[准确回执](#q7-ray-imlane-frozen-model)。
+没有缩图、改源或拆批绕过；该冻结Q7的执行资格不授予其他题目或整套接入。
 
 <a id="kalypso-query-scope-clock"></a>
 ## Kalypso 原题范围与独立时钟读取
@@ -1071,6 +1071,93 @@ ROOT从干净aab09192f导出叠加唯一C++及测试文件，独立9／9通过�
 `2c7dc492341dabed494c7bbad6056efc05af8d345a29137bfe74ee48cc57b102`；
 覆盖五handler、records/prefix、完整sink后审计失败及旧版本／未知／非法时序，原缺陷输出保留。
 这是时钟身份和读取修复，不增加多阶段、图像或新模型资格，冻结3500功能与离线失败仍按原版本解释。
+
+<a id="independent-native-filter-runners"></a>
+## 独立原生 Ray／Daft 的同类 Filter runner
+
+实现冻结为`75837115092401284fb607532891b8160cd5e600`，配置模板与两系统runner同时提交。
+依据用户要求，将独立原生系统与LOTUS＋后端分开：新`sembench_native_text.MovieFilterTask`只复用
+固定c814的题目目标、原源数据和评分，不导入LOTUS SDK、formatter或parser。
+它用项目独立JSON布尔提示／严格解析绑定Movie Q1–Q4；Q1全源、Q2–Q4先按原id筛选，
+实际合格行均完成Filter，Q1/Q2再取源顺序head5，Q3完整COUNT，Q4保留原分母及空结果行为。
+重复reviewId仍按源发生位置请求，标签只进入事后评分。原空gold的NaN质量不改成零误差。
+这是“统一语义工程对照”（`semloom.native_text_filter.json_bool.v1`），不是作者原版或官方系统runner。
+固定c814相关7件原源码Git blob已核对。
+
+每个系统一个runner：`sembench_native_ray`调用现有公开Ray LLM processor；`sembench_native_daft`调用
+内置vllm-prefix-caching图，复用既有隔离worker／监督／READY→sink→release ACK。
+两者不复制逐题执行器，不改原生批处理／调度。Ray引用外层已预留永久预算，Daft在本查询私有目录
+绑定有限预算；每次实际委托前扣除，失败不退还。显式生成参数须声明单输出和本任务JSON-object。
+check／无执行标志run仅作CPU检查，不claim预算、创建输出或启动模型。
+
+fresh CSV、任务消息、原生冷启动／预测、严格解析及完整内存sink在独立source→sink内；Daft还包含
+实际chat template、packet及IPC，两者已披露的同步观测I/O仍在内。最终关闭、源身份核对、原评分和
+driver结果持久化在后，不能与ready后查询直接排名。完整sink已完成而解析以外的清理、评分或写盘失败时，
+保留结果、原异常、已消耗预算并撤下成功质量标签。审查补齐Ray后验写盘失败、Daft最终报告失败行为，
+没有增加新的持久化重试或错误恢复框架。
+
+隔离干净导出组合初轮46／46；新增Ray CLI与显式生成合同后，只复核受影响Ray模块10／10。
+去重为48个不同方法全部通过、0skip／模型／GPU，不是56项；单独任务层12项和早期分任务检查不再累加。
+去重来源摘要SHA-256为`b865397a39db3ebffa6d8c8e6fc2f5434faa92da1078fdf81883b32e7e02c132`。
+覆盖四题原评分、重复／缺失／未知答复、空输入、完整sink与关闭顺序、失败留证及fresh进程禁止LOTUS导入。
+Ray使用公开图软件替身，Daft使用真实子进程／ACK加软件图；它们不是目标框架整图或真实模型资格。
+Daft首轮默认host监督受本机sysctl沙箱限制，模型0；原失败保留，fixture改用同现有测试的有界已知子进程，
+生产supervisor不改。新语义的Linux原生框架／模型、质量、物理退出与性能均pending。
+现有Ray HTTP Q3因外部模型所有权保留，元数据更正为LOTUS-compatible路径；其旧默认True parser
+仍按原来源解释，不重复计入新独立语义baseline，也未借此次修改删除尚有用途的对照。
+
+<a id="lotus-daft-attached-visual"></a>
+## LOTUS＋Daft 的内置 OpenAI 图像接点
+
+实现冻结为`f029bb5441f6138d76b749278aca979847d80f2e`，沿前一提交不改变独立语义runner。
+固定Daft0.7.21的原生`OpenAIProvider`＋`prompt(list[Expression])`可表达原查询所需的
+固定system＋单user内容数组。新接点只将文字／PNG data URI映射为有类型原生列，保留原内容和顺序；
+原LOTUS查询、提示、parser、JSON阶段、评分及最终关系仍由同一完整query runner拥有。
+这属于LOTUS＋Daft，不能改称上节独立原生语义路径。没有新增provider、Prompter或执行调度器。
+每批沿现有worker／ACK；外部模型不由worker关闭，实际READY、启动、显式SDK client close均未观测，
+worker退出只证明本地隔离进程结束。多轮、字符串user、额外detail和未验证消息形态不作静默转换；
+原Q12混合文本阶段、分组并发及取消的TopK保持未接，不通过其他实现恢复取消动作。
+
+先以真实Mac arm64 Daft0.7.21原生表达式／执行图加软件AsyncOpenAI，比较原始Animals单图4、
+Medical双图10以及MMQA Q2b Join4→Extract4四批：消息／图像字节和完整原结果一致，
+重复消息保留不同call_id，仅Extract透传JSON-object。没有访问模型或外部API。
+该原生图证明摘要SHA-256为`da928e15fea79bc9d4f42b4721870f5ab624e915fb3ab083d6ea4fe067302d89`。
+首轮guard拦截urllib3的IPv6能力探测socket构造，实际socket尚未创建、无bind／connect；原输出与源码定位保留，
+未为绕过检查重跑原题。SDK软件client共创建6个、GC后均销毁，显式close为0，不能据此声称transport正常关闭。
+
+HTTP观察复用现有observer，发送前永久占额，SDK重试仍由原生配置拥有；HTTP receipt只按原消息整批核对，
+逐行结果关联由Daft call_id列拥有，不能声称重复消息的HTTP答复已经逐行绑定。
+endpoint／key只引用环境变量名，不进入packet；外部profile拒绝同时声明本地engine构造。
+独立验证五个受影响模块共47个不同方法：首轮46通过、1个fixture读取错误报告字段失败，
+改用实际`physical_attempts_reserved`字段后只复核该项，通过；生产代码没有为此失败改动。
+去重证明SHA-256为`bb93b971e74d22bf4fa173712d87f4d0b9da5db8b6ad0e87f1fb26730e88497d`。
+覆盖旧字符串图／worker／完整查询回归、新真实Daft图、软件子进程HTTP观察、原Q7及非空Q2b完整sink／ACK／原评分，
+无skip／模型／GPU。真实兼容服务、模型、并发和物理资源资格pending，不能借用旧本地vllm成绩。
+
+<a id="q7-ray-imlane-frozen-model"></a>
+## 冻结 Ray／IMLane Animals Q7 sf64 两阶段模型回执
+
+原服务器协调会话分别提供`ray-animals-q7-4073f0a-full-query-20261113-r1`与
+`imlane-visual-q7-a1105-native-qualification-20261113-r1`。本接入会话只恢复核验原件，没有复跑模型。
+两条均为LOTUS完整原题和原评分，各64源行、两阶段共128次终态，unknown／retry为0，最终City precision／recall／F1均1。
+这是原sf64，不是Animals全8718图、全部视觉题或新独立原生JSON语义runner资格。
+
+| 冻结路径 | 完整查询区间 | 启动与真实执行条件 | 有效范围 |
+|---|---:|---|---|
+| LOTUS＋Ray，4073f0a5e | `lotus_ray.source_to_sink.v1` 229.928207925秒 | 包含原生懒启动；两个实际模型owner，vLLM0.22；不是同owner暖轮 | 两阶段原消息／终态／完整sink已验；原外层清理失败保留，精确资源恢复后监督通过 |
+| LOTUS＋IMLane工程版，a1105b723 | `lotus_imlane.source_to_sink.v1` 97.176916763秒 | 模型就绪后fresh source；启动72.99360989872366秒另列；两批同一Qwen2-VL-2B-Instruct BF16，revision `895c3a49bc3fa70a340399125c650a463535e71c`，vLLM0.25.1 | 薄driver重链，原DSO未重编，Linux SQL／IPC／ACK及原图VLM通过，物理资源／租约清理完成 |
+
+两者环境、模型生命周期和起点不同，不能按这两项数值排名。IMLane保留原max_tokens8192、temperature0、
+top_p1、seed0、空stop与原惩罚参数；未使用事后估算扣减。CSV扫描仍在查询内，
+两批最大记录分别2380577／2380579字节，对应reader2380578／2380580，未缩图或拆批绕过。
+a110的9项Linux读取／build检查通过，旧build仍被拒绝；旧4073在prediction前CSV失败的0模型记录保持。
+
+128条原消息及输入token数组跨路径相同，126条原始文本答复相同；第一阶段发生位置2／14的True／False不同，
+最终City仍相同。没有从这一现象推断因果或逐项完全等价；IMLane输出token ID数组未观测，不填空数组或零。
+两份无损参考恢复包绑定同一已核64图原消息参考，接入owner逐件核编码／恢复字节、清单、归档和准确Git源码：
+Ray包1694个payload含Ray383及旧失败IMLane4073的1311；对应4073源码1146个blob。
+a110包1492个payload、恢复2643558317字节，对应源码1147个blob。归档身份见下表；
+模型结果只归各自冻结版本，不转授当前新增Daft接点或独立Ray／Daft语义runner。
 
 ## 原件恢复与独立核验
 
@@ -1102,6 +1189,8 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 051639 Ray Animals Q1 sf64 | 84905964 | 1431 | `8ce429180056911dc8e0d7e2ce67a0eda19a045fd85dc7cfc27e7818dad4fa02` |
 | 807224 IMLane Q5单叶 | 3741666 | 1367 | `e648fc1de0bcee4f4aad4cf0ca678f8b32bb7c12e498ac7dc6684c1a702361b0` |
 | 3500 Kalypso Q5单层 | 3129361 | 1368 | `3549da07180f31519880da6412f7dacec24547ddad33f300dfbc4de54bc320f0` |
+| 4073 Ray Q7及旧失败IMLane参考恢复包 | 3541250 | 1694 | `461c67847a7f867a8da420401350e1d23a8a8f677330c427ceef1b5927d81a27` |
+| a1105 IMLane Q7参考恢复包 | 3683997 | 1492 | `0cae1fa63714d42c8ac671c0cec38de62038b5e07681df60470240ecc6560c2c` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

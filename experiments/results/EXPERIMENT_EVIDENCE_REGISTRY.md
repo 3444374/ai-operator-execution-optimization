@@ -55,7 +55,26 @@
 [IMLane prepared CSV实际记录边界](diagnostics/sembench_native_integration_20261112/README.md#imlane-csv-record-envelope)
 记录4073服务器在prediction前触发默认2MiB的0模型失败，以及按本次CSV最大记录字节绑定reader的薄driver修复。
 整合独立9／9本地检查通过，包含实际本机DuckDB读回与软件build；固定072f的7件源码身份核对，额外扫描保留在完整区间。
-原服务器全包尚待恢复，Linux作者SQL／IPC／ACK、薄driver重链和真实VLM待验，不从软件读回授予模型资格。
+原失败包随后已恢复并逐件复核；后续准确a110的薄driver／SQL／IPC／ACK／VLM资格见下方冻结Q7回执，
+旧4073仍为0模型失败，不从软件读回或新版本通过改写旧结果。
+
+[冻结Ray／IMLane Q7模型回执](diagnostics/sembench_native_integration_20261112/README.md#q7-ray-imlane-frozen-model)
+分别绑定4073与a110原sf64完整两阶段，各128终态、City F1=1；128原消息／输入token数组相同，
+两条中间原文本不同，未知输出token数组不填零。Ray懒启动／两owner与IMLane ready后／同owner口径不同，不能横比。
+1694及1492份payload的编码／恢复字节、归档及1146／1147件准确源码逐件核验，旧清理失败／CSV失败保留，
+物理清理完成；不授予全量SemBench或新增独立语义runner资格。
+
+[独立原生Ray／Daft Filter runner](diagnostics/sembench_native_integration_20261112/README.md#independent-native-filter-runners)
+同一任务层接Movie Q1–Q4原目标／源／评分，各系统原生AI接口拥有执行；不导入LOTUS SDK／提示／解析。
+项目JSON布尔合同明确为“统一语义工程对照”，非作者原版；48个不同软件方法通过、0模型／GPU，
+真实框架整图／模型／质量／物理退出待验。完整结果在后验失败时保留，旧HTTP Q3更正为LOTUS-compatible，避免重复统计。
+
+[LOTUS＋Daft内置图像接点](diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-attached-visual)
+固定Daft0.7.21内置OpenAIProvider表达式保留同形态原消息，真实原生图＋软件API四批消息等价，
+完整原Q7／非空Q2b软件worker／ACK及受影响回归共47个不同方法最终通过，首fixture失败保留。
+固定system＋单user数组以外、真实服务／模型及物理清理待验；HTTP仅按批关联，远端READY／启动／显式client close未观测。
+该路径保留LOTUS语义，与前述独立JSON语义runner分列，不借用旧本地模型成绩。
+
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。
