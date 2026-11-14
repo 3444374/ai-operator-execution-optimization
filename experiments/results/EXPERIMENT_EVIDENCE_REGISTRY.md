@@ -2,6 +2,11 @@
 
 ## 2026-11-12：SemBench 原生接入的分路径验收
 
+[43e原Q8同模型实机](diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-q8-43e-model)
+原2000源两轮各120真实API终态，原文／完整sink相同，原相对误差4.043%；准确版本、首／重复时钟与嵌套启动分列。
+1523份原件及1188源码blob独立核验，专属inactive SHM确切恢复与allocator未知分别保留。
+不外推JSON／TopK／视觉或正式性能排名；只读核验没有新增模型调用。
+
 [LOTUS＋Ray就绪首轮／同模型重复](diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-serve-ready-repeat)
 同一原题runner复用现有Serve owner／caller及两路径共用生命周期，保持LOTUS逐算子消息／采样／完整sink。
 最终106个不同软件方法通过，0模型／GPU；原失败与定向复核保留。单IPC通道、整体session期限和正式匹配条件分列，

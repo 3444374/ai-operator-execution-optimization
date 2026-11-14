@@ -2736,3 +2736,37 @@ Daft TopK取消保持，独立系统没有作者级聚合／TopK、Kalypso没有
 目标模型身份／两轮实际请求与物理清理仍交原服务器会话验收。CPU合成PID不证明真实模型复用，
 也不借用旧JSON Serve的模型成绩。正式比较仍绑定相同原题／输入／模型／生成／缓存／资源及实际profile，
 原RNG、两轮工作量／质量差异、token或kernel未观测项均如实保留。
+
+<a id="lotus-ray-q8-43e-model"></a>
+## 43e：LOTUS＋Ray 原 Q8 就绪首轮／同模型重复实机
+
+`lotus-ray-q8-ready-43e-qualification-20261114-r1`固定`43e20327a`，code tree
+`af32f1bf9d1120900eabe010ad427457cfa037a5`，LOTUS1.2.4／Ray2.56.1／vLLM0.22.0，
+Qwen2.5-7B-Instruct。原2000×11 CSV两轮fresh读取，各选120个taken_3发生项，重复ID保留。
+原Map消息／parser／完整关系／原评价已用保存答复重放，未强加JSON。
+
+| 实际轮次 | 完整原生API结果 | source→完整内存sink（秒） | 原相对误差 |
+|---|---:|---:|---:|
+| 模型就绪首轮 | 120 | 14.375733989 | 0.04043126684636118 |
+| 同一实际模型重复 | 120 | 10.529996431 | 0.04043126684636118 |
+
+两轮120份原文及完整sink一致：NEGATIVE105／POSITIVE15。不是质量全对。
+240次API终态、未关联API结果0；额外预热／自动重试／启动generate为0，永久上限256未用16不退款。
+一个constructor，五次当场actor／EngineCore PID和birth观测一致；每轮新LOTUS LM客户端不等于新模型。
+prefix cache开、结果缓存关，命中工作量未测。每轮API逻辑usage为prompt14206、completion360，
+不等于实际engine输入／输出token数组、未命中工作量或kernel；这些及成本、独立engine提交／终态计数仍未知。
+缓存的请求配置与现有原生启动日志均为`enable_prefix_caching=True`；没有命中计数／工作量证据。
+执行顺序为ready-first再same-owner-repeat，两轮各一个原LM批次，command中的源选中顺序均为row0..119、
+消息序列相同且轮间call_id不同；原生调度后的engine接受顺序未观测。时差不归因缓存，不为此补跑实验。
+
+caller启动100.76003266032785秒包含deployment启动86.657353025秒，不能相加。
+原8192 token／无stop及其余原配置保持，计时直接用`lotus_ray_serve.source_to_sink.v1`事件；
+必要预算／batch IPC在内，后置审计／评分／归档与最终关闭在外，不回填旧成绩或作跨系统排名。
+顺序IPC不等同offline分组并发；本题单Map资格不外推JSON Extract、TopK、多阶段、VLM或其他模型。
+
+本轮模型／进程退出后精确回收一个专属、无持有者的stage-new SHM，资源清理和租约释放完成；
+allocator归因未证，通用guard未放宽，不宣称上游SHM问题已修复。
+1523份原件与1188件准确Git源码blob、归档、两轮原采样／发生项／结果／时钟已独立核验；
+首个只读核验脚本错取顶层quality字段的KeyError保留，改读实际逐轮字段后通过，没有模型或实验重跑。
+私有证明`VERIFY-43e-native-model-originals-20261114` SHA-256为
+`947118f8356d1490896d642d1f1acbcb21a3e286b3703f9a7bf546bb77ccc820`。
