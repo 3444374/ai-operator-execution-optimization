@@ -582,6 +582,12 @@ worker已移除纯文本类型限制，将同一完整对象交`generate`，保�
 独立`lotus_imlane.source_to_sink.v1`含必要SQL／ACK／scope关闭、provider配置／指纹／回执I/O，
 完整原函数返回后才核对／评分／最终关闭；零/no-op没有READY前提。不是统一v3性能成绩。
 
+prepared VARCHAR 薄 driver 不再在每批 prediction 前执行额外 `EXPLAIN`，也不输出无现行消费者的
+`explain` 字段；实际 SQL、输入规模／发生项检查、原生投影和完整关系 ACK 保留。
+历史原件及其匹配源码继续保留原字段与时钟，不能扣减或回填为当前计时。
+此变更须重链薄 driver、生成匹配当前源码的新 build record；Linux 真实 DSO／SQL／IPC／ACK
+尚未据此重新验证，provider 同步回执等区间内成本也仍保留。
+
 薄driver的prepared CSV读取按本次输入的最大记录字节数加1设置`maximum_line_size`，
 不受DuckDB默认2MiB单行值限制。顺序扫描仅保留字节计数与引号状态，保留UTF-8／CSV双引号及合法多行ID，
 不缓存整条消息或整文件，不改图像或拆批；`input_csv`记录实际record字节与派生reader值。

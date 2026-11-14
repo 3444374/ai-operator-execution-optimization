@@ -176,7 +176,6 @@ void execute(const std::map<std::string, std::string> &args, Json &report, bool 
     report["source_rows"] = rows;
     const std::string sql = "SELECT call_id, imlane_prepared_text(call_id,messages_json) AS generated_text FROM prepared";
     report["sql"] = sql;
-    report["explain"] = query(connection, "EXPLAIN " + sql)->ToString();
     const auto started = now_ns();
     auto result = query(connection, sql);
     if (result->ColumnCount() != 2 || result->RowCount() != rows)
