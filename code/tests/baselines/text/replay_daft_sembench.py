@@ -110,7 +110,7 @@ def replay(config, frozen, output):
             assert all(engine.closed for engine in sdk.engines)
         assert all(not executor.loop_thread.is_alive() and executor.loop.is_closed() for executor in sdk.executors)
         native = terminal['native_api']
-        assert [native[key] for key in ('generate_calls', 'accepted', 'final_events', 'unresolved')] == [len(requests)] * 3 + [0]
+        assert [native[key] for key in ('generate_calls', 'final_events', 'unresolved')] == [len(requests)] * 2 + [0]
         assert not native['errors']
         budget = worker['request_budget']
         unit = SharedClaimedUnit(Path(budget['path']), AttemptBudget(budget['budget_id'], budget['limit']), budget['unit_id'])

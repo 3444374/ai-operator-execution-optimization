@@ -91,6 +91,11 @@ LOTUS服务额外响应审计现已后置，92个不同软件方法为91通过�
 质量、SHM专属回收及旧失败保持各自范围，不转授后续完成契约／EXPLAIN／响应审计修改，
 见[固定版本回执](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-1f176-q4-q6a-model)。
 
+Daft失败交接已复用原worker日志／READY闭合，移除collector成功包装与accepted，attached成功快照不再重复构造；
+104个不同软件方法最终通过，目标Linux／SDK和新计时仍待验。完整READY仍是当前失败交接成本，
+不再另列“ACK后补审计”机制待办，见[实现与失败依据](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-native-failure-handoff)。
+各runner的实际source→完整结果、冷暖和残余成本见[时钟表](src/baselines/README.md#native-runner-clock-boundaries)。
+
 当前剩余问题按共同边界处理，不能用增加题目入口绕开：
 
 | 共同边界 | 当前源码事实与收尾范围 |

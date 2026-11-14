@@ -50,6 +50,23 @@ from src.infrastructure.private_artifacts import read_json,write_private_json
 config,directory,mode=read_json(sys.argv[1]),Path(sys.argv[2]),sys.argv[3]
 def execute(rows,**options):
  write_private_json(directory/'fixture-start.json',dict(role='software predictions; no native SDK/model',started_ns=time.monotonic_ns()))
+ if mode=='native-stall':
+  import asyncio
+  from src.baselines.text.frameworks.daft_native_trace import NativeMapTrace
+  class EngineGenerateError(Exception):pass
+  class Engine:
+   async def generate(self,*args,**kwargs):
+    try:raise RuntimeError('software native generation failed before a result')
+    except RuntimeError as cause:raise EngineGenerateError() from cause
+    yield
+  trace=NativeMapTrace(options['on_native_event'],before_generate=options['before_generate'])
+  trace.current_row.set(rows[0]['call_id'])
+  engine=Engine();trace.attach(engine)
+  async def discarded_background_failure():
+   try:await engine.generate(rows[0]['prompt'],options['sampling_params'],'stalled-native-request').__anext__()
+   except EngineGenerateError:pass
+  asyncio.run(discarded_background_failure())
+  while True:time.sleep(.01)
  predictions=[]
  for row in rows:
   options['before_generate'](row['call_id'],'software-'+row['call_id'],row['prompt'])
@@ -68,7 +85,7 @@ def execute(rows,**options):
   predictions.append(dict(call_id=row['call_id'],generated_text=generated))
  if mode=='missing':predictions.pop()
  result=dict(predictions=predictions,metadata=dict(result_ready_monotonic_ns=time.monotonic_ns(),
-  native_api=dict(role='software fixture',generate_calls=len(rows),accepted=len(rows),final_events=len(rows),unresolved=0,errors=[]),model_close_receipt=None))
+  native_api=dict(role='software fixture',generate_calls=len(rows),final_events=len(rows),unresolved=0,errors=[]),model_close_receipt=None))
  options['on_result_ready'](result)
  close=dict(status='closed',role='software fixture, not a model shutdown',close_started_monotonic_ns=time.monotonic_ns())
  write_private_json(directory/'fixture-close.json',close)
@@ -103,7 +120,7 @@ class SoftwareSupervisor:
                     kwargs['monitor'](())
                     if process.poll() is not None:
                         if process.returncode:
-                            raise RuntimeError('CPU software worker failed; see fixture-worker.log')
+                            raise RuntimeError('CPU software worker failed; see worker.log')
                         return dict(status='CPU software child exited', scope='one known Popen child; tree/GPU unverified',
                                     known_child_exit_confirmed=True, worker_exit=process.returncode)
                     if time.monotonic() >= deadline:
@@ -117,7 +134,7 @@ class SoftwareSupervisor:
                     process.wait(timeout=kwargs['grace_s'])
                 raw, _ = process.communicate(timeout=kwargs['grace_s'])
                 from src.infrastructure.redact import redact_text
-                (Path(directory) / 'fixture-worker.log').write_text(redact_text(raw))
+                (Path(output) / 'worker.log').write_text(redact_text(raw))
         with patch.object(processes, 'supervise', side_effect=launch):
             return native_daft_query.supervised_run(config, directory, **options)
 
@@ -535,6 +552,36 @@ class IndependentDaftQueryTests(unittest.TestCase):
             self.assertNotIn('quality', report)
             self.assertEqual(report['physical_attempts_reserved'], 4)
             self.assertTrue((self.output / 'native-worker/result-release.json').exists())
+            evidence = report['native_failure_evidence']
+            self.assertEqual(evidence['ready_result'], 'result-ready.json')
+            self.assertTrue(evidence['result_ready_observed'])
+            raw = read_json(Path(evidence['artifact_root']) / evidence['ready_result'])
+            self.assertTrue(raw['result']['predictions'])
+
+    def test_discarded_native_generation_error_survives_forced_timeout_without_a_worker_report(self):
+        config = self.config()
+        config.update(query_timeout_s=1, cleanup_s=.5, stop_grace_s=.2)
+        with self.assertRaises(TimeoutError) as caught:
+            driver.run_query(config, self.root/'native-stall', model_python=sys.executable,
+                tokenizer=SoftwareTokenizer(), supervise=SoftwareSupervisor('native-stall'))
+        report = caught.exception.query_report
+        self.assertEqual(report['physical_attempts_reserved'], 1)
+        self.assertIsNone(report['sink_ready_ns'])
+        self.assertNotIn('quality', report)
+        evidence = report['native_failure_evidence']
+        self.assertIsNone(evidence['ready_result'])
+        self.assertFalse(evidence['result_ready_observed'])
+        worker = Path(evidence['artifact_root'])
+        self.assertFalse((worker/'worker.json').exists())
+        events = [json.loads(line) for line in (worker/evidence['worker_log']).read_text().splitlines()
+                  if line.startswith('{')]
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]['event'], 'native_generate_error')
+        self.assertEqual(events[0]['error_type'], 'EngineGenerateError')
+        self.assertEqual(events[0]['error_summary'], '')
+        self.assertEqual(events[0]['cause_type'], 'RuntimeError')
+        self.assertIn('software native generation failed before a result', events[0]['cause_summary'])
+        self.assertEqual(events[0]['caller_request_id'], 'stalled-native-request')
 
     def test_close_failure_preserves_completed_sink_without_claiming_success(self):
         with self.assertRaises(RuntimeError) as error:

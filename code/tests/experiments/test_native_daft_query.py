@@ -120,7 +120,7 @@ class NativeDaftWorkerTests(unittest.TestCase):
         self.assertEqual(rows,self.requests)
         self.assertEqual(options['sampling_params'], self.config['sampling_params'])
         self.assertEqual(options['close_timeout_s'], 112)
-        self.assertNotIn('on_native_event', options)
+        self.assertTrue(callable(options['on_native_event']))
         for row in rows:options['before_generate'](row['call_id'],'CPU-'+row['call_id'],row['prompt'])
         result = dict(predictions=[dict(call_id=row['call_id'],generated_text='True') for row in rows],
             metadata=dict(result_ready_monotonic_ns=time.monotonic_ns(),model_close_receipt=None,native_api={}))
@@ -172,6 +172,102 @@ class NativeDaftWorkerTests(unittest.TestCase):
         command = supervise.call_args.args[0]
         self.assertEqual(command[:5], ['CPU-python', '-u', '-B', '-m', 'src.experiments.native_daft_query'])
         self.assertTrue((self.root / 'supervised/deadline.json').exists())
+
+    def test_failed_pre_sink_monitor_or_late_ready_keeps_existing_artifact_without_inventing_ACK(self):
+        config = self.root/'config.json'
+        write_private_json(config, dict(self.config, wait_for_result_release=True))
+        for mode in ('cancel', 'late'):
+            with self.subTest(mode=mode):
+                output = self.root/mode
+                primary = InterruptedError('software caller cancelled before READY delivery')
+                callback = Mock()
+                def monitor(identities):
+                    if mode == 'cancel':
+                        raise primary
+                def supervise(command, directory, **options):
+                    timestamp = time.monotonic_ns() + (1201_000_000_000 if mode == 'late' else 0)
+                    publish_private_json(Path(directory).parent/'result-ready.json', dict(
+                        schema='semloom.native_daft_map.result_ready.v1',
+                        result_ready_monotonic_ns=timestamp, result=dict(predictions=['saved raw result'])))
+                    options['monitor'](())
+                    self.fail('the failed boundary must not complete supervision')
+                with patch('src.experiments.lotus_records_supervisor.supervise', side_effect=supervise), \
+                        self.assertRaises(InterruptedError if mode == 'cancel' else TimeoutError) as caught:
+                    supervised_run(config, output, model_python='CPU-only', monitor=monitor, on_result_ready=callback)
+                if mode == 'cancel':
+                    self.assertIs(caught.exception, primary)
+                callback.assert_not_called()
+                evidence = caught.exception.native_failure_evidence
+                self.assertEqual(evidence['ready_result'], 'result-ready.json')
+                self.assertEqual(evidence['result_ready_observed'], mode == 'late')
+                self.assertTrue((Path(evidence['artifact_root'])/evidence['ready_result']).is_file())
+                self.assertFalse((output/'result-release.json').exists())
+
+    def test_attached_success_reuses_the_complete_ready_API_snapshot(self):
+        import httpx
+        import os
+        from src.experiments import native_daft_query as worker
+        from src.infrastructure.private_artifacts import file_sha256
+
+        rows = [dict(call_id=row['call_id'], messages=[dict(role='user', content=row['prompt'])])
+                for row in self.requests]
+        packet = self.root/'messages.json'
+        write_private_json(packet, dict(schema='semloom.native_daft_messages.v1', requests=rows))
+        config = dict(self.config, requests_path=str(packet), requests_sha256=file_sha256(packet),
+            native_openai=dict(base_url_env='CPU_DAFT_BASE', api_key_env='CPU_DAFT_KEY'))
+        def execute(rows, **options):
+            predictions = []
+            with httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(200,
+                    json=dict(model=options['model'], choices=[dict(message=dict(content='True'))])))) as client:
+                for row in rows:
+                    response = client.post(options['provider_options']['base_url']+'/chat/completions',
+                        json=dict(model=options['model'], messages=row['messages']))
+                    predictions.append(dict(call_id=row['call_id'], generated_text=response.json()['choices'][0]['message']['content']))
+            result = dict(predictions=predictions, metadata=dict(result_ready_monotonic_ns=time.monotonic_ns(),
+                model_close_receipt=None))
+            options['on_result_ready'](result)
+            return result
+        output = self.root/'attached'
+        with patch.dict(os.environ, CPU_DAFT_BASE='http://localhost/v1', CPU_DAFT_KEY='test-key'), \
+                patch.object(worker, '_http_report', wraps=worker._http_report) as snapshot:
+            report = run_worker(config, output, execute_query=execute)
+        self.assertEqual(snapshot.call_count, 1)
+        self.assertEqual(report['native_api'], read_json(output/'result-ready.json')['result']['metadata']['native_api'])
+        self.assertEqual(report['native_api']['reserved_attempts'], 2)
+
+    def test_long_native_failure_keeps_short_cause_through_existing_log_line_bound(self):
+        from contextlib import redirect_stderr
+        from io import StringIO
+        import json
+        import os
+        from src.experiments.lotus_records_supervisor import _RedactedOutput
+
+        primary = RuntimeError('original executor failure')
+        cause = 'underlying native failure ' + 'x' * 20000
+        def execute(rows, **options):
+            options['before_generate'](rows[0]['call_id'], 'native-request', rows[0]['prompt'])
+            options['on_native_event']('native_generate_error', call_id=rows[0]['call_id'],
+                caller_request_id='native-request', error_type='EngineGenerateError', error='',
+                cause_type='RuntimeError', cause=cause, error_monotonic_ns=time.monotonic_ns(),
+                error_traceback='RuntimeError: '+cause+'\nEngineGenerateError\n')
+            raise primary
+        raw = StringIO()
+        with redirect_stderr(raw), self.assertRaises(RuntimeError) as caught:
+            run_worker(self.config, self.root/'long-error', execute_query=execute)
+        self.assertIs(caught.exception, primary)
+        reader, writer = os.pipe()
+        saved = StringIO()
+        output = _RedactedOutput(os.fdopen(reader, 'rb'), saved)
+        try:
+            output._consume(raw.getvalue().encode())
+        finally:
+            output.finish()
+            os.close(writer)
+        event = json.loads(saved.getvalue().splitlines()[0])
+        self.assertEqual(event['cause_type'], 'RuntimeError')
+        self.assertTrue(event['cause_summary'].startswith('underlying native failure'))
+        self.assertEqual(len(event['cause_summary']), event['summary_char_limit'])
+        self.assertEqual(output.omitted_lines, 1)
 
     def test_failed_collection_keeps_partial_predictions_without_publishing_ready(self):
         self.directory = self.root / 'failed-count'

@@ -192,6 +192,10 @@ IMLane回执v3删除逐行重复完整payload／hash及重复JSON预检查；整
 975c353e5保持原生HTTP对象／bytes引用／字段／真实时间与失败证据，响应审计在sink后处理，默认Daft不变。
 92个不同软件方法为91通过、1真实输入未绑定跳过，0模型／GPU；请求观测仍在区间，目标关联与计时待验。
 
+[Daft原生失败交接](diagnostics/sembench_native_integration_20261112/README.md#daft-native-failure-handoff)
+删除collector成功旁录／accepted，失败只用既有stderr及READY引用保原因，空EngineGenerateError显式cause与长行摘要均验证；
+104个不同软件方法最终通过，初始环境／夹具／临时runner失败保留，0模型／GPU。完整READY必要成本仍在区间，新目标运行与公平性能待验。
+
 [1f176 IMLane Q4与Serve Q6a](diagnostics/sembench_native_integration_20261112/README.md#native-1f176-q4-q6a-model)
 141项Linux及两行真实SQLv3通过；74次实际请求全终态，IMLane质量未全对，独立JSON Serve同owner结果一致。
 1773原件／1186源码blob及原报告直接核验，专属SHM回收与生产通用guard分开，不转授新候选或统一性能资格。

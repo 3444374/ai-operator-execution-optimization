@@ -195,9 +195,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
                           no_model_reason='no eligible semantic occurrences; no native worker or model started')
         apis = [batch['native_api'] for batch in report['native_batches'] if batch['native_worker_started']]
         if len(apis) > 1:
-            report['native_api'] = dict(scope='complete query native generate/add/final API receipts',
+            report['native_api'] = dict(scope='complete query native generate/final API receipts',
                 generate_calls=sum(api['generate_calls'] for api in apis),
-                accepted=sum(api['accepted'] for api in apis),
                 final_events=sum(api['final_events'] for api in apis),
                 unresolved=sum(api['unresolved'] for api in apis),
                 errors=[error for api in apis for error in api['errors']],
@@ -220,6 +219,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
             report['native_batches'][-1]['status'] = 'failed'
         if hasattr(error, 'report'):
             report['supervision'] = error.report
+        if hasattr(error, 'native_failure_evidence'):
+            report['native_failure_evidence'] = error.native_failure_evidence
     finally:
         if query is not None:
             query.close()
@@ -582,6 +583,8 @@ def run_attached_session(config, directory, *, model_python, supervise=supervise
                 current.update(error_type=type(caught).__name__, error=redact_text(str(caught)))
                 if hasattr(caught, 'report'):
                     current['supervision'] = caught.report
+                if hasattr(caught, 'native_failure_evidence'):
+                    current['native_failure_evidence'] = caught.native_failure_evidence
                 raise
             finally:
                 current.update(logical_model_requests=len(requests), physical_HTTP_attempts=unit.attempts-first_attempt)

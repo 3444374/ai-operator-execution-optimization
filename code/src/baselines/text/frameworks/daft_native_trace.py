@@ -7,7 +7,9 @@ not reserve capacity, retry, consume ahead, schedule tasks or call abort.
 from contextvars import ContextVar
 import hashlib
 import time
+import traceback
 
+from src.infrastructure.redact import redact_text
 
 _MISSING = object()
 
@@ -23,18 +25,20 @@ class _ObservedStream:
         if 'iteration_started_ns' not in self.record:
             self.record['iteration_started_ns'] = time.monotonic_ns()
             self.trace.emit('native_generate_iteration', self.record)
-        token = self.trace.current_request.set(self.record)
         try:
             value = await operation(*args)
         except StopAsyncIteration:
             self.record['iterator_exhausted_ns'] = time.monotonic_ns()
             raise
         except BaseException as error:
-            self.record['error_type'] = type(error).__name__
+            self.record.update(error_type=type(error).__name__, error=redact_text(str(error)),
+                               error_traceback=redact_text(''.join(traceback.format_exception(error))),
+                               error_monotonic_ns=time.monotonic_ns())
+            if error.__cause__ is not None:
+                self.record.update(cause_type=type(error.__cause__).__name__,
+                                   cause=redact_text(str(error.__cause__)))
             self.trace.emit('native_generate_error', self.record)
             raise
-        finally:
-            self.trace.current_request.reset(token)
         self.trace.final(self.record, value)
         return value
 
@@ -46,11 +50,7 @@ class _ObservedStream:
 
     async def aclose(self):
         # Closing is a delegated operation, not a terminal model receipt.
-        token = self.trace.current_request.set(self.record)
-        try:
-            return await self.stream.aclose()
-        finally:
-            self.trace.current_request.reset(token)
+        return await self.stream.aclose()
 
 
 class NativeMapTrace:
@@ -58,7 +58,6 @@ class NativeMapTrace:
         self.sink = emit
         self.before_generate = before_generate
         self.current_row = ContextVar('native_daft_row', default=None)
-        self.current_request = ContextVar('native_daft_request', default=None)
         self.requests, self.errors, self.models = [], [], []
         self.ready = []
 
@@ -94,8 +93,7 @@ class NativeMapTrace:
     def attach(self, model):
         trace = self
         engine_id = len(self.models)
-        originals = {name: model.__dict__.get(name, _MISSING) for name in ('generate', 'add_request')}
-        self.models.append((model, originals))
+        self.models.append((model, model.__dict__.get('generate', _MISSING)))
         config = getattr(model, 'vllm_config', None)
         model_config = getattr(model, 'model_config', getattr(config, 'model_config', None))
         cache_config = getattr(model, 'cache_config', getattr(config, 'cache_config', None))
@@ -109,7 +107,7 @@ class NativeMapTrace:
             max_num_seqs=getattr(scheduler_config, 'max_num_seqs', None),
             max_num_batched_tokens=getattr(scheduler_config, 'max_num_batched_tokens', None)))
         self.emit('native_model_constructed', self.ready[-1])
-        original_generate, original_add = model.generate, model.add_request
+        original_generate = model.generate
 
         def generate(*args, **kwargs):
             prompt = kwargs.get('prompt', args[0] if args else None)
@@ -135,25 +133,7 @@ class NativeMapTrace:
             stream = original_generate(*args, **kwargs)
             return _ObservedStream(stream, trace, record)
 
-        async def add(*args, **kwargs):
-            record = trace.current_request.get()
-            if record is not None:
-                record['native_add_enter_ns'] = time.monotonic_ns()
-                trace.emit('native_add_enter', record)
-            try:
-                collector = await original_add(*args, **kwargs)
-            except BaseException as error:
-                if record is not None:
-                    record['native_add_error'] = type(error).__name__
-                    trace.emit('native_add_error', record)
-                raise
-            if record is not None:
-                record.update(native_add_return_ns=time.monotonic_ns(),
-                              collector_request_id=getattr(collector, 'request_id', None))
-                trace.emit('native_add_return', record)
-            return collector
-
-        model.generate, model.add_request = generate, add
+        model.generate = generate
 
     def final(self, record, output):
         try:
@@ -169,25 +149,22 @@ class NativeMapTrace:
             self.errors.append(dict(boundary='native final observation', error_type=type(error).__name__))
 
     def report(self):
-        return dict(scope='native generate/add/final API; no GPU kernel evidence',
-            accepted_scope='native add_request returned a collector; not an independent engine or kernel observation',
+        return dict(scope='native generate/final API; no GPU kernel evidence',
             first_engine_accept_ns=None,
-            engine_accept_reason='add_request return is an API collector receipt, not independently observed engine acceptance',
+            engine_accept_reason='engine acceptance is not independently observed',
             model_ready_reason='factory returned an initialized native model; no additional warmup request',
             generate_calls=len(self.requests),
             generation_iterations=sum('iteration_started_ns' in row for row in self.requests),
-            accepted=sum('native_add_return_ns' in row for row in self.requests),
             final_events=sum(row.get('finished') is True for row in self.requests),
             unresolved=sum(row.get('finished') is not True for row in self.requests),
             requests=[dict(row) for row in self.requests], errors=list(self.errors), ready=list(self.ready))
 
     def __exit__(self, *exception):
         self.executor_type._generate = self.original_row
-        for model, originals in reversed(self.models):
-            for name, original in originals.items():
-                if original is _MISSING:
-                    delattr(model, name)
-                else:
-                    setattr(model, name, original)
+        for model, original in reversed(self.models):
+            if original is _MISSING:
+                del model.generate
+            else:
+                model.generate = original
         self.models.clear()
         return False

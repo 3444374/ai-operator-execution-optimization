@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from src.experiments import native_daft_query as worker, native_daft_sembench as driver
-from src.infrastructure.private_artifacts import read_json, write_private_json
+from src.infrastructure.private_artifacts import new_private_directory, read_json, write_private_json
 from tests.experiments import test_native_daft_query as worker_fixture
 from tests.experiments import test_sembench_lotus_mmqa_aggregate as aggregate_fixture
 
@@ -41,7 +41,7 @@ def execute(rows,**options):
   answer='Another Actor' if mode=='wrong_actor' else 'Lizzy Caplan'
   if mode=='long_summaries' and ('\n\tDocument ' in prompt or prompt.count('\n\tSource ')>2): answer+=' '+'detail '*90
   predictions.append(dict(call_id=row['call_id'],generated_text=answer))
- result=dict(predictions=predictions,metadata=dict(result_ready_monotonic_ns=time.monotonic_ns(),model_close_receipt=None,native_api=dict(generate_calls=len(rows),accepted=len(rows),final_events=len(rows),unresolved=0,errors=[])))
+ result=dict(predictions=predictions,metadata=dict(result_ready_monotonic_ns=time.monotonic_ns(),model_close_receipt=None,native_api=dict(generate_calls=len(rows),final_events=len(rows),unresolved=0,errors=[])))
  options['on_result_ready'](result)
  close=dict(status='closed',close_started_monotonic_ns=time.monotonic_ns())
  write_private_json(directory/'model-close.json',close)
@@ -64,6 +64,7 @@ class ChildSupervisor:
         self.calls.append((config, Path(directory)))
         def launch(command, output, **options):
             # One known CPU child: process-tree/GPU supervision is a separate target qualification.
+            new_private_directory(output)
             process = subprocess.Popen([sys.executable, '-B', '-c', CHILD, str(config_path), str(directory),
                 self.mode, str(Path(__file__).resolve().parents[2])], stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT, text=True)
@@ -86,7 +87,7 @@ class ChildSupervisor:
                     process.wait(timeout=options['grace_s'])
                 raw, _ = process.communicate(timeout=options['grace_s'])
                 from src.infrastructure.redact import redact_text
-                Path(directory, 'CPU-worker.log').write_text(redact_text(raw))
+                Path(output, 'worker.log').write_text(redact_text(raw))
         with patch('src.experiments.lotus_records_supervisor.supervise', side_effect=launch):
             return worker.supervised_run(config_path, directory, **kwargs)
 

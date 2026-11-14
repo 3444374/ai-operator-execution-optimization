@@ -2519,7 +2519,7 @@ Serve仅按需保存模型构造身份，完整非流式响应的call_id／respo
 
 原Q5 sf1000仍是相同16篇、单叶，不把未触发多层当接线缺口；原Q2b非空链的模型判断与代码执行资格分开。
 Cars／E-Commerce真实数据缺口、系统原生不支持和目标未验证各自保留，详细题目范围继续由能力表及具名回执维护。
-LOTUS额外响应审计已由[后续实现](#lotus-response-audit-after-sink)完成软件收口；当前Daft失败证据交接的工程估计约2–4小时。
+LOTUS额外响应审计已由[后续实现](#lotus-response-audit-after-sink)完成软件收口，Daft失败交接也已由[原通道实现](#daft-native-failure-handoff)完成代码及软件验证。
 其余请求观测／IMLane／Kalypso留存仍有真实消费者，须先核最小必要证据及失败路径，不能直接按删日志估时；
 目标构建、模型验证和排队时间另计，现阶段不能给出整套验收完成时间。
 
@@ -2606,3 +2606,40 @@ allocator仍未证明，生产通用guard未放宽，不能推广成原生SHM问
 专项消息/token／SQL回放及清理归因依照冻结服务器审计，模型／SQL未为归档重跑。
 私有核验身份`VERIFY-1f176-native-model-originals-20261114` SHA-256为
 `959cafc50689918043ab9e4313d973780c6d6a485013c0841a6778357aac49b3`；本次只读核验新增模型0次。
+
+<a id="daft-native-failure-handoff"></a>
+## Daft 原生失败证据与必要 READY 交接
+
+按固定Daft0.7.21源码核对，`LocalVLLMExecutor._generate`后台异常可发生在结果入队及running计数递减之前，
+而submit丢弃Future／Task；Rust sink仍轮询计数，故不能假定该异常一定进入collect的结果流。
+固定vLLM0.25.1的普通字符串generate正常结束由finished控制，异常可包装成空`EngineGenerateError() from cause`。
+依据为[Daft固定sink](https://github.com/Eventual-Inc/Daft/blob/v0.7.21/src/daft-local-execution/src/streaming_sink/vllm.rs#L357)、
+[vLLM普通生成／错误链](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/engine/async_llm.py#L517)
+及[空错误类](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/engine/exceptions.py#L2)。这是源码与受控CPU依据，不是新目标GPU失败实验。
+
+本批删除`add_request`collector成功包装、仅供它使用的ContextVar和`accepted`字段／汇总／旧夹具断言；
+collector返回本来不代表独立引擎接受，当前完成门也不使用它。真实预算、call_id、采样／token／hash、final／unresolved和owner保留。
+只有native_generate_error写入已有stderr，记录脱敏错误／显式cause短摘要及标准多行异常链；
+没有新线程、侧文件、交接阶段或成功日志，也不修改Daft原生错误、重试、超时和调度策略。
+原空包装错误对象继续抛出；观察器写失败不会替换它。短摘要最多1024字符，完整长行仍服从原supervisor的16KiB省略规则，
+强制终止时不保证全部长链落盘；独立短cause避免整条单行JSON超限后失去可定位原因。
+
+supervised_run失败把既有worker日志／已保存READY的引用交给原异常，三个维护入口继续传到失败报告。
+已保存结果不等于已观测、按时完整sink、ACK或close；取消、late READY、ACK失败的原控制保持。
+后台错误丢弃后至原期限才终止时，即使worker.json不存在，既有日志仍能保留短原因；不将未知模型结局填零。
+完整native_api仍随原READY在callback／关闭前持久化：ACK后再写worker.json不能覆盖解析失败、监控取消或native close崩溃。
+因此该快照／packet／预测传输和中间批次ACK／退出留在完整查询内，不靠延迟异常或新增协议隐藏成本。
+attached成功直接复用READY已建立的HTTP快照，删除ACK后的同一份重复构造；失败仍重新收集真实HTTP状态。
+所有CPUchild夹具的日志路径同步到真实supervisor位置，旧冻结包保留原源码和字段。
+
+10文件冻结导出与当前源码逐SHA一致；104个不同软件方法最终全通过，0skip／真实模型／GPU／外部服务。
+覆盖原查询／实际依赖批次、默认attached、SDK采样／结果和关闭、预算，以及原生空包装异常链、观察写失败、
+后台错误丢弃后的强制超时、解析失败、monitor取消、late READY／ACK及既有16KiB长行规则。
+首轮缺既有Daft SDK搜索路径和夹具日志位置所致17条错误记录／3跳过保留；复核临时runner缺main guard引发的spawn递归也保留，
+修复临时运行器后只重验受影响项，重复方法不累加。只读环境管理器没有匹配本机Darwin CPU的GPU profile，
+未改profile、安装依赖或授予正式运行资格；本批按本地纯fixture授权执行。
+私有证明`VERIFY-daft-failure-final-20261114` SHA-256为
+`23ccc435c8f8a148954b275c77742a100233fb689ba17733956a8da83224a5fa`。
+新目标Linux监督／实际SDK与模型计时仍由原服务器会话验收，不重复其正在执行的任务。
+逐系统实际边界统一维护在[runner时钟表](../../../../code/src/baselines/README.md#native-runner-clock-boundaries)；
+必要交接、残余同步诊断、冷暖条件分列，不授予全路径计时对齐或正式性能排名。

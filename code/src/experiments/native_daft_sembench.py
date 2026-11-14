@@ -320,6 +320,10 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
     except BaseException as error:
         primary = error
         report['error_type'] = type(error).__name__
+        if hasattr(error, 'report'):
+            report['supervision'] = error.report
+        if hasattr(error, 'native_failure_evidence'):
+            report['native_failure_evidence'] = error.native_failure_evidence
         if report['native_batches'] and report['native_batches'][-1]['status'] == 'submitted':
             report['native_batches'][-1].update(status='failed', error_type=type(error).__name__)
         raise

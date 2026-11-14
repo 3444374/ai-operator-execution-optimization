@@ -29,8 +29,9 @@ class PreparedDaftTests(unittest.TestCase):
                          for row, text in zip(requests, texts)])
         self.assertEqual(sorted(reserved), sorted((row['call_id'], row['prompt']) for row in requests))
         trace = result['metadata']['native_api']
-        self.assertEqual([trace[name] for name in ('generate_calls', 'accepted', 'final_events', 'unresolved')],
-                         [3, 3, 3, 0])
+        self.assertEqual([trace[name] for name in ('generate_calls', 'final_events', 'unresolved')],
+                         [3, 3, 0])
+        self.assertNotIn('accepted', trace)
         self.assertFalse(trace['errors'])
         self.assertIsNone(trace['first_engine_accept_ns'])
         self.assertLess(ready[0], result['metadata']['model_close_receipt']['close_started_monotonic_ns'])
@@ -53,6 +54,7 @@ class PreparedDaftTests(unittest.TestCase):
             remaining[0] -= 1
         with NativeMapTrace(before_generate=reserve) as trace:
             trace.attach(engine)
+            self.assertIs(engine.add_request.__func__, Engine.add_request)
             stream = engine.generate('first', {}, 'id-1')
             asyncio.run(stream.aclose())
             with self.assertRaisesRegex(RuntimeError, 'CPU exhausted'):
@@ -79,6 +81,35 @@ class PreparedDaftTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 native_sampling_params(dict(values, response_format={'type': 'json_object'}, structured_outputs={}))
         self.assertEqual(values, dict(n=1, max_tokens=8192, temperature=0, seed=0, stop=[]))
+
+    def test_failure_observation_does_not_replace_the_native_generator_exception(self):
+        class EngineGenerateError(Exception):
+            pass
+        primary = EngineGenerateError()
+        class Engine:
+            async def generate(self, *args, **kwargs):
+                try:
+                    raise RuntimeError('native root cause password=fixture-only-value')
+                except RuntimeError as cause:
+                    raise primary from cause
+                yield
+        def record(event, **values):
+            if event == 'native_generate_error':
+                raise OSError('failure log unavailable')
+        engine = Engine()
+        with NativeMapTrace(record) as trace:
+            trace.attach(engine)
+            with self.assertRaises(EngineGenerateError) as caught:
+                asyncio.run(engine.generate('original', {}, 'original-id').__anext__())
+            self.assertIs(caught.exception, primary)
+            report = trace.report()
+            self.assertEqual(report['requests'][0]['error'], str(primary))
+            chain = report['requests'][0]['error_traceback']
+            self.assertIn('RuntimeError: native root cause', chain)
+            self.assertNotIn('fixture-only-value', chain)
+            self.assertEqual(report['unresolved'], 1)
+            self.assertEqual(report['errors'], [dict(boundary='native evidence sink', error_type='OSError')])
+        self.assertNotIn('generate', engine.__dict__)
 
 
 if __name__ == '__main__':

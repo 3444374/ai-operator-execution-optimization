@@ -991,6 +991,29 @@ prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常�
 完整LOTUS＋Ray当前使用独立`lotus_ray.source_to_sink.v1`，LOTUS服务使用独立`lotus_service.source_to_sink.v1`，
 原生IMLane Q3使用独立v2，当前Kalypso五handler及Movie records/prefix使用独立`kalypso.source_to_sink.v1`并各自披露残余；
 字段或版本相同均不自动授予跨系统可比性。
+
+<a id="native-runner-clock-boundaries"></a>
+当前源码的完整查询起止如下；LOTUS算法、独立JSON工程方法和作者原生系统保持各自身份。
+共同起点是真实源读取，终点是原查询或任务完成内存结果；真实准备和关系后处理留在区间内，评分与结果写盘在外。
+
+| 执行profile | 查询区间内 | 启动／结束与仍待验证的条件 |
+|---|---|---|
+| LOTUS resident | fresh source→原accessor／LM／parser→完整原题结果 | 默认首次惰性模型加载包含；显式before_queries准备另计，按实际owner观测区分冷暖；统计／写盘／最终close在外 |
+| LOTUS外部服务 | source／实际读图及PNG准备→完整原题结果；真实HTTP等待、POST预算、请求／图像指纹和请求／结束事件仍在内 | 额外响应解析／编码、关联／评分／flush在sink后；后台写盘仍可重叠，服务启动／READY由外部owner另证 |
+| LOTUS＋Ray | fresh source→原SDK语义及实际多批native graph→完整原函数结果；API额度与惰性runtime／模型启动在内 | 原函数返回后audit／ray.shutdown；逐请求成功旁录已删，不声称跨批模型复用，新候选目标运行待验 |
+| 独立Ray offline／Serve | fresh source→工程消息／实际图像准备→真实依赖批次及完整任务结果；额度与必要IPC在内 | offline包含惰性启动；Serve deployment启动另计，源前／sink后观测真实模型身份，响应关联和最终close在外 |
+| LOTUS＋Daft／独立Daft local | fresh source→提示／packet与摘要→各批原生图→完整原题或工程任务结果；完整READY交接及中间批ACK／退出在内 | 各批模型冷启动仍在内；末批完整sink后ACK／close。原生后台错误可能只到外层timeout，失败日志和READY须保留 |
+| Daft attached的两种语义入口 | fresh source／消息和真实PNG编码→builtin OpenAI graph→完整结果；packet／HTTP／完整READY与中间批交接在内 | 外部模型启动另证；末批sink后ACK／client退出。完整READY的API快照复用，原始HTTP审计仍在区间，不能借用local或其他语义的暖轮 |
+| LOTUS＋IMLane完整原题 | fresh source→必要packet／SQL／UDF／IPC及实际后续关系→完整原函数结果；SQL scope／ACK及provider回执在内 | 模型READY在前；评价／最终模型关闭在外；provider同步审计仍有区间内成本 |
+| IMLane独立Q3 | fresh source及必要输入／packet摘要→作者SQL／UDF／IPC→C++完整COUNT内存结果 | 模型／数据库READY在前，Python读回报告在后；worker进入至COUNT另计启动；不把C++COUNT标成Python完整DataFrame |
+| Kalypso五handler／Movie records-prefix | fresh source及作者必需输入→原生执行／默认策略／完整关系后处理→完整结果；uniform回执在内 | 规划／预检在前，评分／写盘在后；外部启动和模型READY需实际owner证据；ratio旁录副本已删，图像carrier仍无原生支持 |
+
+Daft失败报告引用原有`supervision/worker.log`及已保存`result-ready.json`，不以文件存在证明按时sink、ACK或关闭。
+原生失败仅写既有stderr的脱敏短原因和异常链，成功不增加写盘；`add_request`collector包装及误导的`accepted`汇总已删除。
+该快照在callback／ACK／关闭之前已持久化，是当前失败交接所需成本；不为移出计时另建补证据阶段，
+见[源码依据与验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-native-failure-handoff)。
+上表闭合实际起止和成本归属，仍不授予不同冷暖、诊断成本或语义profile的正式横向排名。
+
 共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，
 sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 视觉和 MMQA 聚合也在
 本地客户端、输入／叶级预检及原函数绑定后开始，不将 Git 校验和模块加载混入完整查询。

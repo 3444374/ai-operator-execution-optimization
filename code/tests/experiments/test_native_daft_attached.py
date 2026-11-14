@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 from src.experiments import native_daft_query as worker, native_daft_sembench as driver
 from src.baselines.text.frameworks.daft_sembench_native import effective_openai_messages
-from src.infrastructure.private_artifacts import content_digest, read_json, write_private_json
+from src.infrastructure.private_artifacts import content_digest, new_private_directory, read_json, write_private_json
 from src.serving.backends.vllm_protocol import GenerationSpec
 from tests.experiments import test_sembench_lotus_image_query as fixture
 
@@ -80,6 +80,7 @@ class AttachedSupervisor:
     def __call__(self, config_path, directory, **kwargs):
         self.calls.append((read_json(config_path), Path(directory)))
         def launch(command, output, **options):
+            new_private_directory(output)
             process = subprocess.Popen([sys.executable, '-B', '-c', CHILD, str(config_path), str(directory),
                 str(self.plan), str(Path(__file__).resolve().parents[2])],
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -103,7 +104,7 @@ class AttachedSupervisor:
                     process.wait(timeout=options['grace_s'])
                 raw, _ = process.communicate(timeout=options['grace_s'])
                 from src.infrastructure.redact import redact_text
-                Path(directory, 'CPU-worker.log').write_text(redact_text(raw))
+                Path(output, 'worker.log').write_text(redact_text(raw))
         with patch('src.experiments.lotus_records_supervisor.supervise', side_effect=launch):
             return worker.supervised_run(config_path, directory, **kwargs)
 

@@ -11,6 +11,7 @@ import json
 import math
 import os
 from pathlib import Path
+import sys
 import time
 
 from src.infrastructure.private_artifacts import (
@@ -18,6 +19,7 @@ from src.infrastructure.private_artifacts import (
 )
 from src.infrastructure.redact import redact_text
 
+_ERROR_SUMMARY_CHARS = 1024
 
 def _save_artifact(path, value, *, primary=None, publish=False):
     try:
@@ -242,6 +244,20 @@ def run_worker(config, directory, *, execute_query=None):
             raise ValueError('remaining physical allowance cannot cover the complete native query')
         def reserve(call_id, request_id, prompt):
             unit.reserve(content_digest(dict(call_id=call_id, request_id=request_id, prompt=prompt)))
+        def record_failure(event, **record):
+            if event == 'native_generate_error':
+                # Daft can discard the background task's exception and wait until
+                # timeout. Keep its cause in the existing supervised worker log.
+                failure = dict(event=event, call_id=record['call_id'],
+                    caller_request_id=record['caller_request_id'],
+                    error_type=record['error_type'], error_summary=record['error'][:_ERROR_SUMMARY_CHARS],
+                    summary_char_limit=_ERROR_SUMMARY_CHARS, monotonic_ns=record['error_monotonic_ns'])
+                if 'cause' in record:
+                    failure.update(cause_type=record['cause_type'], cause_summary=record['cause'][:_ERROR_SUMMARY_CHARS])
+                # Keep the short cause below the supervisor's existing line bound;
+                # ordinary traceback lines retain the detailed failure separately.
+                print(json.dumps(failure, ensure_ascii=False), file=sys.stderr, flush=True)
+                print(record['error_traceback'], file=sys.stderr, flush=True)
         arguments = dict(model=config['model'], sampling_params=native_sampling, on_result_ready=ready)
         observation = nullcontext()
         if attached:
@@ -258,13 +274,11 @@ def run_worker(config, directory, *, execute_query=None):
                 options['base_url'].rstrip('/') + '/chat/completions', timeout_s=config['query_timeout_s'])
             arguments['provider_options'] = options
         else:
-            arguments.update(before_generate=reserve,
+            arguments.update(before_generate=reserve, on_native_event=record_failure,
                 engine_kwargs=config['engine_kwargs'], provider_options=config['provider_options'],
                 close_timeout_s=config['cleanup_s'] - config['stop_grace_s'])
         with observation:
             result = execute_query(query_input, **arguments)
-        if attached:
-            result['metadata']['native_api'] = _http_report(http_events)
         report.update(status='completed', model_close_receipt=result['metadata']['model_close_receipt'])
         report['native_api'] = result['metadata']['native_api']
     except BaseException as error:
@@ -315,6 +329,10 @@ def supervised_run(config_path, directory, *, model_python, monitor=None, on_res
             monitor=deadline)
     except BaseException as error:
         primary = error
+        error.native_failure_evidence = dict(artifact_root=str(directory), worker_log='supervision/worker.log',
+            ready_result='result-ready.json' if (directory/'result-ready.json').is_file() else None,
+            result_ready_observed=deadline.ready is not None,
+            scope='existing owned worker artifacts; a saved result is not proof of ACK, close or an on-time complete query')
         raise
     finally:
         _save_artifact(directory / 'deadline.json', deadline.report(), primary=primary)
