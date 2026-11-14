@@ -382,7 +382,7 @@ def main(argv=None, *, controller_entry_ns=None):
             if read_json(root/'preflight.json')['binding']['config_sha256'] != content_digest(config):
                 raise ValueError('resident worker differs from the validated launch configuration')
             engine.validate_driver_environment()
-            run(config,args.sembench_checkout,args.data_dir,engine,generation,resources,root/'session')
+            run(config,args.sembench_checkout,args.data_dir,engine,generation,resources,root/'session',checked_query=query)
         else:
             run_worker(config,query,engine,resources,root)
     else:

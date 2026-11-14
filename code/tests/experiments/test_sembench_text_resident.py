@@ -60,9 +60,36 @@ class ResidentBindingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'occurrences changed'):
             self.verify()
         self.query.operation.records[0].source_index = 7
-        self.engine.max_model_calls = 3
-        with self.assertRaisesRegex(ValueError,'exactly the declared queries'):
+        self.engine.max_model_calls = 1
+        with self.assertRaisesRegex(ValueError,'cover the declared queries'):
             self.verify()
+
+    def test_finite_headroom_and_unequal_units_do_not_change_source_request_count(self):
+        self.config['budget']['limit']=self.engine.max_model_calls=1
+        with self.assertRaisesRegex(ValueError,'cover the declared queries'):
+            self.verify()
+        self.config['budget']['limit']=7
+        self.engine.max_model_calls=4
+        self.assertEqual(self.verify()['logical_requests'],2)
+        ledger=CellBudgetLedger.create(self.root/'budget.sqlite',AttemptBudget('resident-test',7),deadline_utc=None)
+        ledger.reserve_unit('cold',4);ledger.reserve_unit('warm',2)
+        with patch.object(resident,'run_sequence',return_value={}) as sequence, \
+                patch.object(entry,'query_from_config',return_value=self.query) as prepare:
+            resident.run(self.config,'checkout','data',None,None,None,self.root/'run',checked_query=self.query)
+            prepare.assert_not_called()
+            resident.run(self.config,'checkout','data',None,None,None,self.root/'fallback')
+            prepare.assert_called_once_with(self.config,'checkout','data',None)
+        self.assertEqual([q['unit_id'] for q in sequence.call_args.args[0]],['cold','warm'])
+        self.assertTrue(all(row['claimed']==0 for row in ledger.snapshot()['units']))
+
+    def test_insufficient_later_unit_stops_before_model_even_with_large_total_limit(self):
+        self.config['budget']['limit']=self.engine.max_model_calls=7
+        self.query.describe=lambda:dict(expected_model_calls=2)
+        ledger=CellBudgetLedger.create(self.root/'budget.sqlite',AttemptBudget('resident-test',7),deadline_utc=None)
+        ledger.reserve_unit('cold',4);ledger.reserve_unit('warm',1)
+        with patch.object(resident,'ResidentDriver') as owner,self.assertRaisesRegex(ValueError,'reserve all fresh'):
+            resident.run(self.config,'checkout','data',None,None,None,self.root/'run',checked_query=self.query)
+        owner.assert_not_called()
 
     def test_fresh_execution_identity_preserves_input_binding_but_source_changes_do_not(self):
         self.query.operation.records[0].row_id = 'warm-row-0'
@@ -126,19 +153,19 @@ class ResidentBindingTests(unittest.TestCase):
         ledger = CellBudgetLedger.create(self.root/'budget.sqlite',AttemptBudget('resident-test',2),deadline_utc=None)
         for unit in ('cold','warm'):ledger.reserve_unit(unit,1)
         with patch.object(resident,'run_sequence',return_value={}) as sequence:
-            resident.run(self.config,'checkout','data',None,None,None,self.root/'run')
+            resident.run(self.config,'checkout','data',None,None,None,self.root/'run',checked_query=self.query)
         self.assertEqual([q['temperature'] for q in sequence.call_args.args[0]],['ready_first','ready_repeat'])
 
     def test_missing_or_spent_query_unit_prevents_owner_creation(self):
         ledger = CellBudgetLedger.create(self.root/'budget.sqlite',AttemptBudget('resident-test',2),deadline_utc=None)
         ledger.reserve_unit('cold',1)
         with patch.object(resident,'ResidentDriver') as owner,self.assertRaisesRegex(ValueError,'reserve all fresh'):
-            resident.run(self.config,'checkout','data',None,None,None,self.root/'run')
+            resident.run(self.config,'checkout','data',None,None,None,self.root/'run',checked_query=self.query)
         owner.assert_not_called()
         ledger.reserve_unit('warm',1)
         ledger.claim_shared_unit('cold')
         with patch.object(resident,'ResidentDriver') as owner,self.assertRaisesRegex(ValueError,'reserve all fresh'):
-            resident.run(self.config,'checkout','data',None,None,None,self.root/'run')
+            resident.run(self.config,'checkout','data',None,None,None,self.root/'run',checked_query=self.query)
         owner.assert_not_called()
 
     def test_existing_sequence_closes_resident_once_and_skips_warm_after_failure(self):
@@ -154,7 +181,7 @@ class ResidentBindingTests(unittest.TestCase):
         driver.query,driver.close = query,close
         with patch.object(resident,'ResidentDriver',return_value=driver), \
                 self.assertRaisesRegex(RuntimeError,'native query failed') as caught:
-            resident.run(self.config,'checkout','data',None,None,None,self.root/'run')
+            resident.run(self.config,'checkout','data',None,None,None,self.root/'run',checked_query=self.query)
         self.assertIs(caught.exception,failure)
         self.assertEqual(driver.closes,1)
         self.assertEqual(failure.session_report['skipped_queries'],['test-1'])
@@ -217,7 +244,7 @@ class ResidentReportTests(unittest.TestCase):
 
 
 class ResidentClockTests(unittest.TestCase):
-    def stage_clock(self, *, post_error=None, statistics_error=None, original_join=False):
+    def stage_clock(self, *, post_error=None, statistics_error=None, original_join=False, allowance=1):
         import pandas as pd
         from src.baselines.text.frameworks import lotus_native_stage as stage
         from src.baselines.text.frameworks import lotus_native_join as join
@@ -227,7 +254,7 @@ class ResidentClockTests(unittest.TestCase):
         from src.serving.backends.vllm_protocol import GenerationSpec
 
         now, sink, events = [1_000_000_000], [False], []
-        unit = SimpleNamespace(attempts=0, remaining=1)
+        unit = SimpleNamespace(attempts=0, remaining=allowance)
         native_frame = (pd.DataFrame({'id:left': [1], 'id:right': [2]}) if original_join else
                         pd.DataFrame(dict(_map=['POSITIVE'])))
         preserved = result_value(native_frame.copy(deep=True))
@@ -277,7 +304,7 @@ class ResidentClockTests(unittest.TestCase):
             if not original_join:
                 self.assertTrue(kwargs['defer_accounting'])
             self.assertIs(kwargs['shared_owner'], owner)
-            unit.attempts, unit.remaining = 1, 0
+            unit.attempts, unit.remaining = 1, allowance-1
             now[0] += 3_000_000_000
             frame = kwargs['invoke']()
             value = (dict(status='native_returned', expected_model_calls=1,
@@ -354,8 +381,17 @@ class ResidentClockTests(unittest.TestCase):
         except BaseException as error:
             state['error'] = error
             report = error.query_report
-        state.update(report=report, events=events, driver=driver, binding=binding)
+        state.update(report=report, events=events, driver=driver, binding=binding, unit=unit)
         return state
+
+    def test_headroom_leaves_unused_allowance_without_extra_native_work_or_clock_changes(self):
+        state=self.stage_clock(allowance=4)
+        self.assertNotIn('error',state)
+        self.assertEqual(state['unit'].attempts,1)
+        self.assertEqual(state['unit'].remaining,3)
+        self.assertEqual(state['report']['source_to_sink_seconds'],5)
+        self.assertEqual(state['report']['result']['data'],[[1]])
+        state['driver'].close()
 
     def test_resident_stage_statistics_follow_full_sink_and_preserve_relation_snapshot(self):
         state = self.stage_clock()

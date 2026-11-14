@@ -163,6 +163,24 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 共享Medical评价只给原评分器副本，保留真实sink，独立任务删除重复copy；原算法／分数保持，不改旧成绩。
 九模块165个不同方法最终162通过、3项资产证明未绑定跳过，0模型／GPU；实际Daft0.7.21图的软件API与目标模型分开，原失败和定向复核保留。
 
+[LOTUS resident原题需求与有限额度](diagnostics/sembench_native_integration_20261112/README.md#lotus-resident-allowance-headroom)
+模型与永久上限独立覆盖完整原题需求，允许有限余量及非均等query单位；全部在模型前检查，复用已有原query，删除按总额度除轮数推测工作量的旧逻辑。
+原算法／实际工作／硬上限及受控source→sink时钟保持；五模块119个不同软件方法最终116通过、3个依赖或真实资产未绑定跳过，0模型／GPU，22项复核不重复累加。
+
+[f53 Kalypso跨查询F/M/E](diagnostics/sembench_native_integration_20261112/README.md#kalypso-f53-text-sequence-model)
+固定作者策略、同owner顺序25／120／25共170真实终态；F1 .9167、原Map MAPE60.69%、工程Extract F1=1。
+保留原始四组标签、实际输入token数组及原审计未知项，不归一化修分；不是单题多阶段或每题首／暖，资源关闭通过。
+[e67独立JSON Daft MMQA Q7](diagnostics/sembench_native_integration_20261112/README.md#native-daft-e67-q7-model)
+原sf25完整625 pair×2、同服务owner，F1均.1481、执行完整但质量未通过；两项决策不同，完整sink不相等。
+保留实际generate数组／重复HTTP发生项关联未知及首次CPU失败；两包2952payload／2370Gitblob只读核验，无额外模型，不作排名。
+
+[751b独立Ray Serve Q8](diagnostics/sembench_native_integration_20261112/README.md#ray-serve-q8-751b-model)
+原2000源／120选择，两轮各120真实终态、MAPE4.0431%，同owner／唯一响应及实际token数组通过；JSON工程语义、启动另列，不作排名。
+外层首次PSM清理失败及确切对象恢复保留，分配库未证明，不记全程通过、不放宽通用guard。1746payload及1185件Git源码blob逐件核验，未重复模型。
+[751b LOTUS＋Daft原Q5](diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-q5-751b-model)
+原sf25全25→16，自然单叶首／同owner重复各1真实HTTP，原F1均1；单user编码和目标模板token等价、完整ACK及物理清理通过，模型generate ID数组未知保留。
+1395payload及1185件Git源码blob核验，首次私有SDK门误要求JSON的0模型失败保留；非作者Daft聚合算法、不外推多层或性能排名。
+
 [Ray Serve原生hook冲突与callback修复](diagnostics/sembench_native_integration_20261112/README.md#ray-serve-native-hook-repair)
 7aa61目标配置／120条模板token门通过，三次初始化因hook冲突失败、0生成；原失败及预算／清理保留。
 改用原生模型初始化callback，保留节点／worker hook／observer及同一runner；四模块70项软件及真实源码函数回放通过、0模型／GPU。

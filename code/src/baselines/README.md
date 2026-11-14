@@ -273,7 +273,8 @@ E-Commerce Q7复用同一任务的exact pair分支，原price<=500后N²含self�
 driver只持有任务、原评分及必要批次IPC，不导入vLLM协议或混入另一环境的包；caller／部署启动、查询和关闭分别记录。
 原生构造事件绑定的model actor及实际EngineCore进程PID／birth须经当场观测，且两轮实际有模型请求；缺证据时warm=None。
 观察器通过[原生初始化callback](text/frameworks/ray_native_serve_observer.py)在模型构造前安装，保留Ray Serve原worker hook及节点初始化；
-旧自定义hook造成7aa61真实启动冲突、0生成，70项软件修复通过，修复后的目标模型／暖轮仍待验。
+旧自定义hook造成7aa61真实启动冲突、0生成；修复后751b Q8已完成240真实终态和同owner首／重复，
+原外层清理失败经确切恢复，仍不记全程通过；见[具名回执](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#ray-serve-q8-751b-model)，其他组合另验。
 该拓扑不继承offline成绩，见[失败与修复](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#ray-serve-native-hook-repair)及[隔离接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)。
 同一Daft runner另接[attached-session模板](../../configs/sembench_native_daft_attached_session.example.json)，
 复用builtin OpenAI messages graph、既有worker／ACK及永久HTTP预算，两次fresh完整查询使用各自客户端worker。
@@ -497,7 +498,7 @@ TopK 不进入 F/M/E 记录图；原 LOTUS 拥有随机 pivot、比较批次、�
 比较绑定左右 source occurrence，再由原 LM 的有序返回关联终态，不能按并发抵达顺序或相同文本去重。
 
 使用现有 resident 配置模板；单冷资格设置 `resident.repetitions=1`，只预留一个冷单位。
-每轮预算为 `N*(N-1)/2` 上界，`engine.max_model_calls` 和永久总预算为该上界乘轮数。
+每轮额度覆盖 `N*(N-1)/2` 比较上界，可保留有限余量；模型和永久总上限分别覆盖全部轮次，不再要求与实际工作量相等。
 8 条样本最多 28 个模型请求，实际比较数可更少；两轮不可共用一份 28 次预算。
 结果缓存关闭，`num_retries=max_retries=0`；每次实际 IPC 提交前由原预算守卫收费。
 完整原查询返回即记 sink，再按保存的实际 RNG 状态、比较答复重放原算法并核对完整关系和原 sink，

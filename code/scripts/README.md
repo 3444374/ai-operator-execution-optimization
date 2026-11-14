@@ -147,7 +147,8 @@ startup_timeout_s／session_timeout_s／cleanup_s须为有限正数；模板180�
 与两轮constructor事件核对；它不是独立证明的Serve replica身份或cache状态。Python identity_snapshot仍可接同合同host探针。
 缺完整新鲜身份或任一轮无实际请求均保留warm=None；复用Python对象或application名不授予模型资格。
 SDK检查包含原生初始化callback配置／导入，不启动Ray或模型；观察器不再替换worker hook。
-7aa61实际启动冲突为0生成，原失败保留；修复后的callback／部署／模型／退出须再做[服务器验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)。
+7aa61实际启动冲突为0生成，原失败保留；751b Q8已取得实际SDK／模型首与重复资格，原外层清理失败恢复分列，
+见[具名回执](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#ray-serve-q8-751b-model)；其他组合须另做[服务器验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)。
 v1的driver缺vLLM协议失败保留，新入口直接替代旧默认caller；Daft已核具名同owner回执见下节，不与Ray互授资格。
 
 <a id="native-daft-attached-session"></a>
@@ -267,6 +268,8 @@ LITELLM_LOCAL_MODEL_COST_MAP=True PYTHONHASHSEED=3 PYTHONPATH=code "$DRIVER_PYTH
 该回放不使用模型答案，不能报告真实质量或延迟；目标 `run` 仍需精确源码、模型/输入绑定与外层监督。
 LOTUS resident 可显式设置 `model_initialization=before_queries`，先初始化同一原生模型，
 再执行 `ready_first/ready_repeat`，不发额外预热查询；省略时仍是查询内惰性启动的 `cold/warm`。
+模型与永久调用上限可各有有限余量，每query的既有单位可非均等但都须覆盖原题需求，并在模型前检查；
+额度不决定实际调用数，不额外推理或退还已claim额度，见[实现／检查](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-resident-allowance-headroom)。
 E-Commerce Q2／Q4／Q6／Q8–Q14 使用[完整 LOTUS 视觉服务入口](../src/experiments/sembench_lotus_query.py)，
 设置 `scenario=ecomm`、所选 `query` 和 `--data-dir`；沿用配置模板、预付预算与外层服务监督。
 真实中间关系交给原生后续算子，不进入单算子文本 CLI；Q12 上界为2N，其余预检记录首算子下界，

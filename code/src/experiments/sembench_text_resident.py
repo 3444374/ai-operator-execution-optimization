@@ -73,9 +73,10 @@ def verify_binding(config, query, engine, *, assets=True):
         raise ValueError('resident requires the declared clean maintained source checkout')
     verify_inputs(config, query)
     count = query.describe()['expected_model_calls']
-    maximum = spec['repetitions'] * max(1, count)
-    if engine.max_model_calls != maximum or config['budget']['limit'] != maximum:
-        raise ValueError('resident model and permanent allowances must cover exactly the declared queries')
+    required = spec['repetitions'] * max(1, count)
+    if (engine.max_model_calls is None or engine.max_model_calls < required
+            or config['budget']['limit'] < required):
+        raise ValueError('resident finite model and permanent limits must each cover the declared queries')
     digests = {}
     if assets:
         for base, key in ((engine.model_path, 'model_files'),
@@ -155,8 +156,8 @@ class ResidentDriver:
                 report['query'] = query.describe()
                 unit = self.ledger.claim_shared_unit(spec['unit_id'])
                 expected_count = query.describe()['expected_model_calls']
-                if unit.attempts or unit.remaining != max(1, expected_count):
-                    raise ValueError('resident query requires its fresh exact permanent allowance')
+                if unit.attempts or unit.remaining < max(1, expected_count):
+                    raise ValueError('resident query requires a fresh permanent allowance covering its source')
                 if self.owner is None and query.operation is not None:
                     self.owner = LocalNativeModel(self.engine, query.operation.generation,
                         self.resources, self.config['profile']['native_lm_max_batch_size'])
@@ -303,13 +304,16 @@ class ResidentDriver:
         return self.owner.close(timeout=self.config['resident']['cleanup_s'])
 
 
-def run(config, checkout, data_dir, engine, generation, resources, output):
+def run(config, checkout, data_dir, engine, generation, resources, output, *, checked_query=None):
     """Use the existing finite sequence lifecycle; no host lease or new executor."""
     value = config['budget']
     ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
     units = {unit['unit_id']: unit for unit in ledger.snapshot()['units']}
-    expected = value['limit'] // config['resident']['repetitions']
-    if any(unit not in units or units[unit]['claimed'] or units[unit]['requests'] != expected
+    if checked_query is None:
+        from .sembench_text_query import query_from_config
+        checked_query = query_from_config(config, checkout, data_dir, generation)
+    expected = max(1, checked_query.describe()['expected_model_calls'])
+    if any(unit not in units or units[unit]['claimed'] or units[unit]['requests'] < expected
            for unit in value['unit_ids']):
         raise ValueError('reserve all fresh resident query units before creating a model')
     initialization = config['resident'].get('model_initialization', 'inside_first_query')

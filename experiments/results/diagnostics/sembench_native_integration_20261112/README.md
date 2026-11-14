@@ -2076,6 +2076,113 @@ Filter先执行的另一路径经过原生规划与完整软件token数组。HTT
 新混合类型单元的目标作者CPU／完整prompt与真实模型请求、同模型PID／birth及物理清理仍须原服务器协调会话验收。
 原e67cc Q1单类50次及3500 Q5等具名结果不转授新序列；本会话未重复模型，不恢复取消的Daft TopK或改三份保护草稿。
 
+<a id="lotus-resident-allowance-headroom"></a>
+## LOTUS resident 按原题需求检查有限额度
+
+旧入口将模型调用上限和永久总额度强制设成预计请求数×轮数，每个query又必须恰好取得总额度除轮数。
+这把有限上限当作实际工作量，拒绝合法余量和不等额的独立预留。现两种全局上限分别覆盖原题需求，
+每个既有query单位保持新鲜且足够即可；全部单位在创建模型前检查，不能用宽裕总额掩盖某个后续query的不足。
+原permanent ledger、模型硬上限、无退款／无自动重试及原NativeStage／Join逐提交检查保留，不增加模型请求。
+TopK原算法与已有比较上界合同保持，不改三份保护草稿。
+
+CLI将已检查的原query传给序列入口，避免重新准备一次；直接Python调用仍可在模型前取得同一原题需求。
+真实source／完整sink时钟、原提示／parser／评分及模型初始化策略保持，不改旧成绩或宣称性能收益。
+f53b44c6e干净导出加三份准确源码／测试，五完整模块119个不同方法为116通过、3跳过、0模型／GPU。
+未绑定项是另一环境的Daft SDK及真实Medical／MMQA资产；最终resident模块22项复核通过，不与119重复累加。
+检查覆盖独立有限上限、非均等query额度、后续不足在模型前拒绝、复用已检查query和保留旧调用方式，
+以及余量下实际仍只执行原发生项、完整结果与受控时钟不变。
+最终源码／方法清单SHA-256为`feef4b4ed9032526d9ba561a902cb2540cf2fd60b8b6701e19dfc70d473a8a34`。
+本批没有为额度调整重复模型运行；真实目标的新源码软件验收由原服务器协调者安排。
+
+<a id="ray-serve-q8-751b-model"></a>
+## 751b Ray Serve Q8：真实首／同 owner 重复及外层失败
+
+751b25c8e的隔离原生caller通过目标70项CPU、实际CallbackBase及120条请求／完整token门；
+随后同一模型构造一次，原Reviews完整2000行中原谓词选择120行，每轮120个真实generate／终态，共240，unknown为0。
+没有启动期generate、额外预热或query重试；独立JSON工程语义及原Movie Q8完整计数／评分保留，不称原LOTUS提示或作者语义算法。
+
+| 阶段 | 完整source→sink v2 | 原结果／质量 | 实际模型token |
+|---|---:|---|---|
+| ready首次 | 13.734792893秒 | NEGATIVE107／POSITIVE13；原MAPE4.0431267% | prompt14315／completion1080 |
+| 同模型owner重复 | 10.970508194秒 | 同完整计数、原MAPE4.0431267% | prompt14315／completion1080 |
+
+caller启动107.270531837秒、deployment启动94.637079484秒另列，两者嵌套不能相加。
+真实model actor／EngineCore PID及birth、唯一响应ID／发生项、完整模型token数组已核；结果缓存关，原prefix缓存开，
+cache命中未观测。原7aa61 hook失败仍保留，不能由修复后的通过改写旧结果，也不转授其他原题或LOTUS＋Ray。
+
+query/session本身完成并通过同owner暖轮资格，但外层首次清理失败：仅接受sem.mp的原guard发现一个本次新增、
+已无持有者的psm共享内存对象。原服务器owner在保留失败原件后只回收该确切对象，恢复物理资源并释放租约；
+确切分配库尚未证明，不放宽通用清理guard，不把外层原失败改成全程通过。计时含IPC与原生同步旁录，不作正式横向排名。
+
+<a id="lotus-daft-q5-751b-model"></a>
+## 751b LOTUS＋Daft Q5：原单叶聚合首／同 owner 重复
+
+固定751b、SemBench c814和Daft0.7.21的原生OpenAI图，完整sf25源25行经原片名选择16行，
+原LOTUS SemAgg自然形成单叶，每轮一次真实HTTP调用、同一外部模型owner重复，共2次终态、unknown／重试／额外预热为0。
+这是LOTUS原层次算法经Daft执行，不称作者Daft聚合算法，单叶不能授予多层模型资格。
+
+| 阶段 | 原source→完整sink v1 | 完整结果／原评分 |
+|---|---:|---|
+| ready首次 | 5.343571708秒 | Lizzy Caplan；P／R／F1均1 |
+| 同owner重复 | 4.888152366秒 | 同完整结果；P／R／F1均1 |
+
+模型服务启动40.064031945秒另列；四次新鲜PID／birth观测相同，末批完整结果后ACK／client退出及物理清理通过。
+原单user消息与Daft的单text part编码差异明确，目标原始／effective／服务模板完整token数组相同；
+每轮API usage为prompt3442／completion5，实际generate输入／输出ID数组未独立观测，不从usage猜补。
+driver的远端ready／tokenizer未验证字段保持原样，外层owner证明另列；结果缓存关、原prefix缓存开，实际cache命中未知。
+首次私有SDK门误要求JSON格式，违背原Q5明文输出；保留0模型失败，仅修正并复核该门，原33项CPU及输入绑定未重复冒充新增。
+质量只属本原题／输入及版本，不作跨算法或异口径性能排名。
+
+两包共3141份payload、2370件对应Git源码blob与归档逐件核验；本会话另回放Ray240份真实输出标签、
+完整token长度及终态ID，对照两轮完整计数；Daft两份driver结果／评分／时钟和worker ACK直接核对。
+Daft服务token等价及owner身份依照冻结服务器审计，未重复调用模型。
+核验SHA-256为`77e1e7b334e38605139f653b65a6e35c2de9abc0971862fe2970ea4a5e0985e0`。
+
+<a id="kalypso-f53-text-sequence-model"></a>
+## f53 Kalypso：同 owner 的三个独立文本查询
+
+`kalypso-text-sequence-f53b-qualification-20261114-r1` 固定f53b44c6e，
+同一原生worker／模型UID顺序完成MMQA Q3a Filter25、Movie Q8 Map120、MMQA Q1文本Extract25。
+这是三个完整查询，后两项是同owner的不同查询，不是每题首／暖重复或单题多算子链。
+170次原生API均终态，unknown／长度重试／额外推理预热为0；永久额度315中未用145不退款。
+
+| 原题／实际策略 | 真调用 | 原题质量 | ready后完整内存sink（秒） |
+|---|---:|---|---:|
+| MMQA Q3a，作者原Filter | 25 | precision1、recall0.84615、F1=0.91667 | 1.700478947 |
+| Movie Q8，作者原SemMap | 120 | 原MAPE=60.6918% | 2.213406745 |
+| MMQA Q1，文本Extract-via-SemMap工程适配 | 25 | 原precision／recall／F1均1 | 0.808812722 |
+
+原Map保留四个原始分组：` NEGATIVE`84、`NEGATIVE`19、`POSITIVE`14、`_POSITIVE_`3；
+前导空格／下划线输出导致原评分误差较大，不能为修成绩自行归一化或重跑。
+作者Filter的false-absence判定、Map估计器／动态长度／重试策略保持；Extract非作者原生算子。
+模型启动39.214935784秒另列，v1保留原生输入准备和内部I/O，不据本次数字跨系统排名。
+
+Linux97项CPU通过，实际170份generate API输入token数组与作者CPU数组逐项一致，
+响应ID关联170份；该观测不等于GPU张量消费或engine首次接受时间。
+原始ACTUAL-AUDIT未核部分字段仍未知，后续独立UNIFORM-ACTUAL-AUDIT只核已有原件，未增模型调用；
+output token数组、成本、kernel及缓存命中工作量仍未独立观测。模型／物理资源关闭、租约释放通过。
+
+<a id="native-daft-e67-q7-model"></a>
+## e67 独立 Daft MMQA Q7：完整 pair Join 与低质量
+
+`native-daft-mmqa-q7-e67cc-qualification-20261114-r1` 固定e67ccfcb7，
+独立JSON工程语义经原生Daft OpenAI图执行原sf25的25表行×25图像，保留官方关系和评分；
+不导入LOTUS提示／解析，也不称作者原始Join算法。
+同一外部服务／EngineCore在两轮前后四次身份观测一致，每轮625请求，共1250终态，unknown／重试为0。
+两轮均保留52个True pair，原precision=0.08163265、recall=0.8、F1=0.14814815；
+执行闭合但质量未通过。两轮有两个pair决策差异，最终关系不相等，不用相同F1掩盖差异。
+
+原生source→完整内存sink分别59.902908864、59.504820417秒；启动65.073862338秒、
+查询前tokenizer门33.130711808秒另列。result／prefix cache关闭，mm processor cache为0；
+最终ACK、client退出、评分、审计及持久化在sink后，内部packet／graph／轮询保留，不作性能排名。
+36项driver与7项独立核心CPU通过；另两项依赖LOTUS的旧helper有1错误、1跳过，原失败保留。
+两轮1250份CPU renderer／服务tokenize完整数组核验通过，但实际generate输入／输出数组未采集；
+HTTP重复wording与发生项的原始关联也未独立证明，API usage不能替代这些未知项。物理清理通过。
+
+本次只读核验两包全部2952个payload、2370个Git源码blob、归档字节与原始session结果／质量／计时。
+原件核验`VERIFY-Kalypso-F53-sequence-and-Daft-E67-Q7-originals-20261114.json`的SHA-256为
+`1a6bc75d104bc372790eae20ceed886e413c4e4d4e4d88a1586f406d065dfef6`；未重跑模型。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -2131,6 +2238,11 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | f26fc 原LOTUS MMQA Q6a首／重复 | 3257623 | 1377 | `4f273596c42b815c243501ed04f7b0012dd6154b2370f834f236114e516f6bfc` |
 | e67cc Kalypso MMQA Q1 Extract工程首／重复 | 3325383 | 1420 | `e30c45647708de3f1ef19c754a266f3ae51d0778b9d4441d452891db8699e07d` |
 | 7aa61 Ray Serve Q8启动失败／0生成 | 3533532 | 1458 | `99570e54a00fd70c99258899fb9f5169722380c4ceb06559a8428c7062a3c18b` |
+
+| 751b 独立JSON Ray Serve Q8首／同owner重复及清理恢复 | 3793959 | 1746 | `1a7ffe8369aef2efe532e31564ee0147e06f26072167aa8b2e12bfab5777ec41` |
+| 751b LOTUS＋Daft Q5原单叶首／同owner重复 | 3249594 | 1395 | `9ea33387f81425c6a8552085cc49fd9b2b6aa0d0a7973707177587cc8c3110cc` |
+| f53 Kalypso同owner Filter→Map→工程Extract三个原查询 | 4124518 | 1455 | `7bb14f9154464ee03949ad81ff93a8ac310ef89167d0c373906259faec044dbb` |
+| e67 独立JSON Daft MMQA Q7同owner首／重复 | 707955131 | 1497 | `43fb08ae9a181ff3191c7bc7314704829aaab0a9d0c3f8ea41014a17cdc7f111` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。
