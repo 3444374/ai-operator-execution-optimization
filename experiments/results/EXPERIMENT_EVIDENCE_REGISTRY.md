@@ -201,12 +201,22 @@ Cars原2026常量／两种权重、E-Commerce重复索引后写及原ARI错误�
 [606f Medical Q10真实完整源](diagnostics/sembench_native_integration_20261112/README.md#medical-q10-606f-model)
 原生Ray1200条及Daft同模型owner两轮各1200条，完整诊断关系／原评分与清理保留；1193相同、七条差异单列。
 两份归档3976payload完整校验及三份生产源码核对；只重算预测投影，未重算质量或重跑模型。
-低质量与冷暖时钟分列，不作正式排名／全部系统资格，Serve环境和真实非空Q2b仍待验。
+低质量与冷暖时钟分列，不作正式排名／全部系统资格，Serve目标环境与LOTUS原语义非空Q2b仍待验；独立JSON后续8cd另列。
 
 [Daft具名Q7／Q2b／Q8模型回执](diagnostics/sembench_native_integration_20261112/README.md#daft-6c75-4793-606f-model)
 6c75 LOTUS＋Daft Animals Q7、4793 LOTUS＋Daft Q2b与606f独立JSON Daft Q8按准确来源分列；Q2b不计为独立原生Daft。
 128／325／240真实终态与预算／清理核对，Q2b质量为零且没有Extract；Q8只支持该配置的实际模型owner复用，不作正式性能排名或转授新组合。
-原始失败、解析／token关联缺口与原件摘要保留；非空Extract和Ray Serve仍待验。
+原始失败、解析／token关联缺口与原件摘要保留；LOTUS原语义非空Extract和Ray Serve仍待验，独立JSON后续8cd另列。
+
+[8cd独立JSON Q2b非空原件](diagnostics/sembench_native_integration_20261112/README.md#native-json-q2b-8cd-nonempty)
+Ray325→6、Daft同owner首／重复325→5／8，共994真实终态，F1全0；五个金标配对在全部候选中均明确False。
+归档摘要、选定源码／25图原件及全部真实答复／完整请求包／sink回放已核；未声称重核所有payload或重跑模型／评分。
+非空链执行与零质量分列，不转授LOTUS原语义非空Extract、Ray Serve或正式性能；私有回放路径／编码／包布局失败保留。
+
+[8cd独立JSON Medical Q4](diagnostics/sembench_native_integration_20261112/README.md#native-medical-q4-8cd-model)
+Ray与Daft首／同owner重复各1200真实终态，保原普通Join及重复加权均值，原MAPE约6.5%／6.9%／6.5%。
+两份归档3969个payload及源码／全部Boolean重建均值已核，0新模型／评分；Ray原外层清理失败与无模型重试恢复均保留。
+执行闭合不等于质量门槛通过，单冷／ready时钟不互排，不转授其他任务或模型拓扑。
 
 [3500 Kalypso原SemAgg](diagnostics/sembench_native_integration_20261112/README.md#kalypso-3500-single-reduction)
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，

@@ -1738,7 +1738,7 @@ Ray在一个查询owner内推进批次，Daft复用既有逐批worker／IPC／AC
 | Medical | Q3／Q8完整单图Filter后原LIMIT；Q9普通三表merge后双图Filter | 新JSON视觉组合、真实原图绑定／VLM待验 |
 | Cars | Q3普通merge＋Manual＋完整Filter＋原head10；Q8完整Filter后原head100 | 其他原题未接；真实资产／VLM待验 |
 | E-Commerce | Q2 Filter、Q4 Extract、Q6 Map、Q8/Q9 exact pair、Q12文本Filter→实际幸存图片Extract、Q13图文Filter | Q10/Q11当时未接，后续见[依赖Join](#native-ecommerce-dependent-outfits)；Q14及真实资产／模型待验 |
-| MMQA | Q2a／Q7完整视觉exact pair；Q2b真实Join匹配→颜色Extract | 新JSON组合模型待验，尚无真实非空后继Extract资格；Q5原生归约未接 |
+| MMQA | Q2a／Q7完整视觉exact pair；Q2b真实Join匹配→颜色Extract | 8cd独立JSON Q2b三轮已真机非空执行，F1均0，见[原件分析](#native-json-q2b-8cd-nonempty)；不转授LOTUS系列；Q5原生归约未接 |
 
 这些场景任务由Ray和Daft同一配置工厂选择；Ray显式打开prepare_image_stage，Daft图文显式选择attached-session。
 Daft本地字符串profile仍拒绝图片，不静默换语义或换执行拓扑。原生API只提供生成，不等同作者级Join／Aggregate／TopK。
@@ -1837,7 +1837,7 @@ run报告内部target_native_model_qualified=False不是自我授证；外层实
 Daft两轮1193条解析结果相同、七条不同，按物理发生位置保留；原答案差异／低质量不被最终执行成功覆盖。
 prefix cache开启、结果缓存关闭，无额外推理预热／整题重试；native/API终态与永久计费、资源清理按原件核。
 这是统一JSON工程对照，不是作者原版算法；Ray冷与Daftready首／重复口径不能横向排位，不能转授图像或新依赖查询资格。
-Daft实际generate输入token数组、输出ID、重复HTTP一一关联等未知点仍保留；Ray Serve环境缺口及真实非空Q2b Extract待验。
+Daft实际generate输入token数组、输出ID、重复HTTP一一关联等未知点仍保留；后续独立JSON Q2b见[非空原件](#native-json-q2b-8cd-nonempty)，不转授LOTUS原题链或Ray Serve。
 复核只重算原始预测→sink投影，质量引用归档保存的原评价，未重算金标评分。
 
 原件复核SHA-256：`fa3f029e3d8e77fbd7f64a95320fe7c5bbc9c9206cf0fb861f52981d5014e248`。
@@ -1895,6 +1895,51 @@ f26fc3f6e干净导出加七份准确文件，三完整模块55项通过、0skip�
 本批未安装依赖、启动Serve、访问GPU或重复既有模型请求；v1失败保留，目标兼容、真实暖轮和物理退出pending。
 调用与三个超时字段见[现行入口](../../../../code/scripts/README.md#native-ray-serve-session)。
 
+<a id="native-json-q2b-8cd-nonempty"></a>
+## 8cd 独立 JSON MMQA Q2b：非空执行与零质量
+
+两份服务器原件冻结8cd108a83909b35f6b583f5f08dd6c7ebe94c9ca、SemBench c814，保留13表行×25张实际图片的325个配对。
+这是独立JSON工程语义，不是LOTUS原提示／算法；4793的LOTUS＋Daft空Join回执仍是另一条路径。
+
+| 路径 | 真实Join→Extract及完整结果 | 原F1 | 原source→sink |
+|---|---:|---:|---|
+| 独立Ray，单冷 | 325→6，6行ID／image／color | 0 | 198.625074238秒，含原生懒启动 |
+| 独立Daft，服务就绪后首次 | 325→5，5行 | 0 | 41.516931146秒，服务启动另列 |
+| 同Daft实际模型owner重复 | 325→8，8行 | 0 | 40.614414924秒，同owner，客户端worker另建 |
+
+共994次真实终态、unknown为0；支持该冻结输入的实际非空二阶段执行，不能说质量通过、全规模通过或横向排名。
+三轮全部五个金标配对都出现在325个候选中，原始JSON均明确False，没有一个金标配对进入Extract。
+被保留的19个匹配均属于另外两张赛马场照片；SHA绑定的金标图片是蓝色Santa Anita Park标志，另两张为场景照片。
+原SemBench与本工程提示都要求识别该赛马场的logo，本次没有更改原题、提示、阈值、解析或金标来获得匹配。
+原始答复严格解析后，按真实输入顺序回放任务，三份完整关系逐项等于已存sink；没有发现Boolean回退吞掉True。
+因此已定位到Join判定与金标不符，而不能仅凭本复核证明模型内部视觉tensor或全部生成配置正确；颜色阶段不能恢复漏掉的配对。
+
+只读复核两份完整归档字节／SHA、选定源码blob与8cd Git一致、25张原图与manifest一致，
+全部真实答复及完整请求包SHA精确回放；不声称独立重核所有3264个payload，完整manifest计数由协调会话另存。
+Mac路径别名造成的本地顺序fixture失败、相同RGB但PNG编码字节不同、误猜Daft包布局的三次复核失败均保留；
+只修私有回放helper，使用归档PNG且核25张解码RGB与原图逐项相等，再核完整包字节，不改生产数据或补造匹配。
+本次模型／网络／评分重跑均0；复核SHA-256为`6a52e9edd0f8e673d97ee8e0b254c01e3ffc220a7380bc87ba998dc25a66ffc2`。
+LOTUS＋后端的原语义非空Join→Extract资格仍独立pending，Ray Serve v2也不借用本轮成绩。
+
+<a id="native-medical-q4-8cd-model"></a>
+## 8cd 独立 JSON Medical Q4 完整普通 Join 与均值
+
+三轮均读取11112个patient与1200个symptom原源，原普通Join得到1200个发生项，再执行JSON Filter及保留重复权重的年龄均值。
+固定同一8cd源码，原生Ray冷启动与Daft外部服务就绪后两轮分列；不是作者原版或原LOTUS提示／解析。
+
+| 路径 | 真实请求／保留发生项 | 完整均值 | 原MAPE | source→完整sink |
+|---|---:|---:|---:|---:|
+| Ray，单冷 | 1200／129 | 59.8992248062 | 6.4951220634% | 80.785331415秒，含原生启动 |
+| Daft，就绪后首次 | 1200／130 | 59.6692307692 | 6.8541511564% | 34.585681993秒 |
+| Daft，同模型owner重复 | 1200／129 | 59.8992248062 | 6.4951220634% | 32.593405434秒 |
+
+Daft服务启动44.065334279秒另列，prefix cache开启、结果缓存关闭；三轮无未知、重试或额外推理预热，不作性能排名。
+Ray原查询与结果已完成，但首轮外层清理失败；后续精确恢复未重跑模型，原失败和原因判别记录不足均保留，不能重写成首轮全过。
+本接入会话重新核两份归档及3969个声明payload字节／SHA、场景任务与系统runner的冻结Git blob，
+用全部真实Boolean按原patient普通Join位置重建保留关系及均值，结果与三份完整sink相同；质量取保存的原评分，没有重算金标或调用模型。
+这证明具名配置下执行闭合，非质量门槛通过，也不转授视觉、其余Medical题或新Serve拓扑。
+只读复核SHA-256为`2a7d3afda8fee7d3ab1fa7513396106308ff3c12dedf324d660d9cabab0222c4`。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -1942,6 +1987,10 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 606f 独立JSON Daft Movie Q8同owner两轮 | 3790208 | 1482 | `b1aee233c72bdbcce806fd6a1ab70437bf3dff3700b97071735335d089b35930` |
 | 606f 独立JSON Ray Medical Q10完整1200行 | 4447628 | 2628 | `e5dcff3e78389d7579d9986f8fd1107e48d44a9c438af5232cf240859e71c4cd` |
 | 606f 独立JSON Daft Medical Q10同owner两轮 | 7076616 | 1348 | `6c105a256431036c47720bc70f457d51b6aa9542f9c082069b285734a75c6780` |
+| 8cd 独立JSON Ray MMQA Q2b非空 | 183867006 | 1846 | `24213d8d97114011c2173d12b5210ccd13c5a9753b512fdb5676cc788dfa6786` |
+| 8cd 独立JSON Daft MMQA Q2b首／同owner重复 | 600396690 | 1418 | `bccf8e0c801ef7b9c5a7bc2ab92d989cc26965e17fe6fc90f22d98de4a14d3b0` |
+| 8cd 独立JSON Ray Medical Q4 | 4429887 | 2614 | `358c12ad7eae7a08418b543458bb83515a0d1baebe534b3936bbed0388001a2f` |
+| 8cd 独立JSON Daft Medical Q4首／同owner重复 | 7638119 | 1355 | `3b270486497b772ebcfb570941a334cfcdfd042a2954db22b952d8b2cb1d1a7f` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。
