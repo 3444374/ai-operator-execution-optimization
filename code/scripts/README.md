@@ -51,7 +51,9 @@ request_budget是已claim的永久额度。名称中的Map是既有运输schema�
 [外部服务模板](../configs/sembench_daft_native_openai.example.json)沿同一`sembench`动作，
 仅将packet改为`semloom.native_daft_messages.v1`的完整原消息。
 `native_openai`只保存endpoint／key的环境变量名，`engine_kwargs`必须为空，远端模型归调用方所有。
-不把该LOTUS＋Daft图像profile称作独立原生语义runner。
+文本与图像沿同一原题runner，不把该LOTUS＋Daft profile称作独立原生语义runner。
+Q5外部服务追加声明式`native_lm_max_ctx_len`与SHA绑定`token_counter`，保持空`engine_kwargs`；
+本地模型仍核对引擎context／tokenizer，远端context／tokenizer匹配须另验，不填已验证。
 
 `result-ready.json`先保存一次完整预测，`worker.json`记录执行／关闭回执，`deadline.json`记录实际READY时钟；
 原生物化或READY已失败时保存`failed-result.json`而不报READY。附加写入失败不覆盖原异常或supervisor的清理报告。

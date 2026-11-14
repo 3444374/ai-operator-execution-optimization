@@ -180,7 +180,8 @@ Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON �
 完整原函数现在经`bind_original_execution()`和`make_query_lm()`实际产生各LM批次，
 不再走生产单算子的`prepare/finish`重建。MMQA Q5也使用同一runner：配置追加`token_counter`
 （本地`huggingface_tokenizer_file`的path／sha256／tokenizer_id／tokenizer_revision）和
-`native_lm_max_ctx_len`，与`engine_kwargs.max_model_len`及实际声明的tokenizer一致。
+`native_lm_max_ctx_len`；本地模型profile继续核对`engine_kwargs.max_model_len`及所声明tokenizer。
+外部服务profile保持空`engine_kwargs`，使用同一声明式context／SHA绑定本地counter；远端context／tokenizer匹配未验证，不宣称模型owner或实际加载已核。
 原LOTUS拥有分块、token计数、摘要依赖、parser和最终`_output`；动态总数保持未知，有限预算按实际调用扣除。
 现有字符串prompt provider尚无逐行图像carrier；图像使用下述独立profile。TopK取消项保持停止，分组并发尚未由该路径授予支持。
 附加服务的既有顺序查询桥亦能执行E-Commerce Q10/Q11原分支Filter／Join，19／25请求的软件原题、完整结果／评分与末批ACK已核，保原SDK多列选择限制；不为两题另建执行器。
@@ -189,13 +190,16 @@ Extract 的 JSON-object 由原任务决定，普通 Filter/Map 不强加 JSON �
 
 另有[外部OpenAI兼容服务模板](../../configs/sembench_daft_native_openai.example.json)，沿同一原题runner与worker：
 Daft0.7.21内置`OpenAIProvider`和`prompt(list[Expression])`拥有执行，不增加自定义provider或Prompter。
-接同一system＋单user字符串或内容数组；builtin将字符串显式编码为单text part，数组原内容保持，
+接可选静态system＋单user字符串或内容数组；builtin将字符串显式编码为单text part，数组原内容保持，
 文本与PNG data URI还原为有类型的原生列，固定布局、图像字节及顺序按实际编码核对。
 原QueryLM消息／packet不改，完整sink后保存call_id对应原始／effective SHA并按后者核HTTP。
 不把该API说成任意raw conversation接口；多轮、额外图像detail和未验证形态仍拒绝。
 原Q12文本Filter→实际survivors图像Extract已复用同一runner，软件原题4→3／原评分及空survivor原KeyError通过；
 这是明确的native编码差异，目标renderer／token等价仍为None待验，不因相同文本声称输入tokens相同。
 原Extract的JSON-object只在该阶段透传，沿chat-completions返回原文本，仍交原LOTUS parser。
+纯文本F／M／E／Join及Q5单层／摘要依赖多层现沿同一桥接，删除仅允许visual的错误入口条件；
+八条原题软件流程及聚合回归的[范围与失败记录](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-attached-text)分列，不借独立JSON或旧视觉模型资格。
+Medical评价在共享边界复制结果给原评分器，避免其大小写规范化改写完整sink；独立工程任务不再重复复制结果，原评价算法与分数保持。
 `native_openai`只引用endpoint／key环境变量名；禁止同时声明本地模型构造，外部模型由调用方拥有。
 原生SDK重试策略照配置，HTTP发送前占永久预算；driver仅在完整sink后核对实际请求／响应。
 结果行关联由原生Daft的call_id列承担；重复消息的HTTP答复目前仅按整批关联，不虚报逐行HTTP绑定。

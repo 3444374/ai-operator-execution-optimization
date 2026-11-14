@@ -26,6 +26,7 @@ from src.serving.backends.vllm_protocol import GenerationSpec
 
 def _query(config, generation):
     aggregate = config['scenario'] == 'mmqa' and str(config['query']).lower().removeprefix('q') == '5'
+    attached = 'native_openai' in config
     options = {}
     if aggregate:
         from src.baselines.text.sembench_mmqa_aggregate import load_token_counter
@@ -37,14 +38,15 @@ def _query(config, generation):
             raise ValueError('aggregation requires the declared local tokenizer JSON identity')
         engine = config['engine_kwargs']
         context = config.get('native_lm_max_ctx_len')
-        if (type(context) is not int or engine.get('max_model_len') != context
-                or generation.max_tokens >= context):
+        if (type(context) is not int or generation.max_tokens >= context
+                or (not attached and engine.get('max_model_len') != context)):
             raise ValueError('aggregation requires the declared native context with input space after max_tokens')
-        if Path(counter['path']).resolve() != Path(engine.get('tokenizer', config['model'])).resolve() / 'tokenizer.json':
-            raise ValueError('LOTUS counter must be the declared native model/tokenizer tokenizer.json')
-        revision = engine.get('tokenizer_revision') or engine.get('revision')
-        if revision is not None and revision != counter['tokenizer_revision']:
-            raise ValueError('LOTUS counter revision differs from the declared native tokenizer revision')
+        if not attached:
+            if Path(counter['path']).resolve() != Path(engine.get('tokenizer', config['model'])).resolve() / 'tokenizer.json':
+                raise ValueError('LOTUS counter must be the declared native model/tokenizer tokenizer.json')
+            revision = engine.get('tokenizer_revision') or engine.get('revision')
+            if revision is not None and revision != counter['tokenizer_revision']:
+                raise ValueError('LOTUS counter revision differs from the declared native tokenizer revision')
         if generation.repetition_penalty != 1 or generation.logprobs is not None or generation.response_format is not None:
             raise ValueError('native Q5 retains ordinary generation and the original unstructured parser')
         options = dict(max_ctx_len=context, tokenizer=load_token_counter(counter))
@@ -54,10 +56,9 @@ def _query(config, generation):
               if name in config}
     if any(name in visual and type(visual[name]) is not bool for name in ('visual_query', 'image_join')):
         raise ValueError('visual_query and image_join must be booleans')
-    attached = 'native_openai' in config
     if attached and (generation.response_format is not None or generation.logprobs is not None
                      or generation.repetition_penalty != 1):
-        raise ValueError('complete visual queries require plain base generation; original operators own JSON overrides')
+        raise ValueError('attached queries require plain base generation; original operators own JSON overrides')
     query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'],
         config['scenario'], config['query'], execution_id=config['query_id'],
         model_name=config['model_name'], generation=generation,
@@ -65,8 +66,6 @@ def _query(config, generation):
         **(dict(lm_options=options) if aggregate else {}))
     if query.visual_inputs is not None and not attached:
         raise ValueError('the native Daft string-prompt provider has no per-row image input')
-    if attached and query.visual_inputs is None:
-        raise ValueError('the attached builtin profile currently binds original visual queries')
     if query.operation is not None and query.operation.describe()['kind'] == 'topk':
         raise ValueError('native Daft TopK remains disabled')
     return query
@@ -149,7 +148,7 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
             service_startup_in_query_seconds=None,
             lifecycle='one original query; isolated native API-client worker per sequential LM batch; remote service externally owned',
             client_release_boundary='worker process exit after result ACK; native SDK explicit close unobserved',
-            timing_scope='fresh original source and image decode, original SDK methods and complete native Daft '
+            timing_scope='fresh original source and required image decode, original SDK methods and complete native Daft '
                 'OpenAI graphs, required intermediate worker exits, HTTP attempt accounting/fingerprints/API receipts '
                 'and complete original sink; remote READY/startup attribution unobserved; final worker exit, '
                 'post-query audits, scoring and persistence excluded')
@@ -161,6 +160,8 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
     pending = [None]
     try:
         query = _query(config, generation)
+        if attached and query.aggregate_task is not None:
+            report['message_encoding'] = 'daft.openai.single_user.parts.v1'
         if tokenizer is None and not attached:
             from transformers import AutoTokenizer
             engine = config['engine_kwargs']
@@ -219,7 +220,9 @@ def run_query(config, directory, *, model_python, tokenizer=None, supervise=supe
         if query.aggregate_task is not None:
             report['lotus_lm'] = dict(max_ctx_len=lm.max_ctx_len,
                 input_token_budget=lm.max_ctx_len-lm.max_tokens, token_counter=config['token_counter'],
-                model_tokenizer_verified=False, scope='declared native context/tokenizer only; actual target loading unverified')
+                model_tokenizer_verified=False, scope=(
+                    'declared external model context and local counter; remote context/tokenizer match unverified'
+                    if attached else 'declared native context/tokenizer only; actual target loading unverified'))
 
         def original_query():
             import lotus

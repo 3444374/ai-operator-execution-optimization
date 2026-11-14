@@ -171,7 +171,7 @@ class MedicalTextTask:
 
         if evaluation is None:
             raise ValueError('Medical evaluation requires prepare_evaluation before execution')
-        quality = evaluate_original(checkout, self.query, result.copy(deep=True),
+        quality = evaluate_original(checkout, self.query, result,
             evaluation.frame.copy(deep=True),
             source.frames[self.symptoms_file].copy(deep=True) if self.query == '10' else None,
             scale_factor=self.scale_factor)

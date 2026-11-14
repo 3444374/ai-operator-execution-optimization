@@ -115,6 +115,9 @@ def evaluate_original(checkout, query_id, result, labeled_patients, symptoms_tex
     # DataFrame. Preserve the Series result itself and that evaluation shape.
     if isinstance(result, pd.Series):
         result = result.to_frame()
+    # The official Q10 scorer rewrites columns and diagnosis strings in place.
+    # Evaluation must leave the completed query relation intact for every runner.
+    result = result.copy(deep=True)
     evaluator = object.__new__(module.MedicalEvaluator)
     evaluator.patient_df = labeled_patients
     if symptoms_text is not None:

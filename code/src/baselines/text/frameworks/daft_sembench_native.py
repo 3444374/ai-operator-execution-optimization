@@ -81,15 +81,15 @@ def effective_openai_messages(messages):
     """
     from copy import deepcopy
 
-    if (len(messages) != 2 or any(set(message) != {'role', 'content'} for message in messages)
-            or messages[0]['role'] != 'system' or not isinstance(messages[0]['content'], str)
-            or messages[1]['role'] != 'user'
-            or not isinstance(messages[1]['content'], (str, list))
-            or isinstance(messages[1]['content'], list) and not messages[1]['content']):
-        raise ValueError('native message batches support system text and one user string or content-parts array')
+    if (len(messages) not in (1, 2) or any(set(message) != {'role', 'content'} for message in messages)
+            or len(messages) == 2 and (messages[0]['role'] != 'system' or not isinstance(messages[0]['content'], str))
+            or messages[-1]['role'] != 'user'
+            or not isinstance(messages[-1]['content'], (str, list))
+            or isinstance(messages[-1]['content'], list) and not messages[-1]['content']):
+        raise ValueError('native message batches support optional system text and one user string or content-parts array')
     effective = deepcopy(messages)
-    if isinstance(effective[1]['content'], str):
-        effective[1]['content'] = [dict(type='text', text=effective[1]['content'])]
+    if isinstance(effective[-1]['content'], str):
+        effective[-1]['content'] = [dict(type='text', text=effective[-1]['content'])]
     return effective
 
 
@@ -106,12 +106,12 @@ def _message_columns(requests):
             raise ValueError('native message batches require unique nonempty call_id values')
         seen.add(call_id)
         effective = effective_openai_messages(messages)
-        if system is None:
-            system = messages[0]['content']
-        elif system != messages[0]['content']:
+        row_system = messages[0]['content'] if len(messages) == 2 else None
+        if rows and system != row_system:
             raise ValueError('native prompt requires one static system message per batch')
+        system = row_system
         parts, kinds = [], []
-        for part in effective[1]['content']:
+        for part in effective[-1]['content']:
             kind = part.get('type')
             if kind == 'text' and set(part) == {'type', 'text'} and isinstance(part['text'], str):
                 text = part['text']
@@ -166,7 +166,8 @@ def execute_prepared_messages(requests, *, model, sampling_params, provider_opti
     result = dict(predictions=[], metadata=metadata)
     try:
         system, rows = _message_columns(requests)
-        metadata.update(message_encoding='daft.openai.system_single_user.parts.v1',
+        metadata.update(message_encoding=('daft.openai.single_user.parts.v1' if rows and system is None
+                                         else 'daft.openai.system_single_user.parts.v1'),
             target_renderer_equivalence_verified=None)
         effective = deepcopy(sampling_params)
         if 'repetition_penalty' in effective:

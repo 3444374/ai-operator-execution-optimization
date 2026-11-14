@@ -157,6 +157,12 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 三模块55项软件检查通过，含真实CPU子进程／两轮／异常退出／大图片包／fresh actor及EngineCore身份判断；0模型／GPU。
 必要IPC计入独立v2查询，启动另列；不授予实际SDK、响应ID关联、暖轮或物理退出资格，旧失败保留。
 
+[LOTUS＋Daft外部服务原文本／层次聚合](diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-attached-text)
+同一runner删除only-visual误限，八条原F／M／E／Join及Q5单层／摘要依赖多层复用既有原生图、worker和ACK；不逐题执行。
+按原SDK允许省略system，不补空提示；本地引擎与外部声明式context／counter分开，远端匹配未知保留。
+共享Medical评价只给原评分器副本，保留真实sink，独立任务删除重复copy；原算法／分数保持，不改旧成绩。
+九模块165个不同方法最终162通过、3项资产证明未绑定跳过，0模型／GPU；实际Daft0.7.21图的软件API与目标模型分开，原失败和定向复核保留。
+
 [Ray Serve原生hook冲突与callback修复](diagnostics/sembench_native_integration_20261112/README.md#ray-serve-native-hook-repair)
 7aa61目标配置／120条模板token门通过，三次初始化因hook冲突失败、0生成；原失败及预算／清理保留。
 改用原生模型初始化callback，保留节点／worker hook／observer及同一runner；四模块70项软件及真实源码函数回放通过、0模型／GPU。

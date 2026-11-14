@@ -1189,6 +1189,29 @@ class OriginalSemBenchTextTests(unittest.TestCase):
         self.assertEqual(native["frame"].loc[1, "title"], "Replacement Fixture")
         self.assertIn("Replacement Fixture", result.loc[result["genre"] == "comedy", "movies_in_genre"].iloc[0])
 
+    def test_medical_evaluation_isolates_the_original_scorers_in_place_normalization(self):
+        from src.baselines.text import sembench_medical
+        from src.baselines.text.sembench_source import load_module
+
+        query = self._query('medical', '10')
+        answers = ['{"text_diagnosis":"ALLERGY\\n"}']*len(query.operation.records)
+        result, _ = self._reference(query, answers)
+        before = result.copy(deep=True)
+        module = load_module(CHECKOUT, 'sembench_medical_evaluator', 'src/scenario/medical/evaluation/evaluate.py')
+        original = module.MedicalEvaluator._evaluate_single_query
+        observed = []
+        def evaluate(evaluator, query_id, actual, truth):
+            self.assertIsNot(actual, result)
+            pd.testing.assert_frame_equal(actual, before)
+            observed.append(query_id)
+            return original(evaluator, query_id, actual, truth)
+        with patch.object(sembench_medical, 'load_module', return_value=module), \
+                patch.object(module.MedicalEvaluator, '_evaluate_single_query', evaluate):
+            quality = query.evaluate(result)
+        self.assertEqual(observed, [10])
+        self.assertIn('f1_score', quality['original_metric'])
+        pd.testing.assert_frame_equal(result, before)
+
     def test_missing_extract_keys_preserve_original_keyerror_after_known_successful_calls(self):
         for key, count in (("1", 3), ("4", 4)):
             with self.subTest(query=key), redirect_stdout(io.StringIO()):

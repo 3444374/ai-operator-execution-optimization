@@ -2015,6 +2015,41 @@ Kalypso原caller→内存sink为9.731334692／0.440251780秒，模型服务启�
 本会话仅只读核验三包全部4255份payload、3546件对应Git源码blob和归档哈希，未重复模型。
 完整核验SHA-256为`6750610debacdac3b28712bb8045b42ec7611420fedce9a1f170004188c980ba`。
 
+<a id="lotus-daft-attached-text"></a>
+## LOTUS＋Daft 外部服务的原文本与层次聚合
+
+删除同一完整查询入口中“外部服务只能执行visual”的无依据条件；原Filter／Map／Extract／exact Join
+继续复用SemBench原函数、LOTUS方法及现有Daft builtin OpenAI图／隔离worker／ACK，不增加逐题执行器。
+Movie Q3/Q8/Q7、MMQA Q1/Q4、Medical Q10、E-Commerce Q3及Cars Q10八条软件流程对照原SDK的
+完整结果、评分、实际请求数、HTTP有效消息和末批ACK；不借用独立JSON或已完成视觉模型的资格。
+
+原Q5的两项共同接点一并闭合：外部服务禁止本地engine_kwargs，故不再强求其中的max_model_len／tokenizer路径；
+保留声明式native_lm_max_ctx_len和SHA绑定本地token_counter，实际远端context／tokenizer匹配仍未验证。
+本地模型profile继续核对原引擎context／tokenizer，不放宽其约束。原LOTUS仍拥有token计数、叶子分块、
+摘要决定后继、parser与完整sink；预算按实际请求扣除，不预先固定层数。
+
+第一次聚合回放暴露原消息只有一条user，而旧carrier强制system＋user。
+固定Daft0.7.21的OpenAIPrompter原本支持system_message=None，现薄接线允许可选静态system及一个user，
+完整保留角色和文本，不补空system、不改原查询。原字符串仍显式编码为单text part，renderer／token等价待目标模型核验；
+无system的新批次记录daft.openai.single_user.parts.v1，既有system及空批的版本身份保持。
+静态system是否存在／内容与part布局在一个原生批次内仍一致，不扩大到任意多轮conversation。
+实际Daft原生CPU图＋软件OpenAI验证新单user与旧图文编码、重复发生项和空批；单层与依赖长摘要的多层原Q5
+通过现有真实CPU子进程／完整ACK和原评分差分，远端模型不由driver创建或关闭。
+
+同批修复共享Medical评价边界：原Q10评分器会原地规范化列名与诊断文本，旧LOTUS＋后端在评价后保存结果时
+可能保存被规范化后的值。现只给原评分器DataFrame副本，原算法／分数保持，完整内存sink及持久化值保持实际输出；
+副本在既有评价区间、完整sink之后创建。独立JSON任务原已复制结果，删其重复副本，不说旧独立成绩遭污染。
+真实原评分器回归覆盖大写及换行文本，先前暴露问题的失败原件保留。
+
+b1d0e7a8e干净导出加七份准确源码／测试，九完整模块最终去重165个不同方法：162通过、3跳过、0模型／GPU。
+未绑定项是两份真实Medical／MMQA数据及原图文冻结证明，不用fixture外推其资格。
+先前tuple消息夹具、错误patch不同原模块实例、Mac临时路径别名及原聚合carrier失败均保留；
+最终整合无断言错误，随后仅绑定已有作者Git对象重跑该7方法模块，以及保留空批版本的10方法模块，不重复累加。
+最终范围／源码与分次证明SHA-256为`8871378f48cce7662511841e8beef9383bd7be7fefede30abad677a2d9e9b56e`。
+目标文本／Q5模型、真实renderer和远端context／tokenizer及物理清理仍待服务器协调者验收；
+原完整query时钟保留实际IPC、HTTP记账和必要中间worker退出，不估算扣减旧成绩，远端READY未知仍为None。
+取消的Daft TopK、分组并发与三份保护草稿保持原范围，未以此恢复或授予资格。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

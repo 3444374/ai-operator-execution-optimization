@@ -50,6 +50,9 @@ assert messages[1]['content']=='  original \\n文本  '
 array=[{'role':'system','content':'system'}, {'role':'user','content':[{'type':'text','text':'original'}]}]
 assert effective_openai_messages(array)==array
 assert effective_openai_messages([messages[0],{'role':'user','content':''}])[1]['content']==[{'type':'text','text':''}]
+single=[{'role':'user','content':'original aggregate'}]
+assert effective_openai_messages(single)==[{'role':'user','content':[{'type':'text','text':'original aggregate'}]}]
+assert single==[{'role':'user','content':'original aggregate'}]
 '''
         completed = subprocess.run([sys.executable, '-B', '-c', script], capture_output=True, text=True)
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
@@ -206,6 +209,17 @@ class NativeMessageBatchTests(unittest.TestCase):
         self.assertEqual(identities[1]['original_messages_sha256'], identities[1]['effective_messages_sha256'])
         self.assertNotIn('message_identities', metadata)
 
+    def test_single_user_aggregation_has_no_invented_system_message(self):
+        rows = [dict(call_id=str(index), messages=[dict(role='user', content=text)])
+                for index, text in enumerate(('original first document', 'original second document'))]
+        original = deepcopy(rows)
+        result = self.execute(rows)
+        self.assertEqual(rows, original)
+        self.assertEqual(result['metadata']['message_encoding'], 'daft.openai.single_user.parts.v1')
+        self.assertCountEqual([call['messages'] for call in SoftwareClient.calls],
+                             [binding.effective_openai_messages(row['messages']) for row in rows])
+        self.assertTrue(all(len(call['messages']) == 1 for call in SoftwareClient.calls))
+
     def test_original_formatters_keep_plain_text_then_image_JSON_batches(self):
         from PIL import Image
         from lotus.templates.task_instructions import filter_formatter, extract_formatter
@@ -296,6 +310,8 @@ class NativeMessageBatchTests(unittest.TestCase):
         row = self.request(); row['messages'][1]['content'] = {'unsupported': 'content'}; values.append([row])
         row = self.request(); row['messages'][0]['role'] = 'assistant'; values.append([row])
         values.append([self.request(), self.request()])
+        single = dict(call_id='single-user', messages=[dict(role='user', content='original')])
+        values.extend(([single, self.request()], [self.request(), single]))
         row = self.request('other'); row['messages'][0]['content'] = 'different system'; values.append([self.request(), row])
         row = self.request('other'); row['messages'][1]['content'].append(dict(type='text', text='another part'))
         values.append([self.request(), row])
@@ -316,6 +332,7 @@ class NativeMessageBatchTests(unittest.TestCase):
         seen = []
         result = self.execute([], on_result_ready=seen.append)
         self.assertEqual(result['predictions'], [])
+        self.assertEqual(result['metadata']['message_encoding'], 'daft.openai.system_single_user.parts.v1')
         self.assertEqual(seen, [result])
         self.assertIsInstance(result['metadata']['result_ready_monotonic_ns'], int)
         self.assertEqual(SoftwareClient.created, [])

@@ -65,7 +65,8 @@ def execute(rows,*,model,sampling_params,provider_options,on_result_ready):
   return predictions
  result=dict(predictions=asyncio.run(all_rows()),metadata=dict(
   result_ready_monotonic_ns=time.monotonic_ns(),model_close_receipt=None,model_process_owned=False,
-  message_encoding='daft.openai.system_single_user.parts.v1',target_renderer_equivalence_verified=None))
+  message_encoding=('daft.openai.single_user.parts.v1' if len(rows[0]['messages'])==1
+                    else 'daft.openai.system_single_user.parts.v1'),target_renderer_equivalence_verified=None))
  on_result_ready(result)
  return result
 run_worker(config,directory,execute_query=execute)
@@ -341,6 +342,134 @@ class AttachedOriginalQueryTests(unittest.TestCase):
                 worker.native_openai_options(dict(config, **change))
         with patch.dict(os.environ, {}, clear=True), self.assertRaises(KeyError):
             worker.native_openai_options(config)
+
+
+@unittest.skipUnless(fixture.CHECKOUT and fixture.HAS_SDK, 'requires pinned SemBench and existing LOTUS SDK')
+class AttachedOriginalTextTests(unittest.TestCase):
+    def setUp(self):
+        from tests.experiments.test_sembench_text_original import OriginalSemBenchTextTests
+
+        self.helper = OriginalSemBenchTextTests()
+        self.helper.setUp()
+        self.addCleanup(self.helper.doCleanups)
+        self.helper._write_ecomm_inputs()
+        self.helper._write_cars_inputs()
+        guard = patch.dict(os.environ, CPU_DAFT_BASE='http://localhost:18473/v1', CPU_DAFT_KEY=fixture.KEY_VALUE)
+        guard.start()
+        self.addCleanup(guard.stop)
+
+    def original(self, scenario, key, text):
+        from lotus.models import LM
+        from src.baselines.text.sembench_text import SemBenchTextQuery
+        from src.experiments.native_service_query import native_query_settings
+        from src.semantic_methods.lotus.engine import engine_response
+        from tests.experiments.test_sembench_text_original import _reply
+
+        query = SemBenchTextQuery(fixture.CHECKOUT, self.helper.data, scenario, key,
+            execution_id='original-'+scenario+'-'+key, model_name='openai/local-fixture',
+            generation=self.helper.generation, **(dict(scale_factor=7) if scenario == 'cars' else {}))
+        lm = LM(query.model_name, **self.helper.generation.kwargs())
+        responses, counts = {}, []
+        def reply(data, *args, **kwargs):
+            counts.append(len(data))
+            output = []
+            for message, _ in data:
+                response = engine_response(_reply(dict(call_id='reference'), text), lm)
+                raw = response.model_dump()
+                raw['model'] = 'local-fixture'
+                responses[content_digest(effective_openai_messages(message))] = raw
+                output.append(response)
+            return output
+        lm._process_uncached_messages = reply
+        with native_query_settings(lm):
+            expected = query.bind_original_execution()()
+        return query, expected, responses, counts
+
+    def test_text_filter_map_extract_and_join_use_existing_builtin_graph_handoff(self):
+        from src.baselines.text.sembench_prepared import result_value
+
+        cases = [('movie','3','True'), ('movie','8','POSITIVE'), ('movie','7','True'),
+                 ('mmqa','1','{"director":"Michael Ritchie"}'), ('mmqa','4','{"genres":"comedy"}'),
+                 ('medical','10','{"text_diagnosis":"ALLERGY"}'),
+                 ('ecomm','3','{"category":"Acme"}'), ('cars','10','{"problem_category":"ENGINE"}')]
+        for scenario, key, text in cases:
+            with self.subTest(scenario=scenario, query=key):
+                query, expected, responses, counts = self.original(scenario, key, text)
+                encoded = result_value(expected)
+                quality = query.evaluate(expected)
+                config = dict(schema='semloom.native_daft_sembench.v1', sembench_checkout=str(fixture.CHECKOUT),
+                    data_dir=str(self.helper.data), scenario=scenario, query=key, query_id='attached-text-'+scenario+'-'+key,
+                    model_name='openai/local-fixture', model='local-fixture',
+                    sampling_params=self.helper.generation.kwargs(), engine_kwargs={},
+                    provider_options=dict(max_retries=0), native_openai=dict(base_url_env='CPU_DAFT_BASE', api_key_env='CPU_DAFT_KEY'),
+                    max_model_calls=sum(counts), query_timeout_s=60, cleanup_s=3, stop_grace_s=.5,
+                    **(dict(scale_factor=7) if scenario == 'cars' else {}))
+                plan = self.helper.data/(scenario+'-'+key+'-HTTP-plan.json')
+                write_private_json(plan, dict(responses=responses, failure=False))
+                supervise = AttachedSupervisor(plan)
+                report = driver.run_query(config, self.helper.data/('run-'+scenario+'-'+key),
+                    model_python=sys.executable, supervise=supervise)
+                self.assertEqual(report['status'], 'completed')
+                self.assertEqual(report['result'], encoded)
+                self.assertEqual(report['quality'], quality)
+                self.assertEqual(report['logical_requests'], sum(counts))
+                self.assertEqual(report['physical_attempts_reserved'], sum(counts))
+                self.assertEqual(report['native_HTTP_audit']['unresolved_attempts'], 0)
+                self.assertIsNone(report['model_ready_before_source'])
+                self.assertIsNone(report['service_startup_in_query_seconds'])
+                self.assertEqual(len(supervise.calls), len(counts))
+                terminal = read_json(supervise.calls[-1][1]/'worker.json')
+                self.assertTrue(terminal['result_release']['confirmed'])
+                self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
+                self.assertLessEqual(report['sink_ready_ns'], report['semantic_audit_started_ns'])
+                self.assertLessEqual(report['sink_ready_ns'], report['evaluation_started_ns'])
+
+    def test_original_aggregation_uses_declared_counter_without_remote_engine_ownership(self):
+        from tests.experiments.test_native_daft_full_query import NativeDaftFullQueryTests
+        from tests.experiments.test_sembench_lotus_mmqa_aggregate import NativeAggregateReplies
+
+        NativeDaftFullQueryTests.setUpClass()
+        local = NativeDaftFullQueryTests()
+        local.setUp()
+        self.addCleanup(local.doCleanups)
+        for service, mode in ((local.source.config()[0], 'compact'),
+                              (local.source.multi_config()[0], 'long_summaries')):
+            with self.subTest(context=service['native_lm_max_ctx_len'], mode=mode):
+                data, responses = local.source.source(), {}
+                replies = NativeAggregateReplies(self, mode=mode)
+                respond = replies.respond
+                def record(request):
+                    response = respond(request)
+                    body = json.loads(request.content)
+                    responses[content_digest(effective_openai_messages(body['messages']))] = response.json()
+                    return response
+                with patch.object(replies, 'respond', side_effect=record):
+                    reference, _, _ = local.source.invoke(service, data, replies, allowance=40)
+                config = local.configure(service, data)
+                config.update(model='local-aggregate-fixture', engine_kwargs={}, provider_options=dict(max_retries=0),
+                    native_openai=dict(base_url_env='CPU_DAFT_BASE', api_key_env='CPU_DAFT_KEY'))
+                plan = local.source.directory('attached-plan')/'HTTP.json'
+                write_private_json(plan, dict(responses=responses, failure=False))
+                supervise = AttachedSupervisor(plan)
+                output = local.source.directory('attached-result')/'query'
+                report = driver.run_query(config, output, model_python=sys.executable, supervise=supervise)
+                self.assertEqual(report['result'], reference['result'])
+                self.assertEqual(report['quality'], reference['quality'])
+                self.assertEqual(report['physical_attempts_reserved'], reference['model_calls'])
+                self.assertEqual(report['native_HTTP_audit']['unresolved_attempts'], 0)
+                self.assertFalse(report['lotus_lm']['model_tokenizer_verified'])
+                self.assertIn('remote context/tokenizer match unverified', report['lotus_lm']['scope'])
+                if mode == 'long_summaries':
+                    self.assertGreater(len(supervise.calls), 1)
+                for worker_config, directory in supervise.calls:
+                    self.assertEqual(worker_config['engine_kwargs'], {})
+                    terminal = read_json(directory/'worker.json')
+                    self.assertTrue(terminal['result_release']['confirmed'])
+                config['token_counter'] = dict(config['token_counter'], sha256='0'*64)
+                generation = GenerationSpec.from_dict({key: value for key, value in config['sampling_params'].items()
+                                                        if key != 'n'})
+                with self.assertRaisesRegex(ValueError, 'SHA256'):
+                    driver._query(config, generation)
 
 
 if __name__ == '__main__':
