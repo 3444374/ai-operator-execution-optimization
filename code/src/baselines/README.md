@@ -471,7 +471,10 @@ Q9 Map 不代表 TopK。上述是该冻结提交的独立单冷成绩，当前�
 必要API预算、batch IPC和模型执行留在内。caller启动包含deployment启动，不能相加。
 warm要求两轮实际非空、无新增constructor、当场model actor和EngineCore PID／birth均保持；
 缺证据／零请求留空，prefix cache开启不证明命中。每轮原RNG、真实工作量和质量分别保留。
-软件接线及43e原Q8的真实同模型两轮／本轮清理已验，其他任务／renderer与正式匹配比较仍待验，见[验证与范围](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-serve-ready-repeat)。
+43e原Q8及8b73原MMQA Q4均已真实执行同模型两轮，Q4低质量与外层SHM清理失败及恢复保留，见[原件与范围](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-mmqa-q4-8b73-model)。
+会话在自有隔离runtime中以原生`serve.shutdown()`关闭应用和Serve系统组件，再`ray.shutdown()`断连；
+配置／build失败也走同一关停路径，外来runtime／同名应用不被关停。删除原逐应用delete及冗余status读取。
+38项相关软件检查通过、0模型；原生API返回不证明物理GPU／SHM清理完成，仍由目标监督核对。其他任务／renderer与正式匹配比较另验。
 
 <a id="lotus-native-resident-sembench"></a>
 ### 原生 LOTUS 的显式 resident 文本查询
@@ -1031,7 +1034,7 @@ prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常�
 | LOTUS resident | fresh source→原accessor／LM／parser→完整原题结果 | 默认首次惰性模型加载包含；显式before_queries准备另计，按实际owner观测区分冷暖；统计／写盘／最终close在外 |
 | LOTUS外部服务 | source／实际读图及PNG准备→完整原题结果；真实HTTP等待、POST预算、请求／图像指纹和请求／结束事件仍在内 | 额外响应解析／编码、关联／评分／flush在sink后；后台写盘仍可重叠，服务启动／READY由外部owner另证 |
 | LOTUS＋Ray offline | fresh source→原SDK语义及实际多批native graph→完整原函数结果；API额度与惰性runtime／模型启动在内 | 原函数返回后audit／ray.shutdown；逐请求成功旁录已删，不声称跨批模型复用，新候选目标运行待验 |
-| LOTUS＋Ray Serve | fresh source→原LOTUS实际消息／算法／多批native Serve→完整原函数结果；API预算与批次IPC在内 | 模型READY及启动在前，后置审计／评价／写盘和最后关闭在后；groupby批次顺序交接；43e Q8同owner及本轮清理已验，其他任务／renderer／物理条件另验 |
+| LOTUS＋Ray Serve | fresh source→原LOTUS实际消息／算法／多批native Serve→完整原函数结果；API预算与批次IPC在内 | 模型READY及启动在前，后置审计／评价／写盘和最后关闭在后；groupby批次顺序交接；43e Q8与8b73 Q4同owner执行已验；Q4外层SHM失败／恢复保留，当前Serve关停修复的物理效果待验 |
 | 独立Ray offline／Serve | fresh source→工程消息／实际图像准备→真实依赖批次及完整任务结果；额度与必要IPC在内 | offline包含惰性启动；Serve deployment启动另计，源前／sink后观测真实模型身份，响应关联和最终close在外 |
 | LOTUS＋Daft／独立Daft local | fresh source→提示／packet与摘要→各批原生图→完整原题或工程任务结果；完整READY交接及中间批ACK／退出在内 | 各批模型冷启动仍在内；末批完整sink后ACK／close。原生后台错误可能只到外层timeout，失败日志和READY须保留 |
 | Daft attached的两种语义入口 | fresh source／消息和真实PNG编码→builtin OpenAI graph→完整结果；packet／HTTP／完整READY与中间批交接在内 | 外部模型启动另证；末批sink后ACK／client退出。完整READY的API快照复用，原始HTTP审计仍在区间，不能借用local或其他语义的暖轮 |
@@ -1063,7 +1066,7 @@ LOTUS记录的审计body可在查询后核对，不能把byte SHA换名成旧val
 不据此声称保存了完整body或可重建旧canonical字段。实际SDK发送、参数、body读取和响应关联保持。
 尚在查询内的HTTP解析／图像指纹／事件编码、IMLane provider回执和Kalypso uniform记录仍逐项披露；
 其中有现用审计／失败消费者，不能以删记录或扣估算时间取代可靠留存。必要数据、packet、IPC、阶段间关闭不移出查询。
-LOTUS＋Ray的同算法ready／warm配置已实现，43e原Q8两轮已取得真实模型资格；其他任务另验，独立JSON Serve不替代其语义身份。
+LOTUS＋Ray的同算法ready／warm配置已实现，43e原Q8及8b73原Q4两轮已取得真实模型执行回执；Q4质量／清理限制保留，其他任务另验，独立JSON Serve不替代其语义身份。
 其余实际模型／缓存／启动条件及真实资产未绑定项仍按所属覆盖表留空，不由本次软件检查授予性能资格。
 
 <a id="native-cache-and-request-order"></a>
@@ -1076,14 +1079,14 @@ LOTUS＋Ray的同算法ready／warm配置已实现，43e原Q8两轮已取得真�
 | 系统／profile | prefix cache配置与状态来源 | 结果缓存与请求顺序 |
 |---|---|---|
 | LOTUS resident／外部服务 | 本地engine声明及实际owner配置；外部服务由其启动配置／日志另证，缺观察留空 | LOTUS原题profile关闭SDK结果cache；保存原source及LM批次顺序，SDK／服务可原生重排 |
-| LOTUS＋Ray offline／Serve | engine_kwargs与实际原生配置／启动日志分列。43e Q8请求开启，现有原生日志也确认开启，命中量未知 | Q8结果cache关闭；ready-first再same-owner-repeat，每轮一批、原选中顺序row0..119，轮间call_id不同。实际engine接受顺序未观测 |
+| LOTUS＋Ray offline／Serve | engine_kwargs与实际原生配置／启动日志分列。43e Q8与8b73 Q4均请求并确认开启，命中量未知 | 两题结果cache均关闭；ready-first再same-owner-repeat，每轮一批、逻辑选中顺序分别row0..119／0..23，轮间call_id不同。实际engine接受顺序未观测 |
 | 独立Ray JSON | 各自offline／Serve的engine_kwargs及owner记录，不能借LOTUS那轮状态 | 项目任务无结果cache；保留完整依赖批次、call_id和已观测API关联，原生调度顺序未观测时留空 |
 | LOTUS＋Daft local／attached | 内置provider／engine配置与实际worker状态；attached的远端模型另证，不能借local provider名称授予状态 | LOTUS SDK结果cache关闭；每批新client／worker，记录批次及原生行关联，HTTP相同消息不强配唯一发生项或顺序 |
 | 独立Daft JSON | 同样分清local provider配置、worker状态和attached远端服务状态 | 项目任务无结果cache；实际依赖批次／顺序与远端模型owner分开，每批client更换不等于模型更换 |
 | IMLane原SQL／LOTUS工程profile | ModelService配置与模型ready日志；未观测的原生默认不补False | LOTUS完整原题关闭SDK结果cache，原SQL专属配置按各回执。保存Arrow／call_id／SQL批次与provider序列，接受顺序不能由最终COUNT推断 |
 | Kalypso | loaded-model的native_engine_configuration.cache及作者引擎声明，实际worker未采到则留空 | 适配层不加结果cache，作者机制保持；按各回执记录设置。保留source idx、native API sequence与原server调度，不能用源顺序替代已发生的原生顺序 |
 
-43e两轮时差只作该运行观察，不归因prefix cache；原件已有信息足够更新上述状态，不新增缓存实验。
+43e Q8与8b73 Q4的两轮时差只作各运行观察，不归因prefix cache；原件已有信息足够更新上述状态，不新增缓存实验。
 
 共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，
 sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 视觉和 MMQA 聚合也在

@@ -94,13 +94,13 @@ class NativeServeSession:
         sdk.serve.start(proxy_location='Disabled')
         if self.app_name in sdk.serve.status().applications:
             raise ValueError('the named Serve application already exists')
+        self.creation_attempted = True
         events['deployment_start_ns'] = time.monotonic_ns()
         config = sdk.LLMConfig(model_loading_config=dict(model_id=self.model, model_source=self.model_source),
             engine_kwargs=deepcopy(self.engine_kwargs), runtime_env=deepcopy(self.model_runtime_env),
             callback_config=dict(callback_class=sdk.NativeObserverCallback),
             deployment_config=dict(name=self.deployment_name, num_replicas=1))
         app = sdk.build_llm_deployment(config, override_serve_options=dict(name=self.deployment_name))
-        self.creation_attempted = True
         sdk.serve.run(app, name=self.app_name, route_prefix=None)
         events['deployment_ready_ns'] = time.monotonic_ns()
         self.report['deployment_startup_seconds'] = (events['deployment_ready_ns']-events['deployment_start_ns'])/1e9
@@ -150,12 +150,14 @@ class NativeServeSession:
         events = self.report['events']
         events['close_started_ns'] = time.monotonic_ns()
         try:
-            if self.creation_attempted and self.app_name in self.native.serve.status().applications:
-                self.native.serve.delete(self.app_name)
+            if self.creation_attempted:
+                # The session owns this isolated runtime and its Serve system actors.
+                self.native.serve.shutdown()
                 self.report['owned_app_deleted'] = True
+                self.report['owned_serve_shutdown_returned'] = True
         except BaseException as caught:
             error = caught
-            self.report['delete_error_type'] = type(caught).__name__
+            self.report['serve_shutdown_error_type'] = type(caught).__name__
         finally:
             try:
                 self.native.ray.shutdown()

@@ -2770,3 +2770,46 @@ allocator归因未证，通用guard未放宽，不宣称上游SHM问题已修复
 首个只读核验脚本错取顶层quality字段的KeyError保留，改读实际逐轮字段后通过，没有模型或实验重跑。
 私有证明`VERIFY-43e-native-model-originals-20261114` SHA-256为
 `947118f8356d1490896d642d1f1acbcb21a3e286b3703f9a7bf546bb77ccc820`。
+
+
+<a id="lotus-ray-mmqa-q4-8b73-model"></a>
+## 8b73：LOTUS＋Ray 原 MMQA Q4 两轮与关停缺口
+
+`lotus-ray-mmqa-q4-8b73-qualification-20261114-r1`固定`8b73b04b8`，code tree
+`0b700fb41e3f1b668cba6e0036f043d4166aebf7`，LOTUS1.2.4／Ray2.56.1／vLLM0.22.0、Qwen2.5-7B-Instruct。
+两轮fresh读取原sf25文本源25行，原谓词各选24行；沿原Extract的JSON-object采样、LOTUS解析、逗号展开及groupby到完整结果。
+不是独立项目JSON方法，也没有全局强加JSON格式。
+
+| 实际轮次 | 完整原生API结果 | source→完整内存sink（秒） | 原F1 |
+|---|---:|---:|---:|
+| 模型就绪首轮 | 24 | 13.125528074 | 0.48648648648648646 |
+| 同一实际模型重复 | 24 | 10.512822449 | 0.48648648648648646 |
+
+48份完整非流式API响应均关联，未关联0；独立engine提交／终态／unknown计数仍未知。
+一个constructor、五次新鲜actor／EngineCore PID及birth观测一致，无额外预热／自动重试／启动generate。
+两轮原文23／24相同，Item 47的`Thriller`与`Sci-Fi`差异使完整sink不同；两轮均18组且F1相同，不能说结果相等或质量全对。
+原JSON null、大小写及解析行为保留。每轮API逻辑usage为prompt6560／completion261，不等于实际engine token数组或未命中工作量。
+caller启动84.48708053678274秒包含deployment启动71.651460991秒，不相加；原source→完整sink直接打点，必要API预算／IPC在内，启动和后置审计／评价／写盘／最终关闭在外。
+prefix cache请求及实际启用均为True、结果缓存关，命中未知；两轮command按相同逻辑row0..23／消息序列提交，call_id各异，实际engine接受顺序未观测，不将时差归因缓存。
+
+原生caller记录closed、应用delete及Ray断连，内层worker成功；外层仍因一个stage-new SHM未消失而失败。
+原失败时holder／错误列表未记录，实际分配者未证；之后的无holder扫描及精确回收只证明后来恢复，不能倒推失败当时状态。
+通用SHM guard未放宽，原查询／外层失败文件保持，专属回收、原baseline保护与租约释放已有回执。
+1533份原件、1188件准确Git源码blob、归档及逐轮消息／响应／结果／时钟已只读独立核验，未重跑模型。
+私有证明`VERIFY-8b73-Q4-originals-20261114` SHA-256为
+`73d39aa85a73781b79357afa7b9a8b7fb5e2006d30e202327d63b107b0ce8c8e`。
+归档2246224字节，SHA-256为`10d71ee6a07d32e2fe2a4db27e865288f16387e705ae73251830f54c83e25285`。
+
+源码复核确认另一明确生命周期缺口：原close只delete应用，再断开Ray；没有显式关闭自有Serve系统组件。
+按固定[Ray2.56.1公开shutdown实现](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/serve/api.py#L119)，
+现改为自有隔离runtime中的`serve.shutdown()`之后`ray.shutdown()`，删除逐应用delete和冗余status读取。
+配置／deployment build失败也进入该路径；外来runtime／同名app保护、首错、完整结果及幂等关闭保持。
+API返回只记`owned_serve_shutdown_returned`，不冒充物理模型／SHM已退出；异常记真实shutdown错误，Ray断连仍尝试。
+
+软件回归先复现缺少Serve关停，再复现配置／build两个失败分支；修后38个不同方法全通过、0跳过／模型／原生Ray runtime／GPU／外部服务。
+覆盖两个语义入口的共用生命周期、实际CPU子进程IPC、关停顺序、外来所有权及原异常；两份修前失败均保留。
+最终私有证明`VERIFY-serve-close-cpu-20261114-r1` SHA-256为
+`f31adae3985ea9352dbf8822c9cbac3a094380c654e612e283de2b55f673cc6b`。
+两份独立只读审查无剩余阻断；此结论只闭合API生命周期遗漏，不证明上述真实SHM根因或残留已消除。
+下一项仅需协调会话做既有profile的有限启动／一次必要生成／关停门，不重复这48条Q4或240条Q8，不放宽资源guard。
+其他原题、VLM、同语义匹配和正式性能资格继续按覆盖表留空。

@@ -2,6 +2,11 @@
 
 ## 2026-11-12：SemBench 原生接入的分路径验收
 
+[8b73原MMQA Q4两轮与Serve关停](diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-mmqa-q4-8b73-model)
+48份真实原生API结果均完成、两轮原F1均.48649，原文23／24相同而完整sink不同；外层SHM失败、分配者未知及后续精确恢复保持。
+1533份原件／1188源码blob只读核验。发现close漏掉Serve系统关停API，改用原生shutdown后断连Ray、覆盖配置／build失败并移除旧delete／status路径；
+38项软件检查与两份独审通过、0新模型，修前失败保留，实际SHM改善仍待Linux关停门，不重复已有查询或授予性能资格。
+
 [43e原Q8同模型实机](diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-q8-43e-model)
 原2000源两轮各120真实API终态，原文／完整sink相同，原相对误差4.043%；准确版本、首／重复时钟与嵌套启动分列。
 1523份原件及1188源码blob独立核验，专属inactive SHM确切恢复与allocator未知分别保留。

@@ -24,7 +24,7 @@ class Config:
 
 
 def software_sdk(*, existing_runtime=False, existing_app=False, start_failure=False):
-    state = SimpleNamespace(initialized=existing_runtime, events=[], configs=[], requests=[],
+    state = SimpleNamespace(initialized=existing_runtime, serve_live=existing_app, events=[], configs=[], requests=[],
         applications={'owned': object()} if existing_app else {}, stages=[])
 
     def initialize(**kwargs):
@@ -41,9 +41,14 @@ def software_sdk(*, existing_runtime=False, existing_app=False, start_failure=Fa
         if start_failure:
             raise ValueError('software deployment startup failed')
 
-    def delete(name):
-        state.events.append('delete:'+name)
-        del state.applications[name]
+    def serve_start(**kwargs):
+        state.events.append('serve.start')
+        state.serve_live = True
+
+    def serve_shutdown():
+        state.events.append('serve.shutdown')
+        state.applications.clear()
+        state.serve_live = False
 
     def deployment(config, **kwargs):
         state.configs.append(config.value)
@@ -73,14 +78,23 @@ def software_sdk(*, existing_runtime=False, existing_app=False, start_failure=Fa
 
     sdk = SimpleNamespace(ray=SimpleNamespace(__version__='2.56.1', is_initialized=lambda: state.initialized,
         init=initialize, shutdown=shutdown, data=SimpleNamespace(from_items=lambda rows: rows)),
-        serve=SimpleNamespace(start=lambda **kwargs: state.events.append('serve.start'),
-            status=lambda: SimpleNamespace(applications=state.applications), run=run, delete=delete),
+        serve=SimpleNamespace(start=serve_start,shutdown=serve_shutdown,
+            status=lambda: SimpleNamespace(applications=state.applications), run=run),
         LLMConfig=Config, build_llm_deployment=deployment, ServeDeploymentProcessorConfig=Config,
         build_processor=build, ChatCompletionRequest=object, NativeObserverCallback=object)
     return sdk, state
 
 
 class NativeServeSessionTests(unittest.TestCase):
+    def test_owned_serve_system_actors_are_stopped_before_runtime_disconnect(self):
+        sdk,state=software_sdk()
+        with patch.object(native,'_load_native',return_value=sdk):
+            owner=native.NativeServeSession(**self.options())
+            owner.start()
+            owner.close()
+        self.assertFalse(state.serve_live, 'deleting an app leaves Serve system actors live')
+        self.assertLess(state.events.index('serve.shutdown'),state.events.index('ray.shutdown'))
+
     def test_original_plain_and_extract_sampling_keep_their_native_request_formats(self):
         messages=[dict(role='user',content='original LOTUS message')]
         for sampling in (dict(n=1,max_tokens=8192,temperature=0,stop=[]),
@@ -116,14 +130,14 @@ class NativeServeSessionTests(unittest.TestCase):
                 self.assertEqual(result['predictions'][0]['response_id'], 'chatcmpl-'+str(index))
                 self.assertNotEqual(result['predictions'][0]['response_id'],
                     result['predictions'][0]['native_response']['request_id'])
-            self.assertNotIn('delete:owned', state.events)
+            self.assertNotIn('serve.shutdown', state.events)
             owner.close()
             owner.close()
         self.assertEqual(messages, original)
         self.assertEqual(state.events.count('build_deployment'), 1)
         self.assertEqual(state.events.count('serve.run'), 1)
         self.assertEqual(state.events.count('materialize'), 2)
-        self.assertEqual(state.events[-2:], ['delete:owned', 'ray.shutdown'])
+        self.assertEqual(state.events[-2:], ['serve.shutdown', 'ray.shutdown'])
         config = state.configs[0]
         self.assertEqual(config['deployment_config'], dict(name='single-model', num_replicas=1))
         self.assertEqual(config['runtime_env'], options['model_runtime_env'])
@@ -143,7 +157,7 @@ class NativeServeSessionTests(unittest.TestCase):
                 with self.assertRaises((RuntimeError, ValueError)):
                     owner.start()
                 owner.close()
-                self.assertNotIn('delete:owned', state.events)
+                self.assertNotIn('serve.shutdown', state.events)
                 if runtime:
                     self.assertNotIn('ray.shutdown', state.events)
 
@@ -154,7 +168,35 @@ class NativeServeSessionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'startup failed'):
                 owner.start()
             owner.close()
-        self.assertEqual(state.events[-2:], ['delete:owned', 'ray.shutdown'])
+        self.assertEqual(state.events[-2:], ['serve.shutdown', 'ray.shutdown'])
+
+    def test_configuration_or_build_failure_after_serve_start_still_stops_serve(self):
+        for name in ('LLMConfig','build_llm_deployment'):
+            sdk,state=software_sdk()
+            failure=ValueError('native '+name+' failed')
+            with self.subTest(step=name),patch.object(native,'_load_native',return_value=sdk), \
+                    patch.object(sdk,name,side_effect=failure):
+                owner=native.NativeServeSession(**self.options())
+                with self.assertRaises(ValueError) as caught:
+                    owner.start()
+                self.assertIs(caught.exception,failure)
+                owner.close()
+                self.assertFalse(state.serve_live)
+                self.assertEqual(state.events[-2:],['serve.shutdown','ray.shutdown'])
+
+    def test_native_serve_shutdown_failure_remains_primary_and_runtime_still_disconnects(self):
+        sdk,state=software_sdk()
+        failure=RuntimeError('native Serve shutdown failed')
+        with patch.object(native,'_load_native',return_value=sdk):
+            owner=native.NativeServeSession(**self.options())
+            owner.start()
+            with patch.object(sdk.serve,'shutdown',side_effect=failure),self.assertRaises(RuntimeError) as caught:
+                owner.close()
+        self.assertIs(caught.exception,failure)
+        self.assertEqual(state.events[-1],'ray.shutdown')
+        self.assertEqual(owner.report['serve_shutdown_error_type'],'RuntimeError')
+        self.assertNotIn('owned_serve_shutdown_returned',owner.report)
+        self.assertIsNone(owner.report['model_process_exit_confirmed'])
 
     def test_errors_streaming_chunks_and_multiple_choices_are_not_complete_predictions(self):
         valid = dict(call_id='row', id='response', choices=[dict(
