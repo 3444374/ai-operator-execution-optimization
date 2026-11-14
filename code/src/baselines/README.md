@@ -994,7 +994,7 @@ prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常�
 
 <a id="native-runner-clock-boundaries"></a>
 当前源码的完整查询起止如下；LOTUS算法、独立JSON工程方法和作者原生系统保持各自身份。
-共同起点是真实源读取，终点是原查询或任务完成内存结果；真实准备和关系后处理留在区间内，评分与结果写盘在外。
+共同起点是真实源读取，终点是原查询或任务完成内存结果；真实准备和关系后处理留在区间内，最终评分／归档在外，必要packet／READY交接仍在内。
 
 | 执行profile | 查询区间内 | 启动／结束与仍待验证的条件 |
 |---|---|---|
@@ -1005,7 +1005,7 @@ prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常�
 | LOTUS＋Daft／独立Daft local | fresh source→提示／packet与摘要→各批原生图→完整原题或工程任务结果；完整READY交接及中间批ACK／退出在内 | 各批模型冷启动仍在内；末批完整sink后ACK／close。原生后台错误可能只到外层timeout，失败日志和READY须保留 |
 | Daft attached的两种语义入口 | fresh source／消息和真实PNG编码→builtin OpenAI graph→完整结果；packet／HTTP／完整READY与中间批交接在内 | 外部模型启动另证；末批sink后ACK／client退出。完整READY的API快照复用，原始HTTP审计仍在区间，不能借用local或其他语义的暖轮 |
 | LOTUS＋IMLane完整原题 | fresh source→必要packet／SQL／UDF／IPC及实际后续关系→完整原函数结果；SQL scope／ACK及provider回执在内 | 模型READY在前；评价／最终模型关闭在外；provider同步审计仍有区间内成本 |
-| IMLane独立Q3 | fresh source及必要输入／packet摘要→作者SQL／UDF／IPC→C++完整COUNT内存结果 | 模型／数据库READY在前，Python读回报告在后；worker进入至COUNT另计启动；不把C++COUNT标成Python完整DataFrame |
+| IMLane独立Q3 | fresh source及必要输入／packet摘要→作者SQL／UDF／IPC→C++完整COUNT内存结果 | 模型和作者coordinator TCP ready在前；driver中的DuckDB构造／DBEnd Setup仍在内。Python报告读回在后；真实worker-entry与query-window区间分列 |
 | Kalypso五handler／Movie records-prefix | fresh source及作者必需输入→原生执行／默认策略／完整关系后处理→完整结果；uniform回执在内 | 规划／预检在前，评分／写盘在后；外部启动和模型READY需实际owner证据；ratio旁录副本已删，图像carrier仍无原生支持 |
 
 Daft失败报告引用原有`supervision/worker.log`及已保存`result-ready.json`，不以文件存在证明按时sink、ACK或关闭。
@@ -1013,6 +1013,27 @@ Daft失败报告引用原有`supervision/worker.log`及已保存`result-ready.js
 该快照在callback／ACK／关闭之前已持久化，是当前失败交接所需成本；不为移出计时另建补证据阶段，
 见[源码依据与验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-native-failure-handoff)。
 上表闭合实际起止和成本归属，仍不授予不同冷暖、诊断成本或语义profile的正式横向排名。
+
+<a id="native-query-comparison-scopes"></a>
+#### 配置能回答的比较问题
+
+下表是源码支持的比较范围，实际资格仍按固定版本回执核对。同算法执行比较须绑定同题／输入／完整sink、
+模型和tokenizer身份、生成／缓存／资源条件及实际启动归属；不同原生算法保留各自策略，另报质量和完整系统代价。
+
+| 比较范围 | 已有配置 | 边界与真实缺口 |
+|---|---|---|
+| 含模型初始化的source→sink | LOTUS resident的`inside_first_query`首次非空查询；LOTUS＋Ray offline；Daft local | 各自真实native初始化留在查询。Ray每次LM预测新建processor、Daft每批新worker，重复轮次或同runtime不证明同模型warm；比较完整物理路径，不能把多实例成本称为单纯传输差异 |
+| 模型已就绪后的首次完整查询 | resident的`before_queries`；有外部READY证据的LOTUS服务／Daft attached；明确先READY的IMLane／Kalypso；独立Ray `serve-session` | 仅双方实际支持的相同任务／语义可比较；resident当前配置不能补称视觉／聚合ready路径。Q3先起coordinator，LOTUS＋IMLane原题逐批起scope，初始化归属仍不同，不能只凭ready字段混排 |
+| 同模型owner重复查询 | 已验身份的resident；独立Ray `serve-session`；独立Daft `attached-session`及有相应外部证据的原题查询 | 必须真实执行非空请求，并核新鲜进程／birth／constructor与owner不变。序列cold/warm标签、端点相同、零请求、不同题顺序执行均不授予该题warm资格；prefix cache开启也不证明实际命中 |
+| 包含启动的生命周期总时长 | 各自真实worker／caller／服务启动事件→同一完整sink | 这些起点不同，不能跨字段直接排位。Serve deployment启动嵌在caller启动内，不能相加；外部服务attach不是模型启动。Q3真实worker入口不含外层CLI／模块导入，旧同名字段实际起于QueryWindow，保留旧值 |
+
+HTTP额外canonical JSON重编码／SHA已删除；真实payload字节SHA仍同时供预算与事件，
+LOTUS记录的审计body可在查询后核对，不能把byte SHA换名成旧values SHA。Daft attached只存messages SHA／model等记录，
+不据此声称保存了完整body或可重建旧canonical字段。实际SDK发送、参数、body读取和响应关联保持。
+尚在查询内的HTTP解析／图像指纹／事件编码、IMLane provider回执和Kalypso uniform记录仍逐项披露；
+其中有现用审计／失败消费者，不能以删记录或扣估算时间取代可靠留存。必要数据、packet、IPC、阶段间关闭不移出查询。
+同算法LOTUS＋Ray offline的同模型ready／warm配置仍未实现或验证，独立JSON Serve不能代替它；
+其余实际模型／缓存／启动条件及真实资产未绑定项仍按所属覆盖表留空，不由本次软件检查授予性能资格。
 
 共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，
 sink 后再核文件摘要；独立 `execute()` 仍保留组合校验入口。LOTUS 视觉和 MMQA 聚合也在

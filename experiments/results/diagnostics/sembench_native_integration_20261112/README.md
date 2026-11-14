@@ -6,6 +6,7 @@
 当前实现范围见[能力表](../../../../code/INFRA_STATUS.md#current-refactor-status)，
 执行与计时规则见[原生接线说明](../../../../code/src/baselines/README.md#sembench-native-query-timing)。
 当前收尾范围和各系统仍待验的边界见[Ray原生完成契约与逐系统收口](#ray-native-completion-owner)。
+配置能支持的冷／就绪首次／同模型重复比较见[当前条件核对](#native-clock-scope-20261114)。
 
 ## 完整 Movie source 与 Kalypso Join
 
@@ -2643,3 +2644,35 @@ attached成功直接复用READY已建立的HTTP快照，删除ACK后的同一份
 新目标Linux监督／实际SDK与模型计时仍由原服务器会话验收，不重复其正在执行的任务。
 逐系统实际边界统一维护在[runner时钟表](../../../../code/src/baselines/README.md#native-runner-clock-boundaries)；
 必要交接、残余同步诊断、冷暖条件分列，不授予全路径计时对齐或正式性能排名。
+
+<a id="native-clock-scope-20261114"></a>
+## 原生启动归属与额外 HTTP 摘要收口
+
+基于`69c5b0686`，只删除HTTP请求观察器的额外canonical JSON重编码／SHA，保留真实payload字节SHA、
+预算、实际body／SDK参数及响应关联。LOTUS审计在sink后用保留body核对；Daft attached只留messages摘要／model等，
+不声称保留完整body。旧`request_values_sha256`不是byte SHA的别名；新冻结外部helper需改用body核对和真实字节摘要，
+历史运行器／原件继续使用其原来源，不改写归档。
+
+独立IMLane Q3原冷字段实际从QueryWindow创建开始，遗漏局部导入、路径处理和输出建目录。
+现在第一条语句记录worker入口，`cold_worker_entry_to_sink_seconds`据此到原C++完整COUNT；
+原窗口区间另存`query_window_to_sink_seconds`。真实source→COUNT、超时／清理期限和原查询不变；
+不含外层CLI／模块导入，旧同名字段原值不回填。source前DuckDBScope只确认coordinator TCP ready，
+数据库构造／DBEnd Setup仍在source后的driver内，不能称整个数据库已预热。
+
+逐系统边界和四类比较条件集中在[runner时钟／可比范围](../../../../code/src/baselines/README.md#native-query-comparison-scopes)：
+Ray offline的每批processor、Daft local的每批worker启动是实际执行成本，同runtime或重复轮次不授予同模型warm。
+resident的显式前置加载、有外部READY证据的服务、Serve与attached重复查询按实际任务／语义和新鲜owner证明区分。
+Serve caller启动包含deployment启动，不能相加；远端attach耗时不等于模型启动。
+统一输入／语义／模型／生成／缓存／资源及启动归属后才能比较相应完整路径，不把不同冷暖成绩混排。
+
+剩余同步HTTP解析／图像指纹／事件编码、IMLane provider回执和Kalypso uniform记录仍有实际消费者；
+必要packet／IPC／完整READY和中间批关闭仍在查询内。本次没有为移出它们新增补证据协议，也没有估算扣除旧时间。
+同算法LOTUS＋Ray的同模型ready／warm路径仍未实现或验证，独立JSON Serve不替代它；
+新目标Linux／模型计时、相同模型缓存配置和缺失真实资产各自仍待验，不能称整套计时已经对齐。
+
+六份源码／测试与干净导出逐SHA一致；136个不同软件方法一次完成，135通过、1项缺原sf25文本资产跳过，
+0失败／错误／真实模型／GPU／外部服务。覆盖实际HTTP字节与body、同步／异步错误、原SDK视觉／聚合、
+Daft attached／READY及Q3必要物化与后置审计。受控时钟注入7秒建目录成本，入口／窗口／source三个区间分别为
+107／100／10个模拟秒，只证明成本归属，不是运行速度。独立Spec与Standards复核无阻塞。
+私有证明`VERIFY-clock-scope-final-20261114` SHA-256为
+`8094a4e1bd372d6c75c2bb6732614117a2b0431bf3494215cbda221b9d4ed61d`。

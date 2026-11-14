@@ -226,6 +226,7 @@ def audit_model_result(directory, checkout):
 
 
 def run_worker(args, *, service_factory=None):
+    worker_entry_ns = time.monotonic_ns()
     from integrations.imlane_duckdb.model_provider import configuration as provider_configuration
     from integrations.imlane_duckdb.model_service import ModelService
     from integrations.imlane_duckdb.runtime import DuckDBScope
@@ -238,9 +239,13 @@ def run_worker(args, *, service_factory=None):
     window = QueryWindow(args.query_seconds, args.cleanup_seconds, args.stop_grace_seconds,
                          cleanup_path=args.output / 'cleanup-start.json')
     report = dict(schema=CONFIG_SCHEMA, status='failed', performance_claim=False, cleanup=[],
+        worker_entry_ns=worker_entry_ns,
         model_requests=None, physical_gpu_exit_confirmed=None, outer_host_lease_required=True,
         kind=args.kind, warmup_semantic_requests=0, whole_query_retries=0,
         source_preparation_in_cold_scope=True, service_close=None)
+    report['cold_worker_entry_to_sink_timing_scope'] = ('run_worker entry before local imports, path normalization '
+        'and output creation through native complete COUNT; includes preflight and model/database startup; '
+        'outer caller/module imports, post-result audit and cleanup excluded')
     report['source_to_sink_timing_scope'] = ('fresh original CSV read/parse, occurrence projection, necessary input.csv '
         'materialization/flush, native driver/SQL/Arrow/UDF/provider and complete COUNT; '
         'outer source/packet identity hashes and statistics, packet JSON, evaluation and owner close excluded; '
@@ -348,7 +353,8 @@ def run_worker(args, *, service_factory=None):
                                         if native_version == 'imlane.q3.source_to_sink.v1' else None)
                                     report['result_ready_monotonic_ns'] = window.ready_ns
                                     report['ready_source_to_sink_seconds'] = (window.ready_ns - report['source_started_ns']) / 1e9
-                                    report['cold_worker_entry_to_sink_seconds'] = window.ready_ns / 1e9 - window.started
+                                    report['cold_worker_entry_to_sink_seconds'] = (window.ready_ns - worker_entry_ns) / 1e9
+                                    report['query_window_to_sink_seconds'] = window.ready_ns / 1e9 - window.started
                                 service.begin_cleanup(window.cleanup_deadline)
                             window.check()
                             scope.check()

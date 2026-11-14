@@ -1,5 +1,6 @@
 """Native SDK observation preserves request content and first transport errors."""
 import asyncio
+import hashlib
 import unittest
 import httpx
 from src.experiments.native_http_observer import observe_native_httpx
@@ -29,6 +30,11 @@ class NativeHttpObserverTests(unittest.TestCase):
         self.assertEqual(seen[0].content,seen[1].content)
         self.assertLessEqual(seen[0].extensions['timeout']['read'],1)
         self.assertEqual(sum(e['event']=='http_finished' for e in events),2)
+        requests = [event for event in events if event['event'] == 'request']
+        self.assertTrue(all('request_values_sha256' not in event for event in requests))
+        self.assertEqual(budget.calls, [hashlib.sha256(request.content).hexdigest() for request in seen])
+        self.assertEqual(budget.calls, [event['request_bytes_sha256'] for event in requests])
+        self.assertEqual([event['body'] for event in requests], [{'messages':['original']}]*2)
 
     def test_optional_response_recording_defers_parsing_without_copying_or_replacing_native_body(self):
         events=[];budget=Budget();native=[];captured=[]

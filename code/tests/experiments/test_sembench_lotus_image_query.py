@@ -25,6 +25,7 @@ from unittest.mock import patch
 
 from src.baselines.image import sembench_animals as animals
 from src.infrastructure.private_artifacts import content_digest, write_private_json
+from src.experiments.native_service_query import _audit_value
 
 
 CHECKOUT = os.environ.get("SEMLOOM_NATIVE_TEST_CHECKOUT")
@@ -385,8 +386,9 @@ class NativeLotusImageQueryTests(unittest.TestCase):
             self.assertLessEqual(report["sink_ready_ns"], report["result_serialization_started_ns"])
         events = [json.loads(line) for line in (directory / "native-http.jsonl").read_text().splitlines()]
         requests = [event for event in events if event["event"] == "request"]
-        self.assertEqual(Counter(event["request_values_sha256"] for event in requests),
-            Counter(content_digest(request["body"]) for request in replies.requests))
+        self.assertTrue(all('request_values_sha256' not in event for event in requests))
+        self.assertEqual(Counter(content_digest(event['body']) for event in requests),
+            Counter(content_digest(_audit_value(request['body'])) for request in replies.requests))
         self.assertEqual(Counter(event["request_bytes_sha256"] for event in requests),
             Counter(hashlib.sha256(request["payload"]).hexdigest() for request in replies.requests))
         self.assertEqual(report["model_calls"], len(replies.requests))

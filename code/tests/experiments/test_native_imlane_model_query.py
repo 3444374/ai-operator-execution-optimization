@@ -492,7 +492,7 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
         from integrations.imlane_records import owner
 
         now = [1000.0]
-        window = QueryWindow(1200, 120, 8, clock=lambda: now[0], cleanup_path=self.args.output/'cleanup-start.json')
+        create_output = worker.new_private_directory
         read, export, describe, identity, write = (packet.read_q3_source, packet._export_source,
             packet.describe_q3_source, packet.file_identity, packet.write_private_json)
         spawn = owner.spawn.side_effect
@@ -511,7 +511,8 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
             now[0] += 5
             return spawn(*args, **kwargs)
 
-        with patch.object(worker, 'QueryWindow', return_value=window), \
+        with patch.object(worker, 'QueryWindow', side_effect=lambda *a, **kw: QueryWindow(*a, clock=lambda: now[0], **kw)), \
+                patch.object(worker, 'new_private_directory', side_effect=cost(create_output, 7)), \
                 patch.object(worker.time, 'monotonic', side_effect=lambda: now[0]), \
                 patch.object(worker.time, 'monotonic_ns', side_effect=lambda: int(now[0]*1e9)), \
                 patch.object(packet, 'read_q3_source', side_effect=cost(read, 2)), \
@@ -524,7 +525,9 @@ class NativeIMLaneModelWorkerTests(unittest.TestCase):
         self.assertEqual(report['query_clock_version'], 'imlane.q3.source_to_sink.v2')
         self.assertEqual(report['native_query_clock_version'], 'imlane.q3.source_to_sink.v1')
         self.assertEqual(report['ready_source_to_sink_seconds'], 10)
-        self.assertEqual(report['cold_worker_entry_to_sink_seconds'], 100)
+        self.assertEqual(report['worker_entry_ns'], 1000_000_000_000)
+        self.assertEqual(report['cold_worker_entry_to_sink_seconds'], 107)
+        self.assertEqual(report['query_window_to_sink_seconds'], 100)
         self.assertEqual(report['input_audit_ended_monotonic_ns']-report['input_audit_started_monotonic_ns'], 31_000_000_000)
         self.assertLessEqual(report['owned_cleanup_completed_monotonic_ns'], report['input_audit_started_monotonic_ns'])
         self.assertLessEqual(report['input_audit_ended_monotonic_ns'], report['audit_started_monotonic_ns'])

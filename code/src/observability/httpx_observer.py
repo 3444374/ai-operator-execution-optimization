@@ -4,8 +4,6 @@ import hashlib
 import json
 import time
 
-from src.infrastructure.private_artifacts import content_digest
-
 
 @contextmanager
 def _observe_native_httpx_client(budget, record, endpoint, *, timeout_s=None, record_response=None):
@@ -36,7 +34,7 @@ def _observe_native_httpx_client(budget, record, endpoint, *, timeout_s=None, re
                 for name in ('connect','read','write','pool')}
         values = json.loads(payload)
         record(dict(event='request',attempt=attempt,monotonic_ns=time.monotonic_ns(),
-            budget_reserve_ns=time.monotonic_ns()-started,request_values_sha256=content_digest(values),
+            budget_reserve_ns=time.monotonic_ns()-started,
             request_bytes_sha256=payload_digest,body=values))
         record(dict(event='http_started',attempt=attempt,monotonic_ns=time.monotonic_ns()))
         return attempt

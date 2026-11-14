@@ -95,6 +95,9 @@ Daft失败交接已复用原worker日志／READY闭合，移除collector成功�
 104个不同软件方法最终通过，目标Linux／SDK和新计时仍待验。完整READY仍是当前失败交接成本，
 不再另列“ACK后补审计”机制待办，见[实现与失败依据](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-native-failure-handoff)。
 各runner的实际source→完整结果、冷暖和残余成本见[时钟表](src/baselines/README.md#native-runner-clock-boundaries)。
+已删除HTTP额外canonical重编码／SHA，并修正独立IMLane Q3冷包络从真实worker入口开始；原查询窗口另列，
+source→COUNT、期限和旧成绩不变。软件136项为135通过、1项缺真实资产跳过，目标新计时未验；
+各配置的可比范围与真实缺口见[冷暖条件核对](src/baselines/README.md#native-query-comparison-scopes)及[验证](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-clock-scope-20261114)。
 
 当前剩余问题按共同边界处理，不能用增加题目入口绕开：
 

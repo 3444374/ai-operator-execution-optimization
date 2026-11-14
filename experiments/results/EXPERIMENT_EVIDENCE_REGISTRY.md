@@ -2,6 +2,11 @@
 
 ## 2026-11-12：SemBench 原生接入的分路径验收
 
+[冷暖条件与额外HTTP摘要收口](diagnostics/sembench_native_integration_20261112/README.md#native-clock-scope-20261114)
+记录69c5后的HTTP重复canonical摘要删除和独立Q3真实worker入口修正，原source／COUNT／期限与历史值保持。
+136项软件为135通过、1项缺真实资产跳过，0模型／GPU；不同原生启动、就绪首次与同模型重复条件分列，
+不从Serve嵌套启动、离线重复轮次或剩余同步审计推导统一性能资格。
+
 [完整查询公共边界](diagnostics/sembench_native_integration_20261112/README.md#full-query-runner-boundary)
 另记录原函数／实际中间关系、LOTUS＋Ray查询级runtime与共用视觉任务的工程修改：191项软件检查为
 188通过、3个环境／资产未绑定跳过，0模型／GPU。临时Q2b的非空／空第二阶段与8行quick多批

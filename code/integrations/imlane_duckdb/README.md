@@ -166,6 +166,11 @@ Python wrapper的`query_clock_version=imlane.q3.source_to_sink.v2`从真实读�
 仍核对实际读取快照与实际导出内容，发布只尝试一次。`prepare_input`的CPU即时packet合同保持。
 原生marker另存`native_query_clock_version=imlane.q3.source_to_sink.v1`；无marker的旧driver只保留
 观测返回的诊断包络，新版本留空。`cold_worker_entry_to_sink_seconds`另含准备与启动，两者不混比。
+当前Q3在`run_worker`第一条语句记录`worker_entry_ns`，其冷包络覆盖局部导入、路径处理和输出建目录，
+不含外层CLI／模块导入；原查询窗口区间另存`query_window_to_sink_seconds`，查询／清理期限不变。
+69c5固定源码的旧同名冷字段实际从QueryWindow创建开始，旧报告原值保留，不能回填成新入口口径。
+source前的DuckDBScope仅证明作者coordinator TCP ready；真正DuckDB构造和DBEnd Setup仍在source后的C++ driver中，
+不能把它称为整个数据库已预热。各配置可比范围见[runner时钟表](../../src/baselines/README.md#native-query-comparison-scopes)。
 
 **v2仍不是统一的`sembench.source_to_sink.v3`。** UDF/provider的消息指纹及同步回执写盘仍在COUNT前；
 必要IPC、额度预扣及失败控制也在内。不能把后置读取这些回执当作其写盘已排除，更不事后减去估算成本。
