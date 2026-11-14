@@ -225,6 +225,29 @@ class ModelServiceTests(unittest.TestCase):
         self.assertTrue(cleanup['socket_cleanup']['directory_removed'])
         self.assertFalse(service.socket_directory.exists())
 
+    def test_query_owner_observation_checks_fresh_birth_and_bound_socket(self):
+        service = self.service()
+        with service:
+            first = service.observe_owner()
+            second = service.observe_owner()
+            self.assertGreaterEqual(second['observed_monotonic_ns'], first['observed_monotonic_ns'])
+            self.assertEqual(first['worker_pid'], self.process.pid)
+            for field in ('worker_pid', 'worker_create_time', 'socket_identity', 'engine_instances'):
+                self.assertEqual(first[field], second[field])
+            self.process.birth += 1
+            try:
+                with self.assertRaisesRegex(RuntimeError, 'worker or its bound socket changed'):
+                    service.observe_owner()
+            finally:
+                self.process.birth -= 1
+            original = service.socket_identity
+            service.socket_identity = dict(original, inode=original['inode']+1)
+            try:
+                with self.assertRaisesRegex(RuntimeError, 'worker or its bound socket changed'):
+                    service.observe_owner()
+            finally:
+                service.socket_identity = original
+
     def test_delayed_ready_waits_only_within_the_work_deadline(self):
         self.publish_ready = False
         service = self.service()

@@ -54,7 +54,7 @@ class NativeAggregateTests(unittest.TestCase):
         return service, config, data
 
     def invoke(self, config, *, mode='compact', bad_ids=False, close_failure=False, audit_failure=False,
-               ready_context=None, reply_batch=None):
+               ready_context=None, reply_batch=None, owner_change_at=None):
         import httpx
         from src.experiments import native_imlane_topk as prediction
 
@@ -65,6 +65,7 @@ class NativeAggregateTests(unittest.TestCase):
         build = dict(binary_path='/unused/driver', kernel_path=str(entry.CODE/'integrations/imlane_duckdb/sembench_udf.py'),
                      duckdb_library_path='/unused/libduckdb.so')
         events, services, current = [], [], []
+        owner_probes = []
         replies = fixture.NativeAggregateReplies(self, mode=mode)
         self.last = SimpleNamespace(output=output, events=events, services=services, replies=replies)
         case = self
@@ -78,6 +79,7 @@ class NativeAggregateTests(unittest.TestCase):
                 context = cfg['engine_options']['max_model_len'] if ready_context is None else ready_context
                 self.ready_info = dict(max_model_len=context,engine_instances=1)
                 self.report = dict(status='configured',software_fixture=True)
+                self.deadline = kwargs['deadline']
                 self.closed = False
             def __enter__(self):
                 self.report['started_monotonic'] = time.monotonic()
@@ -85,7 +87,15 @@ class NativeAggregateTests(unittest.TestCase):
                 return self
             def __exit__(self,*args): return entry.ModelService.__exit__(self,*args)
             def check(self): pass
-            def begin_cleanup(self,deadline): pass
+            def begin_cleanup(self,deadline):
+                self.deadline = deadline
+                events.append(('model-cleanup',time.monotonic_ns()))
+            def observe_owner(self):
+                owner_probes.append(time.monotonic_ns())
+                return dict(observed_monotonic_ns=owner_probes[-1],
+                    worker_pid=31001 if len(owner_probes)!=owner_change_at else 31002,
+                    worker_create_time=10.0,engine_instances=1,socket_identity=dict(device=1,inode=2),
+                    scope='software worker identity; no real model')
             def close(self,**kwargs):
                 if self.closed: return
                 self.closed = True
@@ -169,7 +179,8 @@ class NativeAggregateTests(unittest.TestCase):
             release(*args,**kwargs)
             events.append(('ack-'+kwargs.get('outcome','complete'),time.monotonic_ns()))
         def tokens(*args,**kwargs):
-            case.assertTrue((output/'result-ready.json').exists())
+            ready = list(output.glob('round-*/result-ready.json')) if config.get('lifecycle') == 'model-session' else [output/'result-ready.json']
+            case.assertTrue(ready and ready[-1].exists())
             events.append(('token-audit',time.monotonic_ns()))
             return [7,8]
         audit = entry.audit_ipc

@@ -120,6 +120,17 @@ class ModelService:
         if time.monotonic() >= self.deadline:
             raise TimeoutError('model service work deadline exceeded')
 
+    def observe_owner(self):
+        """Fresh identity of the worker that constructs one AsyncLLM until close."""
+        self.check()
+        birth = psutil.Process(self.process.pid).create_time()
+        if birth != self.created or _identity(self.socket_path.lstat()) != self.socket_identity:
+            raise RuntimeError('the live model worker or its bound socket changed')
+        return dict(observed_monotonic_ns=time.monotonic_ns(), worker_pid=self.process.pid,
+            worker_create_time=birth, socket_identity=dict(self.socket_identity),
+            engine_instances=self.ready_info['engine_instances'],
+            scope='birth-matched model IPC worker; fixed worker constructs one AsyncLLM and has no reload path')
+
     def _observe(self):
         owned._observe(self.known, self.process.pid, self.created)
 

@@ -351,6 +351,31 @@ class OriginalQueryTests(unittest.TestCase):
         self.assertNotIn('response_format',report['provider_batches'][1]['native_sampling'])
         self.assertTrue(all(type(call[1].structured_outputs) is FakeSampling for call in self.engines[-1].calls))
 
+    def test_model_session_repeats_original_nonempty_join_then_json_extract_without_restarting(self):
+        _,config=self.config('mmqa','Q2b',self.visual.mmqa_inputs(),allowance=32)
+        config['lifecycle']='model-session'
+        policy=fixture.NativeHTTPReplies(self,'mmqa',query='Q2b')
+        report=self.native.invoke(config,reply_batch=self.replies(policy))
+        self.assertEqual(len(self.native.last.services),1)
+        self.assertTrue(report['warm_qualified'])
+        self.assertEqual(report['budget']['consumed_requests'],16)
+        for value in report['queries']:
+            self.assertEqual([b['occurrences'] for b in value['native_lm_batches']],[4,4])
+            self.assertEqual(value['provider_batches'][1]['native_sampling']['structured_outputs'],{'json_object':True})
+            self.assertEqual(value['model_calls'],8)
+            self.assertEqual(value['ipc']['image_occurrences'],8)
+        self.assertEqual(sum(name=='model-close' for name,_ in self.native.last.events),1)
+
+    def test_model_session_zero_work_never_qualifies_a_warm_model(self):
+        _,config=self.config('ecomm','Q8',self.visual.ecomm_outfit_inputs('Q8'),allowance=8)
+        config['lifecycle']='model-session'
+        policy=fixture.NativeHTTPReplies(self,'ecomm',query='Q8')
+        report=self.native.invoke(config,reply_batch=self.replies(policy))
+        self.assertEqual([value['model_calls'] for value in report['queries']],[0,0])
+        self.assertFalse(report['warm_qualified'])
+        self.assertEqual(report['budget']['consumed_requests'],0)
+        self.assertEqual(sum(name=='model-close' for name,_ in self.native.last.events),1)
+
     def test_mmqa_empty_join_keeps_native_KeyError_and_closes_sql_and_model(self):
         inputs = self.visual.mmqa_inputs()
         service, config = self.config('mmqa', 'Q2b', inputs, allowance=4)

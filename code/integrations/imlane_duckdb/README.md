@@ -570,7 +570,7 @@ QUERY profile的base generation须plain，Extract自己的JSON参数来自原SDK
 完整原函数经同一QueryLM产生真实LM批次。每批有不可变的provider配置与receipt目录，共用一个模型socket和永久unit；
 原SDK的`response_format={"type":"json_object"}`在native边界等价转为`structured_outputs`，两种采样记录分别保留。
 全局作者注册端点的一次SQL／配置／关闭scope用锁保护，保留原SDK批次，native IMLane／vLLM仍拥有行batch和执行。
-当前carrier一次一个SQL scope，不声称并发SQL或跨查询模型复用。
+当前carrier一次一个SQL scope，不声称并发SQL；默认单查询，显式跨查询模型复用见[会话](#lotus-imlane-model-session)。
 
 vLLM0.25.1的[renderer](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/renderers/base.py)返回
 [EngineInput](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/inputs/engine.py)，图像是`multimodal`而非`token`。
@@ -600,6 +600,35 @@ prepared VARCHAR 薄 driver 不再在每批 prediction 前执行额外 `EXPLAIN`
 [读取器回归](../../tests/baselines/text/test_imlane_csv_input.py)使用本机DuckDB，
 [4073服务器原失败及修复边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-csv-record-envelope)分别保留。
 新源码须重链薄driver并生成新build record；原VARCHAR-owned DSO不改。真实Linux SQL／IPC／ACK通过后再验VLM，不能凭本地reader通过跳过。
+
+<a id="lotus-imlane-model-session"></a>
+### 完整原题的同模型双查询
+
+同一`native_imlane_sembench check/run`与`semloom.imlane.lotus_query.v1`选择`lifecycle=model-session`，
+执行模型就绪首轮和同一owner重复两条完整原查询；省略该字段或`isolated`保持既有单查询。
+[原题模板](../../configs/sembench_imlane_original_query.example.json)默认isolated；改为model-session时同时声明两轮总`max_model_calls`，
+例如原Animals sf64每轮64发生项需要覆盖128次，不能把单轮64的账本重开两次。未知总数按原最小工作量预检，并保留逐次永久消费／超限失败；不为凑预算改原题。
+
+现有model IPC worker在`serve()`中只构造一个AsyncLLM，持续接收各批连接；没有模型reload路径。
+SQL scope关闭与模型退出分开，故可直接延长已有ModelService到两条完整查询之后，无需改作者prediction／调度。
+这仍是LOTUS over IMLane VARCHAR工程变体，不是作者论文runner或新的语义算法。
+每轮重新绑定原函数并fresh读源，query_id追加round编号，原消息／采样／解析／关系／评分和逐批SQL／ACK／关闭保持。
+各轮预测按永久attempt差量核对；共享模型、socket和一次claim的unit，只有两轮后才close。
+
+`query_timeout_s`是启动及两条查询工作的同一个上限，不逐轮续期。每轮READY在`round-N/`，根READY仅末轮完整sink时发布；
+第一轮post-sink核对不触发全会话cleanup，第二轮准备后再次核原期限。失败保留最近完整结果、原错误和实际消费，不重试。
+两轮各自的`lotus_imlane.source_to_sink.v1`在`worker.json.queries`及`timing.json.query_timings`中；
+root冷worker／supervisor区间到最后观测sink，包含前轮查询及其后验工作，不能当第二轮查询时长。
+必要SQL、packet、ACK、scope关闭与provider回执仍在逐轮查询内，评价／额外审计／写盘和最后模型关闭在各自sink后。
+
+源前／sink后新鲜核model worker PID/birth和绑定socket，与固定单AsyncLLM源码共同限定owner证据；
+不证明权重或cache命中。两轮均有请求且owner未变才有warm资格；关闭／持久化失败撤销资格，观察事实保留。
+最终接纳要求终态worker报告和成功退出；author.json是较早快照，最终发布失败不能被该文件的存在覆盖。
+原生prefix cache请求值与ready.native_capacity的实际配置分列，缺少的命中数据留空；结果缓存关闭，保留各轮source／LM顺序及独立call_id。
+
+相关80个不同软件方法最终通过，包含两个真实本地Unix IPC用例，0模型／GPU／真实作者DSO SQL；
+修前失败与定向复核保留，见[验收与剩余项](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-full-query-model-session)。
+目标Linux薄driver／DSO绑定、真实模型两轮、物理进程／GPU／SHM清理及正式同条件比较仍待验。
 
 ## LOTUS quick TopK 与 VARCHAR prediction
 

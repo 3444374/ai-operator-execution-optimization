@@ -1,5 +1,6 @@
 {
   "schema": "semloom.imlane.lotus_query.v1",
+  "lifecycle": "isolated",
   "query_id": "imlane-owned-animals-q1-cold",
   "sembench_checkout": "/path/to/verified-SemBench-c814e380",
   "data_dir": null,

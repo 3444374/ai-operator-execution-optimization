@@ -2,6 +2,11 @@
 
 ## 2026-11-12：SemBench 原生接入的分路径验收
 
+[IMLane完整原题同模型双查询](diagnostics/sembench_native_integration_20261112/README.md#imlane-full-query-model-session)
+同一runner增加显式model-session，复用现有一次AsyncLLM构造／永久unit／逐批SQL与ACK；各轮原函数、采样和完整sink保持。
+80个不同软件方法最终通过，包含2项真实本地Unix IPC；0模型／GPU／真实作者DSO SQL。原失败与定向复核保留，实际模型复用及物理清理待Linux门。
+就绪首／重复、会话总区间、可比较范围及剩余两批验证的执行上限分列，不给缺数据或全矩阵编造完成时间。
+
 [8b73原MMQA Q4两轮与Serve关停](diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-mmqa-q4-8b73-model)
 48份真实原生API结果均完成、两轮原F1均.48649，原文23／24相同而完整sink不同；外层SHM失败、分配者未知及后续精确恢复保持。
 1533份原件／1188源码blob只读核验。发现close漏掉Serve系统关停API，改用原生shutdown后断连Ray、覆盖配置／build失败并移除旧delete／status路径；

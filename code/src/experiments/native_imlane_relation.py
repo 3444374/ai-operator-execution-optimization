@@ -159,6 +159,8 @@ def persist_relation_observation(directory, report, result, *, primary=None):
             write_private_json(Path(directory) / name, payload)
         except BaseException as error:
             report['status'] = 'failed'
+            if 'warm_qualified' in report:
+                report['warm_qualified'] = False
             if failure is None:
                 failure = error
                 failure.query_report = report

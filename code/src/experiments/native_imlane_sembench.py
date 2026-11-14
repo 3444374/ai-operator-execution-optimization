@@ -7,6 +7,7 @@ The complete-query profile preserves original image messages; target VLM qualifi
 
 import argparse
 from contextlib import nullcontext
+from copy import copy
 import csv
 from dataclasses import asdict
 import json
@@ -54,9 +55,12 @@ def configuration(value):
               'tokenizer', 'generation', 'model_service', 'max_model_calls', 'query_timeout_s',
               'cleanup_s', 'stop_grace_s', 'request_timeout_s', 'task'}
     aggregate = isinstance(value, dict) and _aggregation(value)
-    if (type(value) is not dict or set(value) != fields | ({'token_counter'} if aggregate else set())
+    if (type(value) is not dict or set(value) - {'lifecycle'} != fields | ({'token_counter'} if aggregate else set())
             or value['schema'] not in (TEXT_SCHEMA, TOPK_SCHEMA, QUERY_SCHEMA)):
         raise ValueError('explicit native IMLane query configuration required')
+    if (value.get('lifecycle', 'isolated') not in ('isolated', 'model-session')
+            or 'lifecycle' in value and value['schema'] != QUERY_SCHEMA):
+        raise ValueError('only the complete original-query profile supports lifecycle=model-session')
     task_options = {'scenario', 'query', 'scale_factor'}
     if value['schema'] == QUERY_SCHEMA:
         task_options |= {'ranking', 'visual_query', 'image_join', 'manifest', 'manifest_digest'}
@@ -103,13 +107,14 @@ def _aggregation_lm_options(config, generation):
     return dict(max_ctx_len=context, tokenizer=load_token_counter(counter))
 
 
-def prepare_query(config):
+def prepare_query(config, *, execution_id=None):
     from transformers import AutoTokenizer
     config, generation = configuration(config)
     task = config['task']
     options = _aggregation_lm_options(config, generation) if _aggregation(config) else {}
     query = SemBenchTextQuery(config['sembench_checkout'], config['data_dir'], task['scenario'], task['query'],
-        execution_id=config['query_id'], model_name=config['model_name'], generation=generation,
+        execution_id=config['query_id'] if execution_id is None else execution_id,
+        model_name=config['model_name'], generation=generation,
         scale_factor=task.get('scale_factor'), **(dict(lm_options=options) if options else {}),
         **({name: task[name] for name in ('ranking','visual_query','image_join','manifest','manifest_digest')
             if name in task} if config['schema'] == QUERY_SCHEMA else {}))
@@ -120,8 +125,8 @@ def prepare_query(config):
         minimum = description.get('minimum_model_calls')
         if minimum is None:
             minimum = len(query.operation.records) if query.operation is not None else description['expected_model_calls']
-        if minimum is not None and config['max_model_calls'] < minimum:
-            raise ValueError('the finite query allowance must cover the original query minimum')
+        if minimum is not None and config['max_model_calls'] < minimum * (2 if config.get('lifecycle') == 'model-session' else 1):
+            raise ValueError('the finite allowance must cover the original query minimum for every declared execution')
         return query, None, None, None, None
     if query.operation is not None and query.operation.describe()['kind'] not in ('map', 'extract'):
         raise ValueError('prepared VARCHAR binds ordinary text Map/Extract; use the existing Filter/Join/TopK profiles')
@@ -149,7 +154,9 @@ def check(config):
         return dict(schema=config['schema'], status='passed_zero_model_source_check', variant=VARIANT,
             source=query.describe(), generation=asdict(query.generation), model_calls=0,
             **(dict(token_counter=config['token_counter']) if _aggregation(config) else {}),
-            native_DSO_SQL_model_binding_qualified=False, target_VLM_qualified=False)
+            native_DSO_SQL_model_binding_qualified=False, target_VLM_qualified=False,
+            lifecycle=config.get('lifecycle', 'isolated'),
+            query_executions=2 if config.get('lifecycle') == 'model-session' else 1)
     return dict(schema=config['schema'], status='passed_zero_model_source_check', variant=VARIANT,
         source=query.describe(), generation=asdict(query.generation if query.operation is None else query.operation.generation),
         prepared=prepared, requests=requests, token_ids=tokens,
@@ -275,7 +282,7 @@ def _native_sampling(sampling):
     return native
 
 
-def _run_original_query(query, config, args, build, service, window, report, unit, tokenizer):
+def _run_original_query(query, config, args, build, service, window, report, unit, tokenizer, *, on_sink=None):
     """Complete original query; serialized SQL carrier, one model/budget owner."""
     from .native_imlane_topk import SQLPredictions, _token_reference
     from .native_service_query import native_query_settings
@@ -284,6 +291,7 @@ def _run_original_query(query, config, args, build, service, window, report, uni
     predict_sql = SQLPredictions(args, build, service, window, config)
     carrier_lock = threading.Lock()
     providers, join_inputs = [], []
+    attempt_offset = unit.attempts
 
     def predict(requests, *, sampling_params):
         if config['schema'] != QUERY_SCHEMA and sampling_params != query.generation.kwargs():
@@ -344,13 +352,15 @@ def _run_original_query(query, config, args, build, service, window, report, uni
             report.update(model_ready_before_source=True if service is not None else None,
                 model_ready_before_source_observed_ns=report.get('model_ready_observed_ns'))
         window.accept_ready(ready, clock='CLOCK_MONOTONIC')
+        if on_sink is not None:
+            on_sink(ready)
         query.verify_source()
         if query.aggregate_task is not None:
             query.aggregate_task.validate_batch_sizes([len(batch['requests']) for batch in batches], result)
         if query.visual_task is not None:
             query.visual_task.validate_batch_sizes([len(batch['requests']) for batch in batches], result)
         requests = [row for batch in batches for row in batch['requests']]
-        if unit.attempts != len(requests):
+        if unit.attempts - attempt_offset != len(requests):
             raise ValueError('native permanent attempts differ from the complete original query')
         calls = []
         image_calls = 0
@@ -395,12 +405,88 @@ def _run_original_query(query, config, args, build, service, window, report, uni
                 raise
             primary.add_note('original LM batch persistence also failed: '+type(error).__name__)
 
+
+def _run_original_session(query, config, args, build, service, window, report, unit, tokenizer):
+    """Two fresh original queries; SQL scopes end per batch, the model ends last."""
+    report.update(lifecycle='model-session', queries=[], model_owner_observations=[],
+        model_owner_reused=None, warm_qualified=False, result_cache_enabled=False,
+        warm_qualification_scope='same birth-matched IPC worker with one AsyncLLM in the fixed worker source; not weights or cache-hit evidence')
+    identity = None
+
+    def observe():
+        nonlocal identity
+        if service is None:
+            return None
+        actual = service.observe_owner()
+        report['model_owner_observations'].append(actual)
+        current = {key: value for key, value in actual.items() if key != 'observed_monotonic_ns'}
+        if identity is not None and current != identity:
+            report['model_owner_reused'] = False
+            raise RuntimeError('the original query session model owner changed')
+        identity = current
+        return actual
+
+    def final_sink(ready):
+        window.accept_ready(ready, clock='CLOCK_MONOTONIC')
+        if service is not None:
+            service.begin_cleanup(window.begin_cleanup())
+
+    observe()
+    last_result = None
+    try:
+        for number in (1, 2):
+            window.check()
+            if number == 2:
+                query, *_ = prepare_query(config, execution_id=config['query_id']+'-round-2')
+                window.check()
+            round_args = copy(args)
+            round_args.output = args.output/('round-'+str(number))
+            new_private_directory(round_args.output)
+            (round_args.output/'model-calls').mkdir(mode=0o700)
+            round_window = _ResultWindow(round_args.output, window.query_deadline-time.monotonic(),
+                config['cleanup_s'], config['stop_grace_s'])
+            round_window.query_deadline = window.query_deadline
+            value = dict(round=number, phase='ready-first' if number == 1 else 'same-owner-repeat',
+                status='failed', model_ready_observed_ns=report.get('model_ready_observed_ns'),
+                model_owner_before_source=observe(), cost=None, cost_available=False)
+            report['queries'].append(value)
+            primary = result = None
+            try:
+                result = _run_original_query(query, config, round_args, build, service,
+                    round_window, value, unit, tokenizer, on_sink=final_sink if number == 2 else None)
+                value['model_owner_after_sink'] = observe()
+                round_window.check()
+                value['status'] = 'completed'
+            except BaseException as error:
+                primary = error
+                result = getattr(error, 'query_result', result)
+                value.update(error_type=type(error).__name__, error=redact_text(str(error)))
+                raise
+            finally:
+                value.update(result=result_value(result), deadline=round_window.report())
+                if value.get('full_sink_observed_monotonic_ns') is not None:
+                    last_result = result
+                    report.update({key: value[key] for key in ('full_sink_observed_monotonic_ns',
+                        'result_ready_monotonic_ns', 'native_alive_after_sink')})
+                    report['last_observed_sink_round'] = number
+                if primary is not None:
+                    primary.query_result = last_result
+        report['model_owner_reused'] = True if service is not None else None
+        report['warm_qualified'] = service is not None and all(value['model_calls'] > 0 for value in report['queries'])
+        report['model_calls'] = sum(value['model_calls'] for value in report['queries'])
+        report['query_clock_version'] = 'lotus_imlane.source_to_sink.v1'
+        return last_result
+    except BaseException as error:
+        error.query_result = last_result
+        raise
+
 def run_worker(args, config, *, service_factory=ModelService):
     worker_entered = time.monotonic_ns()
     config, generation = configuration(config)
     topk = config['schema'] == TOPK_SCHEMA
     aggregate = _aggregation(config)
     full_query = config['schema'] == QUERY_SCHEMA
+    session = config.get('lifecycle') == 'model-session'
     query = tokenizer = None
     if topk:
         from transformers import AutoTokenizer
@@ -408,7 +494,8 @@ def run_worker(args, config, *, service_factory=ModelService):
         query = prepare_topk(config, generation)
         tokenizer = AutoTokenizer.from_pretrained(config['tokenizer'], local_files_only=True, trust_remote_code=False)
     else:
-        query, method, prepared, requests, tokens = prepare_query(config)
+        query, method, prepared, requests, tokens = prepare_query(config,
+            **(dict(execution_id=config['query_id']+'-round-1') if session else {}))
         # Extract's JSON format belongs to the original operator, not a config guess.
         generation = query.generation if query.operation is None else query.operation.generation
         if aggregate:
@@ -468,7 +555,8 @@ def run_worker(args, config, *, service_factory=ModelService):
                 if aggregate and service.ready_info['max_model_len'] != query.lm_options['max_ctx_len']:
                     raise ValueError('the actual native model context differs from the LOTUS aggregation context')
                 try:
-                    result = _run_original_query(query, config, args, build, service, window, report, unit, tokenizer)
+                    execute = _run_original_session if session else _run_original_query
+                    result = execute(query, config, args, build, service, window, report, unit, tokenizer)
                 finally:
                     if service is not None:
                         service.begin_cleanup(window.begin_cleanup())
@@ -532,7 +620,10 @@ def run_worker(args, config, *, service_factory=ModelService):
                 if primary is None: primary = error
                 else: primary.add_note('budget close also failed: ' + type(error).__name__)
         for number, handler in previous.items(): signal.signal(number, handler)
-        if primary is not None: report['status'] = 'failed'
+        if primary is not None:
+            report['status'] = 'failed'
+            if session:
+                report['warm_qualified'] = False
         if report.get('full_sink_observed_monotonic_ns') is not None:
             report['cold_worker_entry_to_sink_seconds'] = (
                 report['full_sink_observed_monotonic_ns'] - worker_entered) / 1e9
@@ -553,17 +644,29 @@ def run_worker(args, config, *, service_factory=ModelService):
                 'permanent attempt reservation and receipt I/O remain included. Input/LM/tokenizer preflight, '
                 'post-sink audits, evaluation, final persistence and model close are excluded. '
                 'Not the shared v3 comparison scope; cold_worker_entry_to_sink_seconds also includes startup.')
+        if session:
+            report['timing_scope'] += (' Each query has its own direct source-to-sink clock in queries; '
+                'the root cold worker clock ends at the last observed sink and includes the earlier post-sink work. '
+                'query_timeout_s is the whole startup/two-query work allowance, not a renewed per-query limit.')
         report['deadline'] = window.report()
         try:
             persist_relation_observation(args.output, report, result, primary=primary)
         except BaseException as error:
             primary = error
             report.update(status='failed', error_type=type(error).__name__)
+            if session:
+                report['warm_qualified'] = False
         try:
             write_private_json(args.output / 'worker.json', report)
         except BaseException as error:
-            if primary is None: primary = error
-            else: primary.add_note('worker report also failed: ' + type(error).__name__)
+            report['status'] = 'failed'
+            if session:
+                report['warm_qualified'] = False
+            if primary is None:
+                primary = error
+                error.query_report, error.query_result = report, result
+            else:
+                primary.add_note('worker report also failed: ' + type(error).__name__)
     if primary is not None: raise primary
     return report
 
@@ -608,6 +711,8 @@ def main(argv=None):
             cold_worker_entry_to_sink_seconds=terminal['cold_worker_entry_to_sink_seconds'],
             ready_source_to_sink_seconds=terminal['ready_source_to_sink_seconds'],
             model_startup_seconds=terminal['model_startup_seconds'],
+            query_timings=[{key: value[key] for key in ('round', 'phase', 'status', 'source_to_sink_seconds')}
+                           for value in terminal.get('queries', [])],
             strict_host_controller_entry_seconds=None,
             cold_boundary='existing supervisor started_monotonic before log open/Popen; '
                           'excludes host imports/preflight/lease before supervise',

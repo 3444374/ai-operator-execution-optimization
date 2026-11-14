@@ -2813,3 +2813,46 @@ API返回只记`owned_serve_shutdown_returned`，不冒充物理模型／SHM已�
 两份独立只读审查无剩余阻断；此结论只闭合API生命周期遗漏，不证明上述真实SHM根因或残留已消除。
 下一项仅需协调会话做既有profile的有限启动／一次必要生成／关停门，不重复这48条Q4或240条Q8，不放宽资源guard。
 其他原题、VLM、同语义匹配和正式性能资格继续按覆盖表留空。
+
+
+<a id="imlane-full-query-model-session"></a>
+## IMLane 完整原题跨查询复用模型
+
+基于`2630cc63c`核现有model_service／model_ipc_worker与作者SQL scope：一个AsyncLLM在外部worker的serve中构造，
+接收多客户端批次直到关闭；每批SQL／作者scope的退出没有关闭该worker。单查询限制来自项目runner，而非已证原生能力缺失。
+现沿同一`native_imlane_sembench`完整原题schema增加显式`lifecycle=model-session`，不复制逐题runner，也不改DSO或作者prediction算法。
+默认isolated与原typed／独立Q3身份保持；真实作者来源、VARCHAR工程版和LOTUS语义不互相授予资格。
+
+一个ModelService与永久unit覆盖就绪首轮、fresh原题重复及最终关闭；逐轮不同query_id、实际attempt连续。
+每轮原函数／原SDK采样、JSON Extract、必要SQL／ACK／scope关闭及原评分保持；原多层摘要和真实Join survivors驱动后续算子，
+不预造工作图或结果。新鲜PID/birth／socket与固定worker的一次AsyncLLM构造共同限定owner证据，权重／cache命中未知。
+零请求不授暖资格；owner变化、超限或超时不进入下一条查询，完整结果及原失败保留。
+
+直接逐轮`lotus_imlane.source_to_sink.v1`在queries／query_timings，真实source到完整内存结果、必要provider回执仍在内。
+模型启动在首源之前，逐轮后验／评价／归档和最终关闭在sink后；root冷区间覆盖到最后sink，包含前轮后验，不能冒充某一轮的查询时间。
+同一全局query_timeout覆盖启动与两轮，不续期；根READY只在末轮完整sink发布，不因第一轮READY提前关闭模型。
+这补齐可配置的就绪首次／同模型重复入口；与其余系统比较仍须匹配输入、完整结果语义、模型／生成／缓存／资源及区间成本。
+
+软件最终去重80项通过、0skip／真实模型／GPU／作者DSO SQL。76项共享与旧单查询回归通过，
+两个真实本地Unix socket软件测试另通过；最终发布错误与budget／执行ID分离修正后，只复测会话、旧worker及原Join16项，不累计重复方法。
+覆盖摘要驱动多层、非空图像Join→JSON Extract各两轮、连续消费、第二轮动态超限、零请求、owner变化、第一轮后验失败、
+关闭／持久化／最终报告失败和第二次准备耗尽全局期限。完整结果保留，失败撤销暖资格；旧author快照不能覆盖最终失败。
+初轮新Q2b图像计数误断4、实际Join4＋Extract4为8，修正测试，生产未改；两项Unix bind受沙箱限制的失败保留，
+获工具权限后仅复核这两项CPU用例通过。独审发现的期限和资格分支先有失败回归，再修复；无模型重跑。
+另复现合法128字符budget ID被round后缀误拒，现仅执行发生项加后缀，永久预算ID保持；不增加限制、截断或新账本。
+私有证明`VERIFY-imlane-model-session-final-20261114` SHA-256为
+`3ea4f5f339fa21813eed2b026b438e347ada1c637da672b1a04d490a15f3a94c`。
+
+### 剩余代码与测试清单
+
+| 项目 | 实际状态与下一步 | 估算依据 |
+|---|---|---|
+| IMLane本轮接线代码 | 同一runner的model-session、失败／超时及默认单查询回归已完成；无新语义算法、DSO改动或另一个runner | 本地软件已完成；不将未跑目标写成代码缺失 |
+| IMLane匹配薄driver | 原版DSO保留；核当前sembench.cpp／kernel／handoff来源，必要时仅重链薄driver，做真实Linux SQL／IPC／ACK零模型门 | 已准备一批，工作上限240秒／0模型；环境或构建失败停止并保留 |
+| IMLane同模型原题 | 前门后用原Movie Q8输入、同一现有模型配置跑ready-first／repeat，各120预期请求；核实际SQL、连续预算、模型owner、完整sink／原质量及物理清理 | 一批，240预期请求／总上限256；工作900秒＋清理120秒。上限是停止条件，不是预测耗时；排队另计 |
+| Ray Serve关停 | 协调会话新回执称2630的关停／模型退出后仍残留一个SHM，已手动恢复；自动清理未通过，本会话原件及归因待核。不重复已完成Q8／Q4请求 | 不计为修复成功；核原生释放生命周期后才能决定必要改动，不盲增删除逻辑 |
+| 其他已接路径 | 继续绑定既有资产和目标SDK；Daft renderer／HTTP关联、服务owner及残余区间成本按各profile另验 | 未有对应冻结运行计划者不估整套工期，不因已有题通过而外推 |
+| 数据／原生限制／取消 | Cars／E-Commerce及Medical非空视觉资产、原LOTUS Q2b非空和自然多层Q5分别保留缺口；Kalypso无图像carrier、独立API无现成作者算法不另造；Daft新增TopK动作保持取消，三草稿原样 | 没有新数据、原生接口或取消范围的新决定前，不能给完成日期或自动恢复 |
+
+已准备的两个IMLane目标门执行上限合计21分钟，不含队列、环境修复或失败后的新计划；
+不是剩余全矩阵／正式比较的总工期。当前无本会话新服务器任务或模型调用，原始服务器排程继续由协调会话统一管理。
