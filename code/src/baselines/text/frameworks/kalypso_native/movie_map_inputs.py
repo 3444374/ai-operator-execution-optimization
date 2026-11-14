@@ -5,7 +5,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from .native_server import AUTHOR_SOURCE_COMMIT, MOVIE_MAP_QUERIES, MAP_TASKS, TEXT_TASKS, query_task, physical_call_caps
+from .native_server import AUTHOR_SOURCE_COMMIT, MAP_TASKS, ROW_TASKS, query_task, physical_call_caps
 
 # Preserve the existing protocol name; each query's task is bound in the unit.
 SCHEMA = 'semloom.kalypso_q9_cpu_inputs.v1'
@@ -68,10 +68,10 @@ def source_binding(cfg):
 
 
 def binding(cfg, unit):
+    tasks={q['task'] for q in unit['queries']}
     if (len(cfg['units']) != 1 or not unit['queries'] or cfg['units'][0] != unit
-            or any(q['task'] not in TEXT_TASKS for q in unit['queries'])
-            or len({'map' if q['task'] in MAP_TASKS else q['task'] for q in unit['queries']})!=1):
-        raise ValueError('CPU preparation requires one dedicated Map, Filter, TopK or Aggregate unit')
+            or not (tasks <= set(ROW_TASKS) or tasks in ({'sembench-topk'}, {'sembench-aggregate'}))):
+        raise ValueError('CPU preparation requires a text Filter/Map/Extract sequence or a dedicated TopK/Aggregate unit')
     physical_call_caps(unit)
     if cfg['source_commit'] != AUTHOR_SOURCE_COMMIT:
         raise ValueError('Map CPU input handoff requires original author05024')

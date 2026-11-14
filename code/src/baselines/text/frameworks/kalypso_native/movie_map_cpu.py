@@ -8,29 +8,35 @@ from .field_binding import install_prompt
 from .movie_map_inputs import load_inputs
 
 
-def check(cfg,output,executor,manager,planner_class,data,max_model_len,*,kind='map'):
-    tasks=native_server.MAP_TASKS if kind=='map' else ('sembench-filter',)
+def check(cfg,output,executor,manager,planner_class,data,max_model_len,*,kind=None):
+    tasks=(native_server.ROW_TASKS if kind is None else
+           native_server.MAP_TASKS if kind=='map' else ('sembench-filter',))
     if len(cfg['units'])!=1 or any(q['task'] not in tasks for q in cfg['units'][0]['queries']):
-        raise ValueError('CPU preflight requires one dedicated Map or Filter unit')
+        raise ValueError('CPU preflight requires one text Filter/Map/Extract sequence')
     unit=cfg['units'][0]
     caps=native_server.physical_call_caps(unit)
     manifest,inputs=load_inputs(cfg)
     prompt_roots={item['paths']['prompt'].parent for item in inputs}
     if len(prompt_roots)!=1:raise ValueError('Text CPU prompt tables require one frozen directory')
     local=dict(cfg,map_prompt_root=str(next(iter(prompt_roots))))
-    if kind=='map':
+    classes={}
+    maps=[q for q in unit['queries'] if q['task'] in native_server.MAP_TASKS]
+    filters=[q for q in unit['queries'] if q['task']=='sembench-filter']
+    if maps:
         from vllm.kalypso.sem_ops.map import SemMap
         from vllm.kalypso.controller.map_estimator import MapRatioEstimator
-        operator_class=SemMap
-        install(local,unit,output,native_server,SemMap,MapRatioEstimator)
-    else:
+        classes['map']=SemMap
+        install(local,dict(unit,queries=maps),output,native_server,SemMap,MapRatioEstimator)
+    if filters:
         from vllm.kalypso.sem_ops.filters import SemFilter
         from vllm.kalypso.sem_ops.base import OpName
-        operator_class=SemFilter
-        install_prompt(local,unit,SemFilter,'_build_prompts',OpName.SEM_FILTER)
+        classes['filter']=SemFilter
+        install_prompt(local,dict(unit,queries=filters),SemFilter,'_build_prompts',OpName.SEM_FILTER)
     plans=[]
     for item in inputs:
         spec=item['spec'];rows=item['table']['rows'];path=item['paths']['csv']
+        kind='map' if spec['task'] in native_server.MAP_TASKS else 'filter'
+        operator_class=classes[kind]
         manager.reset_stages()
         contexts=list(data._data_source(None,path,executor))
         if [ctx.state.idx for ctx in contexts]!=list(range(len(rows))):
@@ -66,8 +72,9 @@ def check(cfg,output,executor,manager,planner_class,data,max_model_len,*,kind='m
                 prompt_tokens=len(ids),token_ids=ids,first_max_tokens=chat.max_tokens))
         (output/(spec['query_id']+'-native-prompts.json')).write_text(json.dumps(previews,indent=2)+'\n')
         plans.append(dict(query_id=spec['query_id'],logical_occurrences=len(rows),physical_call_cap=caps[spec['query_id']],
+            operator=kind,native_retry=('original length-to8192 branch, at most two calls per occurrence' if kind=='map' else 'none'),
             plan_segments=len(plan),max_prompt_tokens=max((r['prompt_tokens'] for r in previews),default=None)))
     return dict(status='passed_real_native_CPU_text_planning_no_model_execution',plans=plans,
         frozen_input_binding=manifest['binding'],frozen_input_manifest_sha256=cfg['native_cpu_inputs']['sha256'],
-        native_retry=('original length-to8192 branch, at most two calls per occurrence' if kind=='map' else 'none'),
+        native_retry=('per-query original policies; see plans' if len(classes)>1 else plans[0]['native_retry']),
         CPU_numeric_KV_budget_GiB=6,performance_claim=False)

@@ -33,6 +33,10 @@ CSV／本地 records 不要求 PG。真实运行需要明确输入、模型／dr
 
 <a id="native-daft-prepared-worker"></a>
 <a id="native-daft-prepared-worker"></a>
+Kalypso的同一unit可按显式query顺序运行文本Filter／Map／Extract-via-Map，原CLI及每query字段不变；
+--prepare-native-cpu和原生CPU检查按每query任务分派。Join／TopK／SemAgg仍独立unit，
+不同题的同owner运行不称同题暖轮；[范围与验证](../src/baselines/text/frameworks/kalypso_native/README.md#按原题字段复用-filter)分列。
+
 ## LOTUS＋Daft prepared worker 与监督
 
 主driver在取得现有host租约、永久次数claim和当前环境preflight后，调用

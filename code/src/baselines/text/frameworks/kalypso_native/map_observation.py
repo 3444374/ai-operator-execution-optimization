@@ -45,11 +45,15 @@ def install(cfg, unit, directory, native, map_class, estimator_class):
         finally:
             native.ROW.reset(token)
     def reset(self):
-        event('estimator_before_native_reset',query_id=current_query[0],estimator_id=id(self),
-            samples={str(k):len(v) for k,v in self.data.items()},
-            ratios={str(k):list(v) for k,v in self.data.items()})
+        qid=current_query[0]
+        if qid is not None:
+            event('estimator_before_native_reset',query_id=qid,estimator_id=id(self),
+                samples={str(k):len(v) for k,v in self.data.items()},
+                ratios={str(k):list(v) for k,v in self.data.items()})
         result = original_reset(self)
-        event('estimator_after_native_reset',query_id=current_query[0],estimator_id=id(self),samples={str(k):len(v) for k,v in self.data.items()})
+        if qid is not None:
+            event('estimator_after_native_reset',query_id=qid,estimator_id=id(self),samples={str(k):len(v) for k,v in self.data.items()})
+        current_query[0]=None
         return result
     map_class._run_single = run
     estimator_class.reset = reset

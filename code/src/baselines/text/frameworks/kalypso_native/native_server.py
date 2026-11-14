@@ -19,7 +19,8 @@ CALL = contextvars.ContextVar('observed_native_call',default=None)
 AUTHOR_SOURCE_COMMIT = '05024f027f932c0e398852e38302be30b9015481'
 MOVIE_MAP_QUERIES = {'movie-q8': '8', 'movie-q9': '9', 'movie-q10': '10'}
 MAP_TASKS = (*MOVIE_MAP_QUERIES, 'sembench-map', 'sembench-extract-map')
-TEXT_TASKS = (*MAP_TASKS, 'sembench-filter', 'sembench-topk', 'sembench-aggregate')
+ROW_TASKS = (*MAP_TASKS, 'sembench-filter')
+TEXT_TASKS = (*ROW_TASKS, 'sembench-topk', 'sembench-aggregate')
 
 
 def query_task(spec):
@@ -269,15 +270,24 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         finally:
             ROW.reset(token)
 
-    if any(q.get('task') in MAP_TASKS for q in unit['queries']):
-        if any(q.get('task') not in MAP_TASKS for q in unit['queries']):
-            raise ValueError('Map requires its own finite owner unit')
-        from vllm.kalypso.sem_ops.map import SemMap
-        from vllm.kalypso.controller.map_estimator import MapRatioEstimator
-        from src.baselines.text.frameworks.kalypso_native.map_observation import install, install_response_observation
-        binding=install(cfg,unit,directory,sys.modules[__name__],SemMap,MapRatioEstimator)
+    if any(q.get('task') in ROW_TASKS for q in unit['queries']):
+        if any(q.get('task') not in ROW_TASKS for q in unit['queries']):
+            raise ValueError('Text Filter/Map/Extract sequences cannot include another owner profile')
+        from src.baselines.text.frameworks.kalypso_native.map_observation import install_response_observation
+        maps = [q for q in unit['queries'] if q.get('task') in MAP_TASKS]
+        filters = [q for q in unit['queries'] if q.get('task') == 'sembench-filter']
+        if maps:
+            from vllm.kalypso.sem_ops.map import SemMap
+            from vllm.kalypso.controller.map_estimator import MapRatioEstimator
+            from src.baselines.text.frameworks.kalypso_native.map_observation import install
+            counters['map_binding']=install(cfg,dict(unit,queries=maps),directory,
+                sys.modules[__name__],SemMap,MapRatioEstimator)
+        if filters:
+            from vllm.kalypso.sem_ops.base import OpName
+            from src.baselines.text.frameworks.kalypso_native.field_binding import install_prompt
+            install_prompt(cfg,dict(unit,queries=filters),filter_class,'_build_prompts',OpName.SEM_FILTER)
+            counters['filter_binding']='original SemBench referenced fields in author Filter template'
         counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
-        counters['map_binding']=binding
     elif any(q.get('task')=='sembench-aggregate' for q in unit['queries']):
         if any(q.get('task')!='sembench-aggregate' for q in unit['queries']):
             raise ValueError('Native Aggregate requires its own finite owner unit')
@@ -303,15 +313,6 @@ def install_hooks(cfg,unit,directory,executor_class,filter_class,model_runner_cl
         install(cfg,unit,sys.modules[__name__],CartesianProduct,filter_class)
         counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
         counters['join_binding']='original CartesianProduct/SemFilter; added pair indices and original instruction fields'
-    elif any(q.get('task')=='sembench-filter' for q in unit['queries']):
-        if any(q.get('task')!='sembench-filter' for q in unit['queries']):
-            raise ValueError('Field-bound Filter requires its own finite owner unit')
-        from vllm.kalypso.sem_ops.base import OpName
-        from src.baselines.text.frameworks.kalypso_native.field_binding import install_prompt
-        from src.baselines.text.frameworks.kalypso_native.map_observation import install_response_observation
-        install_prompt(cfg,unit,filter_class,'_build_prompts',OpName.SEM_FILTER)
-        counters['response_observation_errors']=install_response_observation(sys.modules[__name__],directory)
-        counters['filter_binding']='original SemBench referenced fields in author Filter template'
     executor_class.chatcomplete=chat
     filter_class._run_single=filtered
     if hasattr(executor_class,'_build_chat_request'):

@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from src.baselines.text.frameworks.kalypso_native import movie_map_inputs as inputs
+from src.baselines.text.frameworks.kalypso_native.native_server import MOVIE_MAP_QUERIES
 from tests.baselines.text.test_kalypso_movie_map import unit
 
 ROOT=Path(__file__).resolve().parents[4]
@@ -33,7 +34,7 @@ class CPUInputContracts(unittest.TestCase):
             with (root/'input.csv').open('w',newline='') as stream:
                 writer=csv.DictWriter(stream,fieldnames=['data']);writer.writeheader()
                 writer.writerows(dict(data=r['reviewText']) for r in rows)
-            query=inputs.MOVIE_MAP_QUERIES[task]
+            query=MOVIE_MAP_QUERIES[task]
             description=dict(scenario='movie',query='Q'+query,query_id=spec['query_id'],
                 sembench_commit='c814e3807e72d4cf876b852b17e77f3cc94575c2',expected_model_calls=count,
                 operation=dict(stage=dict(method=dict(instruction='original'))))
@@ -49,7 +50,7 @@ class CPUInputContracts(unittest.TestCase):
         self.cfg['native_cpu_inputs']=dict(manifest=str(path),sha256=inputs.sha(path))
 
     def test_complete_frozen_inputs_preserve_duplicate_business_ID_and_source_occurrences(self):
-        for task in inputs.MOVIE_MAP_QUERIES:
+        for task in MOVIE_MAP_QUERIES:
             for count in (1,7,13):
                 self.prepare(count,task)
                 manifest,loaded=inputs.load_inputs(self.cfg)

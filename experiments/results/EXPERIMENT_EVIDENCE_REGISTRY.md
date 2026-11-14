@@ -237,6 +237,12 @@ Ray与Daft首／同owner重复各1200真实终态，保原普通Join及重复加
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。
 
+[Kalypso同owner不同文本查询顺序](diagnostics/sembench_native_integration_20261112/README.md#kalypso-text-query-sequence)
+同一runner和unit接文本Filter／Map／显式Extract-via-Map顺序查询，CPU逐query分派，保留原算法／重试与逐query预算。
+清除同类unit误限、Movie额外场景SHA误拒绝及Map reset旁录归属残留，原source→sink版本保持；不扩成单题多算子或并发。
+十四模块97个不同软件方法最终95通过、2项旧tokenizer门未绑定跳过，0模型／GPU；原失败与定向复核保留。
+原生服务／真实混合类型模型与物理owner待验，不转授既有单类成绩。
+
 [Kalypso文本Extract-via-Map与图像前端边界](diagnostics/sembench_native_integration_20261112/README.md#kalypso-text-extract-map)
 固定作者九个Git blob确认无SemExtract／图像carrier／视觉token预算，底层vLLM功能不转授原semantic-query。
 同runner的sembench-extract-map显式工程适配复用作者SemMap与原题关系／评分，JSON只为任务指令、兼容parser具名，不冒充作者Extract。

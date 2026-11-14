@@ -150,7 +150,7 @@ attached入口把自己的后端标识和模型复用能力随调用交给`nativ
 - `native_launch="author_defaults"` 且没有 `engine`；保持原作者 05024 checkout、同一 maintained
   source、依赖 SHA、worker 观察模块、新 CPU evidence 和新 owner 的时限／账本绑定。
 
-同一 Map unit 可以显式列出不同题的顺序查询，但后续不同题只是复用 owner，不能称为前一题
+同一文本 Filter／Map／Extract-via-Map unit 可以显式列出不同题的顺序查询，但后续不同题只是复用 owner，不能称为前一题
 的暖轮。比较同题冷暖时必须保持同一任务、完整输入和模型 owner，并使用各轮自己的实际答复。
 
 `map_observation.py` 复用已经验证的字段格式化和被动观察：精确原题指令／review 嵌入原作者
@@ -283,8 +283,12 @@ pin/KV、采样和服务调度保持。原文件名保留实际 owner／CPU 调�
 同一维护 CLI 新增 `task="sembench-filter"`，每个 spec 指定原 `scenario`、`query` 和需要的
 原 `scale_factor`。`expected_calls=N`／`max_native_calls=N` 绑定原题实际全部 occurrence，
 unit 的 `call_cap` 继续显式给出；没有 Map 的 2N 重试额度。模型／源码／原文件 SHA、就绪证明、
-独立空 `map_prompt_root` 和单独 owner 单元按既有绑定提供；这个历史目录键用于两种字段表。
-Filter 和 Map unit 分别准备，不自动扩成多算子查询。
+独立空 `map_prompt_root` 和 owner 单元按既有绑定提供；这个历史目录键用于字段表。
+Filter／Map／显式文本Extract任务可在同一unit顺序准备和运行，CPU逐query选择原生算子；
+各query仍保留独立ID、完整原题source／sink及物理额度，共用一个unit总额度。不同题的owner复用不称同题暖轮，
+也不自动扩成单题多算子或并发查询；Join／TopK／SemAgg仍使用各自单独unit。
+Movie查询可共享同单元其他场景的数据SHA清单，每个声明的文件仍核验，不放宽原题必需文件。
+实现与[软件／目标边界](../../../../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-text-query-sequence)分列。
 
 [`sembench_inputs.py`](sembench_inputs.py) 拥有原题输入和字段表，
 [`field_binding.py`](field_binding.py) 仅用标准库把字段接到原模板；它们由 Map 与 Filter 共用。

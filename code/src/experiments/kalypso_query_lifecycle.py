@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from src.baselines.text.frameworks.kalypso_native import adapter as native
-from src.baselines.text.frameworks.kalypso_native.native_server import MAP_TASKS, server_argv
+from src.baselines.text.frameworks.kalypso_native.native_server import ROW_TASKS, server_argv
 
 
 def owner_cli_bindings(cfg):
@@ -26,8 +26,8 @@ def owner_cli_bindings(cfg):
 
 def query_driver_type(unit):
     tasks={q['task'] for q in unit['queries']}
-    supported = (tasks and tasks <= set(MAP_TASKS)) or tasks in (
-        {'sembench-filter'}, {'sembench-join'}, {'sembench-topk'}, {'sembench-aggregate'})
+    supported = (tasks and tasks <= set(ROW_TASKS)) or tasks in (
+        {'sembench-join'}, {'sembench-topk'}, {'sembench-aggregate'})
     if supported:
         from src.baselines.text.frameworks.kalypso_native.query_runner import KalypsoRunner
         from src.baselines.text.frameworks.kalypso_native.native_server import physical_call_caps

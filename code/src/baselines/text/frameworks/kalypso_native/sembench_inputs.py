@@ -15,7 +15,7 @@ def make_query(cfg,qid,task='movie-q9',*,kind='map'):
     hashes=cfg['source_data_sha256']
     if binding['scenario']=='movie':
         required={'Reviews.csv','Movies.csv'} if binding['query_id']=='10' else {'Reviews.csv'}
-        if not required<=set(hashes) or set(hashes)-{'Reviews.csv','Movies.csv'}:
+        if not required<=set(hashes):
             raise ValueError('Native query requires the complete original source and evaluation file hashes')
     for name, expected in hashes.items():
         if native.sha(Path(cfg['data_dir'])/name) != expected:

@@ -2050,6 +2050,32 @@ b1d0e7a8e干净导出加七份准确源码／测试，九完整模块最终去�
 原完整query时钟保留实际IPC、HTTP记账和必要中间worker退出，不估算扣减旧成绩，远端READY未知仍为None。
 取消的Daft TopK、分组并发与三份保护草稿保持原范围，未以此恢复或授予资格。
 
+<a id="kalypso-text-query-sequence"></a>
+## Kalypso 同 owner 的不同文本查询顺序接入
+
+既有KalypsoRunner已收拢系统生命周期，但选择器、CPU冻结／规划和服务hook仍强制一个unit只能含一类算子。
+现允许文本Filter／Map／显式Extract-via-SemMap同unit顺序执行，复用原查询、同一runner、作者SemFilter／SemMap及外部模型owner；
+没有新增查询执行器、算子DSL、单题多阶段或并发查询。Join／TopK／SemAgg仍独立unit，图像按固定原生前端能力留空。
+
+服务只按声明的query ID给对应原生类安装字段绑定，共用一个HTTP观察器和unit计数，同时保留各query的独立物理额度。
+Filter仍为原8-token策略，Map／Extract仍保留动态首额度与一次length→8192重试；不修改作者ratio update/reset。
+Map旁录在原reset后清除当前query归属，Filter经过同一估计器reset不再误记到上一条Map；原reset始终执行。
+Movie删除拒绝其他场景SHA条目的误限，原必需文件检查及每个声明文件的真实hash核验仍在额外预检。
+原生CPU规划逐query选择Filter或Map，原冻结清单格式和旧专门profile保留；每条source→完整sink仍用独立v1时钟，
+不把不同题的owner复用或软件对象身份说成真实暖轮、模型启动／KV等价或性能收益。
+
+751b25c8e干净导出加九份准确源码／测试，十四完整模块去重97个不同方法：95通过、2个旧真实tokenizer门未绑定跳过，0模型／GPU。
+新检查使用固定05024作者方法、SemBench原函数和本机顺序runner；模型、tokenizer及KV为明确软件fixture。
+Map→Filter→Extract→Map保留原完整结果／评分、发生项、全局唯一请求、逐query预算、Filter采样和Map真实重试分支；
+Filter先执行的另一路径经过原生规划与完整软件token数组。HTTP response旁录为替身，实际服务／模型／物理owner身份待验。
+首轮无断言失败，但有9项夹具错误：新transport误把作者Filter布尔值当context，8个旧fixture仍从临时转发模块取Movie映射。
+修正软件transport、将fixture导入迁到常量所属native_server后，两个受影响完整模块10项通过；
+删去重复的单Filter分派分支后，再核生命周期／旧Map两个完整模块13项通过。服务端亦保留拒绝混用旧owner profile，最终同两模块13项复核通过；重复用例不累加，首失败保留。
+最终方法／源码／分次核验SHA-256为`5069f50193457e1e311804062b8129a93abf3b838146fefce95e0699aae162fe`。
+
+新混合类型单元的目标作者CPU／完整prompt与真实模型请求、同模型PID／birth及物理清理仍须原服务器协调会话验收。
+原e67cc Q1单类50次及3500 Q5等具名结果不转授新序列；本会话未重复模型，不恢复取消的Daft TopK或改三份保护草稿。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
