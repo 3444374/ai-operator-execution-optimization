@@ -8,7 +8,8 @@ from src.infrastructure.private_artifacts import content_digest
 
 
 @contextmanager
-def _observe_native_httpx_client(budget, record, endpoint, *, timeout_s=None):
+def _observe_native_httpx_client(budget, record, endpoint, *, timeout_s=None, record_response=None):
+    """Optionally delegate response audit using its metadata and already-read bytes."""
     import httpx
     sync_send, async_send = httpx.Client.send, httpx.AsyncClient.send
     deadline = time.monotonic()+timeout_s if timeout_s is not None else None
@@ -44,12 +45,16 @@ def _observe_native_httpx_client(budget, record, endpoint, *, timeout_s=None):
         if attempt is None:
             return
         if response is not None and error is None:
-            try:
-                value = response.json()
-            except ValueError:
-                value = None
-            record(dict(event='http_response',attempt=attempt,status=response.status_code,
-                        response=value,monotonic_ns=time.monotonic_ns()))
+            if record_response is None:
+                try:
+                    value = response.json()
+                except ValueError:
+                    value = None
+                record(dict(event='http_response',attempt=attempt,status=response.status_code,
+                            response=value,monotonic_ns=time.monotonic_ns()))
+            else:
+                record_response(dict(event='http_response',attempt=attempt,status=response.status_code,
+                    monotonic_ns=time.monotonic_ns()), response.content)
         record(dict(event='http_finished',attempt=attempt,monotonic_ns=time.monotonic_ns(),
                     error_type=type(error).__name__ if error is not None else None))
 

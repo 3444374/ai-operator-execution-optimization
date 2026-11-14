@@ -7,8 +7,9 @@ from .request_budget_client import open_request_budget
 
 
 @contextmanager
-def observe_native_httpx(budget, record, endpoint, *, timeout_s=None):
+def observe_native_httpx(budget, record, endpoint, *, timeout_s=None, record_response=None):
     """Account native SDK worker sends in an isolated process, including retries."""
     with open_request_budget(budget) as client:
-        with _observe_native_httpx_client(client, record, endpoint, timeout_s=timeout_s):
+        with _observe_native_httpx_client(client, record, endpoint, timeout_s=timeout_s,
+                                         record_response=record_response):
             yield

@@ -3,6 +3,7 @@
 from contextlib import ExitStack, contextmanager, nullcontext
 from concurrent.futures import ThreadPoolExecutor
 import importlib.util
+import json
 from pathlib import Path
 from types import SimpleNamespace
 import threading
@@ -113,7 +114,7 @@ class ServiceFixture:
         writer = SimpleNamespace(close=self.close, snapshot=self.writer_snapshot)
         audit = SimpleNamespace(lm_calls=self.stages, requests=self.requests, snapshot=self.snapshot,
             observe_lm=lambda *a, **k: nullcontext(), record=lambda event: None,
-            record_sdk_responses=self.sdk_responses)
+            record_sdk_responses=self.sdk_responses, record_response=lambda event, content: None)
         clock = SimpleNamespace(monotonic=lambda: self.now, monotonic_ns=lambda: self.now * 1_000_000_000)
         settings = SimpleNamespace(lm=None, enable_cache=False, context=lambda **kwargs: nullcontext())
         settings.configure = lambda **values: vars(settings).update(values)
@@ -236,13 +237,37 @@ class NativeServiceSinkTimingTests(unittest.TestCase):
 
 
 class NativeQueryObservationTests(unittest.TestCase):
+    def test_deferred_writer_failure_keeps_other_responses_and_unknown_attempts(self):
+        events=[]
+        primary=OSError('first response evidence failure')
+        def record(event):
+            if event['event']=='http_response' and event['attempt']==1:
+                raise primary
+            events.append(event)
+        calls=NativeServiceCalls(SimpleNamespace(record=record),'openai/model')
+        for attempt,body in ((1,b'{"id":"complete","model":"model","choices":[{}]}'),(2,b'not JSON')):
+            calls.record(dict(event='request',attempt=attempt))
+            calls.record_response(dict(event='http_response',attempt=attempt,status=200,monotonic_ns=attempt),body)
+            calls.record(dict(event='http_finished',attempt=attempt))
+        calls.record(dict(event='request',attempt=3))
+        with self.assertRaises(OSError) as caught:
+            calls.snapshot()
+        self.assertIs(caught.exception,primary)
+        self.assertEqual(calls.snapshot(),dict(attempts=3,succeeded=1,failed=1,unknown=1,unfinished=1))
+        self.assertEqual([e['response'] for e in events if e['event']=='http_response'],[None])
+
     @unittest.skipUnless(importlib.util.find_spec('lotus'), 'requires the actual LOTUS SDK')
     def test_original_sdk_order_links_identical_inputs_and_distinct_replies_by_completion_id(self):
         from litellm import ModelResponse
         from lotus.models import LM
 
         events=[]
-        calls=NativeServiceCalls(SimpleNamespace(record=events.append),'openai/software-model')
+        sink_ready=False
+        def record(event):
+            if event['event']=='http_response':
+                self.assertTrue(sink_ready, 'response audit encoded before the complete original sink')
+            events.append(event)
+        calls=NativeServiceCalls(SimpleNamespace(record=record),'openai/software-model')
         texts=['Answer: False','Different reasoning. Answer: False']
         responses=[ModelResponse(id='response-'+str(i),model='software-model',
             choices=[dict(index=0,message=dict(role='assistant',content=text),finish_reason='stop')],
@@ -252,8 +277,8 @@ class NativeQueryObservationTests(unittest.TestCase):
             # HTTP completion order differs from the SDK's original return slots.
             for i in (1,0):
                 calls.record(dict(event='request',attempt=i))
-                calls.record(dict(event='http_response',attempt=i,status=200,
-                    response=responses[i].model_dump()))
+                calls.record_response(dict(event='http_response',attempt=i,status=200,monotonic_ns=i),
+                    json.dumps(responses[i].model_dump()).encode())
                 calls.record(dict(event='http_finished',attempt=i))
             return responses
         lm=LM('openai/software-model',max_tokens=8,cache={})
@@ -261,6 +286,7 @@ class NativeQueryObservationTests(unittest.TestCase):
         with native_query_settings(lm),calls.observe_lm(lm),patch('lotus.models.lm.batch_completion',complete):
             result=lm([[dict(role='user',content='identical input')]]*2,show_progress_bar=False)
         self.assertEqual(result.outputs,texts)
+        sink_ready=True
         self.assertIs(type(lm).__call__,original)
         self.assertNotIn('_process_uncached_messages',lm.__dict__)
         audit=calls.record_sdk_responses()

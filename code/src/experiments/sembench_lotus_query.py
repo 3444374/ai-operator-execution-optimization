@@ -164,10 +164,10 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         source_started_ns=None, sink_ready_ns=None, source_to_sink_seconds=None,
         query_clock_version="lotus_service.source_to_sink.v1",
         source_to_sink_timing_scope="actual image/source decode and CSV reads, native PNG formatting, "
-            "complete original operators and memory sink; mandatory HTTP attempt accounting, request fingerprints/response observation, "
-            "inline-image audit hashing and event encoding/queueing included; background event writes may overlap; "
+            "complete original operators and memory sink; mandatory HTTP attempt accounting, request fingerprints, "
+            "inline-image audit hashing and request/terminal event encoding/queueing included; background event writes may overlap; "
             "all actual HTTP wait included; remote startup attribution unobserved; "
-            "input preflight, LM/client setup, post-result audit, result serialization, "
+            "response audit JSON parsing/encoding, input preflight, LM/client setup, post-result audit, result serialization, "
             "evaluation and final audit drain excluded; independent service scope, not shared v3",
         evaluation_in_query_seconds=False)
     if aggregate:
@@ -176,10 +176,10 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
             lifecycle='attached external text service; readiness and startup are externally owned and unobserved',
             query_timing_scope='legacy source/query interval including post-result input identity and response accounting',
             source_to_sink_timing_scope='actual source read and complete unchanged Q5 hierarchy/projection in memory; '
-                'mandatory HTTP attempt accounting, request fingerprints/response observation and event encoding/queueing included; '
+                'mandatory HTTP attempt accounting, request fingerprints and request/terminal event encoding/queueing included; '
                 'background event writes may overlap; '
                 'all actual HTTP wait included; remote startup attribution unobserved; '
-                'LM/client/tokenizer setup, input/leaf preflight, post-result audit, '
+                'response audit JSON parsing/encoding, LM/client/tokenizer setup, input/leaf preflight, post-result audit, '
                 'result serialization, evaluation and final audit drain excluded; independent service scope, not shared v3',
             complete_cli_timing='supervisor.elapsed_s includes imports, tokenizer/LM setup, preflight, evaluation and audit flush')
     started = time.monotonic()
@@ -232,7 +232,8 @@ def run_query(config, checkout, directory, *, budget, data_dir=None, manifest=No
         report["preflight_finished_ns"] = time.monotonic_ns()
         with native_query_settings(lm), (nullcontext() if aggregate else observe_native_join_inputs(join_inputs)), \
                 audit.observe_lm(lm, kind='aggregate' if aggregate else 'native_query' if config['scenario'] == 'ecomm' else None):
-            with observe_native_httpx(budget, audit.record, checked["endpoint"], timeout_s=config["query_timeout_s"]):
+            with observe_native_httpx(budget, audit.record, checked["endpoint"], timeout_s=config["query_timeout_s"],
+                                      record_response=audit.record_response):
                 report["source_started_ns"] = time.monotonic_ns()
                 result = query.execute()
                 # The original relation is ready before observer teardown or audit.

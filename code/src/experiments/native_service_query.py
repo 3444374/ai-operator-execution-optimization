@@ -7,6 +7,7 @@ observe transport attempts without starting a service or adding model work.
 from contextlib import contextmanager
 from collections import Counter
 import hashlib
+import json
 import os
 from pathlib import Path
 import threading
@@ -79,6 +80,7 @@ class NativeServiceCalls:
         self._active_lm_calls = {}
         self.response_ids = {}
         self.sdk_batches = []
+        self._responses = []
 
     def record(self, event):
         attempt, kind = event.get("attempt"), event["event"]
@@ -99,6 +101,28 @@ class NativeServiceCalls:
                 if event.get("error_type"):
                     self.failed.add(attempt)
         self.writer.record(_audit_value(event))
+
+    def record_response(self, event, content):
+        """Retain the already-read immutable response bytes, without parsing or encoding."""
+        with self.lock:
+            self._responses.append((event, content))
+
+    def _flush_responses(self):
+        with self.lock:
+            pending, self._responses = self._responses, []
+        failure = None
+        for event, content in pending:
+            try:
+                try:
+                    value = json.loads(content)
+                except ValueError:
+                    value = None
+                self.record(dict(event, response=value))
+            except BaseException as error:
+                if failure is None:
+                    failure = error
+        if failure is not None:
+            raise failure
 
     @contextmanager
     def observe_lm(self, lm, *, kind=None):
@@ -153,6 +177,7 @@ class NativeServiceCalls:
 
     def record_sdk_responses(self):
         """Link SDK return slots to physical POSTs without matching prompt text."""
+        self._flush_responses()
         with self.lock:
             batches = list(self.sdk_batches)
             ids = {attempt: value for attempt, value in self.response_ids.items() if attempt in self.succeeded}
@@ -182,6 +207,7 @@ class NativeServiceCalls:
                 'missing/duplicate completion IDs or incomplete native SDK result slots')
 
     def snapshot(self):
+        self._flush_responses()
         with self.lock:
             return dict(attempts=len(self.requests), succeeded=len(self.succeeded), failed=len(self.failed),
                 unknown=len(self.requests - self.succeeded - self.failed),

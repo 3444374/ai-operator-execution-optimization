@@ -3,6 +3,8 @@ import asyncio
 import unittest
 import httpx
 from src.experiments.native_http_observer import observe_native_httpx
+from src.experiments.native_service_query import NativeServiceCalls
+from types import SimpleNamespace
 
 
 class Budget:
@@ -27,6 +29,35 @@ class NativeHttpObserverTests(unittest.TestCase):
         self.assertEqual(seen[0].content,seen[1].content)
         self.assertLessEqual(seen[0].extensions['timeout']['read'],1)
         self.assertEqual(sum(e['event']=='http_finished' for e in events),2)
+
+    def test_optional_response_recording_defers_parsing_without_copying_or_replacing_native_body(self):
+        events=[];budget=Budget();native=[];captured=[]
+        audit=NativeServiceCalls(SimpleNamespace(record=events.append),'openai/model')
+        class Response(httpx.Response):
+            def json(self, **kwargs):
+                raise AssertionError('the optional observer parsed the native response')
+        def receive(request):
+            value=Response(200,json=dict(id='response-'+str(len(native)),model='model',choices=[{}]))
+            native.append(value)
+            return value
+        def capture(event, content):
+            captured.append((event,content))
+            audit.record_response(event,content)
+        with observe_native_httpx(budget,audit.record,'http://localhost/v1/chat/completions',record_response=capture):
+            with httpx.Client(transport=httpx.MockTransport(receive)) as client:
+                self.assertIs(client.post('http://localhost/v1/chat/completions',json={}),native[-1])
+            async def call():
+                async with httpx.AsyncClient(transport=httpx.MockTransport(receive)) as client:
+                    self.assertIs(await client.post('http://localhost/v1/chat/completions',json={}),native[-1])
+            asyncio.run(call())
+        self.assertEqual(len(captured),2)
+        self.assertFalse(any(e['event']=='http_response' for e in events))
+        for (event,content),response in zip(captured,native,strict=True):
+            self.assertIs(content,response.content)
+            finished=next(e for e in events if e['event']=='http_finished' and e['attempt']==event['attempt'])
+            self.assertLessEqual(event['monotonic_ns'],finished['monotonic_ns'])
+        self.assertEqual(audit.snapshot(),dict(attempts=2,succeeded=2,failed=0,unknown=0,unfinished=0))
+        self.assertEqual([e['response']['id'] for e in events if e['event']=='http_response'],['response-0','response-1'])
 
     def test_recording_error_does_not_replace_transport_failure(self):
         original=httpx.ConnectError('first transport error')
