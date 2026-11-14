@@ -62,6 +62,12 @@ def setup():
     unit = SharedClaimedUnit(Path(spec['path']), AttemptBudget(spec['id'], spec['limit']), spec['unit_id'])
 
     def emit(event, **data):
+        if event == 'native_constructor_returned' and spec.get('observe_model_actor_identity'):
+            import psutil
+            import ray
+            context = ray.get_runtime_context()
+            data.update(node_id=context.get_node_id(), model_actor_id=context.get_actor_id(),
+                        model_actor_create_time=psutil.Process(os.getpid()).create_time())
         value = dict(event=event, monotonic_ns=time.monotonic_ns(), pid=os.getpid(), **data)
         fd = os.open(root / ('native-events-' + str(os.getpid()) + '.jsonl'),
                      os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)

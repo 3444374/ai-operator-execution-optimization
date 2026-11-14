@@ -264,10 +264,11 @@ E-Commerce Q7复用同一任务的exact pair分支，原price<=500后N²含self�
 所核固定版本公开AI接点提供生成／结构输出，未提供对应作者级语义Join／Aggregate／TopK算法；
 这里的pair predicate明确为项目exact工程方法，不把普通join/groupby/sort加prompt称作作者原算法。
 配置与CPU检查／显式运行命令见[脚本入口](../../scripts/README.md#independent-native-text-runners)。
-同一Ray runner另有显式`serve-session` profile，[owned Serve adapter](text/frameworks/ray_native_serve_session.py)
-以Ray2.56.1公开Serve deployment和Data processor执行两次fresh完整查询；部署启动、两轮查询和关闭分别记录。
-它改变执行拓扑，不能继承offline单冷成绩。实际模型子进程与replica的新鲜身份、未变constructor事件缺失时，
-`warm_qualified=None`；CLI没有host身份探针，不能授予真暖资格。接口与目标待验范围见[会话接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)。
+同一Ray runner的显式`serve-session` v2通过[原生caller](../experiments/native_ray_serve_process.py)
+在model_python环境持续持有[owned Serve adapter](text/frameworks/ray_native_serve_session.py)，以Ray2.56.1公开deployment／Data processor执行两次fresh查询。
+driver只持有任务、原评分及必要批次IPC，不导入vLLM协议或混入另一环境的包；caller／部署启动、查询和关闭分别记录。
+原生构造事件绑定的model actor及实际EngineCore进程PID／birth须经当场观测，且两轮实际有模型请求；缺证据时warm=None。
+该拓扑不继承offline成绩，目标SDK／模型／物理退出仍待验；见[隔离接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)。
 同一Daft runner另接[attached-session模板](../../configs/sembench_native_daft_attached_session.example.json)，
 复用builtin OpenAI messages graph、既有worker／ACK及永久HTTP预算，两次fresh完整查询使用各自客户端worker。
 外部模型服务由调用者拥有，driver不创建或关闭；每个实际批次保留静态system／content layout限制，任务依赖由查询层推进，Animals Q7拆为两次完整Filter批次。

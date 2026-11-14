@@ -122,11 +122,12 @@ Daft复用既有隔离worker／监督／READY→完整sink→ACK关闭协议，�
 官方评分与结果写盘在后。源码与软件检查范围见[原生对照说明](../src/baselines/README.md#independent-native-text)。
 
 <a id="native-ray-serve-session"></a>
-同一Ray runner的[Serve会话模板](../configs/sembench_native_ray_serve_session.example.json)使用独立schema，
-以一个owned deployment执行两次fresh查询，命令为：
+同一Ray runner的[Serve会话模板](../configs/sembench_native_ray_serve_session.example.json)使用显式v2 schema，
+一个model_python原生caller持有同一owned deployment，driver负责两次fresh查询及原评分，环境不混装。先作零模型检查，再由服务器协调执行：
 
 ```bash
 PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_ray check --config "$SERVE_CONFIG"
+PYTHONPATH=code "$MODEL_PYTHON" -m src.experiments.native_ray_serve_process --check-sdk "$SERVE_CONFIG"
 PYTHONPATH=code "$DRIVER_PYTHON" -m src.experiments.sembench_native_ray serve-session --config "$SERVE_CONFIG" --execute-model --output-dir "$NEW_PRIVATE_OUTPUT"
 ```
 
@@ -134,11 +135,13 @@ Ray2.56.1／Serve和目标vLLM协议须在隔离环境验证；不连接已有Ra
 model为服务ID，model_source为实际模型路径；processor_options只接batch_size／concurrency，模型容量归engine_kwargs。
 模板额度4096及128输出token只作例子，须按两遍实际请求数加原生启动请求声明有限永久预算，不限制输入行数。
 预算在完整会话后关闭，不在两轮之间退还；部署启动的实际模型调用单列，禁止猜测为零。
-每轮ready后source→完整sink直接计时，审计／评分／写盘在后，原生同步预算／观测成本仍在内。
-Python调用`run_serve_session(..., identity_snapshot=host_probe)`可接已有host监督：回调须当场返回
-observed_monotonic_ns、node_id、replica_actor_id、replica_pid／replica_create_time，及非空model_processes的pid／create_time。
-无此真实探针的CLI报告warm_qualified=None；仅复用Python对象、application名或actor PID不足以证明模型复用。
-当前只有[软件验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)，SDK部署／真实模型／物理退出尚待服务器统一安排；Daft附加服务接点见下节，实际同owner暖轮也待验。
+每轮ready后source→完整sink直接计时，必要批次IPC与原生同步预算／观测成本在内；后置审计／评分／写盘在外，使用独立v2时钟。
+startup_timeout_s／session_timeout_s／cleanup_s须为有限正数；模板180／900／30秒只是例子，cleanup在总会话内预留，沿用既有进程树监督。
+默认CLI当场观测构造事件所属model_actor_id、node_id、model_actor_pid／model_actor_create_time及实际EngineCore的pid／create_time，
+与两轮constructor事件核对；它不是独立证明的Serve replica身份或cache状态。Python identity_snapshot仍可接同合同host探针。
+缺完整新鲜身份或任一轮无实际请求均保留warm=None；复用Python对象或application名不授予模型资格。
+SDK检查仅构造原生配置／请求，不启动Ray或模型；实际响应ID关联、SDK部署、模型与退出仍待[服务器验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)。
+v1的driver缺vLLM协议失败保留，新入口直接替代旧默认caller；Daft已核具名同owner回执见下节，不与Ray互授资格。
 
 <a id="native-daft-attached-session"></a>
 ### Daft builtin OpenAI 连续查询

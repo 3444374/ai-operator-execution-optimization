@@ -1,7 +1,7 @@
 """Owned Ray Serve deployment shared by complete native Ray Data queries.
 
 Ray 2.56.1's public ServeDeploymentProcessorConfig owns submission and batching.
-This profile requires Ray Serve and its vLLM request protocol in the driver;
+The isolated native caller owns Ray Serve and its vLLM request protocol;
 imports, deployment and model construction happen only in start(). Model owner
 identity and physical GPU exit belong to the caller's host observations.
 """
@@ -52,15 +52,19 @@ def _output(row):
         response_id=row['id'], native_response=response)
 
 
+def check_options(runtime_options, processor_options):
+    if runtime_options.get('address', 'local') != 'local':
+        raise ValueError('owned Serve sessions require an isolated local Ray runtime')
+    if processor_options.keys() - {'batch_size', 'concurrency'}:
+        raise ValueError('Serve processor options support batch_size and concurrency only')
+
+
 class NativeServeSession:
     """Own one deployment; processor materializations do not own the model."""
 
     def __init__(self, *, model, model_source, app_name, deployment_name,
                  engine_kwargs, processor_options, runtime_options, model_runtime_env):
-        if runtime_options.get('address', 'local') != 'local':
-            raise ValueError('owned Serve sessions require an isolated local Ray runtime')
-        if processor_options.keys() - {'batch_size', 'concurrency'}:
-            raise ValueError('Serve processor options support batch_size and concurrency only')
+        check_options(runtime_options, processor_options)
         self.model, self.model_source = model, model_source
         self.app_name, self.deployment_name = app_name, deployment_name
         self.engine_kwargs, self.processor_options = deepcopy(engine_kwargs), deepcopy(processor_options)

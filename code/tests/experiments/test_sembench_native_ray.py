@@ -675,8 +675,9 @@ class ServeSessionTests(unittest.TestCase):
         if prefix:
             ledger.reserve_unit('prior-unspent', prefix)
         ledger.reserve_unit('session', limit-prefix)
-        return dict(schema='semloom.sembench_native_ray_serve_session.v1', model='fixture-model',
+        return dict(schema='semloom.sembench_native_ray_serve_session.v2', model='fixture-model',
             model_source='unused-local-model', model_python=sys.executable,
+            startup_timeout_s=10, session_timeout_s=45, cleanup_s=3,
             app_name='owned-fixture', deployment_name='model-fixture', query_id='session',
             engine_kwargs={}, processor_options={}, runtime_options={},
             sampling_params=dict(n=1, max_tokens=32, structured_outputs={'json_object': True}),
@@ -763,7 +764,7 @@ class ServeSessionTests(unittest.TestCase):
     @staticmethod
     def identity(*, changed=False):
         return dict(observed_monotonic_ns=time.monotonic_ns(), node_id='fixture-node',
-            replica_actor_id='fixture-actor', replica_pid=10, replica_create_time=1.0,
+            model_actor_id='fixture-actor', model_actor_pid=10, model_actor_create_time=1.0,
             model_processes=[dict(pid=21 if changed else 20, create_time=2.0)])
 
     def test_changed_model_child_stops_before_the_second_fresh_source(self):
@@ -796,7 +797,7 @@ class ServeSessionTests(unittest.TestCase):
 
     def test_identity_evidence_requires_model_children_and_fresh_observation(self):
         from src.experiments.sembench_native_ray import _owner_snapshot
-        for value in (dict(replica_pid=10), self.identity()):
+        for value in (dict(model_actor_pid=10), self.identity()):
             with self.subTest(value=value):
                 _, proof = _owner_snapshot(lambda: value)
                 self.assertIsNone(proof)
@@ -805,6 +806,21 @@ class ServeSessionTests(unittest.TestCase):
         # and target native/model qualification remains explicitly unknown.
         self.assertTrue(report['model_owner_reused'])
         self.assertIsNone(report['target_native_model_qualified'])
+
+    def test_two_empty_queries_do_not_qualify_warm_model_work(self):
+        from src.experiments.sembench_native_ray import run_serve_session
+
+        def factory(value):
+            task = self.tasks(value)
+            task.model_request_count = lambda source: 0
+            task.requests = lambda source: []
+            task.finish = lambda source, predictions: pd.DataFrame(dict(count=[0]))
+            return task
+        report = run_serve_session(self.config(), self.root/'empty-session', checkout='software',
+            session_factory=self.owner, task_factory=factory, identity_snapshot=self.identity)
+        self.assertEqual(report['physical_attempts_reserved'], 0)
+        self.assertIsNone(report['model_owner_reused'])
+        self.assertIsNone(report['warm_qualified'])
 
     def test_primary_failure_survives_owned_close_failure_and_completed_sink_is_kept(self):
         with patch.object(SoftwareServeSession, 'mismatch', True), \
@@ -945,7 +961,7 @@ class NativeMultistageTests(unittest.TestCase):
             processor_options={}, runtime_options={}, sampling_params=dict(n=1,structured_outputs={'json_object':True}),
             budget=dict(path=str(ledger.path),id='multi-fixture',limit=limit,unit_id='query'))
         if serve:
-            config.update(schema='semloom.sembench_native_ray_serve_session.v1', model_source='unused',
+            config.update(schema='semloom.sembench_native_ray_serve_session.v2', model_source='unused',
                           app_name='owned-fixture',deployment_name='model-fixture',query_id='session')
         return config
 

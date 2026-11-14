@@ -21,7 +21,7 @@ from src.infrastructure.private_artifacts import (
 from src.infrastructure.redact import redact_text
 
 
-SERVE_SCHEMA = 'semloom.sembench_native_ray_serve_session.v1'
+SERVE_SCHEMA = 'semloom.sembench_native_ray_serve_session.v2'
 
 
 def _sampling(config):
@@ -247,17 +247,17 @@ def _owner_snapshot(snapshot):
     before = time.monotonic_ns()
     value = snapshot()
     after = time.monotonic_ns()
-    fields = {'observed_monotonic_ns', 'node_id', 'replica_actor_id', 'replica_pid',
-              'replica_create_time', 'model_processes'}
+    fields = {'observed_monotonic_ns', 'node_id', 'model_actor_id', 'model_actor_pid',
+              'model_actor_create_time', 'model_processes'}
     if not isinstance(value, dict) or not fields <= value.keys():
         return value, None
     children = value['model_processes']
     if (not before <= value['observed_monotonic_ns'] <= after
-            or not value['node_id'] or not value['replica_actor_id']
-            or type(value['replica_pid']) is not int or value['replica_pid'] <= 0
+            or not value['node_id'] or not value['model_actor_id']
+            or type(value['model_actor_pid']) is not int or value['model_actor_pid'] <= 0
             or not isinstance(children, list) or not children):
         return value, None
-    processes = [(value['replica_pid'], value['replica_create_time'])]
+    processes = [(value['model_actor_pid'], value['model_actor_create_time'])]
     for child in children:
         if not isinstance(child, dict) or not {'pid', 'create_time'} <= child.keys():
             return value, None
@@ -265,7 +265,7 @@ def _owner_snapshot(snapshot):
     if any(type(pid) is not int or pid <= 0 or type(birth) not in (int, float)
            or not math.isfinite(birth) or birth <= 0 for pid, birth in processes):
         return value, None
-    return value, (value['node_id'], value['replica_actor_id'], processes[0], tuple(sorted(processes[1:])))
+    return value, (value['node_id'], value['model_actor_id'], processes[0], tuple(sorted(processes[1:])))
 
 
 def _serve_constructor_events(directory):
@@ -275,16 +275,25 @@ def _serve_constructor_events(directory):
         if row['event'] in ('native_constructor_started', 'native_constructor_returned'))
 
 
+def _native_serve_process(config, directory, runtime_env):
+    from src.experiments.native_ray_serve_process import NativeServeProcess
+
+    options = {key: config[key] for key in ('model', 'model_source', 'app_name',
+        'deployment_name', 'engine_kwargs', 'processor_options', 'runtime_options')}
+    return NativeServeProcess(model_python=config['model_python'], directory=directory,
+        startup_timeout_s=config['startup_timeout_s'], session_timeout_s=config['session_timeout_s'],
+        cleanup_s=config['cleanup_s'], native_options=dict(options, model_runtime_env=runtime_env))
+
+
 def run_serve_session(config, directory, *, checkout, session_factory=None,
                       identity_snapshot=None, task_factory=None):
     """Two fresh complete queries, one owned Serve deployment and finite unit.
 
-    The optional host snapshot callback must return freshly observed replica
+    The optional host snapshot callback must return freshly observed native model
     actor/PID/birth and actual model subprocess PID/birth on this same host.
     Missing identity evidence leaves warm qualification unknown. The caller
     still owns the existing bounded host supervision and physical GPU checks.
     """
-    from src.baselines.text.frameworks.ray_native_serve_session import NativeServeSession
     from src.baselines.text.sembench_native_text import task_from_config
 
     if config.get('schema') != SERVE_SCHEMA:
@@ -292,19 +301,20 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
     sampling = _sampling(config)
     directory = Path(directory).resolve()
     new_private_directory(directory)
-    report = dict(schema='semloom.sembench_native_ray_serve_session.result.v1',
-        baseline_identity='native-ray-serve-json', status='failed',
+    report = dict(schema='semloom.sembench_native_ray_serve_session.result.v2',
+        baseline_identity='native-ray-serve-json-isolated-caller', status='failed',
         semantic_owner='project unified JSON task semantics; not LOTUS or author-original',
         author_original_semantic_method=False, lotus_sdk_required=False,
         execution_owner='Ray Data ServeDeploymentProcessor and owned Ray Serve deployment',
         target_native_model_qualified=None, performance_claim=False, queries=[],
         model_owner_reused=None, warm_qualified=None, extra_query_warmup=0,
-        warm_qualification_scope='requires fresh host replica and actual model subprocess identities plus '
+        warm_qualification_scope='requires fresh native model actor and actual EngineCore subprocess identities plus '
             'unchanged native constructor events; software fixtures do not qualify a target model',
         native_startup_attempts=None, worker_entry_ns=time.monotonic_ns(),
         timing_scope='deployment startup separately measured; each fresh source, native Serve graph, '
             'dependent batches, necessary terminal checks, strict task parsing and full memory sink measured directly; synchronous native budget/evidence '
-            'included; post-sink audits/scoring/persistence and final deployment close excluded')
+            'and necessary cross-environment batch IPC included; post-sink audits/scoring/persistence '
+            'and final deployment/caller close excluded')
     primary = ledger = unit = owner = current = None
 
     def failed(error, phase):
@@ -331,12 +341,18 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
         first = next(row['first_attempt'] for row in ledger.snapshot()['units'] if row['unit_id'] == value['unit_id'])
         runtime_env = dict(py_executable=config['model_python'], env_vars=dict(
             PYTHONPATH=str(Path(__file__).parents[2]),
-            SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory)))))
-        owner = (session_factory or NativeServeSession)(model=config['model'], model_source=config['model_source'],
-            app_name=config['app_name'], deployment_name=config['deployment_name'],
-            engine_kwargs=config['engine_kwargs'], processor_options=config['processor_options'],
-            runtime_options=config['runtime_options'], model_runtime_env=runtime_env)
+            SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory),
+                                                       observe_model_actor_identity=True))))
+        if session_factory is None:
+            owner = _native_serve_process(config, directory/'native-caller', runtime_env)
+        else:
+            owner = session_factory(model=config['model'], model_source=config['model_source'],
+                app_name=config['app_name'], deployment_name=config['deployment_name'],
+                engine_kwargs=config['engine_kwargs'], processor_options=config['processor_options'],
+                runtime_options=config['runtime_options'], model_runtime_env=runtime_env)
         owner.start()
+        if identity_snapshot is None:
+            identity_snapshot = getattr(owner, 'identity_snapshot', None)
         report['native'] = owner.report
         report['native_startup_attempts'], initial = _serve_attempt_window(directory, unit, first, 0)
         constructors = initial['model_constructor_returned_ns']
@@ -346,12 +362,13 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
         baseline_raw, baseline_identity = _owner_snapshot(identity_snapshot)
         report['initial_model_owner'] = baseline_raw
         report['deployment_startup_seconds'] = owner.report['deployment_startup_seconds']
+        report['native_caller_startup_seconds'] = owner.report.get('native_caller_startup_seconds')
         identity_complete = baseline_identity is not None
         accounted = unit.attempts
         for index, (task, evaluation) in enumerate(zip(tasks, evaluations, strict=True)):
             current = dict(round=index+1, phase='ready-first' if index == 0 else 'same-owner-repeat',
                 status='failed', result=None, model_ready_before_source=None,
-                query_clock_version='native_ray_serve.source_to_sink.v1')
+                query_clock_version='native_ray_serve.source_to_sink.v2')
             report['queries'].append(current)
             phase = directory/('round-'+str(index+1))
             new_private_directory(phase)
@@ -398,7 +415,8 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
                 current['quality'] = json_metric(task.evaluate(source, result, checkout=checkout, evaluation=evaluation))
                 current['status'] = 'completed'
                 if index == 1:
-                    report['model_owner_reused'] = True if identity_complete and actual_identity == baseline_identity else None
+                    report['model_owner_reused'] = (True if identity_complete and actual_identity == baseline_identity
+                        and requests and report['queries'][0]['logical_requests'] else None)
                     report['warm_qualified'] = report['model_owner_reused']
             except BaseException as error:
                 failed(error, 'query')
@@ -455,7 +473,6 @@ def main(argv=None):
     if config.get('schema') == SERVE_SCHEMA:
         from src.baselines.text.sembench_native_text import task_from_config
         from src.baselines.text.sembench_source import verify_checkout
-        from src.baselines.text.frameworks.ray_native_serve_session import NativeServeSession
         if args.action == 'run':
             raise ValueError('the Serve profile uses the explicit serve-session action')
         verify_checkout(config['sembench_checkout'])
@@ -466,9 +483,8 @@ def main(argv=None):
             source = task.read_source()
             if 2*task.model_request_count(source) > config['budget']['limit']:
                 raise ValueError('the session budget cannot cover two current-source queries plus native startup attempts')
-            NativeServeSession(**{key: config[key] for key in ('model', 'model_source', 'app_name',
-                'deployment_name', 'engine_kwargs', 'processor_options', 'runtime_options')}, model_runtime_env={})
-            print(json.dumps(dict(status='checked_cpu_only', profile='native-ray-serve-json',
+            _native_serve_process(config, Path(args.output_dir or '.')/'native-caller', {})
+            print(json.dumps(dict(status='checked_cpu_only', profile='native-ray-serve-json-isolated-caller',
                 task=task.describe(source), execution_enabled=False, model_calls=0,
                 target_native_model_qualified=None), ensure_ascii=False, allow_nan=False))
             return 0

@@ -154,9 +154,10 @@ Cars真实scale文件／原普通Join／Q4的2026常量及投诉权重保留，E
 真实Cars／E-Commerce资产与本组合模型资格仍待核，原生不支持与缺数据不混同；E-Commerce Q7现已接同任务的exact pair工程方法，原SDK算法身份不转授。
 见[两族接线](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-cars-ecommerce-text)。
 Q7保完整N²请求及原index标签普通回连／字符串ID，111项软件及两driver各9发生项通过，原F1／空结果保留；见[配对接线](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ecommerce-exact-pair)，模型与真实资产待验。
-同一Ray runner新增[Serve会话profile](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)：
-一个owned deployment／有限预算执行两遍fresh查询，启动另列；真实模型身份未知时不授予暖轮。
-目标SDK／模型／物理清理尚待验；offline旧成绩不转授，Daft已有附加服务会话的软件接点，真暖／外部服务身份与目标SDK仍待验。
+同一Ray runner的[Serve v2隔离caller](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)
+在model_python持有原生deployment／processor，driver保留任务／原评分；两轮fresh查询、有限预算及原进程树监督不变。
+必要IPC留在独立v2查询内，caller／部署启动另列；当场model actor与实际EngineCore的PID／birth缺失或空查询均不授予暖轮。
+55项相关软件检查通过；真实SDK、响应关联、模型及物理退出仍待验，旧driver协议缺依赖失败保留；不借offline或Daft具名成绩。
 独立Daft同runner的[attached-session](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)复用builtin OpenAI graph／既有worker和ACK；
 两轮fresh查询共用永久HTTP预算，客户端worker换代而外部服务不由driver关闭，缺新鲜模型进程身份时warm=None。
 初始四模块120项软件范围保留；606f Movie Q8后续具名同模型owner两轮已核，其余组合不转授。当前原生静态system／消息layout限制按批次保留。

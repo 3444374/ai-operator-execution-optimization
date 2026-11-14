@@ -1,5 +1,5 @@
 {
-  "schema": "semloom.sembench_native_ray_serve_session.v1",
+  "schema": "semloom.sembench_native_ray_serve_session.v2",
   "sembench_checkout": "<SEMBENCH_C814_CHECKOUT>",
   "reviews_csv": "<FROZEN_MOVIE_REVIEWS_CSV>",
   "query": "Q3",
@@ -7,6 +7,9 @@
   "model": "<SERVED_MODEL_ID>",
   "model_source": "<LOCAL_MODEL_DIRECTORY>",
   "model_python": "<RAY_SERVE_MODEL_PYTHON>",
+  "startup_timeout_s": 180,
+  "session_timeout_s": 900,
+  "cleanup_s": 30,
   "app_name": "semloom-native-json-session",
   "deployment_name": "NativeJSONModel",
   "engine_kwargs": {},

@@ -152,6 +152,11 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 同一组合含[Ray Serve会话profile](diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-session)，
 单deployment两次fresh查询、预算及身份边界已软件检查，目标SDK／模型／物理退出尚待验；缺实际模型身份不得授予warm。
 
+[Ray Serve v2隔离caller](diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)
+同系统runner把原生Serve协议／持续deployment留在model_python，任务／原评分留driver，替代缺依赖的旧默认caller；不混装环境。
+三模块55项软件检查通过，含真实CPU子进程／两轮／异常退出／大图片包／fresh actor及EngineCore身份判断；0模型／GPU。
+必要IPC计入独立v2查询，启动另列；不授予实际SDK、响应ID关联、暖轮或物理退出资格，旧失败保留。
+
 [8d071独立MMQA Q4 sf25](diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-q4-8d071-model)
 两系统各24真实终态、完整19组相同，保存原F1=.6153846，JSON null及原genre别名保留，非全部抽取正确。
 归档／1512payload／源码及预算／清理核验，首轮零模型断言失败保留；单冷含初始化，无warm／排名／后续组合资格。

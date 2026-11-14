@@ -1566,6 +1566,8 @@ Medical模块包含真实原函数／SDK的受控回复差分，以及fresh禁LO
 <a id="native-ray-serve-session"></a>
 ## 独立原生 Ray 的 Serve 会话 profile
 
+以下保留初始v1软件接点；默认caller现已由[隔离v2](#native-ray-serve-isolated-caller)替代，原软件结果不授予v2目标资格。
+
 固定Ray2.56.1公开LLMConfig／build_llm_deployment及ServeDeploymentProcessorConfig，
 在同一sembench_native_ray runner新增显式serve-session及单独schema，由owned deployment承担模型生命周期，
 Data processor承担批处理／调度；不复制任务逻辑，不改offline run_query、原采样或图像stage接点。
@@ -1861,6 +1863,37 @@ Q12七次真实软件API非空链，以及MMQA Q2b仅候选额度的空链均完
 范围包含Movie旧原题／prepared、视觉、Q5多层聚合、真实CPU子进程／ACK和预算失败关闭，均0模型／GPU；
 Daft／Ray推理与HTTP回复是软件fixture，不是目标SDK、VLM或性能资格。
 最终方法清单及分范围复核SHA-256为`ce43235ca8b0b29768444f5bc5a2d4e5dc3b1986b44c4cd8fcba19270055314e`。
+
+<a id="native-ray-serve-isolated-caller"></a>
+## Ray Serve v2：原生调用环境与任务／评分环境分离
+
+606f目标环境检查发现driver有LOTUS／DuckDB等评分依赖但没有vLLM／SGLang协议，原生环境有Ray2.56.1／vLLM0.22.0，
+但没有评分依赖。旧默认caller在driver导入Serve请求类型即失败，不能因此判系统不支持或通过混装环境解决。
+现同一系统runner直接调用native_ray_serve_process，model_python中的一个持续caller持有原NativeServeSession，
+driver只读真实source、推进任务依赖批次和评完整结果；只共享项目源码路径，不借另一venv的包路径。
+Data processor与Serve仍拥有提交／批次／调度；没有新增语义runner、后台模型池或查询DSL。
+
+每个实际batch通过独占私有JSON包交接，回复后恢复原任务；正常结束与首异常均关闭本次owned app，
+原records supervisor负责有界进程树退出，不关闭其他app或全局Serve。启动／会话／清理配置是显式例值，
+清理在总会话时限内预留，不为每阶段重复扣除；失败终态保留原错误及close错误。
+图片包按实际文件大小读取，去掉通用8MiB JSON默认值对合法图像的误限，无输入行数／题号上限。
+必要IPC、原生同步预算／观测留在source→完整内存sink，后置审计／评分／结果写盘在外；
+采用native_ray_serve.source_to_sink.v2，不扣减或改写旧成绩，caller与deployment启动分别报告。
+
+默认CLI在原生构造事件记录实际model actor context及其PID／birth，再当场读取真正EngineCore后代的PID／birth；
+不把它称作独立观测的Serve replica或cache／权重身份。前后构造事件与身份须一致，两轮必须实际有模型工作；
+陈旧／缺失观测、PID复用或空查询均不授予warm。此身份hook只对Serve启用，不增加offline观测调用。
+目标SDK／模型资格仍未知，软件身份只是检查判断逻辑；物理GPU／SHM退出仍须服务器确认。
+
+f26fc3f6e干净导出加七份准确文件，三完整模块55项通过、0skip／模型／GPU，包含真实隔离CPU child、
+两次fresh查询、最终ACK／close、启动／执行异常、大图像包、PID复用、空查询及SDK配置检查fixture。
+此前68项整合含旧Ray prepared回归，不与55项重复累加；首次误列不存在测试模块的53通过＋1导入错误保留，修正计划后完成整合。
+最终55项结果SHA-256为`58b3d54b448b413d408047c629eb33a91ab32ccc2bf4e961a4d625c2e756c7fe`。
+
+服务器应先用model_python执行--check-sdk，只导入并构造原生LLM／processor／request配置，确认未启动Ray／CUDA／模型；
+仍需核实际响应ID与AsyncLLM请求ID的关联。通过后再安排有限两轮真实Movie查询及同模型身份／退出核验。
+本批未安装依赖、启动Serve、访问GPU或重复既有模型请求；v1失败保留，目标兼容、真实暖轮和物理退出pending。
+调用与三个超时字段见[现行入口](../../../../code/scripts/README.md#native-ray-serve-session)。
 
 ## 原件恢复与独立核验
 
