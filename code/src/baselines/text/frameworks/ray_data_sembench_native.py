@@ -25,6 +25,17 @@ _USAGE_FIELDS = (
 )
 
 
+def image_stage_enabled(options):
+    stage = options.get('prepare_image_stage', False)
+    if isinstance(stage, bool):
+        return stage
+    if isinstance(stage, dict):
+        from pydantic import TypeAdapter
+        # Ray 2.56.1 parses dicts with PrepareImageStageConfig(enabled=True).
+        return TypeAdapter(bool).validate_python(stage.get('enabled', True))
+    return stage.enabled
+
+
 def _options(values):
     values = deepcopy(dict(values or {}))
     unknown = values.keys() - _PROCESSOR_OPTIONS

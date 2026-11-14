@@ -2676,3 +2676,28 @@ Daft attached／READY及Q3必要物化与后置审计。受控时钟注入7秒�
 107／100／10个模拟秒，只证明成本归属，不是运行速度。独立Spec与Standards复核无阻塞。
 私有证明`VERIFY-clock-scope-final-20261114` SHA-256为
 `8094a4e1bd372d6c75c2bb6732614117a2b0431bf3494215cbda221b9d4ed61d`。
+
+<a id="ray-image-stage-binding"></a>
+## Ray 原生图像 stage 配置接线与剩余范围收敛
+
+基于`edf824c8b`，LOTUS＋Ray入口在完整视觉查询、MMQA image Join选择及check三处只接受
+`prepare_image_stage is True`，误拒绝Ray2.56.1原生dict配置；独立Ray入口已有dict／对象判断。
+将该既有判断移到Ray后端模块并共用：bool保持，dict默认启用并按Pydantic解析enabled，原生对象读enabled；
+SDK仍收到原配置。删除原独立副本及三处人为bool限制，不增加配置、执行器或语义方法。
+原题、模型采样、图像准备、预算、后续关系、关闭与计时均不改。
+
+新受控回归在修前有7个错误子场景：Animals Q7、E-Commerce Q12、MMQA Q2b的dict绑定及实际查询被拒绝。
+修后三类绑定均通过，E-Commerce非空Filter→Extract与MMQA非空Join→Extract的完整原题结果、
+原评分、全部消息、真实软件批次和sink后关闭与bool版本保持；False和enabled=False／'false'仍拒绝图像。
+五模块共92个不同软件方法最终通过，无跳过／模型／真实Ray runtime／GPU／外部服务。
+首轮91通过、1失败为新测试helper混淆MMQA的image_join与visual_query；定向复核又暴露同处旧operation=None断言。
+完整核对后仅修正该helper的任务身份分支，最终只重验此方法；两次失败与修前配置反例均保留，不将重跑累加。
+生产三文件hash在定向复核间保持。私有证明`VERIFY-ray-stage-final-20261114` SHA-256为
+`a705612d4b3e9f035e65f77dc4916de051409f0da173f5056a3054ef48fb8a6e`。
+
+当前各系统runner、明确题目集合、真实模型代表与必要剩余代码／验证已收敛在
+[实现状态](../../../../code/INFRA_STATUS.md#current-refactor-status)，冷／ready首次／同模型重复范围仍见
+[计时配置](../../../../code/src/baselines/README.md#native-query-comparison-scopes)。
+本次关闭有效配置的接线阻断，不授予新模型或整套验收资格。LOTUS＋Ray同模型warm仍是代码缺口；
+Daft TopK取消保持，独立系统没有作者级聚合／TopK、Kalypso没有图像carrier的项留空。
+数据缺口、原题质量与尚未执行的目标检查分列，不新增审计机制或为相同Q2b／Q5条件重复模型请求。

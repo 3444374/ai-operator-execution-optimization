@@ -2,6 +2,11 @@
 
 ## 2026-11-12：SemBench 原生接入的分路径验收
 
+[Ray原生图像配置接线](diagnostics/sembench_native_integration_20261112/README.md#ray-image-stage-binding)
+删除LOTUS入口三处仅认bool True的人为限制，与独立入口共用Ray原生dict／对象启用判断；原配置和执行保持。
+92个不同软件方法最终通过，配置反例及测试身份断言的两轮失败保留，0模型／GPU；
+当前runner题目集合、必要代码与目标验收分列，不把缺资产、未实现暖轮或原生无carrier归为同类问题。
+
 [冷暖条件与额外HTTP摘要收口](diagnostics/sembench_native_integration_20261112/README.md#native-clock-scope-20261114)
 记录69c5后的HTTP重复canonical摘要删除和独立Q3真实worker入口修正，原source／COUNT／期限与历史值保持。
 136项软件为135通过、1项缺真实资产跳过，0模型／GPU；不同原生启动、就绪首次与同模型重复条件分列，

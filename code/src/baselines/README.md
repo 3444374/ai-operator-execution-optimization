@@ -293,7 +293,7 @@ sink后评价只使用快照及其字节摘要，不让gold进入模型消息或
 [f83b Q10](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q10-f83b-model)完成各2000次及完整105组；两项均核独立物理清理。
 后续[Q9 Map](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q9map-608e20-model)与
 [MMQA Q1 sf25](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-q1-8d071-model)另按冻结版本核，
-后者Ray首次外清理失败及精确恢复保留；当前新族、same-owner warm与正式性能仍分别待验。
+后者Ray首次外清理失败及精确恢复保留；当前新族、其余同模型重复组合与正式性能仍分别待验。
 [后续Map组合验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-map-runners)保留具体提示身份、原后处理、完整空表及失败来源，不与前批计数累加。
 [Q10分组与gold边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#independent-native-q10-runners)复用同一原生图，不增加题目专用runner。
 [Join与计时组合](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-join-resident-accounting)记录完整配对、提前预算检查和resident统计后移；只授予其实际软件范围。
@@ -334,7 +334,7 @@ Q7的zebra与impala两次Filter都处理完整N行，保留两遍实际图像处
 E-Commerce Q8显式提供完整标题／描述和图片；原LOTUS1.2.4 Join accessor只选一侧单列的限制仍保留在原路径，
 本工程输入不据此宣称模型算法相同。原生生成API没有自动提供作者级Join／Aggregate／TopK。
 Q4重复Parquet索引按原Extract标签后写覆盖，Q8/Q9标签回连可扩张关系，物理发生项和模型生成ID不按gold修正。
-MMQA独立Q2b零Extract保留原SDK缺color列的KeyError；已有LOTUS＋后端的空schema兼容适配是另一合同。
+MMQA独立Q2b零Extract保留原SDK缺color列的KeyError；此前LOTUS＋后端补空schema的旧合同已退役，冻结结果仍按原来源解释。
 
 Ray需显式prepare_image_stage及真实VLM；Daft图文使用显式attached-session，offline字符串profile保持原拒绝规则。
 各场景的真实资产／模型资格与新增软件范围分列，见[完整验收与缺口](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-batches-visual-families)。
@@ -360,6 +360,9 @@ MMQA Q5层次聚合另按[对应tokenizer／context条件](#sembench-mmqa-aggreg
 
 同一入口可显式运行MMQA原Q2a／Q2b／Q7：配置`scenario=mmqa`及所选题，
 在`ray_native.processor_options`中设置`prepare_image_stage=true`，绑定实际VLM／processor环境。
+LOTUS和独立Ray入口现共用原生stage启用判断，也接受`{}`或`{"enabled": true}`及原生配置对象；
+dict按Ray2.56.1的bool解析规则处理，显式禁用仍拒绝图像。配置原样交SDK，不改图像处理或查询时钟，
+见[入口反例与验证](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#ray-image-stage-binding)。
 共享任务读取原CSV和`images/`，保留原目录顺序、左右关系及L×R预算；原函数仍拥有Join和最后投影。
 普通无歧义列名及`:left/:right`引用均按原字段绑定；原`ReasoningStrategy.ZS_COT`在准备和结果恢复时保留。
 完整原PNG消息直接交Ray原生图像准备、chat template、tokenization和vLLM actor，不把图片路径当普通文本。

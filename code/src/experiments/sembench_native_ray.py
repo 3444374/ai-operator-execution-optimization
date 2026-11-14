@@ -10,7 +10,7 @@ import math
 from pathlib import Path
 import time
 
-from src.baselines.text.frameworks.ray_data_sembench_native import query_scope
+from src.baselines.text.frameworks.ray_data_sembench_native import image_stage_enabled, query_scope
 from src.baselines.text.frameworks.ray_native_observer import summarize
 from src.baselines.text.sembench_native_text import native_query_batches
 from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
@@ -30,17 +30,6 @@ def _sampling(config):
             or sampling.get('structured_outputs') != {'json_object': True}):
         raise ValueError('native JSON tasks require n=1 and native JSON-object generation')
     return sampling
-
-
-def _image_stage_enabled(options):
-    stage = options.get('prepare_image_stage', False)
-    if isinstance(stage, bool):
-        return stage
-    if isinstance(stage, dict):
-        from pydantic import TypeAdapter
-        # Ray 2.56.1 parses dicts with PrepareImageStageConfig(enabled=True).
-        return TypeAdapter(bool).validate_python(stage.get('enabled', True))
-    return stage.enabled
 
 
 def run_query(task, config, directory, *, checkout, scope=query_scope):
@@ -180,7 +169,7 @@ def _predict_query_batches(task, source, owner, *, sampling, unit,
                 images = any(isinstance(message['content'], list)
                     and any(part.get('type') == 'image_url' for part in message['content'])
                     for request in pending for message in request['messages'])
-                if images and not _image_stage_enabled(processor_options):
+                if images and not image_stage_enabled(processor_options):
                     raise ValueError('native image content requires enabled prepare_image_stage')
             before = unit.attempts
             batch = owner.predict(pending, sampling_params=sampling)
@@ -485,7 +474,7 @@ def main(argv=None):
         if task.model_request_count(source) > config['budget']['limit']:
             raise ValueError('the permanent native budget cannot cover the eligible source')
         description = task.describe(source)
-        if description.get('input_modality') in ('image', 'text+image') and not _image_stage_enabled(config['processor_options']):
+        if description.get('input_modality') in ('image', 'text+image') and not image_stage_enabled(config['processor_options']):
             raise ValueError('native image content requires enabled prepare_image_stage')
         print(json.dumps(dict(status='checked_cpu_only', execution_enabled=False,
             task=description, model_calls=0), ensure_ascii=False, allow_nan=False))

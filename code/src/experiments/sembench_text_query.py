@@ -16,6 +16,7 @@ from src.infrastructure.private_artifacts import (
     json_metric, new_private_directory, read_json, write_private_json,
 )
 from src.infrastructure.redact import redact_text
+from src.baselines.text.frameworks.ray_data_sembench_native import image_stage_enabled
 
 
 BACKENDS = ('lotus-native', 'ray-data', 'daft', 'imlane')
@@ -84,11 +85,12 @@ def query_from_config(config, checkout, data_dir, generation):
     from src.baselines.text.sembench_ecomm import VISUAL_QUERY_IDS as ECOMM_VISUAL
 
     scenario, query = config['scenario'], str(config['query']).lower().removeprefix('q')
+    native_images = (config['backend'] == 'ray-data' and 'ray_native' in config
+        and image_stage_enabled(config['ray_native']['processor_options']))
     visual_query = (scenario == 'animals' or scenario == 'cars' and query in CARS_VISUAL
                     or scenario == 'medical' and query in MEDICAL_VISUAL
                     or scenario == 'ecomm' and query in ECOMM_VISUAL)
-    if visual_query and not (config['backend'] == 'ray-data' and 'ray_native' in config
-            and config['ray_native']['processor_options'].get('prepare_image_stage') is True):
+    if visual_query and not native_images:
         raise ValueError('complete visual queries require explicit native Ray image preparation')
     if scenario != 'animals' and ('manifest' in config or 'manifest_digest' in config):
         raise ValueError('manifest and manifest_digest apply only to the Animals source')
@@ -124,7 +126,7 @@ def query_from_config(config, checkout, data_dir, generation):
         raise ValueError('an explicit token counter is currently used only by native aggregation')
     image_join = (config['scenario'] == 'mmqa'
         and str(config['query']).lower().removeprefix('q') in IMAGE_QUERY_IDS
-        and config.get('ray_native', {}).get('processor_options', {}).get('prepare_image_stage') is True)
+        and native_images)
 
     return SemBenchTextQuery(checkout, data_dir, config['scenario'], config['query'],
         execution_id=config['query_id'], model_name=config['model_name'],
@@ -145,8 +147,8 @@ def check(config, query, engine):
     elif kind not in (None, 'filter', 'map', 'extract') and not native_ray:
         raise ValueError('unsupported semantic operator for this text entry: ' + kind)
     description = query.describe()
-    if description.get('visual_inputs') is not None and not (config['backend'] == 'ray-data' and 'ray_native' in config
-            and config['ray_native']['processor_options'].get('prepare_image_stage') is True):
+    if description.get('visual_inputs') is not None and not (native_ray
+            and image_stage_enabled(config['ray_native']['processor_options'])):
         raise ValueError('prepared image Join requires the explicit native Ray image preparation stage')
     expected = description.get('minimum_model_calls', description['expected_model_calls'])
     if engine.max_model_calls is None or engine.max_model_calls < expected:

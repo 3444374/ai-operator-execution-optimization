@@ -28,14 +28,14 @@ class RayOriginalVisualTests(unittest.TestCase):
         self.source.setUp()
         self.addCleanup(self.source.doCleanups)
 
-    def configure(self, scenario, query, inputs, *, allowance=64, **options):
+    def configure(self, scenario, query, inputs, *, allowance=64, image_stage=True, **options):
         service, _ = self.source.config(scenario, query, **options)
         config = dict(schema='semloom.sembench_text_run.v1', scenario=scenario, query=query,
             query_id='raw-visual', backend='ray-data', model_name=service['model_name'],
             generation=service['generation'], engine=dict(model_path='CPU-no-model',
                 model_python='CPU-no-model', driver_python='CPU-no-model', max_model_calls=allowance),
             resources=dict(query_timeout_s=60), profile={},
-            ray_native=dict(engine_kwargs={}, processor_options=dict(prepare_image_stage=True)))
+            ray_native=dict(engine_kwargs={}, processor_options=dict(prepare_image_stage=image_stage)))
         if 'scale_factor' in options:
             config['scale_factor'] = options['scale_factor']
         config.update({name: str(value) for name, value in inputs.items() if name != 'data_dir'})
@@ -81,8 +81,13 @@ class RayOriginalVisualTests(unittest.TestCase):
         np.random.set_state(state)
         replies = fixture.NativeHTTPReplies(self, scenario, query=query, mode=mode)
         report, sdk = self.invoke(config, task, engine, resources, replies)
-        self.assertTrue(task.visual_query)
-        self.assertIsNone(task.operation)
+        if scenario == 'mmqa':
+            self.assertFalse(task.visual_query)
+            self.assertIsNotNone(task.visual_inputs)
+            self.assertEqual(task.operation.describe()['kind'], 'join')
+        else:
+            self.assertTrue(task.visual_query)
+            self.assertIsNone(task.operation)
         self.assertEqual(report['status'], 'completed')
         self.assertEqual(report['result'], original['result'])
         actual_quality, expected_quality = deepcopy(report['quality']), deepcopy(original['quality'])
@@ -97,7 +102,7 @@ class RayOriginalVisualTests(unittest.TestCase):
                          Counter(batch['input_occurrences'] for batch in original['native_lm_calls']))
         self.assertEqual(len({row['call_id'] for row in sdk.requests}), len(sdk.requests))
         self.assertEqual(report['query_clock_version'], 'lotus_ray.source_to_sink.v1')
-        self.assertIn('synchronous actor observer', report['timing_scope'])
+        self.assertIn('no per-request success event or output persistence', report['timing_scope'])
         if original['model_calls']:
             self.assertLessEqual(report['sink_ready_ns'], report['native']['events']['close_started_ns'])
             self.assertLessEqual(report['native']['events']['close_finished_ns'], report['evaluation_started_ns'])
@@ -285,6 +290,22 @@ class RayOriginalVisualTests(unittest.TestCase):
         self.assertNotIn('quality',report)
         self.assertTrue(read_json(self.last/'native-predictions.json')['batches'][0]['predictions'])
 
+    def test_native_stage_dictionaries_bind_visual_and_image_join_queries_without_changing_execution(self):
+        cases = [('animals', 'Q7', self.source.animals_inputs()),
+                 ('ecomm', 'Q12', self.source.ecomm_inputs()),
+                 ('mmqa', 'Q2b', self.source.mmqa_inputs())]
+        for scenario, query, inputs in cases:
+            for stage in ({}, {'enabled': True}):
+                with self.subTest(scenario=scenario, stage=stage):
+                    _, config, task, engine, _, ledger, checked, _ = self.configure(
+                        scenario, query, inputs, image_stage=stage)
+                    self.assertEqual(checked['status'], 'checked_cpu_only')
+                    self.assertTrue(task.visual_query or task.visual_inputs is not None)
+                    self.assertEqual(config['ray_native']['processor_options']['prepare_image_stage'], stage)
+                    self.assertEqual(ledger.snapshot()['units'][0]['claimed'], 0)
+        self.compare('ecomm', 'Q12', cases[1][2], image_stage={'enabled': True})
+        self.compare('mmqa', 'Q2b', cases[2][2], image_stage={})
+
     def test_missing_assets_or_missing_native_image_stage_stop_before_any_backend_or_claim(self):
         inputs = self.source.ecomm_inputs()
         service, config, task, engine, resources, ledger, _, _ = self.configure('ecomm','Q12',inputs)
@@ -292,9 +313,11 @@ class RayOriginalVisualTests(unittest.TestCase):
         state = check(self.source.checkout, 'ecomm', 'Q12', data_dir=inputs['data_dir'])
         self.assertIn('complete original LOTUS visual query wired', state['baseline_states']['ray-data'])
         self.assertFalse(state['execution_enabled'])
-        with self.assertRaisesRegex(ValueError, 'native Ray image preparation'):
-            entry.query_from_config(dict(config, ray_native=dict(engine_kwargs={},processor_options={})),
-                self.source.checkout, inputs['data_dir'], task.generation)
+        for options in ({}, {'prepare_image_stage': False},
+                {'prepare_image_stage': {'enabled': False}}, {'prepare_image_stage': {'enabled': 'false'}}):
+            with self.subTest(options=options), self.assertRaisesRegex(ValueError, 'native Ray image preparation'):
+                entry.query_from_config(dict(config, ray_native=dict(engine_kwargs={}, processor_options=options)),
+                    self.source.checkout, inputs['data_dir'], task.generation)
         image = Path(inputs['data_dir'])/'images/1.png'
         image.unlink()
         with self.assertRaises(FileNotFoundError):
