@@ -188,6 +188,10 @@ IMLane回执v3删除逐行重复完整payload／hash及重复JSON预检查；整
 取消重复成功事件和批间文件核验，保留API额度／完整结果／错误及Serve响应关联，不补造独立engine终态。
 103个不同软件方法最终通过，首轮断言文字失败及定向复核保留；不是目标SDK或新性能资格。
 
+[b3b7 LOTUS＋Daft MMQA Q7](diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-q7-b3b7-model)
+原sf25完整625对各两轮，同VLM owner、Daft客户端换代；1250终态，原F1 .200／.222，质量偏低。
+1418原件／1186源码blob及原driver／ACK已独立核验，归档容量估计失败与迟到ACK超时保持；不转授新候选或独立JSON语义。
+
 [b3b7与5d617服务器回执](diagnostics/sembench_native_integration_20261112/README.md#b3b7-and-5d617-server-gates)
 b3b7 Linux150／150、0模型；5d617原Q2b单对诊断两后端各1POST都False，Extract0，原错误／wrapper失败保留，非原sf25／非空链或性能资格。
 原Q5 sf1000仍选中相同16篇且单叶，0模型／下载；不为多层资格重复或改造输入。

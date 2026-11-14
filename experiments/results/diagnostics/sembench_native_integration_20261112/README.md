@@ -2521,3 +2521,35 @@ Serve仅按需保存模型构造身份，完整非流式响应的call_id／respo
 Cars／E-Commerce真实数据缺口、系统原生不支持和目标未验证各自保留，详细题目范围继续由能力表及具名回执维护。
 源码层最小待办的工程估计为：LOTUS服务观测收尾约1.5–3小时，Daft失败证据交接约2–4小时；
 这是需要相关失败／视觉用例核对的工作量估计，不包含目标环境、模型运行或排队时间，也不是整套验收完成承诺。
+
+本批另独立审阅并整合`e325fb975`（原候选640a7f27c）和`b524f931a`（原候选3d66d46de）：
+Kalypso仅删除reset前的完整ratios数组副本，13个不同软件方法通过，实际estimator/reset/样本数及现用uniform审计保持。
+IMLane仅删除prepared VARCHAR预测前的额外EXPLAIN和无调用者字段，实际SQL／输入发生项／投影／ACK不变；
+30个不同软件方法通过，共享build-binding旧fixture的6个占位checkout子用例错误保留，不称整套全绿。
+实际DSO不改，须重链薄driver并生成当前源码绑定记录，Linux SQL／IPC／ACK仍待验；旧构建摘要不可手动回填。
+两批均0模型／GPU，软件范围与Ray103有重叠、不累加；对应旧原件、构建和冻结辅助保持。
+
+<a id="lotus-daft-q7-b3b7-model"></a>
+## b3b7 LOTUS＋Daft MMQA Q7：完整 sf25 首／同服务重复
+
+`lotus-daft-mmqa-q7-b3b7-qualification-20261114-r1`固定b3b7c8ebd、SemBench c814、LOTUS1.2.4及Daft0.7.21，
+执行原ImageJoin与完整Airlines/image结果、原parser及评分，不是独立JSON Daft语义。
+同一外部VLM服务／engine的四次新鲜身份观测一致，各轮Daft客户端重建，不能称同一Daft executor驻留。
+每轮原25图×25机场行625个发生项，共1250次终态、unknown／retry／额外预热0；两份625预算分别闭合，不退款。
+
+| 阶段 | 原完整内存sink行数 | source→完整sink v1（秒） | 原precision／recall／F1 |
+|---|---:|---:|---|
+| ready首次 | 15 | 89.336003441 | .133333／.4／.2 |
+| 同模型owner重复 | 13 | 87.360446790 | .153846／.4／.222222 |
+
+服务启动68.088839876秒、查询前token门21.952361517秒另计；执行完成但质量偏低，不作跨算法或异口径排名。
+625条答复中两轮484条逐字相同，完整关系不同，差异保留。
+原生预测call ID／完整关系已回放；HTTP原措辞每轮仅575项可唯一关联，另50个重复提示不强行逐项分配，只核多重集。
+目标模板／CPU token数组一致不代替GPU实际generate输入／输出数组；kernel、金额与未观测量保持未知。
+
+首次消息副本超过预声明1GiB归档估计，及后续归档／迟到ACK超时均保留；模型、审计不重跑。
+现有XZ归档26892964字节、1418份原件和1186件准确Git源码blob已独立逐件核验，
+两份driver原结果／评分／实际打点及worker ACK直接核对；1250答复与owner/token的专项回放依照冻结服务器审计。
+GPU／进程／SHM／端口与租约清理完成，不把迟到验收改写为旧外层全程通过。
+私有核验身份`VERIFY-b3b7-LOTUS-Daft-Q7-originals-20261114` SHA-256为
+`2b3047b70839a052dd6205b08090820d8e1006e83db14f31a60028f139a68214`，本次只读核验新增模型0次。

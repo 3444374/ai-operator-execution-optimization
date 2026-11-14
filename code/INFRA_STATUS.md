@@ -79,6 +79,11 @@ b3b7 Linux150／150及5d617两后端各一次Q2b诊断原件已核；实际都�
 真实目标SDK／新计时仍待验，现行外部测试辅助须迁移已删除的旧事件字段，
 见[逐系统边界与剩余项](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#ray-native-completion-owner)。
 
+Kalypso重复ratio快照已删（13项软件通过），必要uniform旁录保持；IMLane prepared额外EXPLAIN已删，
+30项软件通过、旧占位checkout fixture错误分列，新薄driver构建／Linux SQL与ACK待验。
+LOTUS＋Daft原Q7现有b3b7 sf25首／同VLM owner重复模型回执，原F1 .200／.222、质量偏低；
+原件、失败与计时见[具名回执](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-q7-b3b7-model)。
+
 当前剩余问题按共同边界处理，不能用增加题目入口绕开：
 
 | 共同边界 | 当前源码事实与收尾范围 |
