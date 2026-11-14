@@ -174,6 +174,10 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 离线Ray不再复制／落盘完整output，Serve关联审计仍保留；相关四模块70／70通过。
 与预检批合计去重246个不同方法为243通过、3跳过。actor日志、服务指纹及IMLane回执等仍有区间内开销，未授予统一计时或性能资格；历史值不扣减。
 
+[Serve终态文本记录](diagnostics/sembench_native_integration_20261112/README.md#serve-terminal-response-evidence)
+从b3b7继续移除每请求输出文件、完整token复制及旧callback，关联所需request ID／原文复用现有终态事件，仍在完整sink后核对。
+65个不同软件方法最终通过；首轮fixture缺显式字段及定向修复记录保留，0模型／GPU，不授予计时对齐或性能资格。
+
 [4f0b LOTUS＋Daft MMQA Q4](diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-mmqa-q4-4f0b-model)
 原24×2真实Extract终态，原分组19／18行、F1均.4865；原文与字段差异保留，执行完成不等于质量全对。
 私有首审计错用1200范围的失败原件保留，改为24后离线复核无新增模型；1405payload／1186Gitblob及结果／ACK只读核验。

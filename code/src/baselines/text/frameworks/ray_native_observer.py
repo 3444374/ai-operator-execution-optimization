@@ -10,7 +10,7 @@ import sys
 import time
 
 
-def install(engine_class, budget, emit, save_output=None):
+def install(engine_class, budget, emit, *, capture_outputs=False):
     """Observe the existing AsyncLLM boundary and charge before each generate."""
     original_init, original_generate = engine_class.__init__, engine_class.generate
     signature = inspect.signature(original_generate)
@@ -36,12 +36,8 @@ def install(engine_class, budget, emit, save_output=None):
             async for output in original_generate(self, *args, **kwargs):
                 if output.finished:
                     terminal = True
-                    emit('native_generate_terminal', attempt=attempt, request_id=request_id)
-                    if save_output is not None:
-                        save_output(attempt, dict(request_id=request_id,
-                            prompt_token_ids=list(output.prompt_token_ids or []),
-                            outputs=[dict(text=row.text, token_ids=list(row.token_ids),
-                                finish_reason=row.finish_reason) for row in output.outputs]))
+                    evidence = dict(outputs=[row.text for row in output.outputs]) if capture_outputs else {}
+                    emit('native_generate_terminal', attempt=attempt, request_id=request_id, **evidence)
                 yield output
         finally:
             if not terminal:
@@ -56,7 +52,6 @@ def setup():
     from vllm.v1.engine.async_llm import AsyncLLM
     from src.experiments.attempt_ledger import AttemptBudget
     from src.experiments.shared_request_budget import SharedClaimedUnit
-    from src.infrastructure.private_artifacts import publish_private_json
 
     spec = json.loads(os.environ['SEMLOOM_RAY_NATIVE_OBSERVER'])
     root = Path(spec['output'])
@@ -77,10 +72,7 @@ def setup():
         finally:
             os.close(fd)
 
-    def save_output(attempt, value):
-        publish_private_json(root / ('native-output-' + str(attempt) + '.json'), value)
-
-    install(AsyncLLM, unit, emit, save_output if spec.get('capture_outputs', True) else None)
+    install(AsyncLLM, unit, emit, capture_outputs=spec.get('capture_outputs', False))
     emit('native_observer_installed', python=sys.executable, prefix=sys.prefix,
          versions={name: version(name) for name in ('ray', 'vllm', 'torch', 'transformers')},
          meaning='API submission/terminal events; engine acceptance and kernel time unobserved')
@@ -105,6 +97,8 @@ def summarize(directory, *, offsets=None):
         last_confirmed_terminal_ns=max((row['monotonic_ns'] for row in terminal), default=None),
         submitted_attempts=[row['attempt'] for row in submitted],
         terminal_attempts=[row['attempt'] for row in terminal],
+        terminal_outputs=[dict(attempt=row['attempt'], request_id=row['request_id'], outputs=row['outputs'])
+                          for row in terminal if 'outputs' in row],
         unknown_attempts=[row['attempt'] for row in events if row['event'] == 'native_generate_unconfirmed'],
         native_versions=[row['versions'] for row in events if row['event'] == 'native_observer_installed'],
         native_interpreters=[dict(python=row['python'], prefix=row['prefix']) for row in events

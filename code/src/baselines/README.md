@@ -1006,7 +1006,9 @@ Ray／Daft prepared 路径在配置／输入核对和预算准备后开始，包
 独立Ray／Serve的非末批终态检查只读新增事件，同owner下一轮不再解析上一轮历史；完整核对仍在sink后。
 Daft worker不再重复同步写optional事件sidecar，原生执行记录与必要结果／ACK保持。
 LOTUS＋Ray及独立Ray离线入口也不再逐请求复制／落盘完整token与output，返回predictions保持；
-报告`native_output_artifacts=False`。Serve现有关联审计仍读取原始副本，显式保留True。
+报告`native_output_artifacts=False`。Serve也已删除逐请求输出文件／完整token复制，
+只将原生request ID及输出文本并入已有终态事件，完整响应关联仍在sink后核对，
+见[Serve终态记录](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#serve-terminal-response-evidence)。
 这些实际开销修正不等于所有时钟已对齐，见[验证与剩余边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-audit-work)。
 
 这些版本化起点不等于所有运行配置已经可直接排名：Ray／Daft 单冷和默认 LOTUS resident 的首次惰性

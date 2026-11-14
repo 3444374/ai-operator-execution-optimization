@@ -31,7 +31,6 @@ class SoftwareServeSession:
     def __init__(self, **options):
         from src.baselines.text.frameworks.ray_native_observer import install
         from src.experiments.shared_request_budget import SharedClaimedUnit
-        from src.infrastructure.private_artifacts import write_private_json
 
         self.spec = json.loads(options['model_runtime_env']['env_vars']['SEMLOOM_RAY_NATIVE_OBSERVER'])
         self.root = Path(self.spec['output'])
@@ -51,8 +50,7 @@ class SoftwareServeSession:
                 text = json.loads(prompt[-1]['content'])['text']
                 yield SimpleNamespace(finished=not fixture.unknown, prompt_token_ids=[1], outputs=[
                     SimpleNamespace(text=json.dumps(dict(keep='good' in text)), token_ids=[2], finish_reason='stop')])
-        install(Model, self.unit, emit,
-            lambda attempt, value: write_private_json(self.root/('native-output-'+str(attempt)+'.json'), value))
+        install(Model, self.unit, emit, capture_outputs=self.spec['capture_outputs'])
         self.Model, self.emit = Model, emit
 
     def start(self):
@@ -1102,21 +1100,19 @@ class NativeMultistageTests(unittest.TestCase):
     def test_serve_two_dependent_queries_use_one_model_owner_and_audit_every_batch(self):
         from src.experiments import sembench_native_ray as entry
         events=[]
-        original_read = entry.read_json
         original_summary = entry.summarize
         checkpoint_attempts = []
+        final_attempts = []
         def summarize(directory, *, offsets=None):
             observed = original_summary(directory, offsets=offsets)
             if offsets is not None:
                 checkpoint_attempts.append(observed['submitted_attempts'])
+            elif observed['terminal_attempts']:
+                attempts = observed['terminal_attempts']
+                self.assertGreaterEqual(events.count('sink'), 1 if max(attempts) <= 5 else 2)
+                final_attempts.append(attempts)
             return observed
-        def post_sink_read(path):
-            if Path(path).name.startswith('native-output-'):
-                attempt = int(Path(path).stem.removeprefix('native-output-'))
-                self.assertGreaterEqual(events.count('sink'), 1 if attempt <= 5 else 2)
-            return original_read(path)
-        with patch.object(entry, 'read_json', side_effect=post_sink_read), \
-                patch.object(entry, 'summarize', side_effect=summarize):
+        with patch.object(entry, 'summarize', side_effect=summarize):
             report = entry.run_serve_session(self.config(limit=10,serve=True),self.root/'session',checkout='fixture',
                 session_factory=self.serve_owner,
                 task_factory=lambda config:DependentTableTask(self.source,config['query_id'],events))
@@ -1130,6 +1126,9 @@ class NativeMultistageTests(unittest.TestCase):
         self.assertEqual([len(query['native_observation']['response_associations']) for query in report['queries']],[5,5])
         self.assertEqual(report['physical_attempts_reserved'],10)
         self.assertEqual(checkpoint_attempts, [[1,2,3], [6,7,8]])
+        self.assertEqual(final_attempts, [list(range(1,6)), list(range(1,11))])
+        self.assertFalse(report['native_output_artifacts'])
+        self.assertEqual(list((self.root/'session').glob('native-output-*.json')), [])
         self.assertIsNone(report['warm_qualified'])
         for index,query in enumerate(report['queries'],1):
             self.assertEqual(query['result']['data'],[['duplicate',True],['duplicate',True]])

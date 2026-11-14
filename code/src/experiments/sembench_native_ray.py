@@ -229,7 +229,8 @@ def _serve_attempt_window(directory, unit, first_attempt, before, predictions=No
     expected = window['attempts']
     associations = []
     if predictions is not None:
-        raw = [read_json(Path(directory)/('native-output-'+str(value)+'.json')) for value in expected]
+        expected_set = set(expected)
+        raw = [row for row in observed['terminal_outputs'] if row['attempt'] in expected_set]
         response_ids = [row['response_id'] for row in predictions]
         by_id = {row['request_id']: row for row in raw}
         if (len(predictions) != len(expected) or len(set(response_ids)) != len(response_ids)
@@ -237,7 +238,7 @@ def _serve_attempt_window(directory, unit, first_attempt, before, predictions=No
             raise RuntimeError('Serve response IDs do not cover the charged native outputs')
         for prediction in predictions:
             native = by_id[prediction['response_id']]
-            if len(native['outputs']) != 1 or native['outputs'][0]['text'] != prediction['generated_text']:
+            if len(native['outputs']) != 1 or native['outputs'][0] != prediction['generated_text']:
                 raise RuntimeError('Serve complete response differs from its native output')
             associations.append(dict(call_id=prediction['call_id'], response_id=prediction['response_id']))
     return dict(window, response_associations=associations), observed
@@ -309,7 +310,7 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
         author_original_semantic_method=False, lotus_sdk_required=False,
         execution_owner='Ray Data ServeDeploymentProcessor and owned Ray Serve deployment',
         target_native_model_qualified=None, performance_claim=False, queries=[],
-        native_output_artifacts=True,
+        native_output_artifacts=False, native_output_evidence='terminal event text',
         model_owner_reused=None, warm_qualified=None, extra_query_warmup=0,
         warm_qualification_scope='requires fresh native model actor and actual EngineCore subprocess identities plus '
             'unchanged native constructor events; software fixtures do not qualify a target model',

@@ -274,7 +274,7 @@ class RayPreparedTests(unittest.TestCase):
             ledger = CellBudgetLedger.create(Path(directory)/'ledger', AttemptBudget('one', 1), deadline_utc=None)
             ledger.reserve_unit('query', 1)
             budget = ledger.claim_shared_unit('query')
-            install(Engine, budget, lambda event, **data: events.append(event), lambda *args: None)
+            install(Engine, budget, lambda event, **data: events.append(event))
             self.assertEqual(len(asyncio.run(run())), 1)
             with self.assertRaises(BudgetExhausted):
                 asyncio.run(run())

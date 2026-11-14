@@ -2304,6 +2304,8 @@ GPU tensor／kernel／成本仍未知。私有首审计把24请求误写为1..12
 <a id="native-query-audit-work"></a>
 ## 查询区间内的重复审计开销
 
+以下是b3b7c8ebd的冻结行为；Serve逐请求输出副本已在[后续终态记录](#serve-terminal-response-evidence)替代。
+
 这是源码及CPU软件验证，基于5d617307e。独立[Ray／Serve查询runner](../../../../code/src/experiments/sembench_native_ray.py)
 每个非末批必须确认本批已扣记发生项全部终态，才可提交下一依赖批次；原实现却反复解析全部历史事件，
 再对期望列表逐项查找。同owner第二轮还重新解析第一轮。现在复用原`summarize`，
@@ -2341,6 +2343,27 @@ Standards发现批间全历史重读和列表成员查找；Spec发现同一问�
 LOTUS服务的图像hash／事件编码、Ray同步actor日志／Serve输出、
 IMLane UDF/provider指纹／回执，以及各配置的冷启动／ready条件仍须逐路径收口。
 不能据本批称全路径计时已对齐；旧成绩不扣减、不重贴标签，新候选仍需按实际相同scope和冷暖条件重测。
+
+<a id="serve-terminal-response-evidence"></a>
+## Serve 用已有终态事件保存响应关联
+
+基于b3b7c8ebd，核对[原生观察器](../../../../code/src/baselines/text/frameworks/ray_native_observer.py)的现行消费者后，
+Serve关联只需要attempt、原生request ID和完整输出文本，不需要额外的prompt/token数组或每请求文件。
+现在`capture_outputs=True`只把原文列表放入已有`native_generate_terminal`事件；
+删除`save_output` callback和`native-output-*.json`发布路径，三个现行调用及软件fixture全部迁移。
+离线路径继续不记录输出文本，独立Animals probe等其他诊断入口不受影响。
+Serve报告`native_output_artifacts=False`、`native_output_evidence='terminal event text'`；
+完整sink后仍核对全部扣记终态、唯一原生响应ID、单输出及原文，缺失／重复／不一致继续失败。
+原生输出对象、采样、查询关系、多阶段预算、unknown和关闭规则不变，没有新增协议或审计框架。
+
+三模块65个不同软件方法最终通过，0模型／GPU。首轮65方法有2个失败子例和1个错误：
+隔离caller的默认与故障重绑fixture缺生产Serve已显式传递的`capture_outputs`，子进程在构造阶段KeyError。
+保留首轮及独立子进程复现原件，修正fixture后只复核受影响模块8方法及剩余故障用例1方法；
+不能将重跑数相加或将首轮改为全通过。去重记录
+`VERIFY-serve-terminal-evidence-final-20261114.json` SHA-256为
+`a88dfd10de4eb021a2b620da8ae1b2c39915016c172977aedabe7cee9ff09c6e`。
+该范围没有真实Ray／vLLM模型或新性能资格；同步小型终态事件仍在查询内，尚未全路径计时对齐。
+历史完整输出原件和b3b7源码不改，仓外审计新候选应读取终态文本，不再假设逐请求文件存在。
 
 ## 原件恢复与独立核验
 
