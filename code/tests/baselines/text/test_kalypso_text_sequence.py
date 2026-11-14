@@ -124,6 +124,9 @@ class NativeTextSequenceTests(unittest.TestCase):
         events=[json.loads(line) for line in (root/'map-trace.jsonl').read_text().splitlines()]
         resets=[e['query_id'] for e in events if e['event']=='estimator_after_native_reset']
         self.assertEqual(resets,['map-first','extract','map-repeat'])
+        before=[e for e in events if e['event']=='estimator_before_native_reset']
+        self.assertEqual([e['query_id'] for e in before],resets)
+        self.assertTrue(all('samples' in e and 'ratios' not in e for e in before))
 
     def test_frozen_CPU_dispatch_is_per_query_even_when_filter_is_first(self):
         cfg,unit,_=self.binding(filter_first=True)

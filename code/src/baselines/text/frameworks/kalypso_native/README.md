@@ -33,6 +33,9 @@ receipt 传递 `model_ready_before_source` 与观测时间；它不是由调用�
 未知版本或缺失起点明确留空；没有该字段的旧 receipt 保持原 caller 区间，v2 Map 仍含执行内文件校验。
 当前各算子handler及Movie records/prefix均使用该独立版本；区间内仍有同步observer指纹／回执及必要输入准备，
 不授予跨系统统一可比性。公共读取器识别该版本且保留真实source起点；未知版本仍为空，旧v2／v3 receipt与时长不改写。
+Map reset 旁录只保存 estimator 身份及各阶段样本数，不再复制完整 ratio 历史数组；作者实际 ratio 状态及 reset 调用保持。
+`uniform-generate.jsonl`／`uniform-responses.jsonl`仍供现用外部审计核对实际 generate token 数组、采样、CALL／response ID 和 API usage，
+当前不能删除其 producer 或安装点；这些同步旁录仍计入查询，未声称完整时钟已对齐。历史回执与冻结 helper 保留原来源。
 运行的 `map_prompt_root` 必须与 CPU 预检输出分开，使用新的空目录；
 已有 prompt 表会因独占创建失败，不自动覆盖或复用旧表。
 

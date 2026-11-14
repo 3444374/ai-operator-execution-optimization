@@ -48,8 +48,7 @@ def install(cfg, unit, directory, native, map_class, estimator_class):
         qid=current_query[0]
         if qid is not None:
             event('estimator_before_native_reset',query_id=qid,estimator_id=id(self),
-                samples={str(k):len(v) for k,v in self.data.items()},
-                ratios={str(k):list(v) for k,v in self.data.items()})
+                samples={str(k):len(v) for k,v in self.data.items()})
         result = original_reset(self)
         if qid is not None:
             event('estimator_after_native_reset',query_id=qid,estimator_id=id(self),samples={str(k):len(v) for k,v in self.data.items()})
