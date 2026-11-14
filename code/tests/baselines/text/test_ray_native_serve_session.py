@@ -81,6 +81,19 @@ def software_sdk(*, existing_runtime=False, existing_app=False, start_failure=Fa
 
 
 class NativeServeSessionTests(unittest.TestCase):
+    def test_original_plain_and_extract_sampling_keep_their_native_request_formats(self):
+        messages=[dict(role='user',content='original LOTUS message')]
+        for sampling in (dict(n=1,max_tokens=8192,temperature=0,stop=[]),
+                dict(n=1,max_tokens=8192,response_format={'type':'json_object'}),
+                dict(n=1,max_tokens=8192,structured_outputs={'json_object':True})):
+            before=deepcopy(sampling)
+            value=native._input(dict(messages=messages),model='served',sampling_params=sampling)['request_kwargs']
+            expected=deepcopy(sampling)
+            if expected.pop('structured_outputs',None) is not None:
+                expected['response_format']={'type':'json_object'}
+            self.assertEqual(value,dict(expected,model='served',messages=messages,stream=False))
+            self.assertEqual(sampling,before)
+
     def options(self):
         return dict(model='served-model', model_source='unused-local-model', app_name='owned',
             deployment_name='single-model', engine_kwargs={'enable_prefix_caching': True},

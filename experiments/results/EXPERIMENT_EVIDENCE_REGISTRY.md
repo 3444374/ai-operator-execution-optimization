@@ -2,6 +2,11 @@
 
 ## 2026-11-12：SemBench 原生接入的分路径验收
 
+[LOTUS＋Ray就绪首轮／同模型重复](diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-serve-ready-repeat)
+同一原题runner复用现有Serve owner／caller及两路径共用生命周期，保持LOTUS逐算子消息／采样／完整sink。
+最终106个不同软件方法通过，0模型／GPU；原失败与定向复核保留。单IPC通道、整体session期限和正式匹配条件分列，
+目标SDK／模型／renderer／清理仍待原服务器验收，不借旧独立JSON或CPU身份授予真暖与性能资格。
+
 [Ray原生图像配置接线](diagnostics/sembench_native_integration_20261112/README.md#ray-image-stage-binding)
 删除LOTUS入口三处仅认bool True的人为限制，与独立入口共用Ray原生dict／对象启用判断；原配置和执行保持。
 92个不同软件方法最终通过，配置反例及测试身份断言的两轮失败保留，0模型／GPU；

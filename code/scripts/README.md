@@ -208,6 +208,13 @@ Ray 的原生完整查询使用 [ray_native 配置](../configs/sembench_ray_nati
 的 `--config / --sembench-checkout / --data-dir / --tokenizer / --reference / --output-dir` 参数。
 保存答复按 occurrence 绑定，不能把模型答复按并发抵达顺序或提示去重后分配。
 计时、原生版本、预算与退出条件见 [Ray 内存 sink](../src/baselines/README.md#ray-native-prepared-sembench)。
+LOTUS＋Ray的[就绪首轮／同模型重复模板](../configs/sembench_lotus_ray_serve_session.example.json)
+仍用本CLI的`check/run`，显式`lifecycle=serve-session`及`ray_native.serve`，不是独立JSON任务。
+同一原题完整执行两次，每轮fresh source；Serve模型启动另计。总期限由`serve.session_timeout_s`拥有，
+不填`resources.query_timeout_s`，避免声明未生效的单查询期限。详细条件见[Serve接线](../src/baselines/README.md#lotus-ray-serve-ready-repeat)。
+`check`的`native_serve_configuration`给出隔离模型环境所需的平坦配置，可另存仓库外私有JSON，
+供既有`python -m src.experiments.native_ray_serve_process --check-sdk`做零模型SDK检查；
+driver不混装模型环境依赖。模型run仍由现有服务器租约／监督执行。
 MMQA Q2a／Q2b／Q7也使用这个既有CLI：在仓库外Ray原生配置中选择`scenario=mmqa`、
 `query=2a/2b/7`、实际VLM，并设置`ray_native.processor_options.prepare_image_stage=true`。
 `--data-dir`指向原CSV及`images/`的场景根；预算按原L×R候选发生项，不能按图片数或唯一文本数计数。

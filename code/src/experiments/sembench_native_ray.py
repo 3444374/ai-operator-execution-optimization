@@ -6,7 +6,6 @@ the existing supervised worker, host lease and physical resource checks.
 
 import argparse
 import json
-import math
 from pathlib import Path
 import time
 
@@ -193,240 +192,65 @@ def _predict_query_batches(task, source, owner, *, sampling, unit,
         program.close()
 
 
-def _serve_attempt_window(directory, unit, first_attempt, before, predictions=None):
-    """Match API allowance to complete native responses, after the query sink."""
-    expected = list(range(first_attempt+before, first_attempt+unit.attempts))
-    associations = []
-    if predictions is not None:
-        response_ids = [row['response_id'] for row in predictions]
-        if len(predictions) != len(expected) or len(set(response_ids)) != len(response_ids):
-            raise RuntimeError('Serve complete API response IDs do not cover the charged invocations')
-        associations = [dict(call_id=row['call_id'], response_id=row['response_id']) for row in predictions]
-    return dict(attempts=expected, response_associations=associations,
-        complete_native_API_results=None if predictions is None else len(predictions),
-        completion_source='complete non-streaming native API responses; not an independent engine-output trace'), summarize(directory)
-
-
-def _owner_snapshot(snapshot):
-    if snapshot is None:
-        return None, None
-    before = time.monotonic_ns()
-    value = snapshot()
-    after = time.monotonic_ns()
-    fields = {'observed_monotonic_ns', 'node_id', 'model_actor_id', 'model_actor_pid',
-              'model_actor_create_time', 'model_processes'}
-    if not isinstance(value, dict) or not fields <= value.keys():
-        return value, None
-    children = value['model_processes']
-    if (not before <= value['observed_monotonic_ns'] <= after
-            or not value['node_id'] or not value['model_actor_id']
-            or type(value['model_actor_pid']) is not int or value['model_actor_pid'] <= 0
-            or not isinstance(children, list) or not children):
-        return value, None
-    processes = [(value['model_actor_pid'], value['model_actor_create_time'])]
-    for child in children:
-        if not isinstance(child, dict) or not {'pid', 'create_time'} <= child.keys():
-            return value, None
-        processes.append((child['pid'], child['create_time']))
-    if any(type(pid) is not int or pid <= 0 or type(birth) not in (int, float)
-           or not math.isfinite(birth) or birth <= 0 for pid, birth in processes):
-        return value, None
-    return value, (value['node_id'], value['model_actor_id'], processes[0], tuple(sorted(processes[1:])))
-
-
-def _serve_constructor_events(directory):
-    events = [json.loads(line) for path in Path(directory).glob('native-events-*.jsonl')
-              for line in path.read_text().splitlines()]
-    return sorted((row['monotonic_ns'], row.get('pid'), row['event']) for row in events
-        if row['event'] in ('native_constructor_started', 'native_constructor_returned'))
-
-
-def _native_serve_process(config, directory, runtime_env):
-    from src.experiments.native_ray_serve_process import NativeServeProcess
-
-    options = {key: config[key] for key in ('model', 'model_source', 'app_name',
-        'deployment_name', 'engine_kwargs', 'processor_options', 'runtime_options')}
-    return NativeServeProcess(model_python=config['model_python'], directory=directory,
-        startup_timeout_s=config['startup_timeout_s'], session_timeout_s=config['session_timeout_s'],
-        cleanup_s=config['cleanup_s'], native_options=dict(options, model_runtime_env=runtime_env))
-
-
 def run_serve_session(config, directory, *, checkout, session_factory=None,
                       identity_snapshot=None, task_factory=None):
-    """Two fresh complete queries, one owned Serve deployment and finite unit.
-
-    The optional host snapshot callback must return freshly observed native model
-    actor/PID/birth and actual model subprocess PID/birth on this same host.
-    Missing identity evidence leaves warm qualification unknown. The caller
-    still owns the existing bounded host supervision and physical GPU checks.
-    """
+    """Two independent JSON queries on the shared ready Serve lifecycle."""
+    from functools import partial
     from src.baselines.text.sembench_native_text import task_from_config
+    from .native_ray_serve_process import run_serve_queries
 
     if config.get('schema') != SERVE_SCHEMA:
         raise ValueError('the explicit independent Ray Serve session schema is required')
     sampling = _sampling(config)
-    directory = Path(directory).resolve()
-    new_private_directory(directory)
-    report = dict(schema='semloom.sembench_native_ray_serve_session.result.v2',
-        baseline_identity='native-ray-serve-json-isolated-caller', status='failed',
-        semantic_owner='project unified JSON task semantics; not LOTUS or author-original',
-        author_original_semantic_method=False, lotus_sdk_required=False,
-        execution_owner='Ray Data ServeDeploymentProcessor and owned Ray Serve deployment',
-        target_native_model_qualified=None, performance_claim=False, queries=[],
-        native_output_artifacts=False, native_output_evidence='complete native API response',
-        model_owner_reused=None, warm_qualified=None, extra_query_warmup=0,
-        warm_qualification_scope='requires fresh native model actor and actual EngineCore subprocess identities plus '
-            'unchanged native constructor events; software fixtures do not qualify a target model',
-        native_startup_attempts=None, worker_entry_ns=time.monotonic_ns(),
-        timing_scope='deployment startup separately measured; each fresh source, native Serve graph, '
-            'dependent batches, native complete response checks, strict task parsing and full memory sink measured directly; API allowance '
-            'and necessary cross-environment batch IPC included; no per-request success persistence; post-sink audits/scoring/persistence '
-            'and final deployment/caller close excluded')
-    primary = ledger = unit = owner = current = None
 
-    def failed(error, phase):
-        nonlocal primary
-        report['status'] = 'failed'
-        report['warm_qualified'] = None
-        if current is not None:
-            current['status'] = 'failed'
-            current.pop('quality', None)
-            current.setdefault('error_type', type(error).__name__)
-        if primary is None:
-            primary = error
-            report.update(error_type=type(error).__name__, error=redact_text(str(error)))
-        elif primary is not error:
-            primary.add_note(phase+' also failed: '+type(error).__name__)
-
-    try:
+    def prepare():
         factory = task_factory or task_from_config
         tasks = [factory(dict(config, query_id=config['query_id']+'-round-'+str(index+1))) for index in range(2)]
-        evaluations = [task.prepare_evaluation() for task in tasks]
-        value = config['budget']
-        ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
-        unit = ledger.claim_shared_unit(value['unit_id'])
-        first = next(row['first_attempt'] for row in ledger.snapshot()['units'] if row['unit_id'] == value['unit_id'])
-        runtime_env = dict(py_executable=config['model_python'], env_vars=dict(
-            PYTHONPATH=str(Path(__file__).parents[2]),
-            SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory),
-                observe_model_actor_identity=True))))
-        if session_factory is None:
-            owner = _native_serve_process(config, directory/'native-caller', runtime_env)
-        else:
-            owner = session_factory(model=config['model'], model_source=config['model_source'],
-                app_name=config['app_name'], deployment_name=config['deployment_name'],
-                engine_kwargs=config['engine_kwargs'], processor_options=config['processor_options'],
-                runtime_options=config['runtime_options'], model_runtime_env=runtime_env)
-        owner.start()
-        if identity_snapshot is None:
-            identity_snapshot = getattr(owner, 'identity_snapshot', None)
-        report['native'] = owner.report
-        report['native_startup_attempts'], initial = _serve_attempt_window(directory, unit, first, 0)
-        constructors = initial['model_constructor_returned_ns']
-        if not initial['available'] or not constructors:
-            raise RuntimeError('Serve startup did not establish its mandatory native observer')
-        constructor_events = _serve_constructor_events(directory)
-        baseline_raw, baseline_identity = _owner_snapshot(identity_snapshot)
-        report['initial_model_owner'] = baseline_raw
-        report['deployment_startup_seconds'] = owner.report['deployment_startup_seconds']
-        report['native_caller_startup_seconds'] = owner.report.get('native_caller_startup_seconds')
-        identity_complete = baseline_identity is not None
-        accounted = unit.attempts
-        for index, (task, evaluation) in enumerate(zip(tasks, evaluations, strict=True)):
-            current = dict(round=index+1, phase='ready-first' if index == 0 else 'same-owner-repeat',
-                status='failed', result=None, model_ready_before_source=None,
-                query_clock_version='native_ray_serve.source_to_sink.v2')
-            report['queries'].append(current)
-            phase = directory/('round-'+str(index+1))
-            new_private_directory(phase)
-            requests, predictions, result = [], [], None
-            before = unit.attempts
-            try:
-                if before != accounted or _serve_constructor_events(directory) != constructor_events:
-                    raise RuntimeError('Serve submitted new work or constructed a model between complete queries')
-                raw_identity, actual_identity = _owner_snapshot(identity_snapshot)
-                current['owner_before_source'] = raw_identity
-                identity_complete = identity_complete and actual_identity is not None
-                if baseline_identity is not None and actual_identity is not None and actual_identity != baseline_identity:
-                    raise RuntimeError('Serve model owner changed before fresh source')
-                current['source_started_ns'] = time.monotonic_ns()
-                source = task.read_source()
-                if task.model_request_count(source) > unit.remaining:
-                    raise BudgetExhausted('Serve session budget cannot cover the complete fresh source')
-                def sink(value):
-                    nonlocal result
-                    result = value
-                    current['sink_ready_ns'] = time.monotonic_ns()
-                    current['source_to_sink_seconds'] = (current['sink_ready_ns']-current['source_started_ns'])/1e9
+        return [partial(execute, task, task.prepare_evaluation()) for task in tasks]
 
-                _predict_query_batches(task, source, owner, sampling=sampling, unit=unit,
-                    requests=requests, counts=current.setdefault('request_batch_counts', []),
-                    predictions=predictions, sink=sink)
-                current['post_sink_audit_started_ns'] = time.monotonic_ns()
-                current['native_observation'], observed = _serve_attempt_window(directory, unit, first, before, predictions)
-                accounted = unit.attempts
-                if len(predictions) != len(requests):
-                    raise RuntimeError('Serve complete predictions differ from task occurrences')
-                if _serve_constructor_events(directory) != constructor_events:
-                    raise RuntimeError('Serve constructed a new native model during the session')
-                raw_identity, actual_identity = _owner_snapshot(identity_snapshot)
-                current['model_owner'] = raw_identity
-                identity_complete = identity_complete and actual_identity is not None
-                if baseline_identity is not None and actual_identity is not None and actual_identity != baseline_identity:
-                    raise RuntimeError('Serve model owner changed during the session')
-                current['model_ready_before_source'] = (
-                    owner.report['events']['deployment_ready_ns'] <= current['source_started_ns']
-                    and max(constructors) <= current['source_started_ns'])
-                task.verify_source(source)
-                current['task'] = task.describe(source)
-                current['quality'] = json_metric(task.evaluate(source, result, checkout=checkout, evaluation=evaluation))
-                current['status'] = 'completed'
-                if index == 1:
-                    report['model_owner_reused'] = (True if identity_complete and actual_identity == baseline_identity
-                        and requests and report['queries'][0]['logical_requests'] else None)
-                    report['warm_qualified'] = report['model_owner_reused']
-            except BaseException as error:
-                failed(error, 'query')
-            finally:
-                try:
-                    current['logical_requests'] = len(requests)
-                    if result is not None:
-                        current['result'] = task.encode_result(result)
-                    write_private_json(phase/'requests.json', requests)
-                except BaseException as error:
-                    failed(error, 'query evidence persistence')
-            if primary is not None:
-                raise primary
-        report['status'] = 'completed'
-    except BaseException as error:
-        failed(error, 'session')
-    finally:
-        if unit is not None:
-            try:
-                ledger.close_shared_unit(config['budget']['unit_id'])
-                report['physical_attempts_reserved'] = unit.attempts
-                report['permanent_budget'] = ledger.snapshot()
-            except BaseException as error:
-                failed(error, 'budget close')
-        if owner is not None:
-            report['native'] = owner.report
-            try:
-                owner.close()
-            except BaseException as error:
-                failed(error, 'owned Serve close')
-        for query in report['queries']:
-            try:
-                write_private_json(directory/('round-'+str(query['round']))/'query.json', query)
-            except BaseException as error:
-                failed(error, 'query report persistence')
+    def execute(task, evaluation, owner, unit, current, phase):
+        requests, predictions, result = [], [], None
+        primary = None
         try:
-            write_private_json(directory/'session.json', report)
+            current['source_started_ns'] = time.monotonic_ns()
+            source = task.read_source()
+            if task.model_request_count(source) > unit.remaining:
+                raise BudgetExhausted('Serve session budget cannot cover the complete fresh source')
+            def sink(value):
+                nonlocal result
+                result = value
+                current['sink_ready_ns'] = time.monotonic_ns()
+                current['source_to_sink_seconds'] = (current['sink_ready_ns']-current['source_started_ns'])/1e9
+
+            _predict_query_batches(task, source, owner, sampling=sampling, unit=unit,
+                requests=requests, counts=current.setdefault('request_batch_counts', []),
+                predictions=predictions, sink=sink)
+            current['post_sink_audit_started_ns'] = time.monotonic_ns()
+            task.verify_source(source)
+            current['task'] = task.describe(source)
+            current['quality'] = json_metric(task.evaluate(source, result, checkout=checkout, evaluation=evaluation))
+            return predictions
         except BaseException as error:
-            failed(error, 'session evidence persistence')
-    if primary is not None:
-        primary.query_report = report
-        raise primary
-    return report
+            primary = error
+            raise
+        finally:
+            try:
+                current['logical_requests'] = len(requests)
+                if result is not None:
+                    current['result'] = task.encode_result(result)
+                write_private_json(phase/'requests.json', requests)
+            except BaseException as error:
+                if primary is None:
+                    raise
+                primary.add_note('query evidence persistence also failed: '+type(error).__name__)
+
+    return run_serve_queries(config, directory, prepare_queries=prepare,
+        metadata=dict(schema='semloom.sembench_native_ray_serve_session.result.v2',
+            baseline_identity='native-ray-serve-json-isolated-caller',
+            semantic_owner='project unified JSON task semantics; not LOTUS or author-original',
+            author_original_semantic_method=False, lotus_sdk_required=False),
+        session_factory=session_factory, identity_snapshot=identity_snapshot)
+
 
 
 def main(argv=None):
@@ -438,6 +262,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     config = read_json(args.config)
     if config.get('schema') == SERVE_SCHEMA:
+        from .native_ray_serve_process import _native_serve_process
         from src.baselines.text.sembench_native_text import task_from_config
         from src.baselines.text.sembench_source import verify_checkout
         if args.action == 'run':

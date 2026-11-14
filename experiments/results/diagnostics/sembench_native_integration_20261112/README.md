@@ -2701,3 +2701,38 @@ SDK仍收到原配置。删除原独立副本及三处人为bool限制，不增�
 本次关闭有效配置的接线阻断，不授予新模型或整套验收资格。LOTUS＋Ray同模型warm仍是代码缺口；
 Daft TopK取消保持，独立系统没有作者级聚合／TopK、Kalypso没有图像carrier的项留空。
 数据缺口、原题质量与尚未执行的目标检查分列，不新增审计机制或为相同Q2b／Q5条件重复模型请求。
+
+<a id="lotus-ray-serve-ready-repeat"></a>
+## LOTUS＋Ray 模型就绪首轮与同模型重复接线
+
+基于`7d3f77126`，同一个LOTUS完整查询runner和CLI新增显式`lifecycle=serve-session`，
+复用原Ray Serve deployment／隔离caller，模型ready后执行两次原SemBench函数，各自fresh读源到完整内存sink。
+原accessor、消息、parser、关系处理和逐算子采样保持；普通生成不强加JSON，Extract按其原请求映射JSON-object。
+独立JSON入口仍保留严格JSON合同，语义身份不合并。不是逐题executor，也不改已取消的Daft接入。
+
+原独立JSON会话的owner／永久预算／模型身份／关闭流程移入现有caller模块供两个入口使用，旧重复生命周期移除。
+每轮按原生批次offset及attempt差量核对，不重新claim或提前close共享unit；最终报告由会话层唯一发布。
+源码复核发现的重复独占写`round-N/query.json`已在新会话验证前消除，没有用覆盖文件绕过。
+原groupby线程在单个顺序IPC caller交接LM批次，每批仍由Serve原生调度；与offline并发形态不同，须作为profile条件保留。
+已有work_deadline／stop在锁取得后和命令接受前核对，避免排队线程过期后再交模型请求。
+
+本profile沿已有Serve整体session期限，覆盖启动、两轮及清理；不另实现单查询deadline，
+无效的`resources.query_timeout_s`在check明确拒绝。模板与[配置说明](../../../../code/src/baselines/README.md#lotus-ray-serve-ready-repeat)一致。
+`lotus_ray_serve.source_to_sink.v1`直接记录fresh source至原完整结果，真实API预算／batch IPC保留；
+启动、后置审计／评价／归档及最终关闭另列。caller启动包含deployment，不能相加或扣减历史时长。
+同模型重复须两轮非空、constructor不变且新鲜actor／EngineCore PID／birth一致；零请求或缺身份不授资格。
+
+最终去重106项软件检查全部通过，0跳过／真实模型／真实Ray runtime／GPU／外部服务。
+新增覆盖原Movie Filter两轮、原quick TopK每轮七批28次、MMQA真实软件survivor Join→Extract、
+原CLI worker全流程、预算差量、零请求、模型变更，以及评价／关闭同时失败仍保留首错和完整结果；
+另用真实CPU子进程验证并发调用关联、过期不交新命令和原SDK替身plain／JSON格式。
+首95项有一处构造错误的文本断言失败：新callback在sink后即检出新增constructor，仍禁止第二source；
+错误断言修正。CLI新增检查曾因测试fake拦截纯constructor的空env失败，也已定向修正。
+两份失败原件均保留，后续只复验受影响项，重跑方法不累加。
+私有证明`VERIFY-lotus-ray-ready-final-20261114` SHA-256为
+`c15eb6e13e5b11aee431a2d99f913b7ed60fb8926521742adca48a7e916b7e09`。
+
+这关闭代码层的LOTUS＋Ray ready／同模型重复入口缺口；真实Ray2.56.1配置／renderer／逐算子采样、
+目标模型身份／两轮实际请求与物理清理仍交原服务器会话验收。CPU合成PID不证明真实模型复用，
+也不借用旧JSON Serve的模型成绩。正式比较仍绑定相同原题／输入／模型／生成／缓存／资源及实际profile，
+原RNG、两轮工作量／质量差异、token或kernel未观测项均如实保留。

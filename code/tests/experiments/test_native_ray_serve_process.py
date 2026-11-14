@@ -111,6 +111,36 @@ class NativeServeProcessTests(unittest.TestCase):
         self.assertEqual(read_json(self.root/'caller/terminal.json')['status'], 'closed')
         self.assertTrue(owner.done.is_set())
 
+    def test_concurrent_group_threads_keep_each_command_and_reply_associated(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+
+        owner=self.owner();owner.start();barrier=Barrier(2)
+        def predict(index):
+            barrier.wait(timeout=5)
+            key='thread-'+str(index)
+            batch=owner.predict([dict(call_id=key,messages=[dict(role='user',content='{"text":"good"}')])],
+                sampling_params=dict(n=1,structured_outputs={'json_object':True}))
+            return key,batch['predictions'][0]['call_id']
+        try:
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                pairs=list(pool.map(predict,range(2)))
+            self.assertTrue(all(expected==actual for expected,actual in pairs))
+            self.assertEqual(len(owner.report['batches']),2)
+        finally:
+            self.ledger.close_shared_unit('session');owner.close()
+        self.assertEqual(read_json(self.root/'caller/terminal.json')['status'],'closed')
+
+    def test_expired_work_allowance_cannot_publish_another_prediction_command(self):
+        owner=self.owner();owner.start()
+        try:
+            owner.work_deadline=time.monotonic()-1
+            with self.assertRaisesRegex(TimeoutError,'before submission'):
+                owner.predict([dict(call_id='late',messages=[])],sampling_params={'n':1})
+            self.assertFalse((owner.directory/'command-1.json').exists())
+        finally:
+            self.ledger.close_shared_unit('session');owner.close()
+
     def test_native_startup_and_prediction_failures_keep_error_and_exit(self):
         for mode in ('start-failure', 'prediction-failure'):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
@@ -155,7 +185,7 @@ class NativeServeProcessTests(unittest.TestCase):
                 supervise=known_child_supervisor)
             owner._command = lambda path: [sys.executable, '-B', '-c', CHILD, str(path), 'success']
             return owner
-        with patch('src.experiments.sembench_native_ray._native_serve_process', side_effect=factory):
+        with patch('src.experiments.native_ray_serve_process._native_serve_process', side_effect=factory):
             report = run_serve_session(config, fixture.root/'session', checkout='software', task_factory=fixture.tasks)
         self.assertEqual(report['status'], 'completed')
         self.assertEqual(report['physical_attempts_reserved'], 4)

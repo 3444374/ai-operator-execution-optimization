@@ -446,6 +446,33 @@ Q9 Map 不代表 TopK。上述是该冻结提交的独立单冷成绩，当前�
 该记录图仍有独立调用者，未被本次prepared接线完整替代。旧Q3专项API已按前述恢复说明退役；
 其余记录图在完成对应调用迁移与验证后再退出，不删除原始成功/失败证据或活跃公共清理helper。
 
+<a id="lotus-ray-serve-ready-repeat"></a>
+#### 模型就绪首轮与同模型重复
+
+同一[完整查询runner](../experiments/native_ray_sembench.py)现支持
+[Serve配置](../../configs/sembench_lotus_ray_serve_session.example.json)，沿原`check/run`入口选择
+`lifecycle=serve-session`。先建立一个原生Ray Serve deployment，再两次调用原LOTUS完整查询函数，
+每轮fresh source、实际依赖批次、parser／关系后处理和完整内存sink保持；没有逐题runner或替换成JSON任务。
+原生chat请求保留每算子采样：普通Filter／Map／TopK不强加JSON，Extract自己的JSON-object按native API同义映射。
+独立JSON入口仍要求其原JSON格式，两个语义身份不合并。固定Ray2.56.1，实际vLLM／模型环境另核。
+
+现有[隔离caller／会话生命周期](../experiments/native_ray_serve_process.py)由两条路径复用；
+同一个永久unit覆盖启动及两轮实际调用，每轮用attempt差量与native批次offset核对，末轮后统一关闭。
+`round-N/query.json`仅由会话层发布，原LOTUS批次／预测分别保存；原冷路径仍独立拥有unit／runtime及报告。
+原groupby线程共享单个顺序IPC caller，因此不同LM批次顺序提交，各批内部仍由原生Serve调度；
+不能称与offline并发形态完全相同。锁取得后和caller接受命令前核已有期限，stop后不再接新工作。
+
+`ray_native.serve.session_timeout_s`覆盖模型启动、两轮查询及清理，另有启动和清理保留；
+本profile不支持单查询deadline，显式`resources.query_timeout_s`会在check拒绝，不留下无效限制。
+`serve`的processor选项仅batch_size／concurrency；图像经原LOTUS真实PNG内容与Serve chat carrier，
+不用offline的prepare_image_stage。真实renderer／token及VLM条件须按目标SDK验证，不能从软件消息相同外推。
+
+每轮`lotus_ray_serve.source_to_sink.v1`从原数据读取到完整原结果；模型启动、后置审计／评价／写盘和最终关闭分列，
+必要API预算、batch IPC和模型执行留在内。caller启动包含deployment启动，不能相加。
+warm要求两轮实际非空、无新增constructor、当场model actor和EngineCore PID／birth均保持；
+缺证据／零请求留空，prefix cache开启不证明命中。每轮原RNG、真实工作量和质量分别保留。
+软件接线已验，真实模型／物理清理及正式匹配比较仍待验，见[验证与范围](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-ray-serve-ready-repeat)。
+
 <a id="lotus-native-resident-sembench"></a>
 ### 原生 LOTUS 的显式 resident 文本查询
 
@@ -1003,7 +1030,8 @@ prepared 请求入口拒绝其余算子，不在缺少 stage 时以属性异常�
 |---|---|---|
 | LOTUS resident | fresh source→原accessor／LM／parser→完整原题结果 | 默认首次惰性模型加载包含；显式before_queries准备另计，按实际owner观测区分冷暖；统计／写盘／最终close在外 |
 | LOTUS外部服务 | source／实际读图及PNG准备→完整原题结果；真实HTTP等待、POST预算、请求／图像指纹和请求／结束事件仍在内 | 额外响应解析／编码、关联／评分／flush在sink后；后台写盘仍可重叠，服务启动／READY由外部owner另证 |
-| LOTUS＋Ray | fresh source→原SDK语义及实际多批native graph→完整原函数结果；API额度与惰性runtime／模型启动在内 | 原函数返回后audit／ray.shutdown；逐请求成功旁录已删，不声称跨批模型复用，新候选目标运行待验 |
+| LOTUS＋Ray offline | fresh source→原SDK语义及实际多批native graph→完整原函数结果；API额度与惰性runtime／模型启动在内 | 原函数返回后audit／ray.shutdown；逐请求成功旁录已删，不声称跨批模型复用，新候选目标运行待验 |
+| LOTUS＋Ray Serve | fresh source→原LOTUS实际消息／算法／多批native Serve→完整原函数结果；API预算与批次IPC在内 | 模型READY及启动在前，后置审计／评价／写盘和最后关闭在后；groupby批次顺序交接，目标renderer／同owner／物理清理待验 |
 | 独立Ray offline／Serve | fresh source→工程消息／实际图像准备→真实依赖批次及完整任务结果；额度与必要IPC在内 | offline包含惰性启动；Serve deployment启动另计，源前／sink后观测真实模型身份，响应关联和最终close在外 |
 | LOTUS＋Daft／独立Daft local | fresh source→提示／packet与摘要→各批原生图→完整原题或工程任务结果；完整READY交接及中间批ACK／退出在内 | 各批模型冷启动仍在内；末批完整sink后ACK／close。原生后台错误可能只到外层timeout，失败日志和READY须保留 |
 | Daft attached的两种语义入口 | fresh source／消息和真实PNG编码→builtin OpenAI graph→完整结果；packet／HTTP／完整READY与中间批交接在内 | 外部模型启动另证；末批sink后ACK／client退出。完整READY的API快照复用，原始HTTP审计仍在区间，不能借用local或其他语义的暖轮 |
@@ -1026,8 +1054,8 @@ Daft失败报告引用原有`supervision/worker.log`及已保存`result-ready.js
 | 比较范围 | 已有配置 | 边界与真实缺口 |
 |---|---|---|
 | 含模型初始化的source→sink | LOTUS resident的`inside_first_query`首次非空查询；LOTUS＋Ray offline；Daft local | 各自真实native初始化留在查询。Ray每次LM预测新建processor、Daft每批新worker，重复轮次或同runtime不证明同模型warm；比较完整物理路径，不能把多实例成本称为单纯传输差异 |
-| 模型已就绪后的首次完整查询 | resident的`before_queries`；有外部READY证据的LOTUS服务／Daft attached；明确先READY的IMLane／Kalypso；独立Ray `serve-session` | 仅双方实际支持的相同任务／语义可比较；resident当前配置不能补称视觉／聚合ready路径。Q3先起coordinator，LOTUS＋IMLane原题逐批起scope，初始化归属仍不同，不能只凭ready字段混排 |
-| 同模型owner重复查询 | 已验身份的resident；独立Ray `serve-session`；独立Daft `attached-session`及有相应外部证据的原题查询 | 必须真实执行非空请求，并核新鲜进程／birth／constructor与owner不变。序列cold/warm标签、端点相同、零请求、不同题顺序执行均不授予该题warm资格；prefix cache开启也不证明实际命中 |
+| 模型已就绪后的首次完整查询 | resident的`before_queries`；有外部READY证据的LOTUS服务／Daft attached；明确先READY的IMLane／Kalypso；LOTUS＋Ray及独立Ray的`serve-session` | 仅双方实际支持的相同任务／语义可比较；resident当前配置不能补称视觉／聚合ready路径。Q3先起coordinator，LOTUS＋IMLane原题逐批起scope，初始化归属仍不同，不能只凭ready字段混排 |
+| 同模型owner重复查询 | 已验身份的resident；LOTUS＋Ray／独立Ray的`serve-session`；独立Daft `attached-session`及有相应外部证据的原题查询 | 必须真实执行非空请求，并核新鲜进程／birth／constructor与owner不变。序列cold/warm标签、端点相同、零请求、不同题顺序执行均不授予该题warm资格；prefix cache开启也不证明实际命中 |
 | 包含启动的生命周期总时长 | 各自真实worker／caller／服务启动事件→同一完整sink | 这些起点不同，不能跨字段直接排位。Serve deployment启动嵌在caller启动内，不能相加；外部服务attach不是模型启动。Q3真实worker入口不含外层CLI／模块导入，旧同名字段实际起于QueryWindow，保留旧值 |
 
 HTTP额外canonical JSON重编码／SHA已删除；真实payload字节SHA仍同时供预算与事件，
@@ -1035,7 +1063,7 @@ LOTUS记录的审计body可在查询后核对，不能把byte SHA换名成旧val
 不据此声称保存了完整body或可重建旧canonical字段。实际SDK发送、参数、body读取和响应关联保持。
 尚在查询内的HTTP解析／图像指纹／事件编码、IMLane provider回执和Kalypso uniform记录仍逐项披露；
 其中有现用审计／失败消费者，不能以删记录或扣估算时间取代可靠留存。必要数据、packet、IPC、阶段间关闭不移出查询。
-同算法LOTUS＋Ray offline的同模型ready／warm配置仍未实现或验证，独立JSON Serve不能代替它；
+LOTUS＋Ray的同算法ready／warm配置已实现并通过软件检查，目标模型仍待验；独立JSON Serve不替代其语义身份。
 其余实际模型／缓存／启动条件及真实资产未绑定项仍按所属覆盖表留空，不由本次软件检查授予性能资格。
 
 共享文本任务的 `bind_execution()` 在计时前核输入身份，执行时真实读取原 CSV／Parquet 并运行原题，

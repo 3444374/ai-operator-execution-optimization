@@ -1,6 +1,7 @@
 """Complete SemBench sink inside the existing native Ray runtime lifetime."""
 
 import json
+from contextlib import nullcontext
 from pathlib import Path
 import time
 
@@ -13,7 +14,18 @@ from src.infrastructure.redact import redact_text
 from .native_service_query import native_query_settings
 
 
-def run_query(config, checked_query, engine, resources, directory, *, scope=query_scope):
+def _engine_kwargs(config, engine):
+    options = dict(seed=engine.seed, **engine.optional_kwargs())
+    if engine.tokenizer_path is not None:
+        options['tokenizer'] = engine.tokenizer_path
+    native = config['ray_native']['engine_kwargs']
+    if any(key in native and native[key] != value for key, value in options.items()) or engine.chat_template is not None:
+        raise ValueError('conflicting Ray engine settings or unsupported explicit chat template')
+    return dict(options, **native)
+
+
+def run_query(config, checked_query, engine, resources, directory, *, scope=query_scope,
+              claimed_unit=None, observation_directory=None):
     """Fresh source through original in-memory sink, excluding audit and close.
 
     Called by sembench_text_query's existing supervised worker. The Ray engine
@@ -47,7 +59,11 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
     native = None
     batches = []
     join_inputs = []
-    ledger = unit = None
+    ledger = None
+    unit = claimed_unit
+    attempts_before = 0
+    batch_start = None
+    owner = None
     result = None
     try:
         query = SemBenchTextQuery(checked_query.checkout, checked_query.data_dir,
@@ -63,8 +79,10 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         report['query'] = query.describe()
         spec = config['ray_native']
         value = config['budget']
-        ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
-        unit = ledger.claim_shared_unit(value['unit_id'])
+        if unit is None:
+            ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
+            unit = ledger.claim_shared_unit(value['unit_id'])
+        attempts_before = unit.attempts
         description = query.describe()
         minimum = description.get('minimum_model_calls', description['expected_model_calls'])
         if minimum > unit.remaining:
@@ -73,17 +91,9 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         runtime_env = dict(py_executable=engine.model_python,
             env_vars=dict(PYTHONPATH=str(Path(__file__).parents[2]),
                           SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(observer)))
-        engine_kwargs = dict(seed=engine.seed, **engine.optional_kwargs())
-        if engine.tokenizer_path is not None:
-            engine_kwargs['tokenizer'] = engine.tokenizer_path
-        conflicts = {key for key in engine_kwargs if key in spec['engine_kwargs']
-                     and engine_kwargs[key] != spec['engine_kwargs'][key]}
-        if conflicts or engine.chat_template is not None:
-            raise ValueError('conflicting Ray engine settings or unsupported explicit chat template')
-        engine_kwargs.update(spec['engine_kwargs'])
+        engine_kwargs = _engine_kwargs(config, engine)
 
         execute_query = query.bind_original_execution()
-        owner = None
 
         def predict(requests, *, sampling_params):
             if (engine.max_model_calls is not None
@@ -104,12 +114,21 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         with scope(model=engine.model_path, engine_kwargs=engine_kwargs,
                 processor_options=spec['processor_options'], runtime_options=config['profile'],
                 engine_runtime_env=runtime_env) as owner:
+            batch_start = len(owner.report['batches'])
             native = owner.report
+            if claimed_unit is not None:
+                report.update(query_clock_version='lotus_ray_serve.source_to_sink.v1',
+                    model_ready_before_source=True,
+                    model_ready_before_source_reason='owned Serve deployment returned READY before fresh source',
+                    lifecycle='borrowed ready Serve model; fresh native processor per LM batch; owner closes after both queries',
+                    timing_scope='fresh original source, LOTUS messages/parsers/algorithms, native Serve batches and complete original sink; '
+                        'API allowance and required batch IPC included; startup, post-sink audit/evaluation/persistence and final close excluded')
             with native_query_settings(lm), observe_native_join_inputs(join_inputs):
                 report['source_started_ns'] = time.monotonic_ns()
                 result = execute_query()
                 report['sink_ready_ns'] = time.monotonic_ns()
                 report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_started_ns']) / 1e9
+            native = dict(owner.report, batches=owner.report['batches'][batch_start:])
         report['semantic_audit_started_ns'] = time.monotonic_ns()
         query.verify_source()
         if query.aggregate_task is not None:
@@ -123,14 +142,16 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         report['logical_requests'] = len(requests)
         report['query_seconds'] = (time.monotonic_ns() - started) / 1e9
         report['query_timing_scope'] = 'legacy worker entry through preflight, semantic audit and runtime close; use versioned source_to_sink_seconds'
+        if claimed_unit is not None:
+            report['query_timing_scope'] = 'query worker entry through preflight and semantic audit; shared Serve startup/close excluded'
         from src.baselines.text.frameworks.ray_native_observer import summarize
         report['native_event_audit_started_ns'] = time.monotonic_ns()
         completed = sum(len(batch['predictions']) for batch in native['batches'])
-        report['native_observation'] = dict(summarize(directory),
-            API_invocations_reserved=unit.attempts,
+        report['native_observation'] = dict(summarize(observation_directory or directory),
+            API_invocations_reserved=unit.attempts-attempts_before,
             complete_native_API_results=completed,
             completion_source='Ray native processor requires finished output or raises; not a separate engine receipt')
-        if unit.attempts != len(requests) or completed != len(requests):
+        if unit.attempts-attempts_before != len(requests) or completed != len(requests):
             raise RuntimeError('mandatory native generate accounting does not match complete occurrences')
         report['native_event_audit_finished_ns'] = time.monotonic_ns()
         report['evaluation_started_ns'] = time.monotonic_ns()
@@ -149,10 +170,11 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         raise
     finally:
         try:
-            if unit is not None:
+            if ledger is not None:
                 ledger.close_shared_unit(config['budget']['unit_id'])
-                report['physical_attempts_reserved'] = unit.attempts
                 report['permanent_budget'] = ledger.snapshot()
+            if unit is not None:
+                report['physical_attempts_reserved'] = unit.attempts-attempts_before
         except BaseException as error:
             report.update(status='failed', budget_close_error_type=type(error).__name__)
             if primary is None:
@@ -164,6 +186,8 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
                 report['result_serialization_started_ns'] = time.monotonic_ns()
                 report['result'] = result_value(result)
                 report['result_serialization_finished_ns'] = time.monotonic_ns()
+            if owner is not None and batch_start is not None:
+                native = dict(owner.report, batches=owner.report['batches'][batch_start:])
             if native is not None:
                 report['native'] = {key: value for key, value in native.items() if key != 'batches'}
                 report['native']['batches'] = [{key: value for key, value in batch.items() if key != 'predictions'}
@@ -183,17 +207,73 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
                 primary = error
             else:
                 primary.add_note('Ray native evidence persistence failed: ' + type(error).__name__)
-        report['report_persistence_started_ns'] = time.monotonic_ns()
-        try:
-            write_private_json(directory / 'query.json', report)
-            write_private_json(directory / 'persistence.json', dict(
-                query_json_started_ns=report['report_persistence_started_ns'],
-                query_json_finished_ns=time.monotonic_ns(), excludes='this receipt publication'))
-        except BaseException as error:
-            if primary is None:
-                raise
-            primary.add_note('Ray report persistence failed: ' + type(error).__name__)
+        if claimed_unit is None:
+            report['report_persistence_started_ns'] = time.monotonic_ns()
+            try:
+                write_private_json(directory / 'query.json', report)
+                write_private_json(directory / 'persistence.json', dict(
+                    query_json_started_ns=report['report_persistence_started_ns'],
+                    query_json_finished_ns=time.monotonic_ns(), excludes='this receipt publication'))
+            except BaseException as error:
+                if primary is None:
+                    raise
+                primary.add_note('Ray report persistence failed: ' + type(error).__name__)
         if primary is not None:
             primary.query_report = report
             raise primary
     return report
+
+
+def serve_configuration(config, engine):
+    """Map the existing LOTUS/Ray configuration to the owned Serve caller."""
+    spec = config['ray_native']['serve']
+    fields = {'model', 'app_name', 'deployment_name', 'startup_timeout_s', 'session_timeout_s', 'cleanup_s'}
+    if not isinstance(spec, dict) or set(spec) != fields:
+        raise ValueError('declare the served model, application/deployment and bounded Serve lifecycle')
+    return dict(spec, model_source=engine.model_path, model_python=engine.model_python,
+        engine_kwargs=_engine_kwargs(config, engine),
+        processor_options=config['ray_native']['processor_options'], runtime_options=config['profile'],
+        query_id=config['query_id'], budget=config.get('budget'))
+
+
+def run_serve_session(config, checked_query, engine, resources, directory, *,
+                      session_factory=None, identity_snapshot=None):
+    """Reuse complete LOTUS queries for ready-first and same-owner-repeat."""
+    from functools import partial
+    from .native_ray_serve_process import run_serve_queries
+    from .sembench_text_query import query_from_config
+
+    def prepare():
+        queries = []
+        for index in range(2):
+            current = dict(config, query_id=config['query_id']+'-round-'+str(index+1))
+            query = query_from_config(current, checked_query.checkout, checked_query.data_dir, checked_query.generation)
+            if query.files != checked_query.files or query.visual_inputs != checked_query.visual_inputs:
+                raise ValueError('Serve session source differs from the checked original inputs')
+            queries.append(partial(execute, current, query))
+        return queries
+
+    def execute(current_config, query, owner, unit, current, phase):
+        first = len(owner.report['batches'])
+        try:
+            value = run_query(current_config, query, engine, resources, phase,
+                scope=lambda **unused: nullcontext(owner), claimed_unit=unit,
+                observation_directory=directory)
+        except BaseException as error:
+            current.update(getattr(error, 'query_report', {}))
+            raise
+        else:
+            current.update(value)
+            current['post_sink_audit_started_ns'] = current['semantic_audit_started_ns']
+            return [row for batch in owner.report['batches'][first:] for row in batch['predictions']]
+
+    return run_serve_queries(serve_configuration(config, engine), directory, prepare_queries=prepare,
+        metadata=dict(schema='semloom.lotus_ray_serve_session.result.v1',
+            baseline_identity='lotus-over-ray-data-serve',
+            semantic_owner='original LOTUS queries/accessors/prompts/parsers/algorithms',
+            author_original_semantic_method=False, lotus_sdk_required=True,
+            deadline_scope='existing Serve caller session_timeout_s covers startup, both queries and cleanup; no separate per-query deadline',
+            timing_scope='ready deployment before each fresh original source; original LOTUS methods, native Serve graphs, '
+                'API allowance, required batch IPC and complete original memory sink inside; startup, '
+                'post-sink audits/scoring/persistence and final model/caller close outside'),
+        session_factory=session_factory, identity_snapshot=identity_snapshot)

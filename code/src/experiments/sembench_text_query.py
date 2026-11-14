@@ -46,13 +46,23 @@ def configuration(path):
     if 'ray_native' in value:
         spec = value['ray_native']
         if (value['backend'] != 'ray-data' or type(spec) is not dict
-                or set(spec) != {'engine_kwargs', 'processor_options'}
+                or set(spec) - {'serve'} != {'engine_kwargs', 'processor_options'}
                 or any(type(item) is not dict for item in spec.values())
                 or profile.get('address', 'local') != 'local'
-                or resources.query_timeout_s is None):
+                or 'serve' not in spec and resources.query_timeout_s is None):
             raise ValueError('ray_native requires native engine/processor options and an owned local runtime')
-        from src.baselines.text.frameworks.ray_data_sembench_native import _options
-        _options(spec['processor_options'])
+        if 'serve' in spec:
+            from .native_ray_sembench import serve_configuration
+            from .native_ray_serve_process import _native_serve_process
+            if 'budget' not in value:
+                raise ValueError('the owned Serve session requires an existing permanent budget unit')
+            if resources.query_timeout_s is not None:
+                raise ValueError('Serve bounds the complete session; omit the separate per-query timeout')
+            # Constructor validation only; no directory, caller or model starts.
+            _native_serve_process(serve_configuration(value, engine), Path('.'), {})
+        else:
+            from src.baselines.text.frameworks.ray_data_sembench_native import _options
+            _options(spec['processor_options'])
     if value['backend'] == 'lotus-native':
         if (set(profile) != {'native_lm_max_batch_size'}
                 or type(profile['native_lm_max_batch_size']) is not int
@@ -67,8 +77,9 @@ def configuration(path):
     if value['backend'] == 'imlane':
         resources.request_capacity()
     lifecycle = value.get('lifecycle', 'isolated')
-    if lifecycle not in ('isolated', 'resident'):
-        raise ValueError('choose isolated or explicit native LOTUS resident lifecycle')
+    serve = 'serve' in value.get('ray_native', {})
+    if lifecycle not in ('isolated', 'resident', 'serve-session') or (lifecycle == 'serve-session') != serve:
+        raise ValueError('choose isolated, native LOTUS resident, or explicit Ray serve-session lifecycle')
     if lifecycle == 'resident':
         from .sembench_text_resident import validate_configuration
         validate_configuration(value)
@@ -86,7 +97,7 @@ def query_from_config(config, checkout, data_dir, generation):
 
     scenario, query = config['scenario'], str(config['query']).lower().removeprefix('q')
     native_images = (config['backend'] == 'ray-data' and 'ray_native' in config
-        and image_stage_enabled(config['ray_native']['processor_options']))
+        and ('serve' in config['ray_native'] or image_stage_enabled(config['ray_native']['processor_options'])))
     visual_query = (scenario == 'animals' or scenario == 'cars' and query in CARS_VISUAL
                     or scenario == 'medical' and query in MEDICAL_VISUAL
                     or scenario == 'ecomm' and query in ECOMM_VISUAL)
@@ -148,14 +159,14 @@ def check(config, query, engine):
         raise ValueError('unsupported semantic operator for this text entry: ' + kind)
     description = query.describe()
     if description.get('visual_inputs') is not None and not (native_ray
-            and image_stage_enabled(config['ray_native']['processor_options'])):
+            and ('serve' in config['ray_native'] or image_stage_enabled(config['ray_native']['processor_options']))):
         raise ValueError('prepared image Join requires the explicit native Ray image preparation stage')
     expected = description.get('minimum_model_calls', description['expected_model_calls'])
     if engine.max_model_calls is None or engine.max_model_calls < expected:
         raise ValueError('engine.max_model_calls must cover the complete original operator')
     if engine.max_model_len is not None and query.generation.max_tokens > engine.max_model_len:
         raise ValueError('generation exceeds the explicit model context limit')
-    return dict(status='checked_cpu_only', inference_calls=0, query=description,
+    checked = dict(status='checked_cpu_only', inference_calls=0, query=description,
         backend=config['backend'], engine=asdict(engine), generation=asdict(query.generation),
         effective_operator_generation=(None if query.operation is None else
                                        asdict(query.operation.generation)),
@@ -164,15 +175,23 @@ def check(config, query, engine):
         execution_layout=('public Ray Data LLM processor; complete original sink before close' if 'ray_native' in config
                           else 'original LOTUS accessor / LM / batch_completion' if config['backend']=='lotus-native'
                           else 'existing native finite record-chain graph; one terminal F/M/E operator'),
-        query_clock_version=('lotus_ray.source_to_sink.v1' if native_ray else
+        query_clock_version=('lotus_ray_serve.source_to_sink.v1' if config.get('lifecycle') == 'serve-session' else
+                             'lotus_ray.source_to_sink.v1' if native_ray else
                              'sembench.source_to_sink.v3' if resident else None),
-        lifecycle=('query-owned native Ray runtime; lazy runtime/model startup inside source-to-sink; '
+        lifecycle=('owned Ray Serve; deployment ready before two fresh original queries; model identity requires target observation'
+                   if config.get('lifecycle') == 'serve-session' else
+                   'query-owned native Ray runtime; lazy runtime/model startup inside source-to-sink; '
                    'final runtime close after sink' if native_ray else
                    'explicit same-owner native LOTUS; fresh source per query; owner close after queries' if resident else
                    'legacy isolated query_seconds includes adapter audit and close; no independent pre-close source-to-sink'),
         environment_scope=('source/method/configuration only; native Ray SDK, engine interpreter and model remain unverified'
                            if 'ray_native' in config else
                            'source/method/configuration only; actual driver and model checked before run'))
+    if config.get('lifecycle') == 'serve-session':
+        from .native_ray_sembench import serve_configuration
+        checked['native_serve_configuration'] = dict(serve_configuration(config, engine),
+            sampling_params=query.generation.kwargs())
+    return checked
 
 
 def _frame_value(frame):
@@ -281,6 +300,9 @@ def fixture(config, query, responses, directory):
 
 def run_worker(config, query, engine, resources, directory):
     if 'ray_native' in config:
+        if config.get('lifecycle') == 'serve-session':
+            from .native_ray_sembench import run_serve_session
+            return run_serve_session(config, query, engine, resources, directory/'session')
         from .native_ray_sembench import run_query as run_native_ray
         # Native Ray owns its engine/dependencies. Do not impose the separate
         # SemLoom bridge's vLLM version on the author's official native profile.
@@ -368,6 +390,8 @@ def main(argv=None, *, controller_entry_ns=None):
         return 0
     root = Path(args.output_dir).resolve()
     if args.action == 'fixture':
+        if config.get('lifecycle') == 'serve-session':
+            raise ValueError('Serve software qualification uses the original-query session CPU fixtures')
         if resident:
             raise ValueError('resident CPU qualification uses tests.baselines.text.replay_lotus_resident')
         new_private_directory(root)
@@ -412,6 +436,10 @@ def main(argv=None, *, controller_entry_ns=None):
             session = read_json(session_path, max_bytes=session_path.stat().st_size)
             timing = resident_launch_timing(supervision,session,controller_entry_ns)
             write_private_json(root/'resident-timing.json',timing)
+        elif config.get('lifecycle') == 'serve-session':
+            spec = config['ray_native']['serve']
+            supervise(command, root, timeout_s=resources.startup_timeout_s+spec['session_timeout_s'],
+                grace_s=spec['cleanup_s'])
         else:
             supervise(command,root,timeout_s=None if resources.query_timeout_s is None else resources.startup_timeout_s+resources.query_timeout_s+30)
     return 0

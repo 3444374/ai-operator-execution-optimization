@@ -1,0 +1,38 @@
+{
+  "schema": "semloom.sembench_text_run.v1",
+  "scenario": "movie",
+  "query": "Q8",
+  "query_id": "LOTUS-RAY-SERVE-UNIQUE-SESSION",
+  "backend": "ray-data",
+  "model_name": "openai/<SERVED_MODEL_ID>",
+  "lifecycle": "serve-session",
+  "generation": {"max_tokens": 8192, "temperature": 0, "top_p": 1, "seed": 0, "stop": []},
+  "engine": {
+    "model_path": "<LOCAL_MODEL_DIRECTORY>",
+    "tokenizer_path": "<LOCAL_TOKENIZER_DIRECTORY>",
+    "model_python": "<ISOLATED_RAY_SERVE_MODEL_PYTHON>",
+    "driver_python": "<LOTUS_DRIVER_PYTHON>",
+    "max_model_calls": 512,
+    "seed": 0
+  },
+  "resources": {"startup_timeout_s": 240},
+  "profile": {"address": "local", "num_cpus": 4, "num_gpus": 1},
+  "ray_native": {
+    "engine_kwargs": {"enable_prefix_caching": true},
+    "processor_options": {},
+    "serve": {
+      "model": "<SERVED_MODEL_ID>",
+      "app_name": "semloom-lotus-session",
+      "deployment_name": "LotusModel",
+      "startup_timeout_s": 240,
+      "session_timeout_s": 900,
+      "cleanup_s": 30
+    }
+  },
+  "budget": {
+    "path": "<EXISTING_PERMANENT_BUDGET_SQLITE>",
+    "id": "<BUDGET_ID>",
+    "limit": 1024,
+    "unit_id": "<RESERVED_SHARED_SESSION_UNIT>"
+  }
+}

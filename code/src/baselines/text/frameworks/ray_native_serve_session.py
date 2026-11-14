@@ -31,9 +31,11 @@ def _load_native():
 
 def _input(row, *, model, sampling_params):
     options = deepcopy(sampling_params)
-    if options.pop('structured_outputs', None) != {'json_object': True} or 'response_format' in options:
-        raise ValueError('the independent Serve profile requires one native JSON-object format')
-    options['response_format'] = {'type': 'json_object'}
+    structured = options.pop('structured_outputs', None)
+    if structured is not None:
+        if structured != {'json_object': True} or 'response_format' in options:
+            raise ValueError('Serve requires one unambiguous JSON-object response format')
+        options['response_format'] = {'type': 'json_object'}
     return dict(method='chat', dtype='ChatCompletionRequest', request_kwargs=dict(
         options, model=model, messages=deepcopy(row['messages']), stream=False))
 
@@ -71,7 +73,7 @@ class NativeServeSession:
         self.runtime_options, self.model_runtime_env = deepcopy(runtime_options), deepcopy(model_runtime_env)
         self.native, self.owns_runtime, self.creation_attempted = None, False, False
         self.closed = False
-        self.report = dict(profile='native-ray-serve-json', events={}, batches=[],
+        self.report = dict(profile='native-ray-serve', events={}, batches=[],
             app_name=app_name, deployment_name=deployment_name, num_replicas=1,
             scheduler_owner='Ray Data ServeDeploymentProcessor and Ray Serve',
             model_process_exit_confirmed=None, driver_disconnected=None)

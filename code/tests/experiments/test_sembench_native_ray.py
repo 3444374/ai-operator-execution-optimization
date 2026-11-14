@@ -47,9 +47,8 @@ class SoftwareServeSession:
             def __init__(self):
                 pass
             async def generate(self, prompt, sampling_params, request_id):
-                text = json.loads(prompt[-1]['content'])['text']
                 yield SimpleNamespace(finished=not fixture.unknown, prompt_token_ids=[1], outputs=[
-                    SimpleNamespace(text=json.dumps(dict(keep='good' in text)), token_ids=[2], finish_reason='stop')])
+                    SimpleNamespace(text=fixture.answer(prompt, sampling_params), token_ids=[2], finish_reason='stop')])
         install(Model, self.unit, emit)
         self.Model, self.emit = Model, emit
 
@@ -62,10 +61,13 @@ class SoftwareServeSession:
                 role='user', content=json.dumps(dict(text='startup')))])))
         self.report['events']['deployment_ready_ns'] = time.monotonic_ns()
 
-    async def generate(self, request):
+    def answer(self, prompt, sampling_params):
+        return json.dumps(dict(keep='good' in json.loads(prompt[-1]['content'])['text']))
+
+    async def generate(self, request, sampling_params=None):
         key = 'chatcmpl-'+request['call_id']
         final = None
-        async for output in self.model.generate(request['messages'], SimpleNamespace(n=1), key):
+        async for output in self.model.generate(request['messages'], SimpleNamespace(**(sampling_params or {'n': 1})), key):
             if output.finished:
                 final = output
         if final is None:
@@ -76,7 +78,7 @@ class SoftwareServeSession:
     def predict(self, requests, *, sampling_params):
         self.events.append('predict')
         self.inputs.append(requests)
-        predictions = [asyncio.run(self.generate(request)) for request in requests]
+        predictions = [asyncio.run(self.generate(request, sampling_params)) for request in requests]
         batch = dict(predictions=predictions[::-1])
         self.report['batches'].append(batch)
         return batch
@@ -794,14 +796,14 @@ class ServeSessionTests(unittest.TestCase):
                 return result
             task.evaluate = evaluate
             return task
-        with self.assertRaisesRegex(RuntimeError, 'constructed a model between'):
+        with self.assertRaisesRegex(RuntimeError, 'constructed .*model'):
             run_serve_session(self.config(), self.root/'session', checkout='unused',
                 session_factory=self.owner, task_factory=factory)
         self.assertEqual(len(self.reads), 1)
         self.assertEqual(self.owners[0].events, ['start','predict','close'])
 
     def test_identity_evidence_requires_model_children_and_fresh_observation(self):
-        from src.experiments.sembench_native_ray import _owner_snapshot
+        from src.experiments.native_ray_serve_process import _owner_snapshot
         for value in (dict(model_actor_pid=10), self.identity()):
             with self.subTest(value=value):
                 _, proof = _owner_snapshot(lambda: value)
@@ -1104,14 +1106,15 @@ class NativeMultistageTests(unittest.TestCase):
     def test_serve_two_dependent_queries_use_one_model_owner_and_audit_every_batch(self):
         from src.experiments import sembench_native_ray as entry
         events=[]
-        original_audit = entry._serve_attempt_window
+        from src.experiments import native_ray_serve_process as lifecycle
+        original_audit = lifecycle._serve_attempt_window
         audits = []
         def audit(directory, unit, first, before, predictions=None):
             if predictions is not None:
                 self.assertEqual(events.count('sink'), len(audits)+1)
                 audits.append(len(predictions))
             return original_audit(directory, unit, first, before, predictions)
-        with patch.object(entry, '_serve_attempt_window', side_effect=audit):
+        with patch.object(lifecycle, '_serve_attempt_window', side_effect=audit):
             report = entry.run_serve_session(self.config(limit=10,serve=True),self.root/'session',checkout='fixture',
                 session_factory=self.serve_owner,
                 task_factory=lambda config:DependentTableTask(self.source,config['query_id'],events))
