@@ -56,7 +56,8 @@ class ServiceFixture:
         self.step("source", 2)
         if self.kind == "aggregate":
             return dict(source="frozen", endpoint="unused", work=dict(minimum_model_calls=1, leaf_requests=1))
-        inputs = (dict(query="Q2b", exact_join_candidates=2, maximum_model_calls=len(self.requests))
+        inputs = (dict(query="Q2b", exact_join_candidates=2, minimum_model_calls=2,
+                       maximum_model_calls=len(self.requests))
             if self.kind == "mmqa" else dict(query_id=1, rows=len(self.rows), native_filter_passes=1,
                                              expected_model_calls=len(self.requests)))
         return dict(inputs=inputs, endpoint="unused")

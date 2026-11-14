@@ -60,8 +60,9 @@ def _audit_value(value):
         if value.get("type") == "image_url":
             image = value["image_url"]
             url = image["url"]
+            encoded = url.encode()
             return dict(type="image_url", image_url={k: v for k, v in image.items() if k != "url"},
-                url_sha256=hashlib.sha256(url.encode()).hexdigest(), url_bytes=len(url.encode()),
+                url_sha256=hashlib.sha256(encoded).hexdigest(), url_bytes=len(encoded),
                 representation="data:image/png;base64" if url.startswith("data:image/png;base64,") else "other")
         return {key: _audit_value(item) for key, item in value.items()}
     if isinstance(value, list):

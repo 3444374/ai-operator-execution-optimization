@@ -119,12 +119,13 @@ class IMLaneModelProviderTests(unittest.TestCase):
         self.assertTrue(final['client_closed'])
         self.assertTrue(self.socket.closed)
         self.assertIsNone(final['physical_model_attempts'])
+        self.assertEqual(final['schema'], provider.RECEIPT_SCHEMA)
         self.assertEqual(final['request_sha256'], content_digest(request))
         self.assertEqual(final['response_sha256'], content_digest(final['response']))
         for i, call in enumerate(final['calls']):
             self.assertNotIn('occurrence_id', call)
-            self.assertEqual(call['requested_payload'], dict(self.config['sampling_params'],
-                model=self.config['model'], messages=original[i]))
+            self.assertNotIn('requested_payload', call)
+            self.assertNotIn('request_payload_sha256', call)
             self.assertEqual(call['messages_sha256'], content_digest(original[i]))
             self.assertEqual(call['response'], final['response']['calls'][i])
 

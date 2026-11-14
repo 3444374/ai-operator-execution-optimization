@@ -29,6 +29,14 @@ prepared VARCHAR的`call_id`现交给provider本地回执，RPC仍用原batch ID
 Python kernel身份变化须经现有build-record／原生SQL检查重新绑定；DSO与C++ driver源码未改，
 不得手改旧构建摘要跳过检查。本批软件验证不授予新的作者DSO／模型或性能资格。
 
+provider回执`model_batch.v3`只在整批`request`保存一次模型、采样和完整消息，
+删除逐行重复的`requested_payload`及其hash；逐行仍保留位置／occurrence、消息摘要和原始响应。
+整批request／response及摘要、started未知状态、terminal和client关闭证据保持；实际IPC正文、
+provider配置v2及IPC协议v1不变。两个后置审计入口直接核对实际batch正文，Q3也保留历史v2读取，
+不依赖旧逐行镜像。64项相关软件检查通过，Linux新回执／SQL资格另验，
+见[回执去重](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-single-batch-payload)。
+这里的回执v3不是查询计时v3：成功回执仍同步写，不能据此声称全路径计时已对齐。
+
 输入四VARCHAR依次为`occurrence_id/id/reviewId/reviewText`，作者转换器按位置命名`c0..c3`。
 输出为TINYINT，SQL比较`=1`；不走尚未资格的位图Arrow Boolean转换。完整cohort先进入DuckDB；
 作者planner将普通Filter放在prediction的child，运行时再以实际UDF回执确认只有eligible行。

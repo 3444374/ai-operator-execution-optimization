@@ -217,20 +217,22 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
                 started_monotonic_ns=100, finished_monotonic_ns=200)]))
         write_private_json(self.root / 'query.json', dict(status='query_returned', native_ai_query_returns=1,
             source_rows=3, eligible_rows=2, positive_review_cnt=1))
-        requests = []
+        requests, messages_batch = [], []
         for i, (row, reply) in enumerate(zip(self.rows, replies, strict=True)):
-            payload = dict(self.sampling, model='CPU-model', n=1,
-                           messages=q3_messages(row['reviewText']))
+            messages = q3_messages(row['reviewText'])
+            messages_batch.append(messages)
             requests.append(dict(position=i, attempted=True, status='succeeded',
-                messages_sha256=content_digest(payload['messages']), requested_payload=payload,
-                request_payload_sha256=content_digest(payload), truncated=False, response_id='CPU-' + str(i),
+                messages_sha256=content_digest(messages), truncated=False, response_id='CPU-' + str(i),
                 usage=dict(completion_tokens=2), response=dict(position=i, request_id='CPU-' + str(i),
                     attempted=True, status='succeeded', generated_text=reply, finish_reason='stop',
                     requested_max_tokens=8192, resolved_max_tokens=8192,
                     usage=dict(completion_tokens=2))))
         self.terminal = self.calls / 'model-batch-cpu.terminal.json'
         write_private_json(self.calls / 'model-batch-cpu.started.json', dict(status='unknown'))
-        self.replace_terminal(dict(schema='semloom.imlane.duckdb.q3.model_batch.v2',
+        request = dict(schema='semloom.imlane.duckdb.q3.model_ipc.v1', batch_id='cpu',
+            model='CPU-model', sampling_params=dict(self.sampling, n=1),
+            messages_batch=messages_batch, deadline_monotonic=300)
+        self.replace_terminal(dict(schema='semloom.imlane.duckdb.q3.model_batch.v3', request=request,
             provider_mode='software_ipc', status='succeeded', client_closed=True,
             ipc_attempted=True, engine_generate_invocations=2, calls=requests, worker_pid=1729,
             started_monotonic_ns=110, finished_monotonic_ns=190))
@@ -240,10 +242,7 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
             return audit_model_result(self.root, 'CPU-checkout')
 
     def replace_terminal(self, value):
-        request = dict(schema='semloom.imlane.duckdb.q3.model_ipc.v1', batch_id='cpu',
-            model='CPU-model', sampling_params=dict(self.sampling, n=1),
-            messages_batch=[c['requested_payload']['messages'] for c in value['calls']],
-            deadline_monotonic=300)
+        request = value['request']
         response = dict(schema=request['schema'], batch_id='cpu', model='CPU-model', status='succeeded',
                         calls=[c['response'] for c in value['calls']])
         value.update(batch_id='cpu', request=request, request_sha256=content_digest(request),
@@ -260,12 +259,22 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
         self.assertNotIn('model_requests', self.input)
 
     def test_same_saved_ipc_and_udf_responses_use_original_evaluator_without_model(self):
-        result = self.audit()
-        self.assertEqual(result['ipc']['batch_rpc_invocations'], 1)
-        self.assertEqual(result['quality']['classification']['true_positive'], 1)
-        self.assertEqual(result['quality']['classification']['true_negative'], 1)
-        self.assertFalse(result['comparison_qualified'])
-        self.assertIsNone(result['ipc']['physical_model_attempts'])
+        for schema in ('semloom.imlane.duckdb.q3.model_batch.v3', 'semloom.imlane.duckdb.q3.model_batch.v2'):
+            with self.subTest(schema=schema):
+                value = read_json(self.terminal)
+                value['schema'] = schema
+                if schema.endswith('.v2'):
+                    for position, call in enumerate(value['calls']):
+                        payload = dict(value['request']['sampling_params'], model=value['request']['model'],
+                            messages=value['request']['messages_batch'][position])
+                        call.update(requested_payload=payload, request_payload_sha256=content_digest(payload))
+                self.replace_terminal(value)
+                result = self.audit()
+                self.assertEqual(result['ipc']['batch_rpc_invocations'], 1)
+                self.assertEqual(result['quality']['classification']['true_positive'], 1)
+                self.assertEqual(result['quality']['classification']['true_negative'], 1)
+                self.assertFalse(result['comparison_qualified'])
+                self.assertIsNone(result['ipc']['physical_model_attempts'])
 
     def test_started_without_terminal_leaves_attempts_unknown(self):
         self.terminal.unlink()
@@ -279,8 +288,7 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
             if change == 'close':
                 value['client_closed'] = None
             elif change == 'generation':
-                value['calls'][0]['requested_payload']['max_tokens'] = 8
-                value['calls'][0]['request_payload_sha256'] = content_digest(value['calls'][0]['requested_payload'])
+                value['request']['sampling_params']['max_tokens'] = 8
             else:
                 value['calls'][0]['response']['generated_text'] = 'Answer: False'
             self.replace_terminal(value)
@@ -315,8 +323,7 @@ class NativeIMLaneModelAuditTests(unittest.TestCase):
         udf['predictions'][1]['messages_sha256'] = udf['sources'][0]['messages_sha256']
         model = read_json(self.terminal)
         model['calls'][1]['messages_sha256'] = model['calls'][0]['messages_sha256']
-        model['calls'][1]['requested_payload']['messages'] = deepcopy(model['calls'][0]['requested_payload']['messages'])
-        model['calls'][1]['request_payload_sha256'] = content_digest(model['calls'][1]['requested_payload'])
+        model['request']['messages_batch'][1] = deepcopy(model['request']['messages_batch'][0])
         self.replace_terminal(model)
         path.unlink()
         write_private_json(path, udf)

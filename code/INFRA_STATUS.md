@@ -67,6 +67,13 @@ Ray非末批终态检查只读新增事件，同owner轮次在source前取事件
 65个不同软件方法最终通过，见[Serve终态记录](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#serve-terminal-response-evidence)。
 b3b7的137及70方法通过，合计去重246方法为243通过、3跳过，
 仍未整体对齐计时，见[实际审计开销收尾](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-audit-work)。
+IMLane回执v3删除逐行重复完整payload及hash，后置审计改用实际整批request；64个不同软件方法通过，
+IPC／SQL／UDF不变，回执同步发布仍在查询内，见[回执去重](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#imlane-single-batch-payload)。
+公共HTTP也复用相同的预算／事件payload摘要，图像URL只编码一次；连同相关计时检查最终76方法通过，
+仍保留必要指纹与回执，不据此声称全路径对齐。
+b3b7 Linux150／150及5d617两后端各一次Q2b诊断原件已核；实际都为False、Extract0，仍未验证原题非空链。
+原Q5 sf1000选中仍与sf25相同16篇、单叶；在该固定输入／上下文下未触发多层，
+不作为新增接线缺口或继续重复模型测试的理由，见[原件回执](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#b3b7-and-5d617-server-gates)。
 
 当前剩余问题按共同边界处理，不能用增加题目入口绕开：
 

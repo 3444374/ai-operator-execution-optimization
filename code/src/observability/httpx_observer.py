@@ -24,7 +24,8 @@ def _observe_native_httpx_client(budget, record, endpoint, *, timeout_s=None):
             raise TimeoutError('native query deadline reached before POST')
         payload = request.content
         started = time.monotonic_ns()
-        attempt = budget.reserve(hashlib.sha256(payload).hexdigest())
+        payload_digest = hashlib.sha256(payload).hexdigest()
+        attempt = budget.reserve(payload_digest)
         if deadline is not None:
             remaining=deadline-time.monotonic()
             if remaining <= 0:
@@ -35,7 +36,7 @@ def _observe_native_httpx_client(budget, record, endpoint, *, timeout_s=None):
         values = json.loads(payload)
         record(dict(event='request',attempt=attempt,monotonic_ns=time.monotonic_ns(),
             budget_reserve_ns=time.monotonic_ns()-started,request_values_sha256=content_digest(values),
-            request_bytes_sha256=hashlib.sha256(payload).hexdigest(),body=values))
+            request_bytes_sha256=payload_digest,body=values))
         record(dict(event='http_started',attempt=attempt,monotonic_ns=time.monotonic_ns()))
         return attempt
 

@@ -9,6 +9,7 @@ import pandas as pd
 
 from src.experiments.native_imlane_sembench import audit_ipc
 from src.experiments.native_imlane_relation import finish_mmqa_filters
+from src.infrastructure.private_artifacts import content_digest
 from tests.experiments.test_native_imlane_relation import CHECKOUT
 
 
@@ -25,7 +26,7 @@ class OccurrenceAuditTests(unittest.TestCase):
             request=dict(sampling_params=self.sampling, messages_batch=[messages, messages]), calls=[])
         for position, (name, text) in enumerate((('source-b', 'False'), ('source-a', 'True'))):
             self.receipt['calls'].append(dict(occurrence_id=name, position=position, status='succeeded',
-                attempted=True, requested_payload=dict(messages=messages), response=dict(
+                attempted=True, messages_sha256=content_digest(messages), response=dict(
                     position=position, generated_text=text, rendered_prompt_token_ids=[1,2],
                     requested_max_tokens=8192, resolved_max_tokens=8192,
                     budget_attempt=position+1, request_id='request-' + str(position))))
@@ -46,7 +47,7 @@ class OccurrenceAuditTests(unittest.TestCase):
             lambda r: r['calls'][0].update(occurrence_id='foreign'),
             lambda r: r['calls'][0].update(position=1),
             lambda r: r['calls'][0]['response'].update(position=1),
-            lambda r: r['calls'][0]['requested_payload'].update(messages=[]),
+            lambda r: r['request']['messages_batch'].__setitem__(0, []),
             lambda r: r['calls'][0]['response'].update(rendered_prompt_token_ids=[2,1]),
             lambda r: r['calls'][0]['response'].update(generated_text='True')]
         for mutate in mutations:

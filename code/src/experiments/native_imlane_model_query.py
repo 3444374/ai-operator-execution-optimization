@@ -140,6 +140,7 @@ class _ResultWindow(QueryWindow):
 
 def audit_model_result(directory, checkout):
     """Join saved native/IPC evidence without another model or graph execution."""
+    from integrations.imlane_duckdb.model_provider import RECEIPT_SCHEMA
     from integrations.imlane_duckdb.model_wire import SCHEMA
 
     directory = Path(directory)
@@ -156,7 +157,7 @@ def audit_model_result(directory, checkout):
     for name in sorted(ends):
         path = calls_dir / (name + '.terminal.json')
         receipt = read_json(path, max_bytes=path.stat().st_size)
-        if (receipt['schema'] != 'semloom.imlane.duckdb.q3.model_batch.v2'
+        if (receipt['schema'] not in {'semloom.imlane.duckdb.q3.model_batch.v2', RECEIPT_SCHEMA}
                 or receipt['provider_mode'] != mode or receipt['status'] != 'succeeded'
                 or receipt['client_closed'] is not True):
             raise ValueError('native model-provider execution or IPC client close remains incomplete')
@@ -171,17 +172,12 @@ def audit_model_result(directory, checkout):
                 or response['status'] != 'succeeded'
                 or request['model'] != provider['model'] or response['model'] != provider['model']
                 or len(response['calls']) != len(receipt['calls'])
-                or request['messages_batch'] != [c['requested_payload']['messages'] for c in receipt['calls']]
+                or len(request['messages_batch']) != len(receipt['calls'])
                 or request['sampling_params'] != dict(provider['sampling_params'], n=1)):
             raise ValueError('native IPC request/result identity differs from its same batch')
         for position, call in enumerate(receipt['calls']):
-            payload = call['requested_payload']
-            sampling = {key: value for key, value in payload.items() if key != 'messages'}
-            expected_sampling = dict(provider['sampling_params'], model=provider['model'], n=1)
             if (call['position'] != position or call['attempted'] is not True or call['status'] != 'succeeded'
-                    or sampling != expected_sampling
-                    or content_digest(payload) != call['request_payload_sha256']
-                    or content_digest(payload['messages']) != call['messages_sha256']
+                    or content_digest(request['messages_batch'][position]) != call['messages_sha256']
                     or call['response'] != response['calls'][position]
                     or call['response']['position'] != position
                     or call['response']['attempted'] is not True

@@ -30,7 +30,7 @@ from src.experiments.native_imlane_model_query import _ResultWindow, supervised_
 from src.experiments.native_imlane_relation import run_relation_query, persist_relation_observation
 from src.infrastructure.private_artifacts import (
     file_identity, json_metric, new_private_directory, open_private_text,
-    read_json, write_private_json,
+    read_json, write_private_json, content_digest,
 )
 from src.infrastructure.redact import redact_text
 from src.serving.backends.vllm_protocol import GenerationSpec
@@ -232,7 +232,7 @@ def audit_ipc(directory, requests, tokens, predictions, sampling, *, attempt_off
             call_id, ids, messages = expected[key]
             response = call['response']
             if (call['position'] != position or response['position'] != position
-                    or call['requested_payload']['messages'] != messages
+                    or call['messages_sha256'] != content_digest(messages)
                     or batch['request']['messages_batch'][position] != messages):
                 raise ValueError('native batch position or original occurrence messages changed')
             native_ids = response['rendered_prompt_token_ids']

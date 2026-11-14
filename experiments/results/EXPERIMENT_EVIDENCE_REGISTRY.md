@@ -178,6 +178,15 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 从b3b7继续移除每请求输出文件、完整token复制及旧callback，关联所需request ID／原文复用现有终态事件，仍在完整sink后核对。
 65个不同软件方法最终通过；首轮fixture缺显式字段及定向修复记录保留，0模型／GPU，不授予计时对齐或性能资格。
 
+[实际请求正文去重](diagnostics/sembench_native_integration_20261112/README.md#imlane-single-batch-payload)
+IMLane回执v3删除逐行重复完整payload／hash及重复JSON预检查；整批request／response、摘要、位置和终态保持，历史v2可读。
+公共HTTP复用同一字节SHA，图像URL编码一次；76个不同软件方法最终通过，旧计时fixture缺minimum字段的失败及定向复核保留，0模型／GPU。
+实际成功回执及小型终态事件仍在查询内，不授予统一计时或新模型资格。
+
+[b3b7与5d617服务器回执](diagnostics/sembench_native_integration_20261112/README.md#b3b7-and-5d617-server-gates)
+b3b7 Linux150／150、0模型；5d617原Q2b单对诊断两后端各1POST都False，Extract0，原错误／wrapper失败保留，非原sf25／非空链或性能资格。
+原Q5 sf1000仍选中相同16篇且单叶，0模型／下载；不为多层资格重复或改造输入。
+
 [4f0b LOTUS＋Daft MMQA Q4](diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-mmqa-q4-4f0b-model)
 原24×2真实Extract终态，原分组19／18行、F1均.4865；原文与字段差异保留，执行完成不等于质量全对。
 私有首审计错用1200范围的失败原件保留，改为24后离线复核无新增模型；1405payload／1186Gitblob及结果／ACK只读核验。

@@ -2365,6 +2365,56 @@ Serve报告`native_output_artifacts=False`、`native_output_evidence='terminal e
 该范围没有真实Ray／vLLM模型或新性能资格；同步小型终态事件仍在查询内，尚未全路径计时对齐。
 历史完整输出原件和b3b7源码不改，仓外审计新候选应读取终态文本，不再假设逐请求文件存在。
 
+<a id="imlane-single-batch-payload"></a>
+## 实际请求正文去重
+
+基于057fcc22f，IMLane provider回执`model_batch.v3`删除逐行重复的完整`requested_payload`及其hash。
+实际整批request／response和摘要、每行消息摘要／位置／occurrence、原生响应／usage、started未知状态、
+terminal和client关闭证据保持；重复的`json.dumps(messages)`预检查也已删除，真实发布／IPC编码边界仍严格序列化。
+[Q3审计](../../../../code/src/experiments/native_imlane_model_query.py)与
+[完整原题审计](../../../../code/src/experiments/native_imlane_sembench.py)在sink后直接核对实际batch正文，
+原模型／采样及每个响应的位置、原文、token和额度关联不变；不再依赖逐行复制的镜像。
+Q3沿共同正文保留历史v2读取，原回执不改；旧格式多出的镜像不再作为实际IPC身份来源。
+Linux软件service helper也改读started中的实际request；IPC协议v1、provider配置v2、SQL、UDF与DSO均未修改，
+没有新增配置、框架、线程或额外往返。这里的回执v3不等于查询计时v3。
+
+公共HTTP观察器复用同一原始payload的SHA用于预算与事件，不再计算两次；
+LOTUS证据的图像URL只编码一次用于hash与UTF8字节数，观测字段、真实POST、期限和返回对象不变。
+这两处没有删除指纹、改变消息或把必要IPC移出计时。IMLane成功回执及Ray小型终态事件仍同步记录，
+LOTUS事件编码与其余审计工作也未整体后置，因此本批仍不授予统一计时或性能资格，历史成绩不扣减。
+
+64个不同IMLane软件方法通过，另有既有同一方法的v2／v3兼容子例定向复核；公共HTTP／服务时钟12个不同方法最终通过，
+合计去重76，0模型／GPU。首次服务时钟fixture遗漏当前预检合同`minimum_model_calls`，有10个错误子例；
+错误发生在被改的hash路径之前。只给fixture补与原exact候选数一致的minimum2，未加生产回退；
+保留失败后只复核受影响模块9方法。不能将重跑相加或把首轮写为全通过。
+`VERIFY-native-payload-duplication-final-20261114.json` SHA-256为
+`c44203401004eec824869317fc6b92145b6aac76a0e5eb218c502bb9f1a27147`。
+IMLane主要更改经Standards／Spec只读复核未见新问题；本批Linux真实SQL／新回执及目标模型未验，不借用旧资格。
+
+<a id="b3b7-and-5d617-server-gates"></a>
+## b3b7与5d617服务器回执
+
+只读核对b3b7 Linux150个不同软件方法全部通过、0模型；5d617原Q2b是单个真实金标对的诊断，
+两后端各1次实际POST，2终态、unknown0、原文一致，都被原方法判为False，Extract0。
+原缺列错误、首次empty健康检查失败及私有wrapper读取`native_api`失败均保留；
+Daft真实API终态可在result-ready原件确认，不把wrapper失败补写成完整query成功。
+这不是原sf25／非空Join→Extract或正式质量／性能资格；不修改原题或人为制造匹配。
+
+较大Q5使用既有作者源及官方生成器，sf1000实得1000源行，原题选中16篇；标题／正文／URL／occurrence集合与sf25相同。
+相同32768 context、8192 output、24576 input下，原生叶计数3420、仍为1叶，0模型／下载。
+固定输入没有触发多层，不能将其当作尚需逐题接线的缺口；同样条件不再反复测，也不缩上下文、重复输入或添加人工摘要。
+其他算法的planner与其他真实输入仍按自身来源验证，不由这一叶授予多层或并发资格。
+
+1236／1530份原件逐件SHA与大小相符，两包各1167个实际code snapshot blob与固定Git提交相符；
+两次归档租约均已释放。只读核对记录
+`VERIFY-b3b7-and-5d617-server-originals-20261114.json` SHA-256为
+`0f9c79000183120ebb98ae2eb75ede8c1f1f53ec1890663d88abe8a8273ea6f6`。
+来源为服务器原件及固定源码，不新增任何模型运行。
+
+runner复审仍沿当前系统／题目覆盖表：没有新增逐题执行器；已替代的输出callback和逐行payload producer／读取均已迁移删除。
+Kalypso原生图像carrier不存在的格保持空白，Daft取消的TopK动作保持停止；其他未接、资产未绑定和模型未验分别保留，
+不以回执精简扩大系统或题目资格，也不以本机未绑定推断真实数据全局缺失。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

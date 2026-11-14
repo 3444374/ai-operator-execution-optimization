@@ -33,7 +33,7 @@ def service(fixture_path, receipts, service_config):
         slot = started['calls'][call['position']]
         assert slot['position'] == call['position']
         row = by_id[slot['occurrence_id']]
-        assert messages == row['messages'] == slot['requested_payload']['messages']
+        assert messages == row['messages'] == started['request']['messages_batch'][call['position']]
         token = selected.set(row)
         try: return await original_row(self, request, messages, call)
         finally: selected.reset(token)

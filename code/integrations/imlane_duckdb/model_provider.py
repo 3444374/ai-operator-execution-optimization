@@ -19,7 +19,7 @@ from src.infrastructure.private_artifacts import content_digest, publish_private
 
 CONFIG_ENV = 'SEMLOOM_IMLANE_Q3_MODEL_CONFIG'
 CONFIG_SCHEMA = 'semloom.imlane.duckdb.q3.model_provider.v2'
-RECEIPT_SCHEMA = 'semloom.imlane.duckdb.q3.model_batch.v2'
+RECEIPT_SCHEMA = 'semloom.imlane.duckdb.q3.model_batch.v3'
 
 
 class ModelBatchError(RuntimeError):
@@ -171,7 +171,6 @@ def infer_batch(messages_batch, *, occurrence_ids=None):
     for row in messages:
         if type(row) is not list or not row:
             raise ValueError('each Q3 request requires its original nonempty message list')
-    json.dumps(messages, allow_nan=False)
     now = time.monotonic()
     deadline = now + config['request_timeout_s']
     if config['deadline_monotonic'] is not None:
@@ -190,8 +189,6 @@ def infer_batch(messages_batch, *, occurrence_ids=None):
             deadline_scope='one entire batch RPC, bounded by the original absolute query deadline',
             missing_terminal='IPC delivery and all model outcomes remain unknown'),
         calls=[dict(position=index, messages_sha256=content_digest(row),
-            request_payload_sha256=content_digest(dict(sampling, model=config['model'], messages=row)),
-            requested_payload=dict(sampling, model=config['model'], messages=row),
             attempted=None, status='unknown', response=None, truncated=None)
             for index, row in enumerate(messages)])
     if occurrence_ids is not None:
