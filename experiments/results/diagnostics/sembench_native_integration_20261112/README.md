@@ -2519,8 +2519,9 @@ Serve仅按需保存模型构造身份，完整非流式响应的call_id／respo
 
 原Q5 sf1000仍是相同16篇、单叶，不把未触发多层当接线缺口；原Q2b非空链的模型判断与代码执行资格分开。
 Cars／E-Commerce真实数据缺口、系统原生不支持和目标未验证各自保留，详细题目范围继续由能力表及具名回执维护。
-源码层最小待办的工程估计为：LOTUS服务观测收尾约1.5–3小时，Daft失败证据交接约2–4小时；
-这是需要相关失败／视觉用例核对的工作量估计，不包含目标环境、模型运行或排队时间，也不是整套验收完成承诺。
+LOTUS额外响应审计已由[后续实现](#lotus-response-audit-after-sink)完成软件收口；当前Daft失败证据交接的工程估计约2–4小时。
+其余请求观测／IMLane／Kalypso留存仍有真实消费者，须先核最小必要证据及失败路径，不能直接按删日志估时；
+目标构建、模型验证和排队时间另计，现阶段不能给出整套验收完成时间。
 
 本批另独立审阅并整合`e325fb975`（原候选640a7f27c）和`b524f931a`（原候选3d66d46de）：
 Kalypso仅删除reset前的完整ratios数组副本，13个不同软件方法通过，实际estimator/reset/样本数及现用uniform审计保持。
@@ -2553,3 +2554,28 @@ IMLane仅删除prepared VARCHAR预测前的额外EXPLAIN和无调用者字段，
 GPU／进程／SHM／端口与租约清理完成，不把迟到验收改写为旧外层全程通过。
 私有核验身份`VERIFY-b3b7-LOTUS-Daft-Q7-originals-20261114` SHA-256为
 `2b3047b70839a052dd6205b08090820d8e1006e83db14f31a60028f139a68214`，本次只读核验新增模型0次。
+
+<a id="lotus-response-audit-after-sink"></a>
+## LOTUS 服务的额外响应审计在完整 sink 后执行
+
+`975c353e5`整合独立候选`4f3db9af6`：仅LOTUS服务给已有HTTP observer显式传响应回调，
+保留SDK已经完整读取的不可变response bytes原引用、状态及真实时间；不替换原Response、不缓存请求或图片全文。
+原SDK所需读取／解析仍在查询内，额外审计JSON解析和事件编码由post-sink snapshot／SDK关联执行，失败finally也消费剩余响应。
+默认HTTP observer分支及Daft调用保持；原期限、POST预算、request digest、响应事件字段和completion-ID关联不变。
+响应事件物理追加顺序可能晚于http_finished，原始事件时间和attempt不变；现用消费者按这些字段关联，不推断文件行序。
+某条解析／writer失败后仍核记其余响应，最后保留首个错误；真实未返回请求继续unknown，不改记成功。
+
+冻结导出92个不同软件方法为91通过、1项未绑定真实sf25输入跳过，0失败／错误／模型／GPU／外部服务；首轮无失败。
+覆盖sync／async原对象和body引用、额外解析后置、未知／writer失败、原视觉／多阶段／聚合、默认Daft与预算及冷导入。
+六文件源码SHA与冻结导出逐件一致，独立只读审查及提交前隐私检查通过。
+私有验证身份`semloom-lotus-response-audit-evidence-20261114/FINAL-VALIDATION.json` SHA-256为
+`df17f1946e37ad65616b0ffd7cb7aa022f4d56be8ea596b4af3407c55d4b9c2e`。
+真实服务响应关联／异常及计时收益待服务器验证；请求／图像指纹和请求／结束事件编码仍在查询内，后台writer可能重叠，
+远端模型ready和启动仍须外部owner证据，不授予全路径计时对齐或性能排名。
+
+另只读核对固定Daft0.7.21轮内源码`daft/execution/vllm.py`，其distribution RECORD匹配。
+`LocalVLLMExecutor._generate`取最后yield的output，方法本身未检验finished；提取该方法的两个软件流控制检查均会收集最后结果。
+这不表示真实vLLM通常返回未完成流，只说明该SDK摘录本身不能证明Ray的显式finished-or-error合同。
+当前不据此删除Daft完成／失败核验；目标provider／vLLM完成约定及失败交接还须核实。
+私有证明`VERIFY-daft-native-completion-source-20261114` SHA-256为
+`a1e08fc268ac96c7f82be78763b8f955a9a4a77d807016a0d306ee30aeddafb4`，真实SDK导入／模型／GPU均0。

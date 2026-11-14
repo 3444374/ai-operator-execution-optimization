@@ -84,13 +84,16 @@ Kalypso重复ratio快照已删（13项软件通过），必要uniform旁录保�
 LOTUS＋Daft原Q7现有b3b7 sf25首／同VLM owner重复模型回执，原F1 .200／.222、质量偏低；
 原件、失败与计时见[具名回执](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-q7-b3b7-model)。
 
+LOTUS服务额外响应审计现已后置，92个不同软件方法为91通过、1真实输入未绑定跳过，0模型／GPU；
+默认Daft行为及HTTP事件字段保持，目标服务／新计时仍待验，见[响应审计边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-response-audit-after-sink)。
+
 当前剩余问题按共同边界处理，不能用增加题目入口绕开：
 
 | 共同边界 | 当前源码事实与收尾范围 |
 |---|---|
 | 原题与实际中间关系 | [`SemBenchTextQuery`](src/baselines/text/sembench_text.py) 已有`bind_execution(multiple=True)`实际算子callback与`bind_original_execution()`完整原函数边界；默认单算子合同供未迁移记录图使用。LOTUS＋Ray已改用完整原函数，MMQA Q2b空／非空第二阶段和Movie quick动态批次有原SDK软件差分；其他后端、分支与未绑定原题仍各自待接线或验收，不从公共函数存在取得资格。 |
 | 原生执行与生命周期 | LOTUS＋Ray以query级runtime接实际多批native processor，在完整sink后关闭；分组线程的软件交错检查与4073 Q7目标清理分别解释，不声称跨批模型复用。LOTUS＋Daft沿每批隔离worker，末批完整sink后ACK才关闭；外部OpenAI profile不拥有远端模型，不声称SDK client显式关闭。LOTUS＋IMLane复用多批SQL／ACK及一个模型owner，a110 Q7已验，其余分组／并发另验。Kalypso五handler收拢同一runner，当前受支持纯文本没有虚构第二语义算子的需求；真正图像carrier仍缺，文本Extract-via-Map工程适配及F/M/E跨查询顺序复用已接。独立原生Ray／Daft只复用中性执行／观测与任务工具，不借用LOTUS语义或目标资格。各系统真实owner与不同profile保留，不强行合并生命周期。 |
-| 完整查询计时 | 从真实源读取到完整内存sink直接打点，冷启动、服务ready后查询和组件时间分列；版本名不自动授予跨系统可比性。LOTUS＋Ray记`lotus_ray.source_to_sink.v1`，已按服务器原生完成约定删除逐请求成功旁录，保留API预算、冷启动及完整结果；新目标验证仍待执行；LOTUS外部服务记`lotus_service.source_to_sink.v1`，HTTP指纹、图像审计hash及事件编码仍在查询内，后台写盘可重叠，远端READY／启动归属未观测；LOTUS＋Daft记`lotus_daft.source_to_sink.v1`、LOTUS＋IMLane完整原题记`lotus_imlane.source_to_sink.v1`、Kalypso五handler及Movie records/prefix记`kalypso.source_to_sink.v1`，各自包含尚未后置的内部I/O及必要生命周期；独立IMLane v2仍含UDF/provider回执。额外外层预检和driver后置审计分开，但内部审计留存／flush尚待闭合，不能靠旧数值相减制造统一成绩。 |
+| 完整查询计时 | 从真实源读取到完整内存sink直接打点，冷启动、服务ready后查询和组件时间分列；版本名不自动授予跨系统可比性。LOTUS＋Ray记`lotus_ray.source_to_sink.v1`，已按服务器原生完成约定删除逐请求成功旁录，保留API预算、冷启动及完整结果；新目标验证仍待执行；LOTUS外部服务记`lotus_service.source_to_sink.v1`，额外响应审计解析／编码已后置，HTTP指纹、图像审计hash及请求／结束事件编码仍在查询内，后台写盘可重叠，远端READY／启动归属未观测；LOTUS＋Daft记`lotus_daft.source_to_sink.v1`、LOTUS＋IMLane完整原题记`lotus_imlane.source_to_sink.v1`、Kalypso五handler及Movie records/prefix记`kalypso.source_to_sink.v1`，各自包含尚未后置的内部I/O及必要生命周期；独立IMLane v2仍含UDF/provider回执。额外外层预检和driver后置审计分开，但内部审计留存／flush尚待闭合，不能靠旧数值相减制造统一成绩。 |
 | 验证与数据 | 先以原函数／SDK 差分覆盖共同执行边界，再对有真实输入且后端支持的完整代表查询验模型、结果关联和物理清理。数据缺口、原生接口限制、代码未接线和目标待验各自保留，见下表与所属原报告；不重复已完成模型请求来增加通过数。 |
 | 替代与调用迁移 | 旧 Ray／Daft Q3 专项图和旧 IMLane `Q1Relation` 已退出现行调用。LOTUS外部服务的视觉查询与Q5聚合已共用查询生命周期和原题对象，原两个CLI／worker及旧视觉对象已迁移删除，[恢复来源](../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)保留。HTTP、records、作者算法和不同生命周期对照按真实职责保留；其他替代路径也须迁移完调用再删除。 |
 

@@ -839,6 +839,10 @@ Animals Q3/Q10 在现有64图有三个并列最大项；原评价接受其中一
 不分配或退回额度；Q2b 按完整 Join＋最多同等数目的 Extract 预留。原失败与已发送单元不得重置。
 服务启动和 GPU 归外部 host owner，入口仅监督查询子进程；该计时为已有服务上的完整查询，不能混入文本冷模型启动成绩。
 私有审计保留原 POST 的内容摘要和 PNG URI 摘要，避免在事件队列复制整幅 base64 图像；原请求字节不变。
+LOTUS服务仅保留已读HTTP响应bytes原引用、状态和真实时间，额外响应JSON解析／审计编码在完整sink后或失败finally执行；
+不会缓存请求／图片全文，也不替换SDK响应。`http_response`行可能后于`http_finished`追加，关联使用attempt／ID和事件本身时间。
+默认Daft等HTTP调用保持原行为；请求指纹、图片审计及请求／结束事件仍计入查询，
+见[后置范围与软件检查](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-response-audit-after-sink)。
 共享服务观察还保留原 LOTUS `_process_uncached_messages` 按输入顺序返回的 completion ID，
 在完整查询之后用唯一ID关联HTTP尝试，写入 `native_sdk_response` 的LM调用号／发生项位置／请求号。
 相同输入可以有不同答复，不按消息摘要或HTTP完成顺序猜对应；缺失／重复ID记录为不可用。
