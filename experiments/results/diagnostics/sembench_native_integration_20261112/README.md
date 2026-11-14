@@ -2579,3 +2579,30 @@ GPU／进程／SHM／端口与租约清理完成，不把迟到验收改写为�
 当前不据此删除Daft完成／失败核验；目标provider／vLLM完成约定及失败交接还须核实。
 私有证明`VERIFY-daft-native-completion-source-20261114` SHA-256为
 `a1e08fc268ac96c7f82be78763b8f955a9a4a77d807016a0d306ee30aeddafb4`，真实SDK导入／模型／GPU均0。
+
+<a id="native-1f176-q4-q6a-model"></a>
+## 1f176：IMLane 原 Q4 与独立 Serve Q6a 的目标验收
+
+`baseline-native-observation-1f176-qualification-20261114-r1`固定`1f1766a61`，
+Linux141个不同软件方法全通过，真实两行DSO／Arrow／CPython／Unix IPC／完整VARCHAR relation／ACK门通过；
+同提示的不同发生项及两条软件答复保留，模型0次。此前两次错误构建／kernel绑定拦截发生于SQL／模型前，原件保持。
+实际复用匹配的既有a110薄driver与DSO，没有重编或改写构建摘要；本回执不转授后来删除EXPLAIN的新源码。
+
+| 实际语义／任务 | 真API请求 | 完整source→sink（秒） | 原F1 |
+|---|---:|---:|---:|
+| LOTUS＋IMLane VARCHAR工程变体，原MMQA Q4 Extract／分组 | 24 | 4.352296064 | .486486 |
+| 独立JSON Ray Serve MMQA Q6a，ready首次 | 25 | 13.801530495 | 1 |
+| 同一Serve模型owner重复Q6a | 25 | 10.382624298 | 1 |
+
+IMLane启动30.47860795352608秒另计，真实v3批次回执保留单份整批正文、每发生项及原文/token／评分核对，质量未全对。
+Serve为Ray2.56.1／vLLM0.22.0，同一实际model actor和EngineCore，启动期generate0、额外预热／重试0；
+caller启动99.7656382098794秒与deployment启动85.713445558秒嵌套，不能相加。
+两轮完整结果及25条原文均一致；该版本以终态原文关联全部50个response ID，新候选已删除这套旁录，必须另验其API口径。
+实际generate token数组、kernel及金额未观测，不用API usage补成这些量，不作跨系统排名。
+
+74次实际请求全终态、unknown0，GPU／模型进程／socket／租约清理完成。Serve本轮专属无持有者SHM已确切回收，
+allocator仍未证明，生产通用guard未放宽，不能推广成原生SHM问题已修复。
+1773份原件、1186件准确Git源码blob、原IMLane及Serve session结果／评分／打点已独立核验；
+专项消息/token／SQL回放及清理归因依照冻结服务器审计，模型／SQL未为归档重跑。
+私有核验身份`VERIFY-1f176-native-model-originals-20261114` SHA-256为
+`959cafc50689918043ab9e4313d973780c6d6a485013c0841a6778357aac49b3`；本次只读核验新增模型0次。

@@ -87,6 +87,10 @@ LOTUS＋Daft原Q7现有b3b7 sf25首／同VLM owner重复模型回执，原F1 .20
 LOTUS服务额外响应审计现已后置，92个不同软件方法为91通过、1真实输入未绑定跳过，0模型／GPU；
 默认Daft行为及HTTP事件字段保持，目标服务／新计时仍待验，见[响应审计边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-response-audit-after-sink)。
 
+1f176的Linux／真实SQLv3、IMLane原Q4及独立Serve Q6a同owner模型验收现已封存；
+质量、SHM专属回收及旧失败保持各自范围，不转授后续完成契约／EXPLAIN／响应审计修改，
+见[固定版本回执](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-1f176-q4-q6a-model)。
+
 当前剩余问题按共同边界处理，不能用增加题目入口绕开：
 
 | 共同边界 | 当前源码事实与收尾范围 |
