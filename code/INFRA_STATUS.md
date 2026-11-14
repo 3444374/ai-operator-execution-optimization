@@ -143,6 +143,8 @@ f596的Q1具名模型已完成各2000终态及原最终head5，但最终F1不能
 见[Q1原件范围](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q1-f596-model)。
 后续608e20的Q9 Map各256、原last-wins评分与8d071的MMQA Q1 sf25各25真实终态已核；
 MMQA原Series索引[8]及后置F1=1不表示全部25条抽取正确，Ray首轮外层清理失败及精确恢复／未知原因保留。
+原LOTUS的f26fc MMQA Q6a sf25首／同owner重复各25次请求、原F1均1，结果缓存关／prefix开，
+见[具名回执](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-kalypso-text-model-20261114)；不转授其他LOTUS后端或正式性能比较。
 见[Q9 Map](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-q9map-608e20-model)与[MMQA Q1](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-q1-8d071-model)，不转授当前新族、视觉或warm。
 LOTUS＋Daft的Q2b空Join后零请求Extract不创建native worker，后置HTTP审计已按该正常合同跳过空批；
 五模块53项软件通过，原首轮审计KeyError与已完成空sink保留，模型资格待验，见[修复记录](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#daft-empty-native-successor)。
@@ -157,12 +159,15 @@ Q7保完整N²请求及原index标签普通回连／字符串ID，111项软件�
 Kalypso的文本Extract现在用显式sembench-extract-map工程profile复用作者SemMap和同一系统runner；
 MMQA Q1/Q4、Medical Q10、E-Commerce Q3及Cars Q10原完整关系／评分已做软件差分，非逐题执行器。
 93项软件通过、2项旧tokenizer门未绑定跳过；图像carrier／视觉token预算在固定作者前端不存在，本项目图像适配仍未实现。
-新profile不冒称原生Extract、不透传JSON格式、不借旧模型资格；见[来源、实现与范围](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-text-extract-map)。
+e67cc的MMQA Q1 sf25首／同owner重复各25请求、原F1均1，真实作者CPU规划与资源清理通过；其他文本Extract不转授。
+新profile不冒称原生Extract、不透传JSON格式；见[具名模型回执](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#lotus-kalypso-text-model-20261114)及[来源、实现与范围](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-text-extract-map)。
 
 同一Ray runner的[Serve v2隔离caller](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)
 在model_python持有原生deployment／processor，driver保留任务／原评分；两轮fresh查询、有限预算及原进程树监督不变。
 必要IPC留在独立v2查询内，caller／部署启动另列；当场model actor与实际EngineCore的PID／birth缺失或空查询均不授予暖轮。
-55项相关软件检查通过；真实SDK、响应关联、模型及物理退出仍待验，旧driver协议缺依赖失败保留；不借offline或Daft具名成绩。
+初始55项软件范围保留。7aa61服务器配置／120条完整模板token门通过，但真实启动因observer与原生worker hook冲突失败，0次生成；
+现用原生模型初始化callback替代自定义worker hook，70项受影响软件检查通过；修复后的实际SDK／模型／暖轮仍待验，
+见[失败与修复](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#ray-serve-native-hook-repair)，不借offline或Daft具名成绩。
 独立Daft同runner的[attached-session](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-daft-attached-session)复用builtin OpenAI graph／既有worker和ACK；
 两轮fresh查询共用永久HTTP预算，客户端worker换代而外部服务不由driver关闭，缺新鲜模型进程身份时warm=None。
 初始四模块120项软件范围保留；606f Movie Q8后续具名同模型owner两轮已核，其余组合不转授。当前原生静态system／消息layout限制按批次保留。

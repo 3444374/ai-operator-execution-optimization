@@ -157,6 +157,15 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 三模块55项软件检查通过，含真实CPU子进程／两轮／异常退出／大图片包／fresh actor及EngineCore身份判断；0模型／GPU。
 必要IPC计入独立v2查询，启动另列；不授予实际SDK、响应ID关联、暖轮或物理退出资格，旧失败保留。
 
+[Ray Serve原生hook冲突与callback修复](diagnostics/sembench_native_integration_20261112/README.md#ray-serve-native-hook-repair)
+7aa61目标配置／120条模板token门通过，三次初始化因hook冲突失败、0生成；原失败及预算／清理保留。
+改用原生模型初始化callback，保留节点／worker hook／observer及同一runner；四模块70项软件及真实源码函数回放通过、0模型／GPU。
+七件官方Git blob与目标一致性函数分列，修复后的目标SDK／模型／暖轮仍待验。
+
+[原LOTUS Q6a与Kalypso Q1工程Extract具名模型](diagnostics/sembench_native_integration_20261112/README.md#lotus-kalypso-text-model-20261114)
+f26fc原LOTUS与e67cc Kalypso各完整sf25首／同owner重复25×2终态、原F1均1；后者为SemMap工程适配，非作者Extract。
+三包4255份payload、3546件Git源码blob与归档逐件核验，首绑定失败／运行期token未知／计时差异保留，资源已释放；不作性能排名或全部题目外推。
+
 [8d071独立MMQA Q4 sf25](diagnostics/sembench_native_integration_20261112/README.md#native-mmqa-q4-8d071-model)
 两系统各24真实终态、完整19组相同，保存原F1=.6153846，JSON null及原genre别名保留，非全部抽取正确。
 归档／1512payload／源码及预算／清理核验，首轮零模型断言失败保留；单冷含初始化，无warm／排名／后续组合资格。

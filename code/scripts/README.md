@@ -140,7 +140,8 @@ startup_timeout_s／session_timeout_s／cleanup_s须为有限正数；模板180�
 默认CLI当场观测构造事件所属model_actor_id、node_id、model_actor_pid／model_actor_create_time及实际EngineCore的pid／create_time，
 与两轮constructor事件核对；它不是独立证明的Serve replica身份或cache状态。Python identity_snapshot仍可接同合同host探针。
 缺完整新鲜身份或任一轮无实际请求均保留warm=None；复用Python对象或application名不授予模型资格。
-SDK检查仅构造原生配置／请求，不启动Ray或模型；实际响应ID关联、SDK部署、模型与退出仍待[服务器验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)。
+SDK检查包含原生初始化callback配置／导入，不启动Ray或模型；观察器不再替换worker hook。
+7aa61实际启动冲突为0生成，原失败保留；修复后的callback／部署／模型／退出须再做[服务器验收](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)。
 v1的driver缺vLLM协议失败保留，新入口直接替代旧默认caller；Daft已核具名同owner回执见下节，不与Ray互授资格。
 
 <a id="native-daft-attached-session"></a>

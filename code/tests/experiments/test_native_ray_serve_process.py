@@ -1,5 +1,7 @@
 """Real isolated caller IPC/exit; Serve and generation replies remain software."""
 
+import asyncio
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -181,7 +183,8 @@ class NativeServeProcessTests(unittest.TestCase):
         from tests.baselines.text.test_ray_native_serve_session import Config
 
         native = SimpleNamespace(ray=SimpleNamespace(__version__='2.56.1', is_initialized=lambda: False),
-            LLMConfig=Config, ServeDeploymentProcessorConfig=Config, ChatCompletionRequest=Config)
+            LLMConfig=Config, ServeDeploymentProcessorConfig=Config, ChatCompletionRequest=Config,
+            NativeObserverCallback=object)
         config = dict(self.options, model_python='native-only',
             sampling_params=dict(n=1, max_tokens=32, structured_outputs={'json_object':True}))
         with patch('src.baselines.text.frameworks.ray_native_serve_session._load_native', return_value=native), \
@@ -230,6 +233,50 @@ class NativeServeProcessTests(unittest.TestCase):
                     self.assertGreater(ready['model_actor_create_time'], 0)
                 else:
                     self.assertNotIn('model_actor_id', ready)
+
+    def test_Serve_callback_preserves_native_worker_hook_and_node_initialization(self):
+        events = []
+        native_hook = 'ray.llm._internal.serve._worker_process_setup_hook'
+        hook_env = '__RAY_WORKER_PROCESS_SETUP_HOOK_ENV_VAR'
+        runtime = dict(worker_process_setup_hook=native_hook, env_vars={hook_env: native_hook})
+        context = SimpleNamespace(runtime_env=runtime, placement_group=object(), run_init_node=True)
+
+        class CallbackBase:
+            def __init__(self):
+                self.ctx = context
+            async def on_before_node_init(self):
+                events.append('native_before_node')
+            async def on_after_node_init(self):
+                events.append('native_after_node')
+
+        modules = {}
+        for name in ('ray', 'ray.llm', 'ray.llm._internal', 'ray.llm._internal.common',
+                     'ray.llm._internal.common.callbacks', 'ray.llm._internal.common.callbacks.base'):
+            modules[name] = ModuleType(name)
+            modules[name].__path__ = []
+        modules['ray.llm._internal.common.callbacks.base'].CallbackBase = CallbackBase
+        path = Path(process.__file__).parents[1]/'baselines/text/frameworks/ray_native_serve_observer.py'
+        spec = importlib.util.spec_from_file_location('software_serve_observer', path)
+        module = importlib.util.module_from_spec(spec)
+        with patch.dict(sys.modules, modules), patch.dict(os.environ, {hook_env: native_hook}):
+            spec.loader.exec_module(module)
+            callback = module.NativeObserverCallback()
+            async def start():
+                await callback.on_before_node_init()
+                events.append('native_initialize_node')
+                await callback.on_after_node_init()
+                events.append('native_model_constructor')
+            with patch.object(module, 'setup', side_effect=lambda: events.append('observer_installed')) as install:
+                asyncio.run(start())
+            install.assert_called_once_with()
+            self.assertEqual(os.environ[hook_env], native_hook)
+            self.assertIs(callback.ctx, context)
+            self.assertEqual(runtime, dict(worker_process_setup_hook=native_hook, env_vars={hook_env: native_hook}))
+            with patch.object(module, 'setup', side_effect=ValueError('observer failed')):
+                with self.assertRaisesRegex(ValueError, 'observer failed'):
+                    asyncio.run(callback.on_after_node_init())
+        self.assertEqual(events[:5], ['native_before_node', 'native_initialize_node',
+            'native_after_node', 'observer_installed', 'native_model_constructor'])
 
 
 if __name__ == '__main__':

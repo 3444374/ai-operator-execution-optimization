@@ -20,13 +20,13 @@ def _load_native():
     from ray.data.llm import ServeDeploymentProcessorConfig, build_processor
     from ray.serve.llm import LLMConfig, build_llm_deployment
     from ray.serve.llm.openai_api_models import ChatCompletionRequest
-    from ray._private.runtime_env.setup_hook import export_setup_func_module
+    from src.baselines.text.frameworks.ray_native_serve_observer import NativeObserverCallback
 
     return SimpleNamespace(ray=ray, serve=serve, LLMConfig=LLMConfig,
         build_llm_deployment=build_llm_deployment,
         ServeDeploymentProcessorConfig=ServeDeploymentProcessorConfig,
         build_processor=build_processor, ChatCompletionRequest=ChatCompletionRequest,
-        export_setup_func_module=export_setup_func_module)
+        NativeObserverCallback=NativeObserverCallback)
 
 
 def _input(row, *, model, sampling_params):
@@ -92,11 +92,10 @@ class NativeServeSession:
         sdk.serve.start(proxy_location='Disabled')
         if self.app_name in sdk.serve.status().applications:
             raise ValueError('the named Serve application already exists')
-        runtime = sdk.export_setup_func_module(deepcopy(self.model_runtime_env),
-            'src.baselines.text.frameworks.ray_native_observer.setup')
         events['deployment_start_ns'] = time.monotonic_ns()
         config = sdk.LLMConfig(model_loading_config=dict(model_id=self.model, model_source=self.model_source),
-            engine_kwargs=deepcopy(self.engine_kwargs), runtime_env=runtime,
+            engine_kwargs=deepcopy(self.engine_kwargs), runtime_env=deepcopy(self.model_runtime_env),
+            callback_config=dict(callback_class=sdk.NativeObserverCallback),
             deployment_config=dict(name=self.deployment_name, num_replicas=1))
         app = sdk.build_llm_deployment(config, override_serve_options=dict(name=self.deployment_name))
         self.creation_attempted = True

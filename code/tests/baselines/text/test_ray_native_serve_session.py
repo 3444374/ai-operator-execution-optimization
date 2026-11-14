@@ -76,8 +76,7 @@ def software_sdk(*, existing_runtime=False, existing_app=False, start_failure=Fa
         serve=SimpleNamespace(start=lambda **kwargs: state.events.append('serve.start'),
             status=lambda: SimpleNamespace(applications=state.applications), run=run, delete=delete),
         LLMConfig=Config, build_llm_deployment=deployment, ServeDeploymentProcessorConfig=Config,
-        build_processor=build, ChatCompletionRequest=object,
-        export_setup_func_module=lambda env, hook: dict(env, worker_process_setup_hook=hook))
+        build_processor=build, ChatCompletionRequest=object, NativeObserverCallback=object)
     return sdk, state
 
 
@@ -114,8 +113,8 @@ class NativeServeSessionTests(unittest.TestCase):
         self.assertEqual(state.events[-2:], ['delete:owned', 'ray.shutdown'])
         config = state.configs[0]
         self.assertEqual(config['deployment_config'], dict(name='single-model', num_replicas=1))
-        self.assertEqual(config['runtime_env']['worker_process_setup_hook'],
-            'src.baselines.text.frameworks.ray_native_observer.setup')
+        self.assertEqual(config['runtime_env'], options['model_runtime_env'])
+        self.assertEqual(config['callback_config'], dict(callback_class=sdk.NativeObserverCallback))
         self.assertTrue(all(not request['request_kwargs']['stream'] for request in state.requests))
         self.assertTrue(all(request['request_kwargs']['response_format'] == {'type': 'json_object'} for request in state.requests))
         self.assertTrue(all('SEMLOOM_RAY_NATIVE_OBSERVER' not in stage.map_batches_kwargs['runtime_env']['env_vars']

@@ -229,6 +229,7 @@ def check_sdk(config):
         raise ValueError('the native Serve caller is fixed to Ray 2.56.1')
     sdk.LLMConfig(model_loading_config=dict(model_id=config['model'], model_source=config['model_source']),
         engine_kwargs=config['engine_kwargs'], runtime_env=dict(py_executable=config['model_python']),
+        callback_config=dict(callback_class=sdk.NativeObserverCallback),
         deployment_config=dict(name=config['deployment_name'], num_replicas=1))
     sdk.ServeDeploymentProcessorConfig(app_name=config['app_name'], deployment_name=config['deployment_name'],
         dtype_mapping={'ChatCompletionRequest': sdk.ChatCompletionRequest}, should_continue_on_error=False,

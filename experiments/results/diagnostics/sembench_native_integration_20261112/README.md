@@ -1972,6 +1972,49 @@ LOTUS1.2.4 extract_postprocess明确只作兼容后处理，保actual keys、str
 这些不是新的模型结果，后续由既有服务器协调者先验实际原生CPU规划／完整prompt，再做有界两轮代表text Extract。
 图像输入和图像Extract不从本次纯文本profile取得资格；取消的Daft TopK及三份保护草稿未改。
 
+<a id="ray-serve-native-hook-repair"></a>
+## Ray Serve 原生启动 hook 冲突与 callback 修复
+
+7aa61固定候选在服务器通过55项CPU、原生配置／请求及120条独立JSON Movie Q8消息的原生模板／完整token门，
+但三次原生初始化均在生成前失败，实际generate为0，没有查询或暖轮结果。vLLM EngineCore的ray.init
+收到Ray Serve的worker_process_setup_hook，同时继承本项目observer的内部hook标记，Ray一致性检查拒绝两者冲突。
+242次预算预留已关闭、不退还，原失败、重启尝试和资源释放证据保留，不改写成通过。
+
+修复删除Serve adapter的export_setup_func_module接线，使用原生LLMConfig.callback_config指定
+NativeObserverCallback；其继承默认CallbackBase，在on_after_node_init调用父方法后安装原有AsyncLLM观察器。
+节点初始化、原生worker hook、执行器、预算及模型构造／请求观测保留，不改引擎或禁用观察器。
+SDK检查也构造相同callback配置。依据是[固定Ray LLMConfig](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/llm/_internal/serve/core/configs/llm_config.py)、
+[原生callback](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/llm/_internal/common/callbacks/base.py)及
+[构造顺序](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/llm/_internal/serve/engines/vllm/vllm_engine.py)。
+七个官方Git blob与目标失败包的实际hook一致性函数分别核对；未把官网版本验证当作目标安装环境通过。
+
+e67cc干净导出加五份准确源码／测试，四完整模块70个不同方法全部通过、0skip／模型／GPU，
+覆盖callback先后顺序、原生context／hook保留、安装失败传播、原observer预算及完整查询／关闭旧路径。
+官方真实CallbackBase分派和目标一致性函数的零模型回放通过，旧冲突可复现、新合同无冲突。
+CPU结果SHA-256为`5c652cae4da744d6170a2e0ce4869facf936d49d4e80b9327801b8cc6590f086`，
+源码回放为`6e6cc9c80188bed078971ca19aa8190e0119521d3bcb0758f6eae53170f11f8c`。
+修复后的目标SDK callback配置／完整启动、响应关联、同owner两轮及物理清理仍待服务器验收；无新模型调用，不授予暖轮资格。
+
+<a id="lotus-kalypso-text-model-20261114"></a>
+## 原 LOTUS Q6a 与 Kalypso Extract 工程任务首／重复轮
+
+两份具名回执使用SemBench c814的完整官方sf25，各25×2真实请求、全部终态、unknown／额外预热／重试为0；
+各自模型owner保持不变，原完整关系／parser／评分回放通过，不能把后置F1等同逐项全对。
+
+| 系统与准确候选 | 原题／策略 | ready首次／重复source→sink | 原质量／边界 |
+|---|---|---|---|
+| 原LOTUS f26fc3f6e | MMQA Q6a原Filter与机场投影 | 0.884563632／0.212812939秒 | P／R／F1均1；结果缓存关、prefix开，模型启动32.093948773秒另列 |
+| Kalypso e67ccfcb7 | MMQA Q1，显式Extract-via-SemMap工程任务 | 1.202610809／0.409334223秒 | P／R／F1均1；作者SemMap策略、原Extract parser及关系评分，非作者原生Extract |
+
+Kalypso原caller→内存sink为9.731334692／0.440251780秒，模型服务启动40.208845454秒另列，
+保留与独立source时钟的差异；JSON只是工程指令、未透传原生格式约束。CPU完整token数组与每次实际API消息hash已核，
+运行期模型token IDs／usage未独立观测，不以CPU计数填充运行期字段。LOTUS运行期token／输出长度审计已核。
+首次LOTUS私有绑定误用Airlines/Text列而非原Airlines/Destinations，失败保留，仅修复并重跑受影响的零模型门。
+两运行物理资源释放与租约关闭通过；不作跨系统性能排名，不转授其他题目、后端或Kalypso图像支持。
+
+本会话仅只读核验三包全部4255份payload、3546件对应Git源码blob和归档哈希，未重复模型。
+完整核验SHA-256为`6750610debacdac3b28712bb8045b42ec7611420fedce9a1f170004188c980ba`。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -2023,6 +2066,10 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 8cd 独立JSON Daft MMQA Q2b首／同owner重复 | 600396690 | 1418 | `bccf8e0c801ef7b9c5a7bc2ab92d989cc26965e17fe6fc90f22d98de4a14d3b0` |
 | 8cd 独立JSON Ray Medical Q4 | 4429887 | 2614 | `358c12ad7eae7a08418b543458bb83515a0d1baebe534b3936bbed0388001a2f` |
 | 8cd 独立JSON Daft Medical Q4首／同owner重复 | 7638119 | 1355 | `3b270486497b772ebcfb570941a334cfcdfd042a2954db22b952d8b2cb1d1a7f` |
+
+| f26fc 原LOTUS MMQA Q6a首／重复 | 3257623 | 1377 | `4f273596c42b815c243501ed04f7b0012dd6154b2370f834f236114e516f6bfc` |
+| e67cc Kalypso MMQA Q1 Extract工程首／重复 | 3325383 | 1420 | `e30c45647708de3f1ef19c754a266f3ae51d0778b9d4441d452891db8699e07d` |
+| 7aa61 Ray Serve Q8启动失败／0生成 | 3533532 | 1458 | `99570e54a00fd70c99258899fb9f5169722380c4ceb06559a8428c7062a3c18b` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

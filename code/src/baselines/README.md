@@ -268,7 +268,9 @@ E-Commerce Q7复用同一任务的exact pair分支，原price<=500后N²含self�
 在model_python环境持续持有[owned Serve adapter](text/frameworks/ray_native_serve_session.py)，以Ray2.56.1公开deployment／Data processor执行两次fresh查询。
 driver只持有任务、原评分及必要批次IPC，不导入vLLM协议或混入另一环境的包；caller／部署启动、查询和关闭分别记录。
 原生构造事件绑定的model actor及实际EngineCore进程PID／birth须经当场观测，且两轮实际有模型请求；缺证据时warm=None。
-该拓扑不继承offline成绩，目标SDK／模型／物理退出仍待验；见[隔离接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)。
+观察器通过[原生初始化callback](text/frameworks/ray_native_serve_observer.py)在模型构造前安装，保留Ray Serve原worker hook及节点初始化；
+旧自定义hook造成7aa61真实启动冲突、0生成，70项软件修复通过，修复后的目标模型／暖轮仍待验。
+该拓扑不继承offline成绩，见[失败与修复](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#ray-serve-native-hook-repair)及[隔离接线](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)。
 同一Daft runner另接[attached-session模板](../../configs/sembench_native_daft_attached_session.example.json)，
 复用builtin OpenAI messages graph、既有worker／ACK及永久HTTP预算，两次fresh完整查询使用各自客户端worker。
 外部模型服务由调用者拥有，driver不创建或关闭；每个实际批次保留静态system／content layout限制，任务依赖由查询层推进，Animals Q7拆为两次完整Filter批次。
