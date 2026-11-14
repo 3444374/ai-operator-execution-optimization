@@ -3,7 +3,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from src.baselines.text.frameworks.kalypso_native import adapter as native
-from .sembench_inputs import prepare
+from .sembench_inputs import prepare, native_instruction
 from .query_runner import NativeOperation
 
 
@@ -69,22 +69,26 @@ class MapOperation(NativeOperation):
     )
 
     def execute(self, operation, unused_original):
-        from lotus.sem_ops.postprocessors import map_postprocess
-        from src.semantic_methods.lotus.record_method import LotusRecordMethod
         with native.query_phase(self.timing, 'source_and_required_input'):
-            self.values, path = prepare(self.cfg, self.spec, self.directory, operation)
+            self.values, path = prepare(self.cfg, self.spec, self.directory, operation, kind=self.kind)
             payload = dict(data_path=str(path), ops=[dict(op='sem_map',
-                args=dict(prompt=operation.stage.method.instruction))], blocking=False)
+                args=dict(prompt=native_instruction(operation, self.kind)))], blocking=False)
         self.artifacts.update({'request.json': payload, 'occurrences.json': self.values})
         with native.query_phase(self.timing, 'native_HTTP_and_JSON_parse'):
             self.response = self.driver.transport(payload, self.spec['query_id'], self.directory)
-        with native.query_phase(self.timing, 'required_Map_parser'):
+        with native.query_phase(self.timing, 'required_'+self.kind.title()+'_parser'):
             self.texts = native.response_map_texts(self.response, self.cfg['model'], self.spec['expected_calls'])
-            method = LotusRecordMethod(operation.stage)
-            parsed = map_postprocess(self.texts, method.lm, False).outputs
-            completed = [replace(r, values={**r.values, operation.stage.method.output_column: text})
-                for r, text in zip(operation.records, parsed, strict=True)]
-            return dict(frame=operation.result_frame(completed), calls=[])
+            return dict(frame=self.restore_relation(operation, self.texts), calls=[])
+
+    def restore_relation(self, operation, texts):
+        from lotus.sem_ops.postprocessors import map_postprocess
+        from src.semantic_methods.lotus.record_method import LotusRecordMethod
+
+        method = LotusRecordMethod(operation.stage)
+        parsed = map_postprocess(texts, method.lm, False).outputs
+        completed = [replace(r, values={**r.values, operation.stage.method.output_column: text})
+            for r, text in zip(operation.records, parsed, strict=True)]
+        return operation.result_frame(completed)
 
     def audit(self):
         qid = self.spec['query_id']

@@ -222,6 +222,12 @@ Ray与Daft首／同owner重复各1200真实终态，保原普通Join及重复加
 20项CPU与1次真实单层归约、F1=1；1368份原件复核。私有owner首次未初始化账本、价格表联网超时保留，
 全离线资格失败，多层／并发未验；不能用功能结果抹环境缺口或作异口径排名。
 
+[Kalypso文本Extract-via-Map与图像前端边界](diagnostics/sembench_native_integration_20261112/README.md#kalypso-text-extract-map)
+固定作者九个Git blob确认无SemExtract／图像carrier／视觉token预算，底层vLLM功能不转授原semantic-query。
+同runner的sembench-extract-map显式工程适配复用作者SemMap与原题关系／评分，JSON只为任务指令、兼容parser具名，不冒充作者Extract。
+十三模块95方法，93通过、2个旧tokenizer门未绑定跳过，0模型／GPU；五个原题完整软件流程和实际作者方法回放保持范围。
+首fixture／旧包装器失败保留，新profile目标原生CPU／模型／清理及图像接线仍待验，不改旧成绩或取消动作。
+
 [Kalypso查询范围与独立时钟](diagnostics/sembench_native_integration_20261112/README.md#kalypso-query-scope-clock)
 修正公共读取器拒绝现有聚合独立时钟的问题，现行五handler及records/prefix改用同一独立版本名；实际起止、旧receipt与成绩不变。
 先复现原缺陷，再运行8个受影响模块76项：74通过、2个真实tokenizer未绑定跳过，0模型／GPU。

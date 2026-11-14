@@ -270,7 +270,7 @@ class OriginalMapSizeContracts(unittest.TestCase):
                 original_parse=postprocessors.map_postprocess
                 original_query=sembench_inputs.SemBenchTextQuery._original
                 original_evaluate=sembench_inputs.SemBenchTextQuery.evaluate
-                def prepare(*args):clock.advance(2);return original_prepare(*args)
+                def prepare(*args,**kwargs):clock.advance(2);return original_prepare(*args,**kwargs)
                 def make_query(*args,**kwargs):clock.advance(17);return original_make_query(*args,**kwargs)
                 def parse(*args):clock.advance(5);return original_parse(*args)
                 def original(owner,*args):

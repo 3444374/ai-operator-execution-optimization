@@ -31,7 +31,7 @@ Map 在预检阶段绑定原查询并核文件身份，区间内执行原查询�
 事后完整文件校验在 sink 之后。attach 实际 loaded-model 证明核验后记录模型就绪观测，
 receipt 传递 `model_ready_before_source` 与观测时间；它不是由调用者标签推断的启动耗时。
 未知版本或缺失起点明确留空；没有该字段的旧 receipt 保持原 caller 区间，v2 Map 仍含执行内文件校验。
-当前五handler及Movie records/prefix均使用该独立版本；区间内仍有同步observer指纹／回执及必要输入准备，
+当前各算子handler及Movie records/prefix均使用该独立版本；区间内仍有同步observer指纹／回执及必要输入准备，
 不授予跨系统统一可比性。公共读取器识别该版本且保留真实source起点；未知版本仍为空，旧v2／v3 receipt与时长不改写。
 运行的 `map_prompt_root` 必须与 CPU 预检输出分开，使用新的空目录；
 已有 prompt 表会因独占创建失败，不自动覆盖或复用旧表。
@@ -257,7 +257,7 @@ PYTHONPATH="$VERIFIED_REPO/code" "$AUTHOR_PYTHON" -B \
 `query_runner.KalypsoRunner` 及既有两个 CPU CLI 也接受 `task="sembench-map"`，每个 query spec
 另给 `scenario`、`query`，有需要时给原题已有的 `scale_factor`／`ranking`。原三个 `movie-q*`
 名称继续使用同一 driver；新绑定不维护第二套逐题执行器。只有 `SemBenchTextQuery` 捕获到真实
-普通 Map 才允许准备，Filter、Extract、Join、TopK 不改名冒用此入口，后续第二语义算子仍未接线。
+普通 Map 才允许准备，Filter、Extract、Join、TopK 不改名冒用此入口；文本Extract另用明确的[SemMap工程适配](#text-extract-via-map)，后续第二语义算子仍未接线。
 Movie Q9 在此入口默认显式 Map；它不替代官方 runner 的策略身份。
 
 字段来自原指令实际引用列的 DEFAULT 单元格文字，单字段上下文保持原样；多字段按字段名稳定排序，把全部字段名及
@@ -415,7 +415,8 @@ SemBench runner 完成或多阶段已支持。新结构的 CPU 生命周期检�
 
 固定c814的Movie Q4只有一次语义Filter，普通`id`筛选及ratio不算第二算子；当前已接纯文本分支
 没有连续两次受支持算子的实际需求。作者05024的planner本身支持多算子，不能将本接点单算子限制说成整个系统不支持。
-真实多阶段Q2b／Q12还依赖图像／Extract：当前semantic-query只把data_path内容包装成文本，没有sem_extract算子或JSON格式透传；
+真实多阶段Q2b／Q12还依赖实际图像carrier：作者semantic-query只把data_path包装成文本，没有sem_extract或JSON格式透传；
+文本Extract现有显式SemMap工程适配，不能据此把图像Extract说成已支持；原版前端与本项目未实现的图像工程接线分开记录。
 底层vLLM另有图像／JSON接口，不等于本前端已接通。未来接线须保留实际中间关系并建立阶段输入／trace身份，
 不能仅开multiple=True，也不为无实际原题需求预造阶段框架。来源与计时修正见[共同边界核对](../../../../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-query-scope-clock)。
 
@@ -457,3 +458,29 @@ SemBench runner 完成或多阶段已支持。新结构的 CPU 生命周期检�
 正确前置为该owner按既有create／reserve_unit初始化后再claim，不是修改SemAgg，也不在adapter中自动重建账本。
 HF offline本身不控制LiteLLM价格表请求；本轮未启用其local cost map及完整INET guard，全离线资格保持失败，
 价格未知不填零，不重跑原模型来抹掉失败。
+
+<a id="text-extract-via-map"></a>
+## 文本 Extract 的显式 SemMap 工程适配
+
+作者05024没有SemExtract，现有SemMap可以执行调用者提供的文本指令；原生调度、动态长度估计、ratio estimator、
+无pin单阶段及length到8192的重试保持。新`task="sembench-extract-map"`由同一KalypsoRunner选择
+[ExtractMapOperation](sembench_extract.py)，复用原Map的请求、传输、审计和完整查询生命周期，只替换结果恢复。
+这不是原生Extract算子或原LOTUS提示：工程指令要求原题output_columns定义的JSON字段，保留原完整输入列；
+作者Map模板发送给模型，未透传response_format，不把JSON格式元数据当成原生API保证。
+LOTUS1.2.4 extract_postprocess仅负责明确声明的兼容后处理，原键、str(value)、额外字段、重名列和index标签写入均保持；
+无输出／缺键／无效JSON沿原查询错误，不补列、补金标或把错误改成空成功。
+
+spec沿既有scenario／query和必要scale_factor选择完整原题，不设题号／行数特判；expected_calls来自实际发生项N，
+max_native_calls=2N仍为原SemMap长度重试上界，两轮共用owner时按各查询上界预留同一个unit。
+普通sembench-map仍拒绝原Extract，二者不换名重复计为作者baseline；报告明确engineering variant、
+native_extract_operator=False、native_JSON_format_forwarded=False及parser身份。
+既有prepare-native-cpu和原生CPU CLI使用同一冻结交接，原生侧继续不导入driver／评分依赖。
+实际读源、必需CSV／指令表、native请求、解析与完整关系在kalypso.source_to_sink.v1内，额外审计／评分／写盘在外；
+同步observer成本依旧包含，不据软件检查授予跨系统性能排名。
+
+原图像边界来自固定interface、data reader、context、OpName／planner、prompt、executor和KV manager：
+CSV／JSON里的image URL会成为文本，当前KV预算只做tokenizer文字计数，没有视觉token展开或图像processor接点。
+底层chat API接受内容数组不等于作者semantic-query已支持图像；原版前端无实际carrier，本项目的图像工程适配尚未实现。
+因此Q2b／Q12的实际图像后继链仍不可用，不强写新的原生SemExtract或绕过原KV／调度来冒充支持。
+
+软件范围和首轮失败见[主报告](../../../../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-text-extract-map)。

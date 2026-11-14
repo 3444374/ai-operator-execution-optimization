@@ -43,7 +43,7 @@ LOTUS方法系列共用原题定义／原SDK语义，各执行系统保留自己
 | LOTUS＋Daft | [native_daft_sembench](src/experiments/native_daft_sembench.py)承接完整文本原题、exact Join和Q5实际多批；每批原生collect／worker隔离，末批在完整sink后关闭。附加内置OpenAIProvider接视觉数组、Q12链及Q10/Q11原分支Join；既有顺序桥的两题完整软件／ACK已验，原字符串的native编码显式披露。 | 旧单冷／原生SDK记录仍属各冻结来源；视觉接点有真实Daft0.7.21图＋软件API及完整原题／ACK检查；6c75 Animals Q7 sf64两批128真实模型F1=1，4793 MMQA Q2b sf25空Join325真实终态／F1=0，Extract未触发。 | 本地vllm字符串profile没有图像carrier；外部服务profile固定system＋单user，字符串显式转单text part；多轮／分组并发未接，renderer token等价待验。TopK取消动作保持停止。旧专项Q3图／schema已删除。 |
 | 独立原生Daft | [sembench_native_daft](src/experiments/sembench_native_daft.py)执行同一独立Movie Filter／Map／exact pair Join及MMQA／Medical／Cars／E-Commerce文本任务工厂，本地文本用vllm-prefix-caching图，图文用显式附加服务；既有worker／ACK推进实际查询批次，无LOTUS SDK／提示／解析。 | Movie Q1/Q8/Q9-map/Q10及MMQA Q1/Q4/Q6a sf25有具名模型／ACK／物理清理回执；Q1最终结果与全量质量分列。606f Medical Q10及8cd Medical Q4首／同owner重复各1200条已验；8cd MMQA Q2b为325→5／8非空、F1均0；其他新组合不转授，606f Q8另有具名回执。 | “统一语义工程对照”，非作者原版；offline仍逐查询新模型owner；同runner已接附加服务两轮profile，具名Movie Q8、Medical Q4/Q10及MMQA Q2b同模型owner回执各自分列；其他组合仍待验。共享运输／关闭组件不使其成为LOTUS语义路径。 |
 | IMLane | [native_imlane_sembench](src/experiments/native_imlane_sembench.py)共用原题／SQL／ACK接完整视觉、多阶段、分支及groupby；TINYINT Filter／Join和DOUBLE Map按真实原生profile保留。作者[Movie Q3](src/experiments/native_imlane_model_query.py)另列。 | 034dc Map／Extract、ecbd TopK样本、807224 Q5单叶各有冻结模型证据；a110完整Q7 sf64的SQL／IPC／ACK及128次VLM通过，City F1=1。4073零模型CSV失败、独立Q3的50%相对误差均保留。 | a110仅关闭准确Q7修复资格，不转授其余视觉／并发。VARCHAR-owned为工程变体，非作者聚合／TopK算法；Q3题目合同参考LOTUS兼容语义，非论文未公开UDF。旧Q1Relation已删除。 |
-| Kalypso | 同一[KalypsoRunner](src/baselines/text/frameworks/kalypso_native/query_runner.py)与五handler接文本Filter／Map／Join／TopK／原SemAgg；Movie records/prefix是不同输入与消息合同的同系统profile。 | Join样本、作者full256 TopK及3500 Q5单层各按原来源验收；3500离线资格失败仍保留，不外推多层／并发。 | 当前semantic-query前端的图像／Extract未接，底层vLLM能力不能替代此接线。当前纯文本没有虚构两Filter的需要。旧四个专项Driver类及调用已删除，仍用的records/prefix保留。 |
+| Kalypso | 同一[KalypsoRunner](src/baselines/text/frameworks/kalypso_native/query_runner.py)与原算子handler接文本Filter／Map／Join／TopK／原SemAgg，另接明确的文本Extract-via-Map工程适配；Movie records/prefix是不同输入与消息合同的同系统profile。 | Join样本、作者full256 TopK及3500 Q5单层各按原来源验收；3500离线资格失败仍保留，不外推多层／并发。 | 原版semantic-query无实际图像carrier／视觉token预算，本项目图像工程适配未实现；文本Extract已显式映射作者SemMap，非原生Extract，当前仅软件通过。当前纯文本没有虚构两Filter的需要。旧四个专项Driver类及调用已删除，仍用的records/prefix保留。 |
 
 旧入口的[准确恢复来源](../experiments/reproduction/native_baselines/README.md)与原失败保存；
 活动任务的服务器排程由测试会话协调，本页不把已交付候选写成已经实机通过。
@@ -71,7 +71,7 @@ Q8的旧v3区间仍含中间relation快照与stage统计，不能从标签或单
 
 | 任务能力与官方代表 | LOTUS | LOTUS＋Ray 原生 processor | LOTUS＋Daft 原生 AI | IMLane（接点身份见格内） | Kalypso 作者入口 |
 |---|---|---|---|---|---|
-| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；VARCHAR工程变体的原题单Map／Extract已接，ecbd代表SQL软件已验；其余任务／模型另验，原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；原版结构化输出未透传 |
+| 普通文本 Filter／Map／Extract；Movie、MMQA、Medical、Cars Q1/Q4/Q10 及 E-Commerce Q1/Q3/Q5 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 已接线，软件检查；目标按冻结来源分列 | 各场景 Filter、Movie 数字 Map 已接；VARCHAR工程变体的原题单Map／Extract已接，ecbd代表SQL软件已验；其余任务／模型另验，原版字符串输出受限 | 按原字段的文本 Filter／Map 已接；五场景 Filter、Movie/E-Commerce Map 有软件检查，新入口作者模型待验；文本Extract-via-Map工程适配已接，93项软件通过，原版结构化格式未透传，非作者SemExtract |
 | 文本 exact Join；Movie Q5/Q6/Q7、E-Commerce Q7 | 显式 resident 已接线，N×M／原关系软件检查；实际选列另记，1.2.4不保证多列指令全部入模 | 原生 processor 已接，原 SDK／软件图检查；真实模型待验，旧记录图未接 | LOTUS＋原生入口已接，driver packet／原 sink 软件检查；SDK环境与模型另验，旧记录图未接 | 原版 TINYINT prediction 上的 LOTUS Join 已接；8667样本真实SQL／模型已验，完整输入另验，非作者 Join 算法复现 | 原 CP＋Filter 已接；4f12样本作者模型已验，其他来源／输入另验 |
 | 文本完整排名；Movie Q9 TopK profile | 原 quick TopK显式resident已接；cb754的完整256真实模型已验，原parser回退保留；其他来源另验 | 原quick完整函数已接，8行28次软件比较／7批共用query owner通过；目标模型与多批物理清理待验 | 未接线 | LOTUS quick over VARCHAR工程变体已接，原题／Arrow／provider软件检查；11f的8行Linux SQL／renderer门及ecbd的8行13次真实比较通过，full256待验，非作者TopK算法 | 作者 insertion／merge full TopK 已接；11eff的8行及原全量256发生项分别通过真实模型，其余来源另验 |
 | 图像单 Filter 与两次独立 Filter；Animals Q1/Q3/Q10、Q7 | 原SDK已接线；a110 Q10原sf64真实64次，完整分组／head1原F1=1；其余按冻结来源分列 | 同一完整查询runner已绑定；051639 Q1 sf64真实64次、COUNT3；4073 Q7 sf64真实两批128次、City F1=1且恢复清理已验；其他题／组合另验 | 外部OpenAI profile已接原消息数组；6c75 Q7 sf64两批128真实终态、原City F1=1；Q1软件及其他组合另验 | 同一完整原题runner已接；a110 Q7 sf64真实SQL／IPC／VLM两批128次、City F1=1；其他题另验 | 未接线 |
@@ -154,6 +154,11 @@ Cars真实scale文件／原普通Join／Q4的2026常量及投诉权重保留，E
 真实Cars／E-Commerce资产与本组合模型资格仍待核，原生不支持与缺数据不混同；E-Commerce Q7现已接同任务的exact pair工程方法，原SDK算法身份不转授。
 见[两族接线](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-cars-ecommerce-text)。
 Q7保完整N²请求及原index标签普通回连／字符串ID，111项软件及两driver各9发生项通过，原F1／空结果保留；见[配对接线](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ecommerce-exact-pair)，模型与真实资产待验。
+Kalypso的文本Extract现在用显式sembench-extract-map工程profile复用作者SemMap和同一系统runner；
+MMQA Q1/Q4、Medical Q10、E-Commerce Q3及Cars Q10原完整关系／评分已做软件差分，非逐题执行器。
+93项软件通过、2项旧tokenizer门未绑定跳过；图像carrier／视觉token预算在固定作者前端不存在，本项目图像适配仍未实现。
+新profile不冒称原生Extract、不透传JSON格式、不借旧模型资格；见[来源、实现与范围](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#kalypso-text-extract-map)。
+
 同一Ray runner的[Serve v2隔离caller](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-ray-serve-isolated-caller)
 在model_python持有原生deployment／processor，driver保留任务／原评分；两轮fresh查询、有限预算及原进程树监督不变。
 必要IPC留在独立v2查询内，caller／部署启动另列；当场model actor与实际EngineCore的PID／birth缺失或空查询均不授予暖轮。

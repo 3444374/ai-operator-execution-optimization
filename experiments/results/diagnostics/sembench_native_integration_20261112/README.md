@@ -1940,6 +1940,38 @@ Ray原查询与结果已完成，但首轮外层清理失败；后续精确恢�
 这证明具名配置下执行闭合，非质量门槛通过，也不转授视觉、其余Medical题或新Serve拓扑。
 只读复核SHA-256为`2a7d3afda8fee7d3ab1fa7513396106308ff3c12dedf324d660d9cabab0222c4`。
 
+<a id="kalypso-text-extract-map"></a>
+## Kalypso 文本 Extract-via-Map 与原版图像边界
+
+固定作者05024f027f932c0e398852e38302be30b9015481九个Git blob，核interface／reader／context、OpName、
+Map、prompt、planner、executor与KV manager。原版没有SemExtract，data_path的CSV／JSON内容只转为文字context；
+KV估计仅用tokenizer，没有图像processor／视觉token展开。原chat请求底层能接内容数组，不替代semantic-query的实际图像carrier。
+这是固定源码结论：原版前端未提供该支持，本项目图像工程适配也尚未实现，不能混同为缺数据或只缺一个题目开关。
+原planner支持多算子，此限制不等于整个Kalypso不支持多阶段；Q2b／Q12的实际图像后继路径仍未接通。
+源码复核SHA-256为`d38cd2a8df3e551bf623a6e2a7ea24e8266236e54f9ed1e7d778c18621ee1920`。
+
+现同一个KalypsoRunner新增sembench-extract-map明确工程profile，复用作者SemMap调用、KV／长度／ratio估计、
+采样、length到8192重试、原transport／trace／owner；只从原Extract输出字段构造JSON任务指令并恢复关系。
+没有新SemExtract、查询DSL、逐题执行器或第二个runner；原Map入口仍拒绝把Extract换名冒用。
+LOTUS1.2.4 extract_postprocess明确只作兼容后处理，保actual keys、str(value)、NULL、额外字段、重名覆盖和标签写入；
+原题读数、普通关系、完整结果和原评分保留，未向native请求透传response_format，报告标engineering variant。
+原stage的JSON格式是任务元数据，不是已确认的原生API参数；实际作者SDK／模型／renderer与资源清理仍pending。
+输入准备、必需CSV／指令表、nativeMap、解析及完整sink仍计入原独立时钟，后置审计／评分／写盘在外，旧时长不改写。
+原Map内联关系恢复已移动为共享方法，新的Extract handler只覆盖该方法及身份，没有遗留两套传输／审计主体。
+
+7aa61cba8干净导出加九份准确文件，十三完整模块95个方法：93通过、2个既有Join／TopK tokenizer门因未绑定而跳过，
+0模型／GPU。新增七方法覆盖五个真实原题软件完整流程（MMQA Q1／Q4、Medical Q10、E-Commerce Q3、Cars Q10）、
+原评分、显式profile与2N上界、冻结输入、原始null／键／列覆盖／缺键及空Extract错误；
+直接运行固定作者Map的模板／估计器／方法，API与KV依赖为软件fixture，不能称完整目标SDK验收。
+另用真实作者reader及parse_ops证明图片JSON仍是文字、sem_extract被拒绝，避免用底层vLLM能力虚报前端资格。
+最终软件结果SHA-256为`a5839eef76e72337f2478f13a6f94e0579512892549ae99013f42f8bee1f9ee7`。
+
+首次五方法暴露三个fixture错误：Cars误选Filter Q1、Medical原评分修改传入结果大小写、假模块名称被author scope覆盖。
+修正场景／在评分前冻结预期sink／使用确切模块键后通过；没有更改原题或评分。
+首轮整合还有旧prepare包装器不接kind参数的九个subtest错误，透传kwargs后原受控source→sink时长检查通过；失败日志均保留。
+这些不是新的模型结果，后续由既有服务器协调者先验实际原生CPU规划／完整prompt，再做有界两轮代表text Extract。
+图像输入和图像Extract不从本次纯文本profile取得资格；取消的Daft TopK及三份保护草稿未改。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

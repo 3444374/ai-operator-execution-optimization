@@ -18,7 +18,7 @@ ROW = contextvars.ContextVar('observed_native_row',default=None)
 CALL = contextvars.ContextVar('observed_native_call',default=None)
 AUTHOR_SOURCE_COMMIT = '05024f027f932c0e398852e38302be30b9015481'
 MOVIE_MAP_QUERIES = {'movie-q8': '8', 'movie-q9': '9', 'movie-q10': '10'}
-MAP_TASKS = (*MOVIE_MAP_QUERIES, 'sembench-map')
+MAP_TASKS = (*MOVIE_MAP_QUERIES, 'sembench-map', 'sembench-extract-map')
 TEXT_TASKS = (*MAP_TASKS, 'sembench-filter', 'sembench-topk', 'sembench-aggregate')
 
 
@@ -29,8 +29,8 @@ def query_task(spec):
         query = MOVIE_MAP_QUERIES[task]
         return dict(scenario='movie', query_id=query,
                     **(dict(ranking='map') if query == '9' else {}))
-    if task not in ('sembench-map','sembench-filter','sembench-join','sembench-topk','sembench-aggregate'):
-        raise ValueError('A supported original text Filter/Map/Join/TopK/Aggregate task is required')
+    if task not in (*MAP_TASKS, 'sembench-filter','sembench-join','sembench-topk','sembench-aggregate'):
+        raise ValueError('A supported original text task or explicit Extract-via-Map adaptation is required')
     binding=dict(scenario=spec['scenario'], query_id=str(spec['query']).lower().removeprefix('q'),
                  **{name: spec[name] for name in ('scale_factor', 'ranking') if name in spec})
     if binding['scenario']=='movie' and binding['query_id']=='9' and binding.get('ranking') is None:

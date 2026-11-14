@@ -22,7 +22,7 @@ def make_query(cfg,qid,task='movie-q9',*,kind='map'):
             raise ValueError('Bound native source data changed: '+name)
     # These stage metadata fields do not set author first-request SamplingParams.
     query=SemBenchTextQuery(cfg['sembench'],cfg['data_dir'],**binding,execution_id=qid,
-        model_name=cfg['model_name'],generation=GenerationSpec(max_tokens={'map':8192,'aggregate':8192,'topk':5}.get(kind,8)),
+        model_name=cfg['model_name'],generation=GenerationSpec(max_tokens={'map':8192,'extract':8192,'aggregate':8192,'topk':5}.get(kind,8)),
         **(dict(aggregate_operator=True) if kind=='aggregate' else {}),
     )
     if not set(query.files)<=set(hashes):
@@ -32,6 +32,15 @@ def make_query(cfg,qid,task='movie-q9',*,kind='map'):
     if query.operation is None or query.operation.describe()['kind']!=kind:
         raise ValueError('The original query must use an ordinary text '+kind.title()+', not another semantic operator')
     return query
+
+
+def native_instruction(operation, kind):
+    if kind in ('topk', 'aggregate'):
+        return None if operation is None else operation.instruction
+    if kind == 'extract':
+        from .field_binding import extract_instruction
+        return extract_instruction(operation.stage.method.output_columns)
+    return operation.stage.method.instruction
 
 
 def prepare(cfg,spec,directory,operation,*,kind='map'):
@@ -63,7 +72,7 @@ def prepare(cfg,spec,directory,operation,*,kind='map'):
     with path.open('x',newline='') as out:
         w=csv.DictWriter(out,fieldnames=['data']);w.writeheader();w.writerows({'data':v['data']} for v in values)
     table=Path(cfg['map_prompt_root'])/(spec['query_id']+'.json');table.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
-    instruction=(None if empty_topk else operation.instruction) if kind in ('topk','aggregate') else operation.stage.method.instruction
+    instruction = native_instruction(operation, kind)
     extra={}
     if kind in ('topk','aggregate'):
         from .topk_binding import criterion

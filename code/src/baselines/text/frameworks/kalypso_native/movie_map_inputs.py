@@ -16,6 +16,7 @@ SOURCE_FILES = (
     'src/baselines/text/frameworks/kalypso_native/query_runner.py',
     'src/baselines/text/frameworks/kalypso_native/sembench_inputs.py',
     'src/baselines/text/frameworks/kalypso_native/sembench_filter.py',
+    'src/baselines/text/frameworks/kalypso_native/sembench_extract.py',
     'src/baselines/text/frameworks/kalypso_native/sembench_join.py',
     'src/baselines/text/frameworks/kalypso_native/join_inputs.py',
     'src/baselines/text/frameworks/kalypso_native/join_binding.py',
@@ -91,7 +92,7 @@ def prepare_inputs(cfg, unit, output):
     local = dict(cfg, map_prompt_root=str(output / 'prompts'))
     queries = []
     for index, spec in enumerate(unit['queries']):
-        kind={'sembench-filter':'filter','sembench-topk':'topk','sembench-aggregate':'aggregate'}.get(spec['task'],'map')
+        kind={'sembench-filter':'filter','sembench-extract-map':'extract','sembench-topk':'topk','sembench-aggregate':'aggregate'}.get(spec['task'],'map')
         qid = spec['query_id']
         if Path(qid).name != qid or qid in ('.', '..'):
             raise ValueError('Text CPU query identity must be a filename-safe name')
@@ -100,7 +101,7 @@ def prepare_inputs(cfg, unit, output):
         rows, csv_path = prepare(local, spec, directory, query.operation,kind=kind)
         description = query.describe()
         description['policy'] = 'original SemBench '+kind+' selection; no model calls in CPU preparation'
-        description['native_retry_policy'] = ('author length retry remains at most once at8192' if kind=='map' else 'none')
+        description['native_retry_policy'] = ('author length retry remains at most once at8192' if spec['task'] in MAP_TASKS else 'none')
         source_path = directory / 'source.json'
         source_path.write_text(json.dumps(description, ensure_ascii=False, indent=2) + '\n')
         prompt_path = output / 'prompts' / (qid + '.json')
@@ -145,7 +146,11 @@ def load_inputs(cfg):
         table = json.loads(paths['prompt'].read_text())
         original=query_task(spec)
         operation=description['operation']
-        instruction=(None if operation is None else operation['instruction']) if topk or aggregate else operation['stage']['method']['instruction']
+        if spec['task'] == 'sembench-extract-map':
+            from .field_binding import extract_instruction
+            instruction = extract_instruction(operation['stage']['method']['output_columns'])
+        else:
+            instruction=(None if operation is None else operation['instruction']) if topk or aggregate else operation['stage']['method']['instruction']
         if topk or aggregate:
             from .topk_binding import criterion
             native_instruction=None if instruction is None else criterion(instruction,description['operation']['model_columns'])

@@ -85,6 +85,9 @@ def operator_handler(spec):
     from .sembench_join import JoinOperation
     from .sembench_topk import TopKOperation
     from .sembench_aggregate import AggregateOperation
+    from .sembench_extract import ExtractMapOperation
+    if spec['task'] == 'sembench-extract-map':
+        return ExtractMapOperation
     if spec['task'] in MAP_TASKS:
         return MapOperation
     return {'sembench-filter': FilterOperation, 'sembench-join': JoinOperation,
