@@ -2270,6 +2270,78 @@ GPU tensor／kernel／成本仍未知。私有首审计把24请求误写为1..12
 `VERIFY-LOTUS-Daft-MMQA-Q4-4f0b-originals-20261114.json` SHA-256为
 `a3eacdaacfd21fd4c8ea94b6bff7d490e42cb9916ed68770a1cf44fca12aeb66`。
 
+<a id="query-clock-preflight-and-repro-freeze"></a>
+## runner 预检时钟与复现边界收口
+
+基于5d617307e，本节对应[文本入口check](../../../../code/src/experiments/sembench_text_query.py)的预检声明修正：
+原先同一句“startup和close计入”误用于实际在完整sink后关闭的原生Ray，以及另有owner生命周期的LOTUS resident。
+现在明确声明各自`query_clock_version`：LOTUS＋Ray为`lotus_ray.source_to_sink.v1`，
+原生LOTUS resident为`sembench.source_to_sink.v3`；旧isolated记录图没有独立关闭前边界，保持None，
+其`query_seconds`仍包含adapter审计及关闭。预检只声明实现边界，不产生实测时间／READY资格。
+未改变实际打点、启动／关闭、原模型参数、源读取、原后处理或任何历史数值。
+
+新增完整Q3软件用例沿现有原题／LOTUS／同一Ray query runner：2000行临时CSV、120次原Filter发生项、
+完整COUNT14；完整消息与原SDK参考逐项一致，一次runtime启动在source起点后，一次关闭在完整sink后。
+这是LOTUS＋Ray的CPU替身检查，既不是独立JSON语义、旧HTTP拓扑，也不是2000行真实模型成绩。
+四完整模块96个不同软件方法，93通过、3跳过，0模型／GPU；
+未绑定项为独立Daft SDK和真实Medical／MMQA资产，不把skip解释为资产全局缺失。
+`VERIFY-query-clock-contract-cpu-20261114-r1.json` SHA-256为
+`78a00be2e6f5f54e0d3d381ea3167c861d1699360df9b12c316ea16bf22dce5a`。
+
+反查生产导入、脚本、配置与测试后，已退役的local Ray／Daft Q3图、两个LOTUS服务CLI／worker及旧IMLane Q1Relation
+没有新的现行调用残留；其恢复来源及历史日志保持。独立Ray HTTP Q3虽没有生产CLI调用，
+[校准计划](../../../plans/原生基线校准.md)及6996真实Ray＋软件HTTP对照仍需要其外部服务拓扑，
+因此保留作有用途的诊断，不声称当前完整原题runner与该HTTP生命周期等价，也不重复计为独立语义baseline。
+不因只有测试调用就删除仍有用途的原生API控制。
+
+并行精简的0e099838c／755bbb246两份生产文件与当前树逐字相同，排序一次及CSV直接writerows已存在，
+不重复cherry-pick或重写；没有触碰公共结果／采样实现。复核记录
+`VERIFY-runner-cleanup-and-equivalent-commits-20261114.json` SHA-256为
+`17695971254f75e06627d784342acd47fe6f43b07c831b60dfcdf924cfa369b5`。
+本批不另占GPU、不合main；三个保护草稿和取消的Daft TopK保持。已排队5d617的Q2b／Q5继续按其冻结提交，
+本次元数据修正不要求重复已有模型请求。剩余真实数据、原生能力限制与目标未验仍从当前覆盖表逐格取资格。
+
+<a id="native-query-audit-work"></a>
+## 查询区间内的重复审计开销
+
+这是源码及CPU软件验证，基于5d617307e。独立[Ray／Serve查询runner](../../../../code/src/experiments/sembench_native_ray.py)
+每个非末批必须确认本批已扣记发生项全部终态，才可提交下一依赖批次；原实现却反复解析全部历史事件，
+再对期望列表逐项查找。同owner第二轮还重新解析第一轮。现在复用原`summarize`，
+允许以文件偏移只读新增事件；Serve每轮在真实source起点前记录事件末尾，批间推进偏移，成员查找用集合。
+完整历史、原生输出关联、source与评分核对仍在完整sink后。必要终态／预算、批次／关系和冷暖条件不变，
+没有增加审计框架或更改模型请求。两轮3→2软件查询的批间检查分别只看到1..3及6..8发生项；
+未知终态仍阻止依赖批及后续query，末批未知仍保存已经形成的完整sink。
+
+[Daft worker](../../../../code/src/experiments/native_daft_query.py)删除两处重复optional事件sidecar：
+本地原生执行仍返回原`native_api`记录，attached HTTP仍保留内存事件并生成结果报告；
+不再在每个事件同步追加同一份JSONL。预算在真实调用前扣记，prepared packet、必要结果交接／ACK、
+部分失败和关闭保持。这里没有把实际IPC、数据读取或原题后处理移出计时。
+
+六个完整模块137个不同方法全部通过，0模型／GPU，覆盖独立Ray／Serve、LOTUS＋Ray prepared、
+Daft worker、原题多阶段／聚合、attached HTTP与独立Daft任务；没有SDK／资产跳过。
+`VERIFY-incremental-native-audit-cpu-20261114-r1.json` SHA-256为
+`c8ab54e956918f4d140e0e07d7b51a630706a1c55d8220b6966f2596b79da6c4`。
+与上节四模块无重复方法，合计233方法230通过、3跳过；原始输出保留于仓库外，不增加模型资格。
+
+继续核对输出消费者后，LOTUS＋Ray及独立Ray离线入口显式关闭逐请求完整token／output副本，
+其原生返回predictions、完整sink、必要预算和终态事件保持；没有现行离线runner读取这些额外文件。
+报告`native_output_artifacts=False`，不能再假定新离线运行含`native-output-*.json`。
+Serve的sink后响应关联仍读取该副本，因此显式True；未提供开关的旧私有setup spec维持原行为，历史原件不删除。
+真实setup加软件Engine检查两种配置：构造不推理、返回同一output对象、关闭时不读取复制字段、开启时保留完整副本。
+四完整模块70／70通过，0模型／GPU；不是新原生模型资格。
+`VERIFY-native-output-policy-cpu-20261114-r1.json` SHA-256为
+`77c87007cd4e88bd78a88410ddec0cb15748670f0fccc732f773131ced366ee6`。
+三批按方法ID去重后246方法243通过、3跳过，不能将重复复核相加；汇总
+`VERIFY-native-audit-deduplicated-20261114.json` SHA-256为
+`dd528790ebf7ac7dbab41d71310665efc0363769070796ece02ffb2e8f8d61f3`。
+
+固定源码评审区间为main分叉点5ede5bdecb至5d617307e，两个只读评审轴分开记录：
+Standards发现批间全历史重读和列表成员查找；Spec发现同一问题及同步actor事件／完整输出仍计入查询。
+本节修正前者及离线冗余输出副本，两轴定向复核未见新问题；后者仍部分pending。
+LOTUS服务的图像hash／事件编码、Ray同步actor日志／Serve输出、
+IMLane UDF/provider指纹／回执，以及各配置的冷启动／ready条件仍须逐路径收口。
+不能据本批称全路径计时已对齐；旧成绩不扣减、不重贴标签，新候选仍需按实际相同scope和冷暖条件重测。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、

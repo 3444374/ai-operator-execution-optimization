@@ -120,6 +120,7 @@ class NativeDaftWorkerTests(unittest.TestCase):
         self.assertEqual(rows,self.requests)
         self.assertEqual(options['sampling_params'], self.config['sampling_params'])
         self.assertEqual(options['close_timeout_s'], 112)
+        self.assertNotIn('on_native_event', options)
         for row in rows:options['before_generate'](row['call_id'],'CPU-'+row['call_id'],row['prompt'])
         result = dict(predictions=[dict(call_id=row['call_id'],generated_text='True') for row in rows],
             metadata=dict(result_ready_monotonic_ns=time.monotonic_ns(),model_close_receipt=None,native_api={}))

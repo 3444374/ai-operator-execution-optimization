@@ -163,6 +163,17 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 共享Medical评价只给原评分器副本，保留真实sink，独立任务删除重复copy；原算法／分数保持，不改旧成绩。
 九模块165个不同方法最终162通过、3项资产证明未绑定跳过，0模型／GPU；实际Daft0.7.21图的软件API与目标模型分开，原失败和定向复核保留。
 
+[runner预检时钟与复现核对](diagnostics/sembench_native_integration_20261112/README.md#query-clock-preflight-and-repro-freeze)
+修预检生命周期声明与实测边界不符：原生Ray v1、LOTUS resident v3分列，旧isolated独立sink时钟保持None；实际打点／历史值不改。
+完整Q3软件2000→120→COUNT14及关闭在完整sink后；四模块96个不同方法为93通过、3项依赖／资产未绑定，0模型。
+已退役入口无新的现行调用；有用途的RayHTTP诊断保留，两个精简生产文件已逐字等价集成，不重复cherry-pick，不据此授予新模型或性能资格。
+
+[实际审计开销收尾](diagnostics/sembench_native_integration_20261112/README.md#native-query-audit-work)
+独立Ray／Serve的非末批终态检查由全历史重读改为新增事件，完整核对仍在sink后；Daft删除重复同步optional日志。
+六模块137个不同软件方法全部通过，0模型／GPU；必要预算、严格终态、原题错误、结果／ACK和关闭保持。
+离线Ray不再复制／落盘完整output，Serve关联审计仍保留；相关四模块70／70通过。
+与预检批合计去重246个不同方法为243通过、3跳过。actor日志、服务指纹及IMLane回执等仍有区间内开销，未授予统一计时或性能资格；历史值不扣减。
+
 [4f0b LOTUS＋Daft MMQA Q4](diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-mmqa-q4-4f0b-model)
 原24×2真实Extract终态，原分组19／18行、F1均.4865；原文与字段差异保留，执行完成不等于质量全对。
 私有首审计错用1200范围的失败原件保留，改为24后离线复核无新增模型；1405payload／1186Gitblob及结果／ACK只读核验。

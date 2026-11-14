@@ -232,7 +232,6 @@ def run_worker(config, directory, *, execute_query=None):
             from src.baselines.text.frameworks import daft_sembench_native
             execute_query = (daft_sembench_native.execute_prepared_messages if attached
                              else daft_sembench_native.execute_prepared_map)
-        from src.observability.native_model_api_trace import writer
         from src.experiments.attempt_ledger import AttemptBudget
         from src.experiments.shared_request_budget import SharedClaimedUnit
         from src.infrastructure.private_artifacts import content_digest
@@ -248,7 +247,6 @@ def run_worker(config, directory, *, execute_query=None):
         if attached:
             from src.observability.httpx_observer import _observe_native_httpx_client
             options = native_openai_options(config)
-            emit = writer(directory)
             def record(event):
                 event = dict(event)
                 body = event.pop('body', None)
@@ -256,12 +254,11 @@ def run_worker(config, directory, *, execute_query=None):
                     event['messages_sha256'] = content_digest(body['messages'])
                     event['model'] = body['model']
                 http_events.append(event)
-                emit(event['event'], **{key: value for key, value in event.items() if key != 'event'})
             observation = _observe_native_httpx_client(unit, record,
                 options['base_url'].rstrip('/') + '/chat/completions', timeout_s=config['query_timeout_s'])
             arguments['provider_options'] = options
         else:
-            arguments.update(on_native_event=writer(directory), before_generate=reserve,
+            arguments.update(before_generate=reserve,
                 engine_kwargs=config['engine_kwargs'], provider_options=config['provider_options'],
                 close_timeout_s=config['cleanup_s'] - config['stop_grace_s'])
         with observation:

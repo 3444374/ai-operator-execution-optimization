@@ -133,7 +133,7 @@ Movie source 使用 manifest 的显式 `max_rows`，CSV／字段／manifest 字�
   原题函数拥有选择、parser和完整 sink。旧专项 `execute_q3` 图已移除，
   [历史来源及默认重试／runtime差异](../../../experiments/reproduction/native_baselines/README.md#retired-ray-q3-native-binding)保留。
   Ray2.56.1发布extra仍要求0.22.0；旧67a4实际执行120条但SHM残留导致生命周期失败，物理attempt总数未证实。
-- [Ray公开HTTP profile](text/frameworks/ray_data_http_sembench_native.py)保留原HTTP处理器默认与Q3语义，
+- [Ray公开HTTP诊断profile](text/frameworks/ray_data_http_sembench_native.py)因校准对照仍有用途而保留原HTTP处理器默认与Q3语义，
   外部caller拥有独立模型服务；query／Ray driver断开与物理进程／服务关闭分开核对，不声称修复旧local actor。
   35个替身方法及6996真实Ray＋独立软件服务的正常／错误两例通过；120＋1次实际POST、显式关闭和SHM检查通过。真实模型服务仍待验。
 - [DuckDB＋作者IMLane](../../integrations/imlane_duckdb/README.md)在准确798e通过真实shared库／薄driver、
@@ -997,6 +997,17 @@ Ray Animals四题也在manifest／像素及源码预检、原函数绑定和LOTU
 软件 fixture 不再套用64条上限；具名官方 sf64 输入仍必须匹配其64条生成身份。
 Ray／Daft prepared 路径在配置／输入核对和预算准备后开始，包含必要的消息准备、原生执行和
 原查询的真实重读／后处理。禁止从历史宽区间估算扣除预检时间；旧 JSON 按原口径保留。
+
+文本`check.query_clock_version`只声明执行接点的边界：原生Ray用`lotus_ray.source_to_sink.v1`，
+惰性runtime／模型启动计入、最终关闭在sink后；LOTUS resident用v3，模型是否已就绪按具体phase观测。
+旧isolated无独立关闭前边界，保持None，其query_seconds含adapter审计／关闭；预检不产实测成绩，
+见[原题完整Q3与复现核对](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#query-clock-preflight-and-repro-freeze)。
+
+独立Ray／Serve的非末批终态检查只读新增事件，同owner下一轮不再解析上一轮历史；完整核对仍在sink后。
+Daft worker不再重复同步写optional事件sidecar，原生执行记录与必要结果／ACK保持。
+LOTUS＋Ray及独立Ray离线入口也不再逐请求复制／落盘完整token与output，返回predictions保持；
+报告`native_output_artifacts=False`。Serve现有关联审计仍读取原始副本，显式保留True。
+这些实际开销修正不等于所有时钟已对齐，见[验证与剩余边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-audit-work)。
 
 这些版本化起点不等于所有运行配置已经可直接排名：Ray／Daft 单冷和默认 LOTUS resident 的首次惰性
 加载仍在区间内；显式 LOTUS `before_queries`、IMLane Filter 和 Kalypso 使用已就绪模型，

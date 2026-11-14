@@ -1103,12 +1103,20 @@ class NativeMultistageTests(unittest.TestCase):
         from src.experiments import sembench_native_ray as entry
         events=[]
         original_read = entry.read_json
+        original_summary = entry.summarize
+        checkpoint_attempts = []
+        def summarize(directory, *, offsets=None):
+            observed = original_summary(directory, offsets=offsets)
+            if offsets is not None:
+                checkpoint_attempts.append(observed['submitted_attempts'])
+            return observed
         def post_sink_read(path):
             if Path(path).name.startswith('native-output-'):
                 attempt = int(Path(path).stem.removeprefix('native-output-'))
                 self.assertGreaterEqual(events.count('sink'), 1 if attempt <= 5 else 2)
             return original_read(path)
-        with patch.object(entry, 'read_json', side_effect=post_sink_read):
+        with patch.object(entry, 'read_json', side_effect=post_sink_read), \
+                patch.object(entry, 'summarize', side_effect=summarize):
             report = entry.run_serve_session(self.config(limit=10,serve=True),self.root/'session',checkout='fixture',
                 session_factory=self.serve_owner,
                 task_factory=lambda config:DependentTableTask(self.source,config['query_id'],events))
@@ -1121,6 +1129,7 @@ class NativeMultistageTests(unittest.TestCase):
                          [list(range(1,6)),list(range(6,11))])
         self.assertEqual([len(query['native_observation']['response_associations']) for query in report['queries']],[5,5])
         self.assertEqual(report['physical_attempts_reserved'],10)
+        self.assertEqual(checkpoint_attempts, [[1,2,3], [6,7,8]])
         self.assertIsNone(report['warm_qualified'])
         for index,query in enumerate(report['queries'],1):
             self.assertEqual(query['result']['data'],[['duplicate',True],['duplicate',True]])

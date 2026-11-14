@@ -59,6 +59,13 @@ Q2b旧空Extract补列分支已删除；LOTUS服务、Ray／Daft／IMLane保留�
 已核真实Q2b金标候选未缺失；Q5原sf25在32768／8192下只产生单叶，较大官方scale先核实际分块，
 见[真实输入／原生边界](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#mmqa-native-empty-and-real-gates)。
 
+文本check现声明实际runner时钟：原生Ray v1启动在source后、close在sink后，LOTUS resident用v3；
+旧isolated无独立关闭前边界，保持None。实际打点和历史值不变；完整Q3软件2000→120→COUNT14及
+四模块96方法为93通过、3依赖／资产未绑定，见[预检与复现核对](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#query-clock-preflight-and-repro-freeze)。
+Ray非末批终态检查只读新增事件，同owner轮次在source前取事件起点；Daft删除重复同步sidecar，
+离线Ray不再落盘完整输出副本，Serve仍保留现有用途。相关137及70方法通过，合计去重246方法为243通过、3跳过，
+仍未整体对齐计时，见[实际审计开销收尾](../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-audit-work)。
+
 当前剩余问题按共同边界处理，不能用增加题目入口绕开：
 
 | 共同边界 | 当前源码事实与收尾范围 |

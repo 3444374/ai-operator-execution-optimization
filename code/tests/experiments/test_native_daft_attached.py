@@ -184,6 +184,7 @@ class AttachedOriginalQueryTests(unittest.TestCase):
                     self.assertFalse(terminal['remote_service_shutdown_owned'])
                     self.assertEqual(terminal['native_api']['reserved_attempts'], counts[index])
                     self.assertEqual(terminal['native_api']['http_send_entries'], counts[index])
+                    self.assertEqual(list(directory.glob('native-*.jsonl')), [])
                     self.assertNotIn(fixture.KEY_VALUE, json.dumps(terminal))
                     if index == len(supervise.calls)-1:
                         self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])

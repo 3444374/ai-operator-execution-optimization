@@ -65,10 +65,11 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
         model_ready_before_source=False,
         model_ready_before_source_reason='lazy query scope; native model starts in the first nonempty prediction batch',
         physical_gpu_exit_confirmed=None, performance_claim=False, warmup_calls=0,
+        native_output_artifacts=False,
         result_cache_enabled=False, requested_generate_retries=0,
         timing_scope='fresh task source, necessary image reads/RGB-to-PNG content, project messages, '
             'native startup/dependent predictions, necessary terminal checks, strict task parsing and complete memory sink; '
-            'mandatory budget reservation and synchronous native observer writes included; '
+            'mandatory budget reservation and synchronous native observer events included; redundant full output copies disabled; '
             'source verification, evaluation, result persistence and final runtime close excluded')
     source = result = native = ledger = unit = primary = None
     requests = []
@@ -91,7 +92,7 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
         first = next(row['first_attempt'] for row in ledger.snapshot()['units'] if row['unit_id'] == value['unit_id'])
         runtime_env = dict(py_executable=config['model_python'], env_vars=dict(
             PYTHONPATH=str(Path(__file__).parents[2]),
-            SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory)))))
+            SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory), capture_outputs=False))))
         with scope(model=config['model'], engine_kwargs=config['engine_kwargs'],
                 processor_options=config['processor_options'], runtime_options=config['runtime_options'],
                 engine_runtime_env=runtime_env) as owner:
@@ -110,7 +111,7 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
 
             _predict_query_batches(task, source, owner, sampling=sampling, unit=unit, directory=directory,
                 first_attempt=first, requests=requests, counts=report.setdefault('request_batch_counts', []),
-                predictions=[], sink=sink, processor_options=config['processor_options'])
+                predictions=[], sink=sink, event_offsets={}, processor_options=config['processor_options'])
             if not requests:
                 report.update(model_ready_before_source=None,
                     model_ready_before_source_reason='no eligible occurrences; native runtime and model were not started')
@@ -159,14 +160,15 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
     return report
 
 
-def _confirmed_attempt_window(directory, unit, first_attempt, before):
+def _confirmed_attempt_window(directory, unit, first_attempt, before, *, offsets=None):
     """Only the terminal/allowance evidence required before another native batch."""
     after = unit.attempts
     expected = list(range(first_attempt+before, first_attempt+after))
-    observed = summarize(directory)
-    submitted = [value for value in observed['submitted_attempts'] if value in expected]
-    terminal = [value for value in observed['terminal_attempts'] if value in expected]
-    unknown = [value for value in observed['unknown_attempts'] if value in expected]
+    expected_set = set(expected)
+    observed = summarize(directory, offsets=offsets)
+    submitted = [value for value in observed['submitted_attempts'] if value in expected_set]
+    terminal = [value for value in observed['terminal_attempts'] if value in expected_set]
+    unknown = [value for value in observed['unknown_attempts'] if value in expected_set]
     if sorted(submitted) != expected or sorted(terminal) != expected or unknown:
         raise RuntimeError('native interval has unconfirmed, duplicate or missing native attempts')
     return dict(attempts=expected, submitted_attempts=submitted, terminal_attempts=terminal,
@@ -174,7 +176,7 @@ def _confirmed_attempt_window(directory, unit, first_attempt, before):
 
 
 def _predict_query_batches(task, source, owner, *, sampling, unit, directory, first_attempt,
-                           requests, counts, predictions, sink, processor_options=None):
+                           requests, counts, predictions, sink, event_offsets, processor_options=None):
     """Drive the task's ordinary query generator; native Ray owns every batch."""
     program = native_query_batches(task, source)
     try:
@@ -207,8 +209,8 @@ def _predict_query_batches(task, source, owner, *, sampling, unit, directory, fi
                 sink(complete.value)
                 return
             try:
-                _confirmed_attempt_window(directory, unit, first_attempt, before)
-                if unit.attempts-before != len(pending):
+                window, _ = _confirmed_attempt_window(directory, unit, first_attempt, before, offsets=event_offsets)
+                if len(window['attempts']) != len(pending):
                     raise RuntimeError('native charged attempts differ from complete batch occurrences')
             except BaseException:
                 # Preserve locally constructed dependent work, without submitting it.
@@ -307,6 +309,7 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
         author_original_semantic_method=False, lotus_sdk_required=False,
         execution_owner='Ray Data ServeDeploymentProcessor and owned Ray Serve deployment',
         target_native_model_qualified=None, performance_claim=False, queries=[],
+        native_output_artifacts=True,
         model_owner_reused=None, warm_qualified=None, extra_query_warmup=0,
         warm_qualification_scope='requires fresh native model actor and actual EngineCore subprocess identities plus '
             'unchanged native constructor events; software fixtures do not qualify a target model',
@@ -342,7 +345,7 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
         runtime_env = dict(py_executable=config['model_python'], env_vars=dict(
             PYTHONPATH=str(Path(__file__).parents[2]),
             SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory),
-                                                       observe_model_actor_identity=True))))
+                observe_model_actor_identity=True, capture_outputs=True))))
         if session_factory is None:
             owner = _native_serve_process(config, directory/'native-caller', runtime_env)
         else:
@@ -382,6 +385,7 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
                 identity_complete = identity_complete and actual_identity is not None
                 if baseline_identity is not None and actual_identity is not None and actual_identity != baseline_identity:
                     raise RuntimeError('Serve model owner changed before fresh source')
+                event_offsets = {path: path.stat().st_size for path in directory.glob('native-events-*.jsonl')}
                 current['source_started_ns'] = time.monotonic_ns()
                 source = task.read_source()
                 if task.model_request_count(source) > unit.remaining:
@@ -394,7 +398,7 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
 
                 _predict_query_batches(task, source, owner, sampling=sampling, unit=unit, directory=directory,
                     first_attempt=first, requests=requests, counts=current.setdefault('request_batch_counts', []),
-                    predictions=predictions, sink=sink)
+                    predictions=predictions, sink=sink, event_offsets=event_offsets)
                 current['post_sink_audit_started_ns'] = time.monotonic_ns()
                 current['native_observation'], observed = _serve_attempt_window(directory, unit, first, before, predictions)
                 accounted = unit.attempts

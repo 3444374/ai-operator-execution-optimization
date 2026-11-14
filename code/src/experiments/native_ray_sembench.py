@@ -36,8 +36,9 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         engine_max_model_calls=engine.max_model_calls,
         lifecycle='query-owned cold runtime; native processor per LM batch; model reuse unverified', requested_generate_retries=0,
         performance_claim=False, physical_gpu_exit_confirmed=None,
+        native_output_artifacts=False,
         timing_scope='actual original source, SDK prompt/image preparation, native predictions and full relation; native cold startup, '
-                     'generate attempt reservation and synchronous actor observer event/output persistence included; '
+                     'generate attempt reservation and synchronous actor observer events included; redundant full output copies disabled; '
                      'source/image identity/config preflight, budget claim, driver post-sink audit, evaluation, result persistence '
                      'and ray.shutdown excluded; independent native scope, not the shared v3 comparison scope',
         strict_controller_unavailable_reason='worker API does not observe earliest host/controller code',
@@ -68,7 +69,7 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         minimum = description.get('minimum_model_calls', description['expected_model_calls'])
         if minimum > unit.remaining:
             raise ValueError('shared physical budget cannot cover every original occurrence')
-        observer = dict(value, output=str(directory.resolve()))
+        observer = dict(value, output=str(directory.resolve()), capture_outputs=False)
         runtime_env = dict(py_executable=engine.model_python,
             env_vars=dict(PYTHONPATH=str(Path(__file__).parents[2]),
                           SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(observer)))

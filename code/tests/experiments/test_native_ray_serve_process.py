@@ -196,7 +196,7 @@ class NativeServeProcessTests(unittest.TestCase):
         self.assertFalse(value['ray_runtime_started'])
         self.assertFalse(value['evaluation_dependencies_required'])
 
-    def test_actor_setup_records_native_context_at_constructor_without_inference(self):
+    def test_actor_setup_preserves_identity_and_only_copies_outputs_when_requested(self):
         from src.baselines.text.frameworks.ray_native_observer import setup
 
         modules = {}
@@ -205,12 +205,17 @@ class NativeServeProcessTests(unittest.TestCase):
             modules[name].__path__ = []
         for capture in (True, False):
             with self.subTest(capture=capture):
+                calls = []
+                output_value = SimpleNamespace(finished=True)
+                if capture:
+                    output_value.prompt_token_ids = [1,2]
+                    output_value.outputs = [SimpleNamespace(text='original output', token_ids=[3], finish_reason='stop')]
                 class Engine:
                     def __init__(self):
                         pass
                     async def generate(self, prompt, sampling_params, request_id):
-                        raise AssertionError('constructor identity caused inference')
-                        yield
+                        calls.append(request_id)
+                        yield output_value
                 modules['vllm.v1.engine.async_llm'].AsyncLLM = Engine
                 def context():
                     self.assertTrue(capture, 'offline observer requested extra actor identity')
@@ -219,11 +224,21 @@ class NativeServeProcessTests(unittest.TestCase):
                 spec = json.loads(self.options['model_runtime_env']['env_vars']['SEMLOOM_RAY_NATIVE_OBSERVER'])
                 output = self.root/str(capture)
                 output.mkdir()
-                spec.update(output=str(output), observe_model_actor_identity=capture)
+                spec.update(output=str(output), observe_model_actor_identity=capture, capture_outputs=capture)
                 with patch.dict(sys.modules, modules), patch.dict(os.environ, SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(spec)), \
                         patch('importlib.metadata.version', return_value='software-version'):
                     setup()
-                    Engine()
+                    engine = Engine()
+                    self.assertEqual(calls, [])
+                    async def generate():
+                        return [row async for row in engine.generate({}, SimpleNamespace(n=1), 'software-request')]
+                    returned = asyncio.run(generate())
+                self.assertIs(returned[0], output_value)
+                self.assertEqual(calls, ['software-request'])
+                artifacts = list(output.glob('native-output-*.json'))
+                self.assertEqual(len(artifacts), int(capture))
+                if capture:
+                    self.assertEqual(read_json(artifacts[0])['outputs'][0]['text'], 'original output')
                 rows = [json.loads(row) for row in (output/('native-events-'+str(os.getpid())+'.jsonl')).read_text().splitlines()]
                 ready = next(row for row in rows if row['event'] == 'native_constructor_returned')
                 self.assertEqual(ready['pid'], os.getpid())

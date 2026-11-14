@@ -137,6 +137,7 @@ def query_from_config(config, checkout, data_dir, generation):
 def check(config, query, engine):
     kind = None if query.operation is None else query.operation.describe()['kind']
     native_ray = config['backend'] == 'ray-data' and 'ray_native' in config
+    resident = config.get('lifecycle') == 'resident'
     if kind in ('join', 'topk') and not native_ray:
         if config['backend'] != 'lotus-native' or config.get('lifecycle', 'isolated') != 'resident':
             raise ValueError('native ' + {'join': 'Join', 'topk': 'TopK'}[kind]
@@ -161,7 +162,12 @@ def check(config, query, engine):
         execution_layout=('public Ray Data LLM processor; complete original sink before close' if 'ray_native' in config
                           else 'original LOTUS accessor / LM / batch_completion' if config['backend']=='lotus-native'
                           else 'existing native finite record-chain graph; one terminal F/M/E operator'),
-        lifecycle='isolated cold query; native runtime/model startup and close included',
+        query_clock_version=('lotus_ray.source_to_sink.v1' if native_ray else
+                             'sembench.source_to_sink.v3' if resident else None),
+        lifecycle=('query-owned native Ray runtime; lazy runtime/model startup inside source-to-sink; '
+                   'final runtime close after sink' if native_ray else
+                   'explicit same-owner native LOTUS; fresh source per query; owner close after queries' if resident else
+                   'legacy isolated query_seconds includes adapter audit and close; no independent pre-close source-to-sink'),
         environment_scope=('source/method/configuration only; native Ray SDK, engine interpreter and model remain unverified'
                            if 'ray_native' in config else
                            'source/method/configuration only; actual driver and model checked before run'))

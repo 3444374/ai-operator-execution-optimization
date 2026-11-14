@@ -10,7 +10,7 @@ import sys
 import time
 
 
-def install(engine_class, budget, emit, save_output):
+def install(engine_class, budget, emit, save_output=None):
     """Observe the existing AsyncLLM boundary and charge before each generate."""
     original_init, original_generate = engine_class.__init__, engine_class.generate
     signature = inspect.signature(original_generate)
@@ -37,10 +37,11 @@ def install(engine_class, budget, emit, save_output):
                 if output.finished:
                     terminal = True
                     emit('native_generate_terminal', attempt=attempt, request_id=request_id)
-                    save_output(attempt, dict(request_id=request_id,
-                        prompt_token_ids=list(output.prompt_token_ids or []),
-                        outputs=[dict(text=row.text, token_ids=list(row.token_ids),
-                            finish_reason=row.finish_reason) for row in output.outputs]))
+                    if save_output is not None:
+                        save_output(attempt, dict(request_id=request_id,
+                            prompt_token_ids=list(output.prompt_token_ids or []),
+                            outputs=[dict(text=row.text, token_ids=list(row.token_ids),
+                                finish_reason=row.finish_reason) for row in output.outputs]))
                 yield output
         finally:
             if not terminal:
@@ -76,16 +77,25 @@ def setup():
         finally:
             os.close(fd)
 
-    install(AsyncLLM, unit, emit, lambda attempt, value:
-            publish_private_json(root / ('native-output-' + str(attempt) + '.json'), value))
+    def save_output(attempt, value):
+        publish_private_json(root / ('native-output-' + str(attempt) + '.json'), value)
+
+    install(AsyncLLM, unit, emit, save_output if spec.get('capture_outputs', True) else None)
     emit('native_observer_installed', python=sys.executable, prefix=sys.prefix,
          versions={name: version(name) for name in ('ray', 'vllm', 'torch', 'transformers')},
          meaning='API submission/terminal events; engine acceptance and kernel time unobserved')
 
 
-def summarize(directory):
-    events = [json.loads(line) for path in Path(directory).glob('native-events-*.jsonl')
-              for line in path.read_text().splitlines()]
+def summarize(directory, *, offsets=None):
+    """Read all events, or only appended events at a dependent-batch checkpoint."""
+    events = []
+    for path in Path(directory).glob('native-events-*.jsonl'):
+        with path.open() as stream:
+            if offsets is not None:
+                stream.seek(offsets.get(path, 0))
+            events.extend(json.loads(line) for line in stream.read().splitlines())
+            if offsets is not None:
+                offsets[path] = stream.tell()
     submitted = [row for row in events if row['event'] == 'native_generate_submitted']
     terminal = [row for row in events if row['event'] == 'native_generate_terminal']
     return dict(available=bool(events),

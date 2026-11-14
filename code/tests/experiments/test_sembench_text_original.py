@@ -561,6 +561,49 @@ class OriginalSemBenchTextTests(unittest.TestCase):
                 self.assertEqual(cpu.events[-1],'close')
             ledger.close_shared_unit('query')
 
+    def test_full_movie_q3_uses_original_query_and_places_native_close_after_sink(self):
+        from src.experiments import native_ray_sembench, sembench_text_query
+        from src.experiments.attempt_ledger import AttemptBudget
+        from src.experiments.cell_budget import CellBudgetLedger
+        from tests.baselines.text.ray_native_fixtures import recorded_processor
+
+        base = pd.read_csv(self.data/'Reviews.csv')
+        frame = pd.concat([base.iloc[[0]]] * 2000, ignore_index=True)
+        frame['id'] = ['taken_3' if i < 120 else 'outside' for i in range(2000)]
+        frame['reviewId'] = list(range(2000))
+        frame['reviewText'] = ['software cohort review '+str(i) for i in range(2000)]
+        frame['scoreSentiment'] = ['POSITIVE' if i < 14 else 'NEGATIVE' for i in range(2000)]
+        frame.to_csv(self.data/'Reviews.csv', index=False)
+        query = self._query('movie', '3')
+        answers = ['True'] * 14 + ['False'] * 106
+        expected, original_batches = self._reference(query, answers)
+        output = self.data/'full-movie-q3'
+        output.mkdir()
+        budget = dict(path=str(output/'budget.sqlite'), id='full-movie-q3', limit=120, unit_id='query')
+        ledger = CellBudgetLedger.create(Path(budget['path']), AttemptBudget(budget['id'], 120), deadline_utc=None)
+        ledger.reserve_unit('query', 120)
+        config = dict(backend='ray-data', profile={}, budget=budget,
+            ray_native=dict(engine_kwargs={}, processor_options={}))
+        engine = EngineSpec(model_path='CPU-only', model_python='unused', driver_python='unused', max_model_calls=120)
+        checked = sembench_text_query.check(config, query, engine)
+        with recorded_processor(lambda row, request: answers[int(row['call_id'].rsplit('-', 1)[1])]) as cpu:
+            report = native_ray_sembench.run_query(config, query, engine, None, output)
+        self.assertEqual(report['status'], 'completed')
+        self.assertEqual(report['result'], expected.to_dict(orient='split'))
+        self.assertEqual(report['result']['data'], [[14]])
+        self.assertEqual(report['logical_requests'], 120)
+        self.assertEqual(report['physical_attempts_reserved'], 120)
+        self.assertEqual([row['messages'] for row in cpu.requests],
+            [message for messages, _ in original_batches for message in messages])
+        self.assertEqual(checked['query_clock_version'], report['query_clock_version'])
+        events = report['native']['events']
+        self.assertLessEqual(report['source_started_ns'], events['runtime_start_ns'])
+        self.assertLessEqual(events['runtime_start_ns'], report['sink_ready_ns'])
+        self.assertLessEqual(report['sink_ready_ns'], events['close_started_ns'])
+        self.assertEqual(cpu.events.count('init'), 1)
+        self.assertEqual(cpu.events.count('close'), 1)
+        self.assertFalse(cpu.initialized)
+
     def test_prepared_join_native_ray_processor_keeps_pair_occurrences(self):
         from src.baselines.text.sembench_prepared import prepare,finish
         from src.baselines.text.frameworks.ray_data_sembench_native import execute_prepared

@@ -252,6 +252,9 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_text_query.py check
 ```
 
 各变量由本机仓库外 runtime／packet 提供；准备输出必须是新的 Git 外私有目录。
+文本check输出query_clock_version及实际lifecycle声明：原生Ray源→完整sink不含最终关闭，
+LOTUS resident沿v3，旧isolated没有独立sink边界则为None。它们是预检声明，实测与READY仍取运行回执，
+见[边界核对](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#query-clock-preflight-and-repro-freeze)。
 Movie 数据目录需要 `Reviews.csv`，Q10 另需原 `Movies.csv`，后者仅用于评价。
 Movie Q5/Q6/Q7可走[显式原生LOTUS resident Join](../src/baselines/README.md#lotus-movie-exact-join)
 或上述原生Ray processor；两者复用同一`check/run`，旧记录链F/M/E图仍未接Join。
