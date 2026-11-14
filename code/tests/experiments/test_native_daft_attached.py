@@ -237,20 +237,6 @@ class AttachedOriginalQueryTests(unittest.TestCase):
         self.assertEqual(report['result'], expected['result'])
         self.assertEqual(report['quality'], expected['quality'])
 
-    def test_zero_join_matches_need_only_the_real_join_budget(self):
-        expected, _, responses, config = self.reference('mmqa', 'Q2b', self.visual.mmqa_inputs(), mode='no_matches')
-        config['max_model_calls'] = 4
-        plan = self.visual.root/'zero-survivor-HTTP-plan.json'
-        write_private_json(plan, dict(responses=responses, failure=False))
-        report = driver.run_query(config, self.visual.root/'zero-survivor-native', model_python=sys.executable,
-            supervise=AttachedSupervisor(plan))
-        self.assertEqual(report['status'], 'completed')
-        self.assertEqual(report['query']['minimum_model_calls'], 4)
-        self.assertEqual(report['query']['maximum_model_calls'], 8)
-        self.assertEqual(report['native_HTTP_attempts'], 4)
-        self.assertEqual(report['result'], expected['result'])
-        self.assertEqual(report['quality'], expected['quality'])
-
     def test_unencoded_text_HTTP_is_rejected_after_the_complete_original_sink(self):
         expected, _, responses, config = self.reference('ecomm', 'Q12', self.visual.ecomm_inputs())
         plan = self.visual.root/'raw-HTTP-plan.json'
@@ -287,33 +273,37 @@ class AttachedOriginalQueryTests(unittest.TestCase):
         self.assertEqual(terminal['native_api']['http_send_entries'], 4)
         self.assertEqual(terminal['native_api']['unresolved'], 0)
 
-    def test_empty_join_successor_keeps_original_complete_sink_without_a_native_worker(self):
+    def test_empty_join_keeps_native_KeyError_with_only_real_join_budget_and_one_worker(self):
         inputs = self.visual.mmqa_inputs()
         _, _, responses, config = self.reference('mmqa', 'Q2b', inputs)
+        config['max_model_calls'] = 4
         service, _ = self.visual.config('mmqa', 'Q2b')
         policy = fixture.NativeHTTPReplies(self, 'mmqa', query='Q2b', mode='no_matches')
-        expected, _, _ = self.visual.invoke(service, inputs, policy, allowance=64)
+        with self.assertRaises(KeyError):
+            self.visual.invoke(service, inputs, policy, allowance=4)
         for response in responses.values():
             response['choices'][0]['message']['content'] = 'False'
         plan = self.visual.root/'empty-join-HTTP-plan.json'
         write_private_json(plan, dict(responses=responses, failure=False))
         supervise = AttachedSupervisor(plan)
-        report = driver.run_query(config, self.visual.root/'empty-join-native',
-                                  model_python=sys.executable, supervise=supervise)
-        self.assertEqual(report['status'], 'completed')
-        self.assertEqual(report['result'], expected['result'])
-        self.assertEqual(report['result']['data'], [])
-        self.assertEqual(report['quality'], expected['quality'])
+        with self.assertRaises(KeyError) as caught:
+            driver.run_query(config, self.visual.root/'empty-join-native',
+                             model_python=sys.executable, supervise=supervise)
+        report = caught.exception.query_report
+        self.assertEqual(report['status'], 'failed')
+        self.assertNotIn('result', report)
+        self.assertNotIn('quality', report)
+        self.assertIsNone(report.get('sink_ready_ns'))
+        self.assertEqual(report['query']['minimum_model_calls'], 4)
+        self.assertEqual(report['query']['maximum_model_calls'], 8)
         self.assertEqual([row['occurrences'] for row in report['native_lm_batches']], [4, 0])
         self.assertEqual(len(supervise.calls), 1)
         self.assertEqual(report['physical_attempts_reserved'], 4)
-        self.assertEqual(report['native_HTTP_audit']['successful_responses'], 4)
-        self.assertEqual(report['native_HTTP_audit']['unresolved_attempts'], 0)
-        self.assertEqual(len(report['native_HTTP_audit']['message_occurrences']), 4)
         self.assertTrue(report['query_thread_closed'])
         terminal = read_json(supervise.calls[0][1]/'worker.json')
         self.assertTrue(terminal['result_release']['confirmed'])
-        self.assertLessEqual(report['sink_ready_ns'], terminal['result_release']['released_monotonic_ns'])
+        self.assertEqual(terminal['native_api']['http_send_entries'], 4)
+        self.assertEqual(terminal['native_api']['unresolved'], 0)
 
     def test_failed_HTTP_keeps_reserved_unknown_attempt_and_no_success_sink(self):
         _, _, responses, config = self.reference('animals', 'Q1', self.visual.animals_inputs())

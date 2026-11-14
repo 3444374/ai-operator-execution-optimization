@@ -846,14 +846,19 @@ class NativeLotusImageQueryTests(unittest.TestCase):
         self.assertEqual(caught.exception.query_report["status"], "failed")
         self.assertEqual(caught.exception.query_report["calls"]["failed"], 1)
 
-    def test_q2b_empty_join_completes_with_declared_schema_and_zero_extract_posts(self):
+    def test_q2b_empty_join_keeps_native_KeyError_and_zero_extract_posts(self):
         inputs = self.mmqa_inputs()
         config, _ = self.config("mmqa", "Q2b")
         replies = NativeHTTPReplies(self, "mmqa", mode="no_matches")
-        report, directory, claim = self.invoke(config, inputs, replies)
-        self.assertEqual(report["status"], "completed")
-        self.assertEqual(report["result"], {"columns": ["ID", "image_id", "color"], "index": [], "data": []})
-        self.assertEqual(report["quality"]["original_metric"]["f1_score"], 0)
+        with self.assertRaises(KeyError) as caught:
+            self.invoke(config, inputs, replies)
+        report = caught.exception.query_report
+        directory, claim = self.last["directory"], self.last["claim"]
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(report["error_type"], "KeyError")
+        self.assertNotIn("result", report)
+        self.assertNotIn("quality", report)
+        self.assertIsNone(report["sink_ready_ns"])
         self.assertEqual(report["model_calls"], 4)
         self.assertEqual(claim.attempts, 4)
         self.assertEqual(report["native_lm_calls"], [

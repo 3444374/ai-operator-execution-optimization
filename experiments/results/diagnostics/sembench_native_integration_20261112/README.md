@@ -2183,6 +2183,93 @@ HTTP重复wording与发生项的原始关联也未独立证明，API usage不能
 原件核验`VERIFY-Kalypso-F53-sequence-and-Daft-E67-Q7-originals-20261114.json`的SHA-256为
 `1a6bc75d104bc372790eae20ceed886e413c4e4d4e4d88a1586f406d065dfef6`；未重跑模型。
 
+<a id="mmqa-native-empty-and-real-gates"></a>
+## Q2b 原生空 Extract、真实匹配诊断及 Q5 原输入资格
+
+本次继续沿当前4f0b492e5和原件核对，没有新增逐题执行器或模型调用。
+已删除[MMQA共享接点](../../../../code/src/baselines/image/sembench_mmqa.py)在零行Extract后补声明列的旧分支，
+只保留原`zs-cot`到当前SDK枚举的必要参数转换。LOTUS1.2.4空Extract不创建`color`，
+原Q2b最终投影应抛KeyError；当前LOTUS服务、LOTUS＋Ray／Daft／IMLane都保留这个错误，
+不把它改成成功空表。已发生Join仍按实际请求记账，零行Extract不产生模型请求，正常资源关闭保留。
+旧8667／4793空表及F1=0属于当时空schema适配合同，原件和时间不改写，不授予当前路径资格。
+
+六完整模块86个不同软件方法通过、0skip／模型／GPU，包含真实CPU worker／ACK、Arrow/provider和软件SQL；
+首轮旧accessor恢复测试仍期待补列成功而报错，迁移断言后原22项模块复核通过，不重复累加。
+删除两项Daft重复的空结果成功期待，合并检查紧预算、单worker、原错误、ACK和关闭。
+`VERIFY-mmqa-native-empty-final-20261114.json` SHA-256为
+`604681c896de0935b2141da3cbde4cbc38a128cc3a3ff6bc0cb4e78038235247`。
+本次不改变任何查询时钟，失败投影不补记完整sink或成功质量。
+
+Q2b的五个官方金标ID0／5／6／9／10均指向同一原PNG；表行／图像都在sf25原件中，
+故当前缺口不是金标候选或该图缺失。原图为150×56蓝白Santa Anita Park字样与马匹图案（人工图像观察）。
+4793原生投影关联的相关答复已读出Santa Anita Park，却仍否定racetrack匹配；
+纯原解析全False、无默认Boolean回退、无length终止。这支持具体模型判断错误的观察，
+仍不能排除未观测的runtime图像处理／实际生成参数差异，不能据此宣布全部接线等价。
+
+新准备只选择原ID5与这张原图，复用完整原查询和现有runner，作为有偏的单匹配诊断；
+不是官方sf25任务或质量成绩。模型之前停止于首LM批次，不伪造Join或Extract答复。
+本机文字、角色、顺序及解码RGB像素与旧原件完全一致，但PNG编码由旧5433字节变为本机5318字节，
+消息SHA不同；具体encoder/build原因未证明，不能强行归为提示顺序或把像素一致称为GPU等价。
+前三次预期逐字节相等的私有检查失败保留；已定位压缩流差异后按实际字节／像素分别报告。
+服务器先核其原生编码、实际参数和关联，再各运行一次LOTUS及LOTUS＋Daft，单路径最多2次模型请求、总上限4；
+只有真实Join为True才进入Extract，False后保留原错误并停止该路径，不循环重跑追求匹配。
+该诊断不能替代完整原题的真实非空第二阶段资格。
+
+Q5的原函数固定选择16个片名；官方生成器从base CSV加抽样additional movies再打乱，
+扩大scale是否增加这些片名的实际行必须核真实CSV，不能仅凭scale推断。
+本次原sf25 CSV25行，选择16行；原context32768、output8192、输入预算24576下，
+原LOTUS首层只有1请求，SDK估计3420 token（不是实际generate输入数组或API计数）。
+因此已有两轮单叶F1=1不能授予多层，也没有证据说此原输入缺一个多层执行器。
+现有公共`configuration/check`和原`leaf_plan`均在无网络／模型情况下核过；
+更大官方scale须用服务器已有原base/additional资产按原生成器准备，再先做相同参数CPU分块。
+若仍单叶则停止，不复制描述、不缩上下文或伪造长摘要来造多层；若自然多叶再按原方法安排目标验证。
+Kalypso原SemAgg首层须独立用作者planner核，不能借LOTUS分块或单层成绩。
+
+该真实输入检查`VERIFY-Q2b-Q5-native-real-input-preflight-20261114.json` SHA-256为
+`fef9c69de104506ed45f71efc82d31d430c97284335871f6f36b2fa94d9d640b`，0模型／网络／服务器调用。
+单pair原数据与配置模板私有包11840字节，SHA-256为
+`a8b8c92e76188d3165f71523091ee863e1678c2b45dabe4e130d8c2f907b8c15`，按本实验标识从协调者获取；
+模板必须重绑实际runtime路径／服务和永久额度，私有路径不进Git。
+
+<a id="lotus-daft-medical-q4-751b-model"></a>
+## 751b LOTUS＋Daft Medical Q4：完整普通 Join 与均值两轮
+
+`lotus-daft-medical-q4-751b-qualification-20261114-r1` 固定751b：11112个patient与1200个symptom，
+原普通inner Join保留1200发生项，经LOTUS Filter后计算完整mean(age)；这是普通均值，不是多层SemAgg。
+同一外部service／EngineCore四次新鲜PID／birth观测一致，首／重复各1200模型请求，2400终态，
+unknown／重试／额外推理预热0。首轮55项保留、均值63，原MAPE1.65469872%；
+重复轮56项、均值63.64285714，原MAPE0.65117524%；三个Boolean判定差异保留，不调参修分。
+`lotus_daft.source_to_sink.v1`分别45.413285177、47.209734213秒；启动41.095125419秒、
+查询前tokenizer门5.326787789秒另列，原driver外部READY未知字段不回填，也不事后相减制造可比冷时间。
+
+原生11项新增CPU通过，复用未改变751b公共33项；2400份CPU／服务tokenize完整数组门已验，
+actual generate输入／输出ID、GPU tensor、kernel／成本／首次接受仍未知。
+每轮90个重复消息缺独立HTTP原文逐发生项关联，已核native call_id投影、完整原解析关系与HTTP多重集合；
+原结果和质量、两轮差异均保留。result cache关闭、native prefix开启，不称无缓存或性能排名。
+worker ACK与物理资源关闭／租约释放通过。
+本次独立核归档1383个payload、1185个Git blob、原driver结果／评分／时钟及ACK，未重跑模型。
+`VERIFY-LOTUS-Daft-Medical-Q4-751b-originals-20261114.json` SHA-256为
+`60219ed51c0b477da3eea709f61748cbc70ed86a6b43f95c2ef6da9a16ee34a3`。
+
+<a id="lotus-daft-mmqa-q4-4f0b-model"></a>
+## 4f0b LOTUS＋Daft MMQA Q4：完整 Extract／分组两轮
+
+`lotus-daft-mmqa-q4-4f0b-qualification-20261114-r1`固定4f0b492e5，原sf25经原片名选择24行，
+同服务／EngineCore四次新鲜身份观测一致，首／重复各24次真实Extract，共48终态，unknown／重试／额外推理预热0。
+原完整分组分别19与18行，precision .5142857、recall .4615385、F1均.4864865；
+执行完成但质量非全对。24个JSON字段中23项相同，The Disaster Artist的genres由non-fiction变为None，
+两条raw文本不同、完整关系不相等，保留原输出和差异，不做大小写归一化或重推理。
+`lotus_daft.source_to_sink.v1`为6.359167637／5.283065778秒，启动41.064707645秒另列；
+result cache关闭、native prefix开启，实际命中工作量未知，不作性能排名。
+
+本批4f0b resident控制面22项CPU通过，不授予GPU成绩；两个完整查询软件图及48份实际renderer／context数组已验。
+48条消息各自唯一关联HTTP原文，当前成功不证明通用重复消息关联已解决；actual generate输入／输出数组、
+GPU tensor／kernel／成本仍未知。私有首审计把24请求误写为1..1200而失败，原失败保留；
+只修私有审计两处expected范围后离线复核，源码／模型结果不变，无新增推理。物理资源关闭／租约释放通过。
+本次独立核归档1405个payload、1186个Git blob、原driver结果／质量／时钟／ACK，未重复模型。
+`VERIFY-LOTUS-Daft-MMQA-Q4-4f0b-originals-20261114.json` SHA-256为
+`a3eacdaacfd21fd4c8ea94b6bff7d490e42cb9916ed68770a1cf44fca12aeb66`。
+
 ## 原件恢复与独立核验
 
 下列私有归档由服务器协调会话《统一安排服务器 GPU 测试》按运行标识提供，完整清单、配置、
@@ -2243,6 +2330,8 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 | 751b LOTUS＋Daft Q5原单叶首／同owner重复 | 3249594 | 1395 | `9ea33387f81425c6a8552085cc49fd9b2b6aa0d0a7973707177587cc8c3110cc` |
 | f53 Kalypso同owner Filter→Map→工程Extract三个原查询 | 4124518 | 1455 | `7bb14f9154464ee03949ad81ff93a8ac310ef89167d0c373906259faec044dbb` |
 | e67 独立JSON Daft MMQA Q7同owner首／重复 | 707955131 | 1497 | `43fb08ae9a181ff3191c7bc7314704829aaab0a9d0c3f8ea41014a17cdc7f111` |
+| 751b LOTUS＋Daft Medical Q4同owner首／重复 | 8616457 | 1383 | `5adaa6fc4f08b8f2256b301eaaeeb32df3f92954a7519a564d63770e45e1cf91` |
+| 4f0b LOTUS＋Daft MMQA Q4同owner首／重复 | 3397045 | 1405 | `3c3fefff63e7fedd7f34f1fc2e06b153a3f639f09cad172df4f73c1a6fea0d6c` |
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。

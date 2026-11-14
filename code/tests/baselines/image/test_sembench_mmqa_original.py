@@ -97,6 +97,7 @@ class OriginalMMQAImageTests(unittest.TestCase):
 
         lm = LM("openai/local-image-fixture", max_tokens=8192, max_batch_size=64)
         batches = []
+        self.last_batches = batches
 
         def respond(data, options, *_args):
             messages = [deepcopy(message) for message, _ in data]
@@ -253,7 +254,12 @@ class OriginalMMQAImageTests(unittest.TestCase):
 
         for none_match in (False, True):
             with self.subTest(none_match=none_match):
-                expected, reference_batches = self._run('2b', none_match=none_match)
+                if none_match:
+                    with self.assertRaises(KeyError):
+                        self._run('2b', none_match=True)
+                    reference_batches = self.last_batches
+                else:
+                    expected, reference_batches = self._run('2b')
                 query = SemBenchTextQuery(CHECKOUT, self.data, 'mmqa', '2b',
                     execution_id='complete-image-chain', model_name='openai/local-image-fixture',
                     generation=GenerationSpec(max_tokens=8192, stop=()), image_join=True)
@@ -275,16 +281,27 @@ class OriginalMMQAImageTests(unittest.TestCase):
                     return 'Reasoning:\nsoftware answer\nAnswer: ' + str(blue and not none_match)
 
                 with recorded_processor(answer) as sdk:
-                    report = run_query(config, query, engine, None, root)
-                self.assertEqual(report['result'], result_value(expected))
-                self.assertEqual(report['quality'], query.evaluate(expected))
+                    if none_match:
+                        with self.assertRaises(KeyError) as caught:
+                            run_query(config, query, engine, None, root)
+                        report = caught.exception.query_report
+                    else:
+                        report = run_query(config, query, engine, None, root)
+                if none_match:
+                    self.assertEqual(report['status'], 'failed')
+                    self.assertNotIn('result', report)
+                    self.assertNotIn('quality', report)
+                    self.assertIsNone(report.get('sink_ready_ns'))
+                else:
+                    self.assertEqual(report['result'], result_value(expected))
+                    self.assertEqual(report['quality'], query.evaluate(expected))
+                    self.assertLess(report['sink_ready_ns'], report['native']['events']['close_started_ns'])
                 self.assertEqual(report['physical_attempts_reserved'], 10 if none_match else 15)
                 self.assertEqual(sdk.events.count('init'), 1)
                 self.assertEqual(sdk.events.count('close'), 1)
                 self.assertEqual(len({row['call_id'] for row in sdk.requests}), len(sdk.requests))
                 actual_messages = [row['messages'] for row in sdk.requests]
                 self.assertEqual(actual_messages, [message for messages, options in reference_batches for message in messages])
-                self.assertLess(report['sink_ready_ns'], report['native']['events']['close_started_ns'])
                 batches = json.loads((root/'native-lm-batches.json').read_text())
                 self.assertEqual([len(batch['requests']) for batch in batches if batch['requests']],
                                  [10] if none_match else [10, 5])
@@ -434,7 +451,8 @@ class OriginalMMQAImageTests(unittest.TestCase):
               patch.object(SemExtractDataFrame, "__call__", observe_extract)):
             self._run("2a")
             self.assertIs(SemJoinDataframe.__call__, observe)
-            self._run("2b", none_match=True)
+            with self.assertRaises(KeyError):
+                self._run("2b", none_match=True)
             self.assertIs(SemExtractDataFrame.__call__, observe_extract)
             with self.assertRaises(KeyError):
                 self._run("2b", extract_text="{}")
@@ -466,20 +484,16 @@ class OriginalMMQAImageTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             self._run("2b", extract_text="{}")
 
-    def test_q2b_no_matches_returns_empty_declared_schema_without_extract_requests(self):
-        import pandas as pd
+    def test_q2b_no_matches_keeps_native_missing_color_error_without_extract_requests(self):
+        from lotus.sem_ops.sem_extract import SemExtractDataFrame
 
-        result, batches = self._run("2b", none_match=True)
+        original_extract = SemExtractDataFrame.__call__
+        with self.assertRaises(KeyError):
+            self._run("2b", none_match=True)
+        batches = self.last_batches
         self.assertEqual([len(messages) for messages, _ in batches], [10, 0])
         self.assertEqual(batches[1][1]["response_format"], {"type": "json_object"})
-        self.assertTrue(result.empty)
-        self.assertEqual(list(result.columns), ["ID", "image_id", "color"])
-        saved = self.data / "empty-q2b.json"
-        saved.write_text(result.to_json(orient="split"))
-        restored = pd.read_json(saved, orient="split")
-        self.assertEqual(list(restored.columns), list(result.columns))
-        metric = evaluate_original(CHECKOUT, "2b", restored)["original_metric"]
-        self.assertEqual(metric["f1_score"], 0)
+        self.assertIs(SemExtractDataFrame.__call__, original_extract)
 
     def test_q7_preserves_original_all_airline_join_and_separate_gold(self):
         import pandas as pd

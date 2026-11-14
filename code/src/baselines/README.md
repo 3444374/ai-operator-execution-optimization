@@ -781,7 +781,7 @@ LOTUS＋Ray也复用同一原函数、`leaf_plan`和本地counter加载：`SemBe
 counter的JSON／SHA、目录和revision只核对声明的Ray模型／tokenizer及context，实际加载仍待目标验证。
 单层、多层、长摘要新增归并层和错误actor的软件差分保留原提示、token计数序列、完整结果及评分。
 该路径包含原生冷启动和actor observer I/O，使用上述独立Ray时钟；服务ready后的LOTUS成绩不能直接与它排位。
-其余后端聚合仍未接线，不增加替代算法。
+其他后端聚合接点及各自验收见[当前系统表](../../INFRA_STATUS.md#各系统-runner-收尾状态)，不借单层成绩授予多层资格。
 配置与命令见[脚本说明](../../scripts/README.md#sembench-native-mmqa-aggregate)。
 
 本轮保留的可复现边界：
@@ -791,7 +791,7 @@ counter的JSON／SHA、目录和revision只核对声明的Ray模型／tokenizer�
 | Daft source DataFrame 提前选择 Native runner，随后显式线程配置被当成外部覆盖而拒绝，发生在模型启动前。 | 在创建 DataFrame 前调用同一个 Native 配置入口；省略时保持 Daft 默认，已有 runner 仍不被暗中重配。原失败及零模型复现保留，原生图／核不改。 |
 | MMQA 原 runner 的 `src.runner` 与 SemLoom 已加载的 `src` 冲突，首轮无法导入。 | 仅在原模块加载期映射同一已验证上游 runner，随后恢复；十六题原查询／方法／accessor 差分及别名恢复检查通过。 |
 | MMQA Q2a/Q2b/Q7 的原 `"zs-cot"` 字符串与 LOTUS1.2.4 的枚举不相等，静默生成非 CoT 提示。旧软件回复检查未覆盖策略分支。 | 在独立查询 worker 调用原 Join 的边界转为 `ReasoningStrategy.ZS_COT`，正常及异常返回均恢复 accessor；不改原查询源码、候选对、顺序、Extract 或解析器。回归检查实际原生 API 参数与 HTTP 消息中的完整 CoT 提示，后续 `d061df8c` 实测确认该提示。 |
-| Q2b 空 Join 后，LOTUS Extract 仅从实际回复字典创建新列，零行结果没有声明的 `color`，原最终投影报错。 | 仍执行原零行 Extract，在返回边界保留声明列；不填值、不补行、不发送 Extract 请求。保存的零行调用记录可重建空表并用原评价器离线评价，原失败与失败耗时继续保留。 |
+| Q2b 空 Join 后，LOTUS Extract 仅从实际回复字典创建新列，零行结果没有声明的 `color`，原最终投影报错。 | 旧补列适配已删除，当前保留原KeyError，零行Extract无模型请求；历史空表仅按其当时合同保存，不能当当前原生成功结果。 |
 | sf25 Q6 有 NaN，最初的纯字符串接纳误拒绝原 SDK 可序列化输入。 | 在文本 wire 边界保留原 DEFAULT cell 呈现；真实三题各25行完整消息与结果顺序相同，原 CSV 不变。 |
 | 非空 Extract 成功后原关系后处理可能因 `{}` 缺列失败，旧的新接线未把已完成算子报告附给该异常。 | 保留原 KeyError 并转交已知调用与关闭证据；不补字段把失败变成成功。 |
 | Movie 适配扩展使五份历史投影从维护版读取旧摘要失败。 | 保存单份准确原源并补五条来源／格式映射；原3010条摘要与投影 ID 不变，完整 materialize 通过。 |
@@ -813,7 +813,7 @@ counter的JSON／SHA、目录和revision只核对声明的Ray模型／tokenizer�
 | Animals Q1/Q3/Q10 | 官方 sf64 共64图、42,725,857编码字节；各64次 Filter | 原查询／原评价 CPU 接通；原生 SDK 服务入口已接，模型服务待实机验证 |
 | Animals Q7 | 同一64图，两遍完整原 Filter，共128次 | 两遍原模型输入都保留，不能替为 CLIP 检索 |
 | MMQA Q2a | 原生成切片25图＋13行表，精确 Join325候选对 | 原生 Join／评价 CPU 接通；原生 SDK 服务入口已接，模型服务待实机验证 |
-| MMQA Q2b | 同一切片，Join325次，后续 Extract 为实际匹配行数，最多再325次 | CPU 完整 Join→Extract 及零行 schema 通过；d061实测的空结果返回失败与离线评价单列，preset 单次 Extract 不构成完整模型资格 |
+| MMQA Q2b | 同一切片，Join325次，后续 Extract 为实际匹配行数，最多再325次 | CPU完整非空Join→Extract及原空Extract缺列错误已验；d061原失败与离线评价按来源单列，preset单次Extract不构成完整模型资格 |
 | MMQA Q7 | sf25 机场25行与原25图，组合后625候选对 | 原源码无自然问题的欧洲预筛，保留并单列该差异；原生服务入口已接，实际服务待绑定／验证 |
 | E-Commerce 图像／多模态 | 首算子真实发生项及图像身份按原函数计算；原件待准备 | 原生服务入口已有软件检查，真实资产／VLM待验，不能记零分 |
 | Cars Q3／Q8 图像 | 原车辆／图像 CSV 的真实连接规模；原件待定位／准备 | 原函数／服务／评价已接线，真实数据／VLM待验 |
@@ -878,8 +878,9 @@ MMQA 同一图片的多个匹配行仍逐个 Extract，JSON response_format 保�
 参数为`--sembench-checkout`、`--data-dir`和`--output-dir`。它只用官方正例作为明确软件Join夹具，
 让原查询／SDK生成Extract消息即停止，0模型；不返回完整查询或评分，不替换真实Join结果。
 消息仅写私有artifact，缺少正例时拒绝。后续独立Extract模型诊断不授予Q2b端到端资格。
-Q2b 无匹配时，原零行 Extract 返回后保留声明的 `color` 列，最终结果仍为零行，额外 POST 为0；
-非空 Extract 返回 `{}` 缺列时仍抛出原 KeyError。正常及异常结束均恢复原 Join／Extract accessor。
+Q2b无匹配时，原零行Extract不创建`color`，最终投影保留原KeyError，额外POST为0；
+非空Extract返回`{}`缺列也保留原错误。不再包装Extract补列，原Join策略适配正常及异常均恢复。
+[86项原生边界检查与真实输入计划](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#mmqa-native-empty-and-real-gates)分开记录软件、模型质量和数据限制。
 `d061df8c` 实测失败的保存记录为325个 Join 成功响应、Extract 输入0行／POST 0次；
 据此重建带 `ID/image_id/color` schema 的空表，原评价器离线得到 precision／recall／F1 均为0。
 原失败记录及46.740秒失败耗时保留，离线评价不补记正常 API 返回或成功端到端计时。

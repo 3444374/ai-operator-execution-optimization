@@ -333,6 +333,9 @@ CLI 只允许四种已接通对照；Kalypso Map／MMQA／Medical 不设替代�
 它不请求模型、不 claim 额度，也不代表服务已就绪。原生 SDK 批处理、层次归并和最终评价保持。
 该入口与视觉查询共用一次准备、执行完整原函数、收结果和审计的生命周期；两类既有配置schema保持。
 旧两个CLI已删除，历史命令按[准确来源](../../experiments/reproduction/native_baselines/README.md#retired-lotus-service-query-runners)恢复。
+Q5原sf25在固定32768／8192下只有单叶；扩大官方scale后先`check`核实际分块，不能复制输入造多层。
+Q2b当前保留原生空Extract缺`color`的KeyError，无匹配时不记成功sink／质量；实际Join决定是否进入Extract，
+见[原生边界与有界真实诊断](../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#mmqa-native-empty-and-real-gates)。
 
 配置见[示例](../configs/sembench_lotus_mmqa_aggregate.example.json)，复制到 Git 外填写实际模型、
 服务、`native_lm_max_ctx_len` 及本地 `token_counter`。上下文与 `service_profile.max_model_len` 一致；

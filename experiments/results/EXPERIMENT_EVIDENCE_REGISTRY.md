@@ -163,6 +163,19 @@ Q1/Q4/Q10沿同两系统runner，保原普通Join、完整sink／评分及真实
 共享Medical评价只给原评分器副本，保留真实sink，独立任务删除重复copy；原算法／分数保持，不改旧成绩。
 九模块165个不同方法最终162通过、3项资产证明未绑定跳过，0模型／GPU；实际Daft0.7.21图的软件API与目标模型分开，原失败和定向复核保留。
 
+[4f0b LOTUS＋Daft MMQA Q4](diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-mmqa-q4-4f0b-model)
+原24×2真实Extract终态，原分组19／18行、F1均.4865；原文与字段差异保留，执行完成不等于质量全对。
+私有首审计错用1200范围的失败原件保留，改为24后离线复核无新增模型；1405payload／1186Gitblob及结果／ACK只读核验。
+同批4f0b resident22项LinuxCPU已验；生成数组、GPU tensor与成本未知，不作排名。
+
+[MMQA原生空Extract与真实输入资格](diagnostics/sembench_native_integration_20261112/README.md#mmqa-native-empty-and-real-gates)
+删除旧补列分支，六模块86项软件检查保留LOTUS服务／Ray／Daft／IMLane原缺列错误、实际调用与关闭，0模型。
+真实Q2b五金标同图且在候选内，旧答复读到标志名仍判False；一pair诊断文字／RGB一致但PNG编码不同，不授予GPU等价。
+原Q5sf25只选16行、32768／8192下单叶；较大scale先核官方输入，不造摘要／数据或推断多层资格。
+[751b LOTUS＋Daft Medical Q4](diagnostics/sembench_native_integration_20261112/README.md#lotus-daft-medical-q4-751b-model)
+原1200×2终态，同owner两轮均值误差1.6547%／.6512%、三个判定差异保留；普通均值不是多层SemAgg。
+1383payload／1185Gitblob与原结果／质量／时钟／ACK只读核验，生成token等未知不补零，不作排名。
+
 [LOTUS resident原题需求与有限额度](diagnostics/sembench_native_integration_20261112/README.md#lotus-resident-allowance-headroom)
 模型与永久上限独立覆盖完整原题需求，允许有限余量及非均等query单位；全部在模型前检查，复用已有原query，删除按总额度除轮数推测工作量的旧逻辑。
 原算法／实际工作／硬上限及受控source→sink时钟保持；五模块119个不同软件方法最终116通过、3个依赖或真实资产未绑定跳过，0模型／GPU，22项复核不重复累加。

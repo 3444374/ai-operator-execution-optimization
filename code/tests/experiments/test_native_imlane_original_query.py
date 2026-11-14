@@ -351,6 +351,26 @@ class OriginalQueryTests(unittest.TestCase):
         self.assertNotIn('response_format',report['provider_batches'][1]['native_sampling'])
         self.assertTrue(all(type(call[1].structured_outputs) is FakeSampling for call in self.engines[-1].calls))
 
+    def test_mmqa_empty_join_keeps_native_KeyError_and_closes_sql_and_model(self):
+        inputs = self.visual.mmqa_inputs()
+        service, config = self.config('mmqa', 'Q2b', inputs, allowance=4)
+        original = fixture.NativeHTTPReplies(self, 'mmqa', query='Q2b', mode='no_matches')
+        with self.assertRaises(KeyError) as reference:
+            self.visual.invoke(service, inputs, original, allowance=4)
+        replies = fixture.NativeHTTPReplies(self, 'mmqa', query='Q2b', mode='no_matches')
+        with self.assertRaises(KeyError) as native:
+            self.native.invoke(config, reply_batch=self.replies(replies))
+        self.assertEqual(str(native.exception), str(reference.exception))
+        failed = read_json(self.native.last.output/'worker.json')
+        self.assertEqual(failed['status'], 'failed')
+        self.assertNotIn('quality', failed)
+        self.assertNotIn('full_sink_observed_monotonic_ns', failed)
+        self.assertEqual(failed['budget']['consumed_requests'], 4)
+        events = self.native.last.events
+        self.assertEqual(sum(name=='sql-open' for name,_ in events), 1)
+        self.assertEqual(sum(name=='sql-close' for name,_ in events), 1)
+        self.assertEqual(sum(name=='model-close' for name,_ in events), 1)
+
     def test_ecomm_text_survivors_reach_original_image_extract_and_empty_keeps_error(self):
         report,_,_=self.compare('ecomm','Q12',self.visual.ecomm_inputs())
         self.assertEqual([b['occurrences'] for b in report['native_lm_batches']],[4,3])
