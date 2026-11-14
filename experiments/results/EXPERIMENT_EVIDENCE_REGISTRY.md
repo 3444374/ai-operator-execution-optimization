@@ -183,6 +183,11 @@ IMLane回执v3删除逐行重复完整payload／hash及重复JSON预检查；整
 公共HTTP复用同一字节SHA，图像URL编码一次；76个不同软件方法最终通过，旧计时fixture缺minimum字段的失败及定向复核保留，0模型／GPU。
 实际成功回执及小型终态事件仍在查询内，不授予统一计时或新模型资格。
 
+[Ray原生完成契约](diagnostics/sembench_native_integration_20261112/README.md#ray-native-completion-owner)
+核服务器已装Ray2.56.1／vLLM0.22.0源码及默认错误传播，提取方法3个零模型控制检查通过；
+取消重复成功事件和批间文件核验，保留API额度／完整结果／错误及Serve响应关联，不补造独立engine终态。
+103个不同软件方法最终通过，首轮断言文字失败及定向复核保留；不是目标SDK或新性能资格。
+
 [b3b7与5d617服务器回执](diagnostics/sembench_native_integration_20261112/README.md#b3b7-and-5d617-server-gates)
 b3b7 Linux150／150、0模型；5d617原Q2b单对诊断两后端各1POST都False，Extract0，原错误／wrapper失败保留，非原sf25／非空链或性能资格。
 原Q5 sf1000仍选中相同16篇且单叶，0模型／下载；不为多层资格重复或改造输入。

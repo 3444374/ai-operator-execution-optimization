@@ -260,26 +260,35 @@ class RayPreparedTests(unittest.TestCase):
         self.assertEqual(report['physical_attempts_reserved'], 0)
         self.assertEqual(sdk.events, [])
 
-    def test_generate_budget_precedes_original_native_call_and_preserves_terminal(self):
+    def test_generate_budget_precedes_native_call_and_preserves_original_iterator(self):
         from src.baselines.text.frameworks.ray_native_observer import install
-        events, invoked = [], []
+        events, invoked, streams = [], [], []
+        output = SimpleNamespace(finished=True)
         class Engine:
-            async def generate(self, prompt, sampling_params, request_id):
-                invoked.append(request_id)
-                yield SimpleNamespace(finished=True, prompt_token_ids=[1, 2], outputs=[])
-        async def run():
-            engine = Engine()
-            return [value async for value in engine.generate({}, SimpleNamespace(), 'same')]
+            def generate(self, prompt, sampling_params, request_id):
+                async def stream():
+                    invoked.append(request_id)
+                    yield output
+                result = stream()
+                streams.append(result)
+                return result
+        async def collect(stream):
+            return [value async for value in stream]
         with tempfile.TemporaryDirectory() as directory:
             ledger = CellBudgetLedger.create(Path(directory)/'ledger', AttemptBudget('one', 1), deadline_utc=None)
             ledger.reserve_unit('query', 1)
             budget = ledger.claim_shared_unit('query')
             install(Engine, budget, lambda event, **data: events.append(event))
-            self.assertEqual(len(asyncio.run(run())), 1)
+            engine = Engine()
+            returned = engine.generate({}, SimpleNamespace(), 'same')
+            self.assertIs(returned, streams[0])
+            self.assertEqual(invoked, [])
+            self.assertIs(asyncio.run(collect(returned))[0], output)
             with self.assertRaises(BudgetExhausted):
-                asyncio.run(run())
+                engine.generate({}, SimpleNamespace(), 'same')
             self.assertEqual(invoked, ['same'])
-            self.assertIn('native_generate_terminal', events)
+            self.assertEqual(len(streams), 1)
+            self.assertEqual(events, ['native_constructor_started', 'native_constructor_returned'])
 
 
 if __name__ == '__main__':

@@ -208,7 +208,8 @@ class OriginalMMQAImageTests(unittest.TestCase):
                 self.assertEqual([row['messages'] for row in sdk.requests],messages)
                 self.assertTrue(sdk.configs[0]['prepare_image_stage'])
                 self.assertEqual(report['physical_attempts_reserved'],len(requests))
-                self.assertEqual(report['native_observation']['unknown_attempts'],[])
+                self.assertEqual(report['native_observation']['API_invocations_reserved'],len(requests))
+                self.assertEqual(report['native_observation']['complete_native_API_results'],len(requests))
                 self.assertLessEqual(report['sink_ready_ns'],report['native']['events']['close_started_ns'])
                 self.assertFalse(sdk.initialized)
 

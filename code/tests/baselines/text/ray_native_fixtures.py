@@ -5,7 +5,6 @@ from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
-import time
 from types import ModuleType, SimpleNamespace
 
 from src.experiments.attempt_ledger import AttemptBudget
@@ -62,19 +61,14 @@ def recorded_processor(replies, *, transform=lambda rows: rows, close_error=None
                 def read():
                     spec = json.loads(state.stage.map_batches_kwargs['runtime_env']['env_vars']['SEMLOOM_RAY_NATIVE_OBSERVER'])
                     unit = SharedClaimedUnit(Path(spec['path']), AttemptBudget(spec['id'], spec['limit']), spec['unit_id'])
-                    events = []
                     output = []
                     for row in dataset.read():
                         request = preprocess(row)
                         state.requests.append(dict(call_id=row['call_id'], **deepcopy(request)))
-                        attempt = unit.reserve(hashlib.sha256(row['call_id'].encode()).hexdigest())
-                        events.extend(dict(event=event, attempt=attempt, monotonic_ns=time.monotonic_ns())
-                                      for event in ('native_generate_submitted', 'native_generate_terminal'))
+                        unit.reserve(hashlib.sha256(row['call_id'].encode()).hexdigest())
                         output.append(postprocess(dict(row, **request,
                             generated_text=(replies(row, request) if callable(replies)
                                             else replies[row['call_id']]), request_id='fixture-'+row['call_id'])))
-                    with Path(spec['output'], 'native-events-software.jsonl').open('a') as stream:
-                        stream.write(''.join(json.dumps(event)+'\n' for event in events))
                     return transform(output[::-1])
                 return Dataset(read)
         return Processor()

@@ -50,7 +50,7 @@ class SoftwareServeSession:
                 text = json.loads(prompt[-1]['content'])['text']
                 yield SimpleNamespace(finished=not fixture.unknown, prompt_token_ids=[1], outputs=[
                     SimpleNamespace(text=json.dumps(dict(keep='good' in text)), token_ids=[2], finish_reason='stop')])
-        install(Model, self.unit, emit, capture_outputs=self.spec['capture_outputs'])
+        install(Model, self.unit, emit)
         self.Model, self.emit = Model, emit
 
     def start(self):
@@ -64,9 +64,13 @@ class SoftwareServeSession:
 
     async def generate(self, request):
         key = 'chatcmpl-'+request['call_id']
+        final = None
         async for output in self.model.generate(request['messages'], SimpleNamespace(n=1), key):
-            text = output.outputs[0].text
-        return dict(call_id=request['call_id'], generated_text=text,
+            if output.finished:
+                final = output
+        if final is None:
+            raise RuntimeError('software native API request is not finished')
+        return dict(call_id=request['call_id'], generated_text=final.outputs[0].text,
                     response_id='wrong' if self.mismatch else key)
 
     def predict(self, requests, *, sampling_params):
@@ -754,7 +758,10 @@ class ServeSessionTests(unittest.TestCase):
                 report = caught.exception.query_report
                 self.assertEqual(report['status'], 'failed')
                 self.assertEqual(len(self.reads), 1)
-                self.assertIsNotNone(report['queries'][0]['result'])
+                if field == 'unknown':
+                    self.assertIsNone(report['queries'][0]['result'])
+                else:
+                    self.assertIsNotNone(report['queries'][0]['result'])
                 self.assertNotIn('quality', report['queries'][0])
                 self.assertTrue(self.owners[0].closed_unit)
                 self.assertIsNone(report['warm_qualified'])
@@ -1049,32 +1056,29 @@ class NativeMultistageTests(unittest.TestCase):
         self.assertEqual(len(state.requests), 3)
         self.assertIn('generator-close', state.events)
 
-    def test_offline_unknown_batch_blocks_next_submission_and_final_unknown_preserves_sink(self):
-        for unknown_batch in (1,2):
-            with self.subTest(unknown_batch=unknown_batch), tempfile.TemporaryDirectory() as temporary:
+    def test_offline_allowance_mismatch_blocks_next_batch_and_keeps_already_complete_sink(self):
+        from src.experiments.shared_request_budget import SharedClaimedUnit
+        for mismatch_batch in (1,2):
+            with self.subTest(mismatch_batch=mismatch_batch), tempfile.TemporaryDirectory() as temporary:
                 self.root = Path(temporary)
-                config = self.config()
+                config = self.config(limit=6)
                 materialized = []
-                def corrupt_terminal(phase):
-                    if phase != 'materialize': return
-                    materialized.append(phase)
-                    if len(materialized) != unknown_batch: return
-                    path = self.root/'query/native-events-software.jsonl'
-                    rows = [json.loads(line) for line in path.read_text().splitlines()]
-                    target = 1 if unknown_batch == 1 else 4
-                    for row in rows:
-                        if row['event']=='native_generate_terminal' and row['attempt']==target:
-                            row['event']='native_generate_unconfirmed'
-                    path.write_text(''.join(json.dumps(row)+'\n' for row in rows))
-                with recorded_processor(self.reply, advance=corrupt_terminal) as state:
-                    with self.assertRaisesRegex(RuntimeError, 'unconfirmed|confirmed terminals') as caught:
+                def extra_reservation(rows):
+                    materialized.append(1)
+                    if len(materialized) == mismatch_batch:
+                        budget = config['budget']
+                        SharedClaimedUnit(Path(budget['path']), AttemptBudget(budget['id'], budget['limit']),
+                            budget['unit_id']).reserve('f'*64)
+                    return rows
+                with recorded_processor(self.reply, transform=extra_reservation) as state:
+                    with self.assertRaisesRegex(RuntimeError, 'charged') as caught:
                         run_query(DependentTableTask(self.source,'unknown',state.events),config,self.root/'query',checkout='fixture')
                 report = caught.exception.query_report
-                self.assertEqual(len(state.requests), 3 if unknown_batch==1 else 5)
-                self.assertEqual(report['physical_attempts_reserved'], 3 if unknown_batch==1 else 5)
+                self.assertEqual(len(state.requests), 3 if mismatch_batch==1 else 5)
+                self.assertEqual(report['physical_attempts_reserved'], 4 if mismatch_batch==1 else 6)
                 self.assertEqual(report['request_batch_counts'], [3,2])
                 self.assertNotIn('quality', report)
-                if unknown_batch==1:
+                if mismatch_batch==1:
                     self.assertIsNone(report['sink_ready_ns'])
                 else:
                     self.assertIsNotNone(report['sink_ready_ns'])
@@ -1100,19 +1104,14 @@ class NativeMultistageTests(unittest.TestCase):
     def test_serve_two_dependent_queries_use_one_model_owner_and_audit_every_batch(self):
         from src.experiments import sembench_native_ray as entry
         events=[]
-        original_summary = entry.summarize
-        checkpoint_attempts = []
-        final_attempts = []
-        def summarize(directory, *, offsets=None):
-            observed = original_summary(directory, offsets=offsets)
-            if offsets is not None:
-                checkpoint_attempts.append(observed['submitted_attempts'])
-            elif observed['terminal_attempts']:
-                attempts = observed['terminal_attempts']
-                self.assertGreaterEqual(events.count('sink'), 1 if max(attempts) <= 5 else 2)
-                final_attempts.append(attempts)
-            return observed
-        with patch.object(entry, 'summarize', side_effect=summarize):
+        original_audit = entry._serve_attempt_window
+        audits = []
+        def audit(directory, unit, first, before, predictions=None):
+            if predictions is not None:
+                self.assertEqual(events.count('sink'), len(audits)+1)
+                audits.append(len(predictions))
+            return original_audit(directory, unit, first, before, predictions)
+        with patch.object(entry, '_serve_attempt_window', side_effect=audit):
             report = entry.run_serve_session(self.config(limit=10,serve=True),self.root/'session',checkout='fixture',
                 session_factory=self.serve_owner,
                 task_factory=lambda config:DependentTableTask(self.source,config['query_id'],events))
@@ -1125,10 +1124,12 @@ class NativeMultistageTests(unittest.TestCase):
                          [list(range(1,6)),list(range(6,11))])
         self.assertEqual([len(query['native_observation']['response_associations']) for query in report['queries']],[5,5])
         self.assertEqual(report['physical_attempts_reserved'],10)
-        self.assertEqual(checkpoint_attempts, [[1,2,3], [6,7,8]])
-        self.assertEqual(final_attempts, [list(range(1,6)), list(range(1,11))])
+        self.assertEqual(audits, [5,5])
         self.assertFalse(report['native_output_artifacts'])
         self.assertEqual(list((self.root/'session').glob('native-output-*.json')), [])
+        records = [json.loads(line) for path in (self.root/'session').glob('native-events-*.jsonl')
+                   for line in path.read_text().splitlines()]
+        self.assertFalse(any(row['event'].startswith('native_generate') for row in records))
         self.assertIsNone(report['warm_qualified'])
         for index,query in enumerate(report['queries'],1):
             self.assertEqual(query['result']['data'],[['duplicate',True],['duplicate',True]])
@@ -1136,7 +1137,7 @@ class NativeMultistageTests(unittest.TestCase):
             requests=json.loads((self.root/'session'/('round-'+str(index))/'requests.json').read_text())
             self.assertEqual(len(requests),5)
 
-    def test_serve_second_stage_unknown_keeps_final_sink_and_native_exception_keeps_primary(self):
+    def test_serve_unfinished_second_stage_and_native_exception_never_form_a_sink(self):
         from src.experiments.sembench_native_ray import run_serve_session
         for mode in ('unknown', 'exception'):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
@@ -1165,8 +1166,8 @@ class NativeMultistageTests(unittest.TestCase):
                 self.assertNotIn('quality', report['queries'][0])
                 self.assertIsNone(report['warm_qualified'])
                 if mode == 'unknown':
-                    self.assertEqual(report['physical_attempts_reserved'], 5)
-                    self.assertEqual(report['queries'][0]['result']['data'], [['duplicate',True],['duplicate',True]])
+                    self.assertEqual(report['physical_attempts_reserved'], 4)
+                    self.assertIsNone(report['queries'][0]['result'])
                 else:
                     self.assertIs(caught.exception, failure)
                     self.assertEqual(report['physical_attempts_reserved'], 3)
@@ -1186,8 +1187,8 @@ class NativeMultistageTests(unittest.TestCase):
                 report=caught.exception.query_report
                 self.assertEqual(self.owners[0].events,['start','predict','close'])
                 self.assertEqual(len(report['queries']),1)
-                self.assertEqual(report['queries'][0]['request_batch_counts'],[3,2])
-                self.assertEqual(report['physical_attempts_reserved'],3)
+                self.assertEqual(report['queries'][0]['request_batch_counts'],[3] if mode=='unknown' else [3,2])
+                self.assertEqual(report['physical_attempts_reserved'],1 if mode=='unknown' else 3)
                 self.assertIsNone(report['queries'][0]['result'])
                 self.assertTrue(self.owners[0].closed_unit)
                 self.assertIsNone(report['warm_qualified'])

@@ -83,8 +83,7 @@ class NativeServeProcessTests(unittest.TestCase):
             engine_kwargs={}, processor_options={}, runtime_options={}, model_runtime_env=dict(
                 py_executable=sys.executable, env_vars=dict(PYTHONPATH=str(Path(__file__).resolve().parents[2]),
                     SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(path=str(self.ledger.path), id='isolated',
-                        limit=4, unit_id='session', output=str(self.root), observe_model_actor_identity=True,
-                        capture_outputs=True)))))
+                        limit=4, unit_id='session', output=str(self.root), observe_model_actor_identity=True)))))
 
     def owner(self, mode='success'):
         owner = process.NativeServeProcess(model_python=sys.executable, directory=self.root/'caller',
@@ -119,8 +118,7 @@ class NativeServeProcessTests(unittest.TestCase):
                 # Rebind the same existing finite ledger; failed software work
                 # must not create a replacement allowance.
                 self.options['model_runtime_env']['env_vars']['SEMLOOM_RAY_NATIVE_OBSERVER'] = json.dumps(dict(
-                    path=str(self.ledger.path), id='isolated', limit=4, unit_id='session', output=str(self.root),
-                    capture_outputs=True))
+                    path=str(self.ledger.path), id='isolated', limit=4, unit_id='session', output=str(self.root)))
                 owner = self.owner(mode)
                 try:
                     with self.assertRaisesRegex(RuntimeError, 'software caller'):
@@ -198,7 +196,7 @@ class NativeServeProcessTests(unittest.TestCase):
         self.assertFalse(value['ray_runtime_started'])
         self.assertFalse(value['evaluation_dependencies_required'])
 
-    def test_actor_setup_preserves_identity_and_only_records_output_text_when_requested(self):
+    def test_actor_setup_only_records_requested_identity_without_request_sidecars(self):
         from src.baselines.text.frameworks.ray_native_observer import setup
 
         modules = {}
@@ -208,9 +206,7 @@ class NativeServeProcessTests(unittest.TestCase):
         for capture in (True, False):
             with self.subTest(capture=capture):
                 calls = []
-                output_value = SimpleNamespace(finished=True)
-                if capture:
-                    output_value.outputs = [SimpleNamespace(text='original output')]
+                output_value = object()
                 class Engine:
                     def __init__(self):
                         pass
@@ -225,32 +221,29 @@ class NativeServeProcessTests(unittest.TestCase):
                 spec = json.loads(self.options['model_runtime_env']['env_vars']['SEMLOOM_RAY_NATIVE_OBSERVER'])
                 output = self.root/str(capture)
                 output.mkdir()
-                spec.update(output=str(output), observe_model_actor_identity=capture, capture_outputs=capture)
+                spec.update(output=str(output), observe_model_actor_identity=capture)
                 with patch.dict(sys.modules, modules), patch.dict(os.environ, SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(spec)), \
                         patch('importlib.metadata.version', return_value='software-version'):
                     setup()
                     engine = Engine()
                     self.assertEqual(calls, [])
+                    before = {path.name: path.read_bytes() for path in output.glob('native-events-*.jsonl')}
                     async def generate():
                         return [row async for row in engine.generate({}, SimpleNamespace(n=1), 'software-request')]
                     returned = asyncio.run(generate())
                 self.assertIs(returned[0], output_value)
                 self.assertEqual(calls, ['software-request'])
                 self.assertEqual(list(output.glob('native-output-*.json')), [])
-                rows = [json.loads(row) for row in (output/('native-events-'+str(os.getpid())+'.jsonl')).read_text().splitlines()]
-                terminal = next(row for row in rows if row['event'] == 'native_generate_terminal')
+                self.assertEqual(before, {path.name: path.read_bytes() for path in output.glob('native-events-*.jsonl')})
                 if capture:
-                    self.assertEqual(terminal['outputs'], ['original output'])
-                else:
-                    self.assertNotIn('outputs', terminal)
-                ready = next(row for row in rows if row['event'] == 'native_constructor_returned')
-                self.assertEqual(ready['pid'], os.getpid())
-                if capture:
+                    rows = [json.loads(row) for raw in before.values() for row in raw.decode().splitlines()]
+                    ready = next(row for row in rows if row['event'] == 'native_constructor_returned')
+                    self.assertEqual(ready['pid'], os.getpid())
                     self.assertEqual(ready['model_actor_id'], 'software-actor')
                     self.assertEqual(ready['node_id'], 'software-node')
                     self.assertGreater(ready['model_actor_create_time'], 0)
                 else:
-                    self.assertNotIn('model_actor_id', ready)
+                    self.assertEqual(before, {})
 
     def test_Serve_callback_preserves_native_worker_hook_and_node_initialization(self):
         events = []

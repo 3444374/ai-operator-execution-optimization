@@ -5,6 +5,7 @@
 也不把不同原生算法、冷暖条件或后端的单次样本排成性能榜。
 当前实现范围见[能力表](../../../../code/INFRA_STATUS.md#current-refactor-status)，
 执行与计时规则见[原生接线说明](../../../../code/src/baselines/README.md#sembench-native-query-timing)。
+当前收尾范围和各系统仍待验的边界见[Ray原生完成契约与逐系统收口](#ray-native-completion-owner)。
 
 ## 完整 Movie source 与 Kalypso Join
 
@@ -2480,3 +2481,43 @@ source binding、日志和观测保留在归档内；公开仓库不复制真实
 
 payload数不包括每包另存的一份清单。已完成的资格不重复请求；缺数据、SDK接线限制和未运行模型
 分别记录在[当前状态](../../../../code/INFRA_STATUS.md)，不由本报告扩展支持范围。
+
+<a id="ray-native-completion-owner"></a>
+## Ray 原生完成契约与逐系统收口
+
+2026-11-14只读核对服务器实际安装Ray2.56.1／vLLM0.22.0／Torch2.11.0／Transformers5.14.1，
+没有导入SDK、启动runtime／模型或占用GPU。实际`vllm_engine_stage.py` SHA-256为
+`7c5800499dbd63dd4803120ad47b15984e29a59fcc63013237cefb94a96c9284`，与先前合格4073原生stage一致。
+源码`_generate_async`仅在native output.finished时返回，否则报错；processor默认`should_continue_on_error=False`。
+Serve使用非流式请求，adapter仍核对错误、单choice、finish_reason、原文、响应ID和发生项覆盖。
+实际提取方法的finished／unfinished／原生异常三项本地控制检查通过，只证明该控制合同，不授予真实SDK执行资格。
+原始读取和提取检查见私有运行身份`READONLY-RAY-INSTALLED-SOURCE-20261114`、
+`READONLY-RAY-SERVE-INSTALLED-SOURCE-20261114`及`VERIFY-installed-ray-completion-contract-20261114`。
+
+据此删除重复的逐请求成功／未确认事件、output／token副本、非末批事件文件检查和旧offset接口。
+预算hook在调用原generate前预留额度，原样返回迭代器，不读、复制或重放输出；该值是API调用预留，
+不冒充引擎接受、实际模型执行或kernel工作量。原生错误、call ID覆盖、本批额度及完整sink保持。
+报告明确区分`API_invocations_reserved`与`complete_native_API_results`；不再输出独立逐请求unknown／终态字段。
+Serve仅按需保存模型构造身份，完整非流式响应的call_id／response_id关联在sink后完成，
+不再称作独立engine-output证据。前述057fcc终态文本方案按固定历史来源保留，以本节为当前接口。
+现行仓库图像测试已迁移；仓库外冻结辅助的旧unknown／terminal字段不能直接用于此候选，须在新验收包中迁移，历史包不改。
+
+受影响原生Ray／Serve、完整原Movie Q3、视觉Join及多阶段软件范围共103个不同方法最终通过，0skip／模型／GPU。
+首81项有1项错误信息文字断言失败，保留原输出；修复后定向1项通过，图像消费者模块22项通过，重叠不累加。
+去重证明`VERIFY-ray-native-completion-final-20261114` SHA-256为
+`e65c35fac90951a474da8ac7fd2e8a842889df2d40785fed689e845b167b550f`。
+尚未执行新候选的目标Ray／模型或计时验证；旧结果不相减、不补贴新口径。
+
+| runner／profile | 已接入的查询边界 | 收口后仍需处理或验证 |
+|---|---|---|
+| LOTUS resident／外部服务 | 同一原查询函数、原SDK方法和评分，真实读取至完整内存结果 | resident默认首次惰性加载与显式ready分列；服务同步指纹／事件编码仍在区间，远端启动／READY需owner证据 |
+| LOTUS＋Ray | query级runtime执行完整原题及实际多批，最后sink后关闭；native API拥有完成／错误 | 上述删除成功旁录后须目标SDK／代表查询再验；本地lazy启动仍在查询内，不声称跨批模型复用 |
+| 独立Ray offline／Serve | 中性任务／原评分，工程JSON语义；offline冷查询和Serve同owner轮次分列 | Serve保留原生完整响应／发生项及真实模型身份；新候选需迁移外部审计并重验，不能套用LOTUS算法身份 |
+| LOTUS＋Daft／独立Daft | 完整函数或中性任务驱动真实依赖批次；末批完整sink后ACK，attached可另验同owner | 本地profile仍逐批冷启动；ready帧内API审计保留失败后证据，不能未解决交接就删；必要数据／ACK仍计入 |
+| LOTUS＋IMLane／独立Q3 | 复用SQL／UDF／IPC，原完整关系或作者SQL完整COUNT后才后置审计 | provider成功／失败回执仍有真实消费者；额外prepared EXPLAIN可删除但须新薄driver构建与Linux SQL／ACK验收 |
+| Kalypso | 同一runner复用原生五handler，文本Extract-via-Map明确工程身份 | 图像carrier在固定作者实现缺失，留空；uniform token／usage旁录有现行消费者，仍计时；只删除无用途的ratio数组副本 |
+
+原Q5 sf1000仍是相同16篇、单叶，不把未触发多层当接线缺口；原Q2b非空链的模型判断与代码执行资格分开。
+Cars／E-Commerce真实数据缺口、系统原生不支持和目标未验证各自保留，详细题目范围继续由能力表及具名回执维护。
+源码层最小待办的工程估计为：LOTUS服务观测收尾约1.5–3小时，Daft失败证据交接约2–4小时；
+这是需要相关失败／视觉用例核对的工作量估计，不包含目标环境、模型运行或排队时间，也不是整套验收完成承诺。

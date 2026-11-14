@@ -69,10 +69,10 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
         result_cache_enabled=False, requested_generate_retries=0,
         timing_scope='fresh task source, necessary image reads/RGB-to-PNG content, project messages, '
             'native startup/dependent predictions, necessary terminal checks, strict task parsing and complete memory sink; '
-            'mandatory budget reservation and synchronous native observer events included; redundant full output copies disabled; '
+            'mandatory API allowance included; no per-request success event or output persistence; '
             'source verification, evaluation, result persistence and final runtime close excluded')
     source = result = native = ledger = unit = primary = None
-    requests = []
+    requests, predictions = [], []
 
     def failed(error, phase):
         nonlocal primary
@@ -89,10 +89,9 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
         value = config['budget']
         ledger = CellBudgetLedger(Path(value['path']), AttemptBudget(value['id'], value['limit']))
         unit = ledger.claim_shared_unit(value['unit_id'])
-        first = next(row['first_attempt'] for row in ledger.snapshot()['units'] if row['unit_id'] == value['unit_id'])
         runtime_env = dict(py_executable=config['model_python'], env_vars=dict(
             PYTHONPATH=str(Path(__file__).parents[2]),
-            SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory), capture_outputs=False))))
+            SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory)))))
         with scope(model=config['model'], engine_kwargs=config['engine_kwargs'],
                 processor_options=config['processor_options'], runtime_options=config['runtime_options'],
                 engine_runtime_env=runtime_env) as owner:
@@ -109,22 +108,20 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
                 report['sink_ready_ns'] = time.monotonic_ns()
                 report['source_to_sink_seconds'] = (report['sink_ready_ns'] - report['source_started_ns']) / 1e9
 
-            _predict_query_batches(task, source, owner, sampling=sampling, unit=unit, directory=directory,
-                first_attempt=first, requests=requests, counts=report.setdefault('request_batch_counts', []),
-                predictions=[], sink=sink, event_offsets={}, processor_options=config['processor_options'])
+            _predict_query_batches(task, source, owner, sampling=sampling, unit=unit,
+                requests=requests, counts=report.setdefault('request_batch_counts', []),
+                predictions=predictions, sink=sink, processor_options=config['processor_options'])
             if not requests:
                 report.update(model_ready_before_source=None,
                     model_ready_before_source_reason='no eligible occurrences; native runtime and model were not started')
         report['post_sink_audit_started_ns'] = time.monotonic_ns()
         task.verify_source(source)
         report['task'] = task.describe(source)
-        observed = report['native_observation'] = summarize(directory)
-        if unit.attempts != len(requests) or (requests and (
-                not observed['available'] or len(observed['submitted_attempts']) != len(requests)
-                or len(set(observed['submitted_attempts'])) != len(requests)
-                or sorted(observed['submitted_attempts']) != sorted(observed['terminal_attempts'])
-                or observed['unknown_attempts'])):
-            raise RuntimeError('native charged submissions and confirmed terminals differ from complete occurrences')
+        report['native_observation'] = dict(summarize(directory),
+            API_invocations_reserved=unit.attempts, complete_native_API_results=len(predictions),
+            completion_source='Ray native processor requires finished output or raises; not a separate engine receipt')
+        if unit.attempts != len(requests) or len(predictions) != len(requests):
+            raise RuntimeError('native charged API invocations and complete results differ from source occurrences')
         report['post_sink_audit_finished_ns'] = time.monotonic_ns()
         report['evaluation_started_ns'] = time.monotonic_ns()
         report['quality'] = json_metric(task.evaluate(source, result, checkout=checkout, evaluation=evaluation))
@@ -160,23 +157,8 @@ def run_query(task, config, directory, *, checkout, scope=query_scope):
     return report
 
 
-def _confirmed_attempt_window(directory, unit, first_attempt, before, *, offsets=None):
-    """Only the terminal/allowance evidence required before another native batch."""
-    after = unit.attempts
-    expected = list(range(first_attempt+before, first_attempt+after))
-    expected_set = set(expected)
-    observed = summarize(directory, offsets=offsets)
-    submitted = [value for value in observed['submitted_attempts'] if value in expected_set]
-    terminal = [value for value in observed['terminal_attempts'] if value in expected_set]
-    unknown = [value for value in observed['unknown_attempts'] if value in expected_set]
-    if sorted(submitted) != expected or sorted(terminal) != expected or unknown:
-        raise RuntimeError('native interval has unconfirmed, duplicate or missing native attempts')
-    return dict(attempts=expected, submitted_attempts=submitted, terminal_attempts=terminal,
-        unknown_attempts=unknown), observed
-
-
-def _predict_query_batches(task, source, owner, *, sampling, unit, directory, first_attempt,
-                           requests, counts, predictions, sink, event_offsets, processor_options=None):
+def _predict_query_batches(task, source, owner, *, sampling, unit,
+                           requests, counts, predictions, sink, processor_options=None):
     """Drive the task's ordinary query generator; native Ray owns every batch."""
     program = native_query_batches(task, source)
     try:
@@ -209,8 +191,7 @@ def _predict_query_batches(task, source, owner, *, sampling, unit, directory, fi
                 sink(complete.value)
                 return
             try:
-                window, _ = _confirmed_attempt_window(directory, unit, first_attempt, before, offsets=event_offsets)
-                if len(window['attempts']) != len(pending):
+                if unit.attempts-before != len(pending):
                     raise RuntimeError('native charged attempts differ from complete batch occurrences')
             except BaseException:
                 # Preserve locally constructed dependent work, without submitting it.
@@ -224,24 +205,17 @@ def _predict_query_batches(task, source, owner, *, sampling, unit, directory, fi
 
 
 def _serve_attempt_window(directory, unit, first_attempt, before, predictions=None):
-    """Full response association audit, after the complete session query sink."""
-    window, observed = _confirmed_attempt_window(directory, unit, first_attempt, before)
-    expected = window['attempts']
+    """Match API allowance to complete native responses, after the query sink."""
+    expected = list(range(first_attempt+before, first_attempt+unit.attempts))
     associations = []
     if predictions is not None:
-        expected_set = set(expected)
-        raw = [row for row in observed['terminal_outputs'] if row['attempt'] in expected_set]
         response_ids = [row['response_id'] for row in predictions]
-        by_id = {row['request_id']: row for row in raw}
-        if (len(predictions) != len(expected) or len(set(response_ids)) != len(response_ids)
-                or len(by_id) != len(raw) or set(response_ids) != by_id.keys()):
-            raise RuntimeError('Serve response IDs do not cover the charged native outputs')
-        for prediction in predictions:
-            native = by_id[prediction['response_id']]
-            if len(native['outputs']) != 1 or native['outputs'][0] != prediction['generated_text']:
-                raise RuntimeError('Serve complete response differs from its native output')
-            associations.append(dict(call_id=prediction['call_id'], response_id=prediction['response_id']))
-    return dict(window, response_associations=associations), observed
+        if len(predictions) != len(expected) or len(set(response_ids)) != len(response_ids):
+            raise RuntimeError('Serve complete API response IDs do not cover the charged invocations')
+        associations = [dict(call_id=row['call_id'], response_id=row['response_id']) for row in predictions]
+    return dict(attempts=expected, response_associations=associations,
+        complete_native_API_results=None if predictions is None else len(predictions),
+        completion_source='complete non-streaming native API responses; not an independent engine-output trace'), summarize(directory)
 
 
 def _owner_snapshot(snapshot):
@@ -310,14 +284,14 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
         author_original_semantic_method=False, lotus_sdk_required=False,
         execution_owner='Ray Data ServeDeploymentProcessor and owned Ray Serve deployment',
         target_native_model_qualified=None, performance_claim=False, queries=[],
-        native_output_artifacts=False, native_output_evidence='terminal event text',
+        native_output_artifacts=False, native_output_evidence='complete native API response',
         model_owner_reused=None, warm_qualified=None, extra_query_warmup=0,
         warm_qualification_scope='requires fresh native model actor and actual EngineCore subprocess identities plus '
             'unchanged native constructor events; software fixtures do not qualify a target model',
         native_startup_attempts=None, worker_entry_ns=time.monotonic_ns(),
         timing_scope='deployment startup separately measured; each fresh source, native Serve graph, '
-            'dependent batches, necessary terminal checks, strict task parsing and full memory sink measured directly; synchronous native budget/evidence '
-            'and necessary cross-environment batch IPC included; post-sink audits/scoring/persistence '
+            'dependent batches, native complete response checks, strict task parsing and full memory sink measured directly; API allowance '
+            'and necessary cross-environment batch IPC included; no per-request success persistence; post-sink audits/scoring/persistence '
             'and final deployment/caller close excluded')
     primary = ledger = unit = owner = current = None
 
@@ -346,7 +320,7 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
         runtime_env = dict(py_executable=config['model_python'], env_vars=dict(
             PYTHONPATH=str(Path(__file__).parents[2]),
             SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(dict(value, output=str(directory),
-                observe_model_actor_identity=True, capture_outputs=True))))
+                observe_model_actor_identity=True))))
         if session_factory is None:
             owner = _native_serve_process(config, directory/'native-caller', runtime_env)
         else:
@@ -386,7 +360,6 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
                 identity_complete = identity_complete and actual_identity is not None
                 if baseline_identity is not None and actual_identity is not None and actual_identity != baseline_identity:
                     raise RuntimeError('Serve model owner changed before fresh source')
-                event_offsets = {path: path.stat().st_size for path in directory.glob('native-events-*.jsonl')}
                 current['source_started_ns'] = time.monotonic_ns()
                 source = task.read_source()
                 if task.model_request_count(source) > unit.remaining:
@@ -397,9 +370,9 @@ def run_serve_session(config, directory, *, checkout, session_factory=None,
                     current['sink_ready_ns'] = time.monotonic_ns()
                     current['source_to_sink_seconds'] = (current['sink_ready_ns']-current['source_started_ns'])/1e9
 
-                _predict_query_batches(task, source, owner, sampling=sampling, unit=unit, directory=directory,
-                    first_attempt=first, requests=requests, counts=current.setdefault('request_batch_counts', []),
-                    predictions=predictions, sink=sink, event_offsets=event_offsets)
+                _predict_query_batches(task, source, owner, sampling=sampling, unit=unit,
+                    requests=requests, counts=current.setdefault('request_batch_counts', []),
+                    predictions=predictions, sink=sink)
                 current['post_sink_audit_started_ns'] = time.monotonic_ns()
                 current['native_observation'], observed = _serve_attempt_window(directory, unit, first, before, predictions)
                 accounted = unit.attempts

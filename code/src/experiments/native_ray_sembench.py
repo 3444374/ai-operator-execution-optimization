@@ -38,7 +38,7 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         performance_claim=False, physical_gpu_exit_confirmed=None,
         native_output_artifacts=False,
         timing_scope='actual original source, SDK prompt/image preparation, native predictions and full relation; native cold startup, '
-                     'generate attempt reservation and synchronous actor observer events included; redundant full output copies disabled; '
+                     'native API allowance included; no per-request success event or output persistence; '
                      'source/image identity/config preflight, budget claim, driver post-sink audit, evaluation, result persistence '
                      'and ray.shutdown excluded; independent native scope, not the shared v3 comparison scope',
         strict_controller_unavailable_reason='worker API does not observe earliest host/controller code',
@@ -69,7 +69,7 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         minimum = description.get('minimum_model_calls', description['expected_model_calls'])
         if minimum > unit.remaining:
             raise ValueError('shared physical budget cannot cover every original occurrence')
-        observer = dict(value, output=str(directory.resolve()), capture_outputs=False)
+        observer = dict(value, output=str(directory.resolve()))
         runtime_env = dict(py_executable=engine.model_python,
             env_vars=dict(PYTHONPATH=str(Path(__file__).parents[2]),
                           SEMLOOM_RAY_NATIVE_OBSERVER=json.dumps(observer)))
@@ -123,17 +123,15 @@ def run_query(config, checked_query, engine, resources, directory, *, scope=quer
         report['logical_requests'] = len(requests)
         report['query_seconds'] = (time.monotonic_ns() - started) / 1e9
         report['query_timing_scope'] = 'legacy worker entry through preflight, semantic audit and runtime close; use versioned source_to_sink_seconds'
-        if unit.attempts != len(requests):
-            raise RuntimeError('mandatory native generate accounting does not match complete occurrences')
         from src.baselines.text.frameworks.ray_native_observer import summarize
         report['native_event_audit_started_ns'] = time.monotonic_ns()
-        observed = report['native_observation'] = summarize(directory)
-        if requests and (not observed['available']
-                or len(observed['submitted_attempts']) != len(requests)
-                or len(set(observed['submitted_attempts'])) != len(requests)
-                or sorted(observed['submitted_attempts']) != sorted(observed['terminal_attempts'])
-                or observed['unknown_attempts']):
-            raise RuntimeError('native event audit lacks unique confirmed terminals for every occurrence')
+        completed = sum(len(batch['predictions']) for batch in native['batches'])
+        report['native_observation'] = dict(summarize(directory),
+            API_invocations_reserved=unit.attempts,
+            complete_native_API_results=completed,
+            completion_source='Ray native processor requires finished output or raises; not a separate engine receipt')
+        if unit.attempts != len(requests) or completed != len(requests):
+            raise RuntimeError('mandatory native generate accounting does not match complete occurrences')
         report['native_event_audit_finished_ns'] = time.monotonic_ns()
         report['evaluation_started_ns'] = time.monotonic_ns()
         report['quality'] = json_metric(query.evaluate(result))

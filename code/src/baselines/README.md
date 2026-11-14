@@ -377,16 +377,17 @@ Ray/模型启动及原关系计算；driver消息摘要、关系序列化、评�
 当前时钟为`lotus_ray.source_to_sink.v1`，起点位于输入身份／配置核对、预算领取之后；准备的是已绑定输入，
 原查询开始时真实读取CSV，图像在实际算子格式化时读取，不先准备首阶段再重跑原函数恢复关系。
 driver完整文件摘要和逐消息摘要在sink后核对；原始批次／答复按独立call_id保存，价格／用量以真实backend回执为准。
-actor的预算预扣、同步事件JSONL和完整输出／token IDs写盘仍在generate结果yield前，实际包含在此区间。
-早期沿用的统一v3标签未核清这段成本，现撤回该可比性声明；冻结旧字段和时长不改写，
-也不从旧时长相减。要排除成功审计，仍需在不丢回执或失败控制的前提下闭合其留存／flush生命周期。
+actor保留原生API调用前的预算预扣，删除重复逐请求成功事件、输出／token副本及其批间文件检查。
+已静态核对服务器Ray2.56.1：原生processor只返回finished输出，否则抛错，默认错误不继续；adapter不再重包原迭代器。
+完整API结果及call ID覆盖仍检查，预算预留不表示引擎接受或GPU工作量。目标SDK执行与新模型计时仍待验，
+早期统一v3声明不恢复，冻结旧时长不改写或相减，见[原生完成契约](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#ray-native-completion-owner)。
 该完整查询结果schema为`semloom.sembench_text_result.v2`；`native.batches`保留实际预测批次，
 query级`events`保留最后关闭，旧单批报告与默认记录图v1不回填或改记。
 原始预测只存`native-predictions.json`；查询摘要保留call ID／消息摘要，
 `native-lm-batches.json`保存原请求和原／有效参数，不再嵌套复制同一批预测。
 `query_seconds` 仍是包含审计和 runtime close 的较宽区间，不能代替 sink 指标。
-最早 host/controller 入口未在此 worker 观察，保持空值；AsyncLLM 首提交、末确认终态与构造返回事件
-保存在 `native-events-*.jsonl` 并在查询报告汇总，不能称为引擎接受或 GPU kernel 时间。
+最早host/controller入口未在此worker观察，保持空值。`native_observation`记录实际API预留／完整结果数，
+不再产生首提交／末终态／unknown事件；独立Serve只按需保留模型构造身份事件，不把缺少独立逐请求观察填成零。
 
 `profile` 是本地独占 `ray.init` 参数；`ray_native.processor_options` 保留未覆盖的原生默认。
 引擎显式设置由 `engine` 与 `ray_native.engine_kwargs` 一致组合，冲突拒绝。
@@ -397,7 +398,7 @@ actor setup hook 复用已核 Q7 的版本相关接点；SDK、跨解释器加�
 调用方先预留永久 SQLite 的单次单位，worker 领取后由原生 `AsyncLLM.generate` 前的
 [预算观察器](text/frameworks/ray_native_observer.py)逐次扣除；相同提示不去重，失败不返还。
 模型 stage 明确设置 `max_restarts=0` / `max_task_retries=0`，不重跑整查询。
-单位计数和原生终态不完整时不能报成功。原 parser、后置审计、close 或持久化失败均保留失败状态
+单位计数或完整原生API结果不匹配时不能报成功。原 parser、后置审计、close 或持久化失败均保留失败状态
 及已有答复；已观察到 sink 不会因此擦除。外层继续使用既有 host 租约、资源监督和物理清理，
 `ray.shutdown` 的 driver 断开本身不证明模型进程、SHM 或 GPU 已释放。
 `startup_timeout_s + query_timeout_s + 30` 是既有监督器的 worker 总窗口，包含其退出预留；
@@ -780,7 +781,7 @@ LOTUS＋Ray也复用同一原函数、`leaf_plan`和本地counter加载：`SemBe
 原摘要决定后续层次，总次数未知时保持`None`，预检使用原首层推导的minimum；显式engine上限和永久预算封顶。
 counter的JSON／SHA、目录和revision只核对声明的Ray模型／tokenizer及context，实际加载仍待目标验证。
 单层、多层、长摘要新增归并层和错误actor的软件差分保留原提示、token计数序列、完整结果及评分。
-该路径包含原生冷启动和actor observer I/O，使用上述独立Ray时钟；服务ready后的LOTUS成绩不能直接与它排位。
+该路径包含原生冷启动和API预算预扣，使用上述独立Ray时钟；服务ready后的LOTUS成绩不能直接与它排位。
 其他后端聚合接点及各自验收见[当前系统表](../../INFRA_STATUS.md#各系统-runner-收尾状态)，不借单层成绩授予多层资格。
 配置与命令见[脚本说明](../../scripts/README.md#sembench-native-mmqa-aggregate)。
 
@@ -1003,12 +1004,12 @@ Ray／Daft prepared 路径在配置／输入核对和预算准备后开始，包
 旧isolated无独立关闭前边界，保持None，其query_seconds含adapter审计／关闭；预检不产实测成绩，
 见[原题完整Q3与复现核对](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#query-clock-preflight-and-repro-freeze)。
 
-独立Ray／Serve的非末批终态检查只读新增事件，同owner下一轮不再解析上一轮历史；完整核对仍在sink后。
+Ray离线／Serve直接使用原生API完成／错误约定，非末批只核本批额度差，不再旁录成功事件或读回其文件。
 Daft worker不再重复同步写optional事件sidecar，原生执行记录与必要结果／ACK保持。
 LOTUS＋Ray及独立Ray离线入口也不再逐请求复制／落盘完整token与output，返回predictions保持；
-报告`native_output_artifacts=False`。Serve也已删除逐请求输出文件／完整token复制，
-只将原生request ID及输出文本并入已有终态事件，完整响应关联仍在sink后核对，
-见[Serve终态记录](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#serve-terminal-response-evidence)。
+报告`native_output_artifacts=False`。Serve的完整响应ID关联仍在sink后核对，来源明确为非流式API答复，
+不是独立engine-output证据；旧终态事件方案及冻结原件按历史版本保留，
+当前接口／软件范围见[原生完成契约](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#ray-native-completion-owner)。
 这些实际开销修正不等于所有时钟已对齐，见[验证与剩余边界](../../../experiments/results/diagnostics/sembench_native_integration_20261112/README.md#native-query-audit-work)。
 
 这些版本化起点不等于所有运行配置已经可直接排名：Ray／Daft 单冷和默认 LOTUS resident 的首次惰性
